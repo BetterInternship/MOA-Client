@@ -7,4 +7,3 @@ A platform for managing MOAs and other similar agreements.
 ```bash
 npm run dev
 ```
-
