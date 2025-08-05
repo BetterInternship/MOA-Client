@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Trigger sync in fork
         run: |
-          curl -X POST https://api.github.com/repos/neue-dev/BetterInternship-MOA-Client/actions/workflows/168126727/dispatches \
+          curl -X POST https://api.github.com/repos/neue-dev/BetterInternship-MOA-Client/actions/workflows/179258867/dispatches \
             -H "Authorization: token ${{ secrets.DEPLOY_FORK_PAT }}" \
             -H "Accept: application/vnd.github+json" \
             -d '{"ref":"main"}'
