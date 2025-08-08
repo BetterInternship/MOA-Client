@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 import { UnivAuthForm } from "@/components/auth/UnivAuthForm";
+
+const companyURL =
+  typeof window !== "undefined"
+    ? window.location.href.replace("univ", "moa").replace(/\/[^/]*$/, "/login")
+    : "http://moa.localhost:3000/login";
 
 export default function UnivLoginPage() {
   return (
@@ -53,7 +56,7 @@ export default function UnivLoginPage() {
 
           <p className="text-center text-sm">
             Not from DLSU?{" "}
-            <Link href="/login" className="underline hover:text-primary">
+            <Link href={companyURL} className="underline hover:text-primary">
               Go to company login
             </Link>
           </p>

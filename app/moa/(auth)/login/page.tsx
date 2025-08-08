@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { CompanyAuthForm } from "@/components/auth/CompanyAuthForm";
 
+const universityURL =
+  typeof window !== "undefined"
+    ? window.location.href.replace("moa", "univ").replace(/\/[^/]*$/, "/login")
+    : "http://univ.localhost:3000/login";
+
 export default function CompanyAuthPage() {
   return (
     <div className="relative grid w-full min-h-[100svh] items-stretch lg:grid-cols-2 lg:px-0">
@@ -39,8 +44,8 @@ export default function CompanyAuthPage() {
 
           <p className="text-center text-sm">
             Not a company?{" "}
-            <Link href="/login" className="underline hover:text-primary">
-              Go to student login
+            <Link href={universityURL} className="underline hover:text-primary">
+                Go to University login
             </Link>
           </p>
         </div>
