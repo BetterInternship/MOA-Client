@@ -46,6 +46,7 @@ export function MoaSidebar() {
   const user = {
     name: "John Doe",
     email: "john.doe@example.com",
+    avatar: "https://example.com/avatar.jpg",
   };
 
   const teams = [
