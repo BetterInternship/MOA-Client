@@ -44,9 +44,8 @@ export function MoaSidebar() {
   ];
 
   const user = {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "John Doe",
+    email: "john.doe@example.com",
   };
 
   const teams = [
@@ -56,7 +55,7 @@ export function MoaSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <TeamSwitcher teams={teams} />
+        <NavUser user={user} />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -93,9 +92,6 @@ export function MoaSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={user} />
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
