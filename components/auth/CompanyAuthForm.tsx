@@ -4,8 +4,10 @@ import * as React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export function CompanyAuthForm() {
+  const router = useRouter();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -27,7 +29,7 @@ export function CompanyAuthForm() {
     await new Promise((r) => setTimeout(r, 600));
 
     setLoading(false);
-    // e.g. router.push("/company/dashboard")
+    router.push("/dashboard")
   }
 
   return (
