@@ -6,22 +6,12 @@ import { UnivAuthForm } from "@/components/auth/UnivAuthForm";
 export default function UnivLoginPage() {
   return (
     <div className="relative grid w-full min-h-[100svh] items-stretch grid-rows-[auto,1fr] lg:grid-rows-1 lg:grid-cols-2 lg:px-0">
-      {/* Optional CTA for companies */}
-      <Link
-        href="/moa/login"
-        className={cn(
-          buttonVariants({ variant: "ghost" }),
-          "absolute top-4 right-4 md:top-8 md:right-8"
-        )}
-      >
-        Company login
-      </Link>
 
       {/* Left panel - University branding */}
       <div className="text-primary relative flex h-full flex-col p-8 lg:p-10 border-b lg:border-b-0 lg:border-r bg-primary/5">
         <div className="absolute inset-0 bg-primary/5" />
         <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-primary">
-          {/* You can replace this with your actual logo */}
+            {/* TODO: Add logo */}
           <span>BetterInternship | De La Salle University</span>
         </div>
         <div className="relative z-20 mt-auto text-muted-foreground text-sm">
@@ -61,6 +51,13 @@ export default function UnivLoginPage() {
             </Link>
             .
           </p>
+
+          <p className="text-center text-sm">
+              Not from DLSU?{" "}
+              <Link href="/login" className="underline hover:text-primary">
+                Go to company login
+              </Link>
+            </p>
         </div>
       </div>
     </div>

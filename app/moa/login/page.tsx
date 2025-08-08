@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 import { CompanyAuthForm } from "@/components/auth/CompanyAuthForm";
 
 export default function CompanyAuthPage() {
@@ -10,7 +8,7 @@ export default function CompanyAuthPage() {
         {/* Left panel */}
         <div className="text-primary relative flex h-full flex-col p-8 lg:p-10 border-b lg:border-b-0 lg:border-r bg-primary/5">
           <div className="relative z-20 flex items-center text-lg font-semibold text-primary">
-            BetterInternship
+            BetterInternship | De La Salle University
           </div>
           <div className="relative z-20 mt-auto text-muted-foreground text-sm">
             <p>Welcome to the MOA Management Platform.</p>
