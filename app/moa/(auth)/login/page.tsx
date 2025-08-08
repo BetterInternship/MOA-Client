@@ -48,6 +48,14 @@ export default function CompanyAuthPage() {
                 Go to University login
             </Link>
           </p>
+
+          <p className="text-center text-sm">
+            Don’t have an account?{" "}
+            <Link href="/register" className="underline hover:text-primary">
+                Register your company
+            </Link>
+        </p>
+
         </div>
       </div>
 

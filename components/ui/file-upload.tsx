@@ -32,7 +32,7 @@ export function FileUpload({ label, name, accept, required }: FileUploadProps) {
       <div
         onClick={handleClick}
         className={cn(
-          "border border-dashed rounded-md px-4 py-4 text-sm cursor-pointer",
+          "border  rounded-md px-4 py-4 text-sm cursor-pointer",
           "hover:bg-muted transition-colors text-muted-foreground",
           "flex items-center gap-2"
         )}

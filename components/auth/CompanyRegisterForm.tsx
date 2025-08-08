@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Separator } from "@/components/ui/separator";
 
 export function CompanyRegisterForm() {
   const [loading, setLoading] = useState(false);
@@ -70,6 +71,8 @@ export function CompanyRegisterForm() {
           <Input id="contactPhone" name="contactPhone" type="tel" required />
         </div>
 
+        <Separator className="my-4" />
+        
         {/* File Uploads */}
         <FileUpload
             label="Company Registration"
