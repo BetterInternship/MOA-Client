@@ -5,13 +5,12 @@ import { UnivAuthForm } from "@/components/auth/UnivAuthForm";
 
 export default function UnivLoginPage() {
   return (
-    <div className="relative grid w-full min-h-[100svh] items-stretch grid-rows-[auto,1fr] lg:grid-rows-1 lg:grid-cols-2 lg:px-0">
+    <div className="relative grid w-full min-h-[100svh] items-stretch lg:grid-cols-2 lg:px-0">
 
-      {/* Left panel - University branding */}
-      <div className="text-primary relative flex h-full flex-col p-8 lg:p-10 border-b lg:border-b-0 lg:border-r bg-primary/5">
+      {/* Left panel - University branding (hidden on mobile) */}
+      <div className="hidden lg:flex text-primary relative flex-col p-10 border-r bg-primary/5">
         <div className="absolute inset-0 bg-primary/5" />
         <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-primary">
-            {/* TODO: Add logo */}
           <span>BetterInternship | De La Salle University</span>
         </div>
         <div className="relative z-20 mt-auto text-muted-foreground text-sm">
@@ -20,7 +19,7 @@ export default function UnivLoginPage() {
         </div>
       </div>
 
-      {/* Right panel - Login Form */}
+      {/* Right panel - Login Form (keeps everything centered) */}
       <div className="flex items-center justify-center h-full p-6 lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center gap-6 sm:w-[400px]">
           <div className="flex flex-col gap-2 text-center">
@@ -53,11 +52,11 @@ export default function UnivLoginPage() {
           </p>
 
           <p className="text-center text-sm">
-              Not from DLSU?{" "}
-              <Link href="/login" className="underline hover:text-primary">
-                Go to company login
-              </Link>
-            </p>
+            Not from DLSU?{" "}
+            <Link href="/login" className="underline hover:text-primary">
+              Go to company login
+            </Link>
+          </p>
         </div>
       </div>
     </div>
