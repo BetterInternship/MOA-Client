@@ -41,7 +41,7 @@ export default function RequestMOA() {
 
             <div className="flex justify-end">
               <Button
-                onClick={() => router.push("/standard")}
+                onClick={() => router.push("/dashboard/request/standard")}
                 variant="outline"
                 className="mt-auto w-fit"
               >
