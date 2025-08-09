@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,60 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Fragment, useMemo } from "react";
+
+type NavLink = {
+  href: string;
+  label: string;
+  match: string[]; // paths that should count as "active"
+};
+
+const NAV_LINKS: NavLink[] = [
+  { href: "/dashboard", label: "Dashboard", match: ["/dashboard"] },
+  { href: "/companies", label: "Companies", match: ["/companies"] },
+  {
+    href: "/verification",
+    label: "Company Verification",
+    match: ["/verification", "/companies/verify"],
+  },
+  {
+    href: "/moa",
+    label: "MOA Requests",
+    match: ["/moa", "/moa/requests"],
+  },
+];
+
+function useIsActive(pathname: string, patterns: string[]) {
+  return useMemo(
+    () => patterns.some((base) => pathname === base || pathname.startsWith(base + "/")),
+    [pathname, patterns]
+  );
+}
+
+function NavItem({ item, pathname }: { item: NavLink; pathname: string }) {
+  const active = useIsActive(pathname, item.match);
+  return (
+    <Link
+      href={item.href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "relative rounded-md px-3 py-1.5 text-sm transition-colors",
+        "text-muted-foreground hover:text-foreground hover:bg-accent",
+        active && "bg-accent text-foreground"
+      )}
+      data-active={active}
+    >
+      {item.label}
+      {/* active underline */}
+      <span
+        className={cn(
+          "pointer-events-none absolute inset-x-2 -bottom-1 h-0.5 rounded",
+          active && "opacity-100"
+        )}
+      />
+    </Link>
+  );
+}
 
 export default function UnivTopbar() {
   const pathname = usePathname();
@@ -22,63 +75,34 @@ export default function UnivTopbar() {
   async function handleLogout() {
     try {
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } finally {
       router.push("/login");
       router.refresh();
-    } catch {
-      router.push("/login");
     }
   }
 
   return (
     <header className="bg-background/80 sticky top-0 z-50 w-full border-b backdrop-blur">
       <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4">
-        {/* Left: Logo + Home */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            {/* <Image src="/logo-only.png" alt="Logo" width={28} height={28} /> */}
-            <span className="font-semibold">BetterInternship | De La Salle University</span>
+        {/* Left: Brand + Nav */}
+        <div className="flex min-w-0 items-center gap-3">
+          <Link href="/" className="shrink-0 font-semibold">
+            BetterInternship | De La Salle University
           </Link>
 
-          <nav className="ml-4 flex gap-2">
-            <Link
-              href="/dashboard"
-              className={cn(
-                "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
-                pathname === "/dashboard" && "bg-accent text-foreground"
-              )}
-            >
-              Dashboard
-            </Link>
+          {/* Scrollable nav on mobile */}
+          <nav className="ml-2 hidden gap-2 sm:flex">
+            {NAV_LINKS.map((item) => (
+              <Fragment key={item.href}>
+                <NavItem item={item} pathname={pathname} />
+              </Fragment>
+            ))}
+          </nav>
 
-            <Link
-              href="/companies"
-              className={cn(
-                "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
-                pathname === "/companies" && "bg-accent text-foreground"
-              )}
-            >
-              Companies
-            </Link>
-
-            <Link
-              href="/dashboard"
-              className={cn(
-                "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
-                pathname === "/dashboard" && "bg-accent text-foreground"
-              )}
-            >
-              Company Verification
-            </Link>
-
-            <Link
-              href="/dashboard"
-              className={cn(
-                "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
-                pathname === "/dashboard" && "bg-accent text-foreground"
-              )}
-            >
-              MOA Requests
-            </Link>
+          <nav className="-mx-2 flex min-w-0 gap-1 overflow-x-auto px-2 sm:hidden">
+            {NAV_LINKS.map((item) => (
+              <NavItem key={item.href} item={item} pathname={pathname} />
+            ))}
           </nav>
         </div>
 
