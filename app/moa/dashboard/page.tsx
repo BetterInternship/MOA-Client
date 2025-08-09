@@ -35,7 +35,7 @@ export default function DashboardPage() {
     },
     {
       label: "Support",
-      href: "/support",
+      href: "/dashboard/support",
       icon: HelpCircle,
       desc: "Get help from legal support or browse the help center.",
       cta: "Get help",
