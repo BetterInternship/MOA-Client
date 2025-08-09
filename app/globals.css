@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 
 :root {
-  font-size: 17px;
+  font-size: 1.1rem;
 }
 
 @custom-variant dark (&:is(.dark *));
