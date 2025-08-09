@@ -29,13 +29,7 @@ export function UnivAuthForm() {
     <form className="grid gap-4" onSubmit={onSubmit}>
       <div className="grid gap-2">
         <Label htmlFor="email">University Email</Label>
-        <Input
-          id="email"
-          name="email"
-          placeholder="student@dlsu.edu.ph"
-          type="email"
-          required
-        />
+        <Input id="email" name="email" placeholder="student@dlsu.edu.ph" type="email" required />
       </div>
 
       <div className="grid gap-2">

@@ -32,7 +32,7 @@ export function CompanyRegisterForm() {
         <h1 className="text-2xl font-semibold tracking-tight">Company Registration</h1>
         <p className="text-muted-foreground text-sm">
           Start or manage your Memorandum of Agreement with <br />
-          <span className="font-medium text-foreground">De La Salle University</span>
+          <span className="text-foreground font-medium">De La Salle University</span>
         </p>
       </div>
 
@@ -78,9 +78,12 @@ export function CompanyRegisterForm() {
       {/* Step 2: File Uploads */}
       {step === 2 && (
         <div className="grid gap-4">
-          <div className="grid gap-2 text-sm text-muted-foreground">
-            <h2 className="text-base font-medium text-foreground">Required Documents</h2>
-            <p>Please upload clear and legible copies of the following documents in PDF, JPG, or PNG format.</p>
+          <div className="text-muted-foreground grid gap-2 text-sm">
+            <h2 className="text-foreground text-base font-medium">Required Documents</h2>
+            <p>
+              Please upload clear and legible copies of the following documents in PDF, JPG, or PNG
+              format.
+            </p>
           </div>
 
           <FileUpload
@@ -89,18 +92,8 @@ export function CompanyRegisterForm() {
             accept=".pdf,.jpg,.png"
             required
           />
-          <FileUpload
-            label="BIR Registration"
-            name="birFile"
-            accept=".pdf,.jpg,.png"
-            required
-          />
-          <FileUpload
-            label="Business Permit"
-            name="permitFile"
-            accept=".pdf,.jpg,.png"
-            required
-          />
+          <FileUpload label="BIR Registration" name="birFile" accept=".pdf,.jpg,.png" required />
+          <FileUpload label="Business Permit" name="permitFile" accept=".pdf,.jpg,.png" required />
 
           <div className="flex justify-between">
             <Button type="button" variant="secondary" onClick={() => setStep(1)}>
@@ -115,7 +108,7 @@ export function CompanyRegisterForm() {
 
       <p className="text-center text-sm">
         Already have an account?{" "}
-        <Link href="/login" className="underline hover:text-primary">
+        <Link href="/login" className="hover:text-primary underline">
           Go to login
         </Link>
       </p>

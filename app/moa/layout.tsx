@@ -12,20 +12,18 @@ import MoaTopbar from "@/components/nav/MoaTopbar";
 
 export default function MoaLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-//   const noSidebarRoutes = ["/login", "/register"];
-const noNavRoutes = ["/login", "/register"];
+  //   const noSidebarRoutes = ["/login", "/register"];
+  const noNavRoutes = ["/login", "/register"];
   const hideNav = noNavRoutes.includes(pathname);
-  
-//   const hideSidebar = noSidebarRoutes.includes(pathname);
 
-//   if (hideSidebar) return <>{children}</>;
+  //   const hideSidebar = noSidebarRoutes.includes(pathname);
+
+  //   if (hideSidebar) return <>{children}</>;
 
   return (
-     <>
+    <>
       {!hideNav && <MoaTopbar />}
-      <main className="flex flex-col gap-6 p-6 max-w-screen-xl mx-auto">
-        {children}
-      </main>
+      <main className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">{children}</main>
     </>
     // <SidebarProvider>
     //   <MoaSidebar />

@@ -49,9 +49,7 @@ export function MoaSidebar() {
     avatar: "https://example.com/avatar.jpg",
   };
 
-  const teams = [
-    { name: "Acme Inc", logo: ClipboardCheck, plan: "Enterprise" },
-  ];
+  const teams = [{ name: "Acme Inc", logo: ClipboardCheck, plan: "Enterprise" }];
 
   return (
     <Sidebar collapsible="icon">

@@ -3,7 +3,7 @@
 name: Sync Deployment Fork with Upstream
 
 on:
-  workflow_dispatch:     # Allows manual trigger
+  workflow_dispatch: # Allows manual trigger
 
 permissions:
   contents: write

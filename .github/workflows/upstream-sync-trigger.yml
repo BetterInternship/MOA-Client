@@ -3,7 +3,7 @@ name: Sync to Deployment Fork
 on:
   push:
     branches:
-      - main  # Release branch
+      - main # Release branch
 
 jobs:
   call-fork:

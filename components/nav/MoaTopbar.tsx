@@ -30,8 +30,8 @@ export default function MoaTopbar() {
   }
 
   return (
-    <header className="w-full sticky top-0 z-50 bg-background/80 backdrop-blur border-b">
-      <div className="mx-auto max-w-screen-xl h-16 px-4 flex items-center justify-between gap-4">
+    <header className="bg-background/80 sticky top-0 z-50 w-full border-b backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4">
         {/* Left: Logo + Home */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export default function MoaTopbar() {
             <Link
               href="/"
               className={cn(
-                "px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent",
+                "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
                 pathname === "/dashboard" && "bg-accent text-foreground"
               )}
             >
@@ -66,12 +66,8 @@ export default function MoaTopbar() {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/profile")}>
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/settings")}>
-              Settings
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/profile")}>Profile</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/settings")}>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-red-600">
               Log out

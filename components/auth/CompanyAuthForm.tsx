@@ -29,7 +29,7 @@ export function CompanyAuthForm() {
     await new Promise((r) => setTimeout(r, 600));
 
     setLoading(false);
-    router.push("/dashboard")
+    router.push("/dashboard");
   }
 
   return (
