@@ -23,7 +23,14 @@ export default function MoaLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       {!hideNav && <MoaTopbar />}
-      <main className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">{children}</main>
+
+      {hideNav ? (
+        // No classes for login/register
+        <>{children}</>
+      ) : (
+        // Default styled container for everything else
+        <main className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">{children}</main>
+      )}
     </>
     // <SidebarProvider>
     //   <MoaSidebar />
