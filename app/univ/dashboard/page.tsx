@@ -1,25 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
-type CompanyRegistration = {
-  id: string;
-  name: string;
-  contactPerson: string;
-  email: string;
-  tin: string;
-  industry: string;
-  reason: string;
-  date: string; // MM/DD/YYYY
-};
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
 
 const stats = [
   { label: "New Companies", value: 21, color: "bg-green-600" },
@@ -28,30 +11,19 @@ const stats = [
   { label: "Active MOAs", value: 1023, color: "bg-blue-700" },
 ];
 
-const aurora: CompanyRegistration = {
-  id: "VXZb0VYY2JqPC2ZKyEQHr",
-  name: "Aurora Systems",
-  contactPerson: "Isabel Reyes",
-  email: "isabel.reyes@aurorasystems.ph",
-  tin: "453-219-874-000",
-  industry: "IT Services",
-  reason:
-    "We're looking to cultivate a strong local talent pipeline and offer students exposure to enterprise-scale IT systems early in their careers.",
-  date: "12/02/2024",
-};
-
-// Derive activity rows (add a few dummy entries)
-const activities: Array<{
+type Activity = {
   date: string;
   company: string;
   action: string;
   performedBy: string;
-}> = [
+};
+
+const activities: Activity[] = [
   {
-    date: aurora.date,
-    company: aurora.name,
+    date: "12/02/2024",
+    company: "Aurora Systems",
     action: "Company Registration Submitted",
-    performedBy: aurora.contactPerson,
+    performedBy: "Isabel Reyes",
   },
   {
     date: "01/15/2025",
@@ -79,10 +51,16 @@ const activities: Array<{
   },
 ];
 
+const columns: ColumnDef<Activity>[] = [
+  { accessorKey: "date", header: "Date" },
+  { accessorKey: "company", header: "Company" },
+  { accessorKey: "action", header: "Action" },
+  { accessorKey: "performedBy", header: "Performed by" },
+];
+
 export default function UnivDashboardPage() {
   return (
     <div className="space-y-8">
-      
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-3xl font-semibold">DLSU MOA Management Dashboard</h1>
@@ -96,14 +74,12 @@ export default function UnivDashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="flex flex-col items-center justify-center border rounded-lg p-6 bg-white"
+            className="flex flex-col items-center justify-center rounded-lg border bg-white p-6"
           >
             <div className="text-4xl font-bold text-slate-600">{stat.value}</div>
             <span
-              className={`mt-2 px-3 py-1 rounded-md text-sm font-medium ${
-                stat.color.includes("bg-gray")
-                  ? stat.color
-                  : `${stat.color} text-white`
+              className={`mt-2 rounded-md px-3 py-1 text-sm font-medium ${
+                stat.color.includes("bg-gray") ? stat.color : `${stat.color} text-white`
               }`}
             >
               {stat.label}
@@ -112,34 +88,13 @@ export default function UnivDashboardPage() {
         ))}
       </div>
 
-      {/* Activity Table */}
+      {/* Activity Data Table */}
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="text-lg">Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[140px]">Date</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead className="w-[200px]">Performed by</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {activities.map((row, idx) => (
-                  <TableRow key={`${row.company}-${row.date}-${idx}`}>
-                    <TableCell className="whitespace-nowrap">{row.date}</TableCell>
-                    <TableCell className="font-medium">{row.company}</TableCell>
-                    <TableCell>{row.action}</TableCell>
-                    <TableCell className="whitespace-nowrap">{row.performedBy}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable columns={columns} data={activities} searchKey="company" />
         </CardContent>
       </Card>
     </div>
