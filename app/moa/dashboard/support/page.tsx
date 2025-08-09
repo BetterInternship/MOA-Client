@@ -112,8 +112,7 @@ export default function SupportPage() {
               <Info className="h-4 w-4" />
               <AlertTitle>Tip</AlertTitle>
               <AlertDescription className="text-sm">
-                For MOA-specific issues, include your request ID (e.g.,{" "}
-                <span className="font-mono">REQ-2025-014</span>) so we can help faster.
+                For MOA-specific issues, include your request ID (e.g., REQ-2025-014) so we can help faster.
               </AlertDescription>
             </Alert>
           </CardContent>
