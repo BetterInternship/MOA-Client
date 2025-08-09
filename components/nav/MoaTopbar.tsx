@@ -41,7 +41,7 @@ export default function MoaTopbar() {
 
           <nav className="ml-4">
             <Link
-              href="/"
+              href="/dashboard"
               className={cn(
                 "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
                 pathname === "/dashboard" && "bg-accent text-foreground"
