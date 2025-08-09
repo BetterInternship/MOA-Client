@@ -19,22 +19,23 @@ export default function ActionGrid({ actions }: { actions: ActionItem[] }) {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {actions.map((a) => (
         <Link key={a.label} href={a.href} className="group">
-          <Card className="hover:border-primary/40 h-full bg-white transition hover:shadow-sm">
-            <CardContent className="space-y-2 p-5">
+          <Card className="h-full transition hover:shadow-sm hover:border-primary/40 bg-white">
+            <CardContent className="space-y-2">
               <div className="flex items-start gap-3">
-                <div className="bg-primary/10 text-primary group-hover:bg-primary/20 rounded-md p-3 transition">
+                <div className="rounded-md p-3 bg-primary/10 text-primary transition group-hover:bg-primary/20">
                   <a.icon className="h-6 w-6" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">{a.label}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm">{a.desc}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{a.desc}</p>
                 </div>
               </div>
-              <div className="flex justify-end">
+              <div className="justify-end flex">
                 <Button variant="ghost" size="sm" className="p-2">
-                  {a.cta} →
+                    {a.cta} →
                 </Button>
               </div>
+              
             </CardContent>
           </Card>
         </Link>
