@@ -25,21 +25,29 @@ export default function RequestMOA() {
           <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between">
               <h2 className="text-foreground text-xl font-semibold">Standard MOA</h2>
-              <Badge variant="default">Recommended</Badge>
+              <Badge variant="success">Recommended</Badge>
             </div>
+
             <p className="text-muted-foreground text-sm">
               Use our pre-approved template for common partnerships.
             </p>
-            <div className="text-muted-foreground text-xs">
-              Processing time: <span className="font-medium">1–2 business days</span>
+
+            <div className="text-muted-foreground flex items-center gap-1 text-sm">
+              <div>Processing time: </div>
+              <Badge variant="secondary" className="text-sm! font-medium">
+                2 business days
+              </Badge>
             </div>
-            <Button
-              onClick={() => router.push("/standard")}
-              variant="outline"
-              className="mt-auto w-fit"
-            >
-              Get Started
-            </Button>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={() => router.push("/standard")}
+                variant="outline"
+                className="mt-auto w-fit"
+              >
+                Get Started
+              </Button>
+            </div>
           </div>
         </Card>
 
@@ -50,16 +58,23 @@ export default function RequestMOA() {
             <p className="text-muted-foreground text-sm">
               Submit custom terms for specialized partnerships requiring unique conditions.
             </p>
-            <div className="text-muted-foreground text-xs">
-              Processing time: <span className="font-medium">2–4 weeks</span>
+
+            <div className="text-muted-foreground flex items-center gap-1 text-sm">
+              <div>Processing time: </div>
+              <Badge variant="secondary" className="text-sm! font-medium">
+                2–4 weeks
+              </Badge>
             </div>
-            <Button
-              onClick={() => router.push("/negotiated")}
-              variant="outline"
-              className="mt-auto w-fit"
-            >
-              Get Started
-            </Button>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={() => router.push("/negotiated")}
+                variant="outline"
+                className="mt-auto w-fit"
+              >
+                Get Started
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
