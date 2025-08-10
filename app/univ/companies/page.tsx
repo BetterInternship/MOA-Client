@@ -1,4 +1,3 @@
-// /app/companies/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -7,28 +6,17 @@ import { companies as seedCompanies } from "../../../data/companies";
 import { Company } from "../../../types/company";
 import CompanyList from "@/components/dashboard/univ/CompanyList";
 import CompanyDetails from "@/components/dashboard/univ/CompanyDetails";
-import { storageKey, usePersistentSizes } from "@/lib/usePersistentSizes";
 
 export default function CompaniesPage() {
-  // state
+  // guard in case the array is empty
+  const safeCompanies = seedCompanies?.length ? seedCompanies : [];
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState(seedCompanies[0].id);
+  const [selectedId, setSelectedId] = useState(
+    safeCompanies[0]?.id ?? "" // avoid crash on empty data
+  );
 
-  // persist resizable sizes per user
-  const userId = undefined; // replace with your real user id if available
-  const { sizes, onLayout } = usePersistentSizes(storageKey(userId), [26, 74]);
-
-  // selected item
-  const selected: Company = seedCompanies.find((c) => c.id === selectedId) ?? seedCompanies[0];
-
-  if (!sizes) {
-    return (
-      <div className="space-y-2">
-        <div className="bg-muted h-6 w-48 rounded" />
-        <div className="bg-muted/60 h-[calc(100vh-180px)] rounded border" />
-      </div>
-    );
-  }
+  const selected: Company | undefined =
+    safeCompanies.find((c) => c.id === selectedId) ?? safeCompanies[0];
 
   return (
     <div>
@@ -43,12 +31,13 @@ export default function CompaniesPage() {
       {/* Resizable layout */}
       <ResizablePanelGroup
         direction="horizontal"
-        onLayout={onLayout}
+        autoSaveId={`moa:asideWidth:anon`} // <-- removed userId (or inject your real user id here)
         className="h-[calc(100vh-180px)] rounded-md border lg:overflow-hidden"
       >
-        <ResizablePanel defaultSize={sizes[0]} minSize={18} maxSize={50}>
+        {/* LEFT */}
+        <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
           <CompanyList
-            companies={seedCompanies}
+            companies={safeCompanies}
             selectedId={selectedId}
             onSelect={setSelectedId}
             query={query}
@@ -58,8 +47,10 @@ export default function CompaniesPage() {
 
         <ResizableHandle withHandle />
 
-        <ResizablePanel defaultSize={sizes[1]} minSize={40}>
-          <CompanyDetails company={selected} />
+        {/* RIGHT */}
+        <ResizablePanel defaultSize={74} minSize={40}>
+          {/* Only render details if we have a selected company */}
+          {selected ? <CompanyDetails company={selected} /> : null}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

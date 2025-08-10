@@ -86,7 +86,7 @@ export default function UnivTopbar() {
       <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4">
         {/* Left: Brand + Nav */}
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/" className="shrink-0 font-semibold">
+          <Link href="/dashboard" className="shrink-0 font-semibold">
             BetterInternship | De La Salle University
           </Link>
 
