@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UnivAuthForm } from "@/components/auth/UnivAuthForm";
+import Image from "next/image";
 
 const companyURL =
   typeof window !== "undefined"
@@ -10,12 +11,23 @@ export default function UnivLoginPage() {
   return (
     <div className="relative grid min-h-[100svh] w-full items-stretch lg:grid-cols-2 lg:px-0">
       {/* Left panel - University branding (hidden on mobile) */}
-      <div className="text-primary bg-primary/5 relative hidden flex-col border-r p-10 lg:flex">
-        <div className="bg-primary/5 absolute inset-0" />
-        <div className="text-primary relative z-20 flex items-center gap-2 text-lg font-semibold">
+      <div
+        className="relative hidden flex-col border-r bg-cover bg-center p-10 lg:flex"
+        style={{
+          backgroundImage: "url('/university-login.jpg')",
+        }}
+      >
+        {/* Overlay for better text readability */}
+        <div className="bg-primary/60 absolute inset-0" />
+
+        <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-white">
+          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
+          <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
+
           <span>BetterInternship | De La Salle University</span>
         </div>
-        <div className="text-muted-foreground relative z-20 mt-auto text-sm">
+
+        <div className="relative z-20 mt-auto text-sm text-white/90">
           <p>Welcome to the MOA Management Portal for university accounts.</p>
           <p className="mt-1">DLSU faculty and staff only.</p>
         </div>

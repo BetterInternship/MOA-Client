@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CompanyAuthForm } from "@/components/auth/CompanyAuthForm";
+import Image from "next/image";
 
 const universityURL =
   typeof window !== "undefined"
@@ -51,11 +52,22 @@ export default function CompanyAuthPage() {
       </div>
 
       {/* Right panel - only shown on desktop (lg and up) */}
-      <div className="text-primary bg-primary/5 relative hidden flex-col items-end border-l p-10 text-right lg:flex">
-        <div className="text-primary relative z-20 flex items-center text-lg font-semibold">
+      <div
+        className="relative hidden flex-col items-end border-l bg-cover bg-center p-10 text-right lg:flex"
+        style={{
+          backgroundImage: "url('moa-login.jpg')",
+        }}
+      >
+        {/* Overlay */}
+        <div className="bg-primary/60 absolute inset-0" />
+
+        <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-white">
+          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
+          <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
           BetterInternship | De La Salle University
         </div>
-        <div className="text-muted-foreground relative z-20 mt-auto text-sm">
+
+        <div className="relative z-20 mt-auto text-sm text-white/90">
           <p>Welcome to the MOA Management Platform.</p>
           <p className="mt-1">For inquiries, contact legal@dlsu.edu.ph</p>
         </div>
