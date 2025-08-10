@@ -25,9 +25,9 @@ const NAV_LINKS: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", match: ["/dashboard"] },
   { href: "/companies", label: "Companies", match: ["/companies"] },
   {
-    href: "/moa",
+    href: "/moa-request",
     label: "MOA Requests",
-    match: ["/moa", "/moa/requests"],
+    match: ["/moa", "/moa-request"],
   },
   {
     href: "/company-registration",
