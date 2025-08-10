@@ -57,7 +57,7 @@ export default function RequestsList({ items, selectedId, onSelect }: Props) {
                     <div>
                       <div className="font-medium">{r.companyName}</div>
                       <div className="text-muted-foreground text-xs">
-                        {r.industry} • {r.submittedAt}
+                        Requested: {r.submittedAt}
                       </div>
                     </div>
                     {/* <StatusChip status={r.status} /> */}
