@@ -60,6 +60,7 @@ interface DataTableProps<TData, TValue> {
   pageSizes?: number[];
   /** Optional: className for wrapper */
   className?: string;
+  onSelectionChange?: (rows: TData[]) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -99,6 +100,8 @@ export function DataTable<TData, TValue>({
     // Keep page size stable across renders
     initialState: { pagination: { pageSize: pageSizes[0] ?? 10 } },
   });
+
+  
 
   const isFiltered = React.useMemo(() => {
     return (
@@ -147,7 +150,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className={cn("space-y-3", className)}>
       {/* Toolbar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex w-full gap-2 sm:w-auto">
           {searchKey && (
             <Input
