@@ -8,7 +8,6 @@ import CompanyList from "@/components/dashboard/univ/CompanyList";
 import CompanyDetails from "@/components/dashboard/univ/CompanyDetails";
 
 export default function CompaniesPage() {
-  // guard in case the array is empty
   const safeCompanies = seedCompanies?.length ? seedCompanies : [];
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(
@@ -19,7 +18,7 @@ export default function CompaniesPage() {
     safeCompanies.find((c) => c.id === selectedId) ?? safeCompanies[0];
 
   return (
-    <div>
+    <div className="h-dvh">
       {/* Page header */}
       <div className="mb-6 space-y-1">
         <h1 className="text-2xl font-semibold">Companies</h1>
@@ -31,7 +30,7 @@ export default function CompaniesPage() {
       {/* Resizable layout */}
       <ResizablePanelGroup
         direction="horizontal"
-        autoSaveId={`moa:asideWidth:anon`} // <-- removed userId (or inject your real user id here)
+        autoSaveId={`moa:asideWidth:anon`}
         className="h-[calc(100vh-180px)] rounded-md border lg:overflow-hidden"
       >
         {/* LEFT */}

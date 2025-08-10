@@ -1,4 +1,3 @@
-// /data/companies.ts
 import { Company } from "@/types/company";
 
 export const companies: Company[] = [

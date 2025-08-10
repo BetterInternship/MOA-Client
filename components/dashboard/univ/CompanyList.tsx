@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+
 import { Company } from "@/types/company";
 import StatusBadge from "../../shared/StatusBadge";
 
@@ -34,8 +37,9 @@ export default function CompanyList({
     <aside className="h-full overflow-y-auto">
       <div className="space-y-3 p-3">
         <div className="relative">
-          <input
-            className="bg-background w-full rounded-md border px-3 py-2 text-sm"
+          <Search className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
+          <Input
+            className="pl-8"
             placeholder="Search company..."
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
