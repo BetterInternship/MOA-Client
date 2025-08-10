@@ -58,7 +58,7 @@ export default function CompanyList({
                       <div className="font-medium">{c.name}</div>
                       <div className="text-muted-foreground text-xs">{c.industry}</div>
                     </div>
-                    <StatusBadge status={c.moaStatus} />
+                    {/* <StatusBadge status={c.moaStatus} /> */}
                   </button>
                 </li>
               );
