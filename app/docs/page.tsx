@@ -71,7 +71,7 @@ export default function VerifyDocsPage() {
 
             <form
               onSubmit={handleVerify}
-              className="mx-auto flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
+              className="mx-auto flex w-full max-w-lg flex-col gap-3 sm:flex-row"
             >
               <SerialInput
                 value={serial}
@@ -104,7 +104,7 @@ export default function VerifyDocsPage() {
 
           <form
             onSubmit={handleVerify}
-            className="mx-auto flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
+            className="mx-auto flex w-full max-w-lg flex-col gap-3 sm:flex-row"
           >
             <SerialInput
               value={serial}
