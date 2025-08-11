@@ -15,10 +15,26 @@ export function PdfViewerPanel({
 }) {
   return (
     <Card className="overflow-hidden rounded-md border bg-white shadow">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <FileIcon className="h-5 w-5" />
-          <span>Official Copy Preview</span>
+      <CardHeader className="">
+        <CardTitle className="flex justify-between">
+          <div className="flex items-center gap-2">
+            <FileIcon className="h-5 w-5" />
+            <span>Official Copy Preview</span>
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm">
+            <Button asChild variant="outline">
+              <Link href={viewUrl} target="_blank" rel="noopener">
+                Open in new tab
+              </Link>
+            </Button>
+            {downloadUrl && (
+              <Button asChild variant="ghost">
+                <Link href={downloadUrl} target="_blank" rel="noopener">
+                  Download PDF
+                </Link>
+              </Button>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -29,20 +45,6 @@ export function PdfViewerPanel({
             className="h-full w-full"
             sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
           />
-        </div>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Button asChild variant="outline">
-            <Link href={viewUrl} target="_blank" rel="noopener">
-              Open in new tab
-            </Link>
-          </Button>
-          {downloadUrl && (
-            <Button asChild variant="ghost">
-              <Link href={downloadUrl} target="_blank" rel="noopener">
-                Download PDF
-              </Link>
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>

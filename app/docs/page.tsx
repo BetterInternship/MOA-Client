@@ -67,21 +67,16 @@ export default function VerifyDocsPage() {
 
       {/* RESULTS */}
       {hasValid ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
           {/* Left: document data */}
           <div>
-            {/* result is valid or revoked */}
-            {/* @ts-expect-error result is not 'not_found' in this branch */}
             <VerificationDetailsCard result={result} />
           </div>
           {/* Right: PDF viewer */}
           <div className="sticky top-24 self-start">
             <PdfViewerPanel
-              // @ts-expect-error result is not 'not_found' here
               title={result.documentTitle}
-              // @ts-expect-error result is not 'not_found' here
               viewUrl={result.viewUrl}
-              // @ts-expect-error result is not 'not_found' here
               downloadUrl={"downloadUrl" in result ? result.downloadUrl : undefined}
             />
           </div>

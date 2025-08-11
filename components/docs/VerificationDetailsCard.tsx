@@ -18,20 +18,31 @@ import { MetaRow } from "./MetaRow";
 import { formatWhen } from "@/lib/format";
 import type { ValidVerification } from "@/types/docs";
 
+function PeopleList({ list }: { list?: { name: string; title?: string }[] }) {
+  if (!list || list.length === 0) return <>--</>;
+  return (
+    <div className="space-y-1">
+      {list.map((p, i) => (
+        <div key={i}>
+          <span className="font-semibold">{p.name}</span>
+          {p.title && (
+            <>
+              {" "}
+              — <span className="text-muted-foreground">{p.title}</span>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function VerificationDetailsCard({ result }: { result: ValidVerification }) {
   const isValid = result.status === "valid";
 
-  const signatoriesText = result.signatories?.length
-    ? result.signatories.map((s) => (s.title ? `${s.name} — ${s.title}` : s.name)).join(", ")
-    : "--";
-
-  const notarizedText = result.notarizedBy?.length
-    ? result.notarizedBy.map((n) => (n.title ? `${n.name} — ${n.title}` : n.name)).join(", ")
-    : "--";
-
   return (
     <Card className="bg-white">
-      <CardHeader className="pb-3">
+      <CardHeader className="">
         <CardTitle className="flex items-center gap-2">
           {/* Result */}
           <Badge variant={isValid ? "success" : "warning"} className="gap-1.5 text-sm">
@@ -46,7 +57,7 @@ export function VerificationDetailsCard({ result }: { result: ValidVerification 
       </CardHeader>
 
       <CardContent className="space-y-5">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <MetaRow icon={<Hash className="h-4 w-4" />} label="Serial" value={result.serial} />
           <MetaRow
             icon={<FileText className="h-4 w-4" />}
@@ -61,12 +72,12 @@ export function VerificationDetailsCard({ result }: { result: ValidVerification 
           <MetaRow
             icon={<User className="h-4 w-4" />}
             label="Signatories"
-            value={signatoriesText}
+            value={<PeopleList list={result.signatories} />}
           />
           <MetaRow
             icon={<Stamp className="h-4 w-4" />}
             label="Notarized By"
-            value={notarizedText}
+            value={<PeopleList list={result.notarizedBy} />}
           />
         </div>
 
@@ -79,28 +90,13 @@ export function VerificationDetailsCard({ result }: { result: ValidVerification 
         {result.meta && (
           <div>
             <Separator className="my-3" />
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2">
               {Object.entries(result.meta).map(([k, v]) => (
                 <MetaRow key={k} label={k} value={v} />
               ))}
             </div>
           </div>
         )}
-
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href={result.viewUrl} target="_blank" rel="noopener">
-              View Official Copy <ExternalLink className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          {result.downloadUrl && (
-            <Button asChild variant="outline">
-              <Link href={result.downloadUrl} target="_blank" rel="noopener">
-                Download
-              </Link>
-            </Button>
-          )}
-        </div>
       </CardContent>
     </Card>
   );
