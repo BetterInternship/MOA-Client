@@ -1,29 +1,37 @@
-// middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const reroute = (prefix: string, url: URL, originalUrl: string) =>
-  NextResponse.rewrite(new URL(`/${prefix}${url.pathname}`, originalUrl));
-
-// Only match non-static pages
 export const config = {
-  matcher: ["/((?!_next|api|favicon.ico|.*\\..*).*)"],
+  // run on everything except static files and api
+  matcher: ["/((?!_next|api|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)"],
 };
 
-export function middleware(request: NextRequest) {
-  const hostname = request.headers.get("host") || "";
-  const url = request.nextUrl.clone();
+function getHost(req: NextRequest) {
+  const h = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+  return h.split(":")[0].toLowerCase();
+}
 
-  if (hostname.startsWith("univ.local")) {
-    return reroute("univ", url, request.url);
+const SUBPATH_BY_HOST: Record<string, string> = {
+  "moa.betterinternship.com": "moa",
+  "uni.moa.betterinternship.com": "univ",
+  "moa.localhost": "moa",
+  "univ.localhost": "univ",
+};
+
+
+export function middleware(req: NextRequest) {
+  const host = getHost(req);
+  const subpath = SUBPATH_BY_HOST[host];
+
+  if (!subpath) return NextResponse.next();
+
+  const url = req.nextUrl;
+
+  // avoid loops if already prefixed (/moa or /univ)
+  if (url.pathname === `/${subpath}` || url.pathname.startsWith(`/${subpath}/`)) {
+    return NextResponse.next();
   }
 
-  if (hostname.startsWith("moa.local")) {
-    return reroute("moa", url, request.url);
-  }
-
-  if (hostname.startsWith("docs.local")) {
-    return reroute("docs", url, request.url);
-  }
-
-  return NextResponse.next();
+  // rewrite to the corresponding app subfolder while keeping the visible URL
+  const rewritten = new URL(`/${subpath}${url.pathname}${url.search}`, req.url);
+  return NextResponse.rewrite(rewritten);
 }
