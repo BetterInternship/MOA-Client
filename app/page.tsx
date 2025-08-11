@@ -24,22 +24,18 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-8 p-6 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-6 text-center">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">
           Welcome to the MOA Management Platform
         </h1>
-        <p className="text-muted-foreground max-w-md mx-auto">
+        <p className="text-muted-foreground mx-auto max-w-md">
           Please choose your role to proceed.
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Button
-          size="lg"
-          className="w-64"
-          onClick={() => redirectToSubdomain("moa")}
-        >
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <Button size="lg" className="w-64" onClick={() => redirectToSubdomain("moa")}>
           I'm a Company
         </Button>
         <Button

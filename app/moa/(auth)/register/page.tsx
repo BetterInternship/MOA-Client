@@ -1,19 +1,31 @@
-import { CompanyRegisterForm } from "@/components/auth/CompanyRegisterForm";
+import { CompanyRegisterForm } from "@/components/moa/auth/CompanyRegisterForm";
+import Image from "next/image";
 
 export default function CompanyRegisterPage() {
   return (
-    <div className="relative grid w-full min-h-[100svh] items-stretch lg:grid-cols-2 lg:px-0">
+    <div className="relative grid min-h-[100svh] w-full items-stretch lg:grid-cols-2 lg:px-0">
       {/* Left panel (form) */}
-      <div className="flex items-center justify-center h-full p-6 lg:p-8">
+      <div className="flex h-full items-center justify-center p-6 lg:p-8">
         <CompanyRegisterForm />
       </div>
 
       {/* Right panel - only shown on desktop */}
-      <div className="hidden lg:flex text-primary relative flex-col p-10 border-l bg-primary/5 text-right items-end">
-        <div className="relative z-20 flex items-center text-lg font-semibold text-primary">
+      <div
+        className="relative hidden flex-col items-end border-l bg-cover bg-center p-10 text-right lg:flex"
+        style={{
+          backgroundImage: "url('moa-login.jpg')",
+        }}
+      >
+        {/* Overlay */}
+        <div className="bg-primary/60 absolute inset-0" />
+
+        <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-white">
+          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
+          <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
           BetterInternship | De La Salle University
         </div>
-        <div className="relative z-20 mt-auto text-muted-foreground text-sm">
+
+        <div className="relative z-20 mt-auto text-sm text-white/90">
           <p>Welcome to the MOA Management Platform.</p>
           <p className="mt-1">For inquiries, contact legal@dlsu.edu.ph</p>
         </div>

@@ -11,7 +11,7 @@ export default function RequestMOA() {
   return (
     <div className="flex flex-col gap-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
           Request a Memorandum of Agreement
         </h1>
         <p className="text-muted-foreground text-sm">
@@ -23,43 +23,58 @@ export default function RequestMOA() {
         {/* Standard MOA */}
         <Card className="p-6 transition-shadow hover:shadow-lg">
           <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-start">
-              <h2 className="text-xl font-semibold text-foreground">Standard MOA</h2>
-              <Badge variant="default">Recommended</Badge>
+            <div className="flex items-start justify-between">
+              <h2 className="text-foreground text-xl font-semibold">Standard MOA</h2>
+              <Badge variant="success">Recommended</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">
+
+            <p className="text-muted-foreground text-sm">
               Use our pre-approved template for common partnerships.
             </p>
-            <div className="text-xs text-muted-foreground">
-              Processing time: <span className="font-medium">1–2 business days</span>
+
+            <div className="text-muted-foreground flex items-center gap-1 text-sm">
+              <div>Processing time: </div>
+              <Badge variant="secondary" className="text-sm! font-medium">
+                2 business days
+              </Badge>
             </div>
-            <Button
-              onClick={() => router.push("/standard")}
-              variant="outline"
-              className="mt-auto w-fit"
-            >
-              Get Started
-            </Button>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={() => router.push("/dashboard/request/standard")}
+                variant="outline"
+                className="mt-auto w-fit"
+              >
+                Get Started
+              </Button>
+            </div>
           </div>
         </Card>
 
         {/* Negotiated MOA */}
         <Card className="p-6 transition-shadow hover:shadow-lg">
           <div className="flex flex-col gap-4">
-            <h2 className="text-xl font-semibold text-foreground">Negotiated MOA</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-foreground text-xl font-semibold">Negotiated MOA</h2>
+            <p className="text-muted-foreground text-sm">
               Submit custom terms for specialized partnerships requiring unique conditions.
             </p>
-            <div className="text-xs text-muted-foreground">
-              Processing time: <span className="font-medium">2–4 weeks</span>
+
+            <div className="text-muted-foreground flex items-center gap-1 text-sm">
+              <div>Processing time: </div>
+              <Badge variant="secondary" className="text-sm! font-medium">
+                2–4 weeks
+              </Badge>
             </div>
-            <Button
-              onClick={() => router.push("/negotiated")}
-              variant="outline"
-              className="mt-auto w-fit"
-            >
-              Get Started
-            </Button>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={() => router.push("/dashboard/request/negotiated")}
+                variant="outline"
+                className="mt-auto w-fit"
+              >
+                Get Started
+              </Button>
+            </div>
           </div>
         </Card>
       </div>

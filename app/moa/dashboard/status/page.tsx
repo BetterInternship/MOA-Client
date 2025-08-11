@@ -31,28 +31,24 @@ export default function StatusPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          MOA Status
-        </h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight">MOA Status</h1>
+        <p className="text-muted-foreground text-sm">
           Track the progress of your submitted Memorandum of Agreement requests.
         </p>
       </div>
 
       {moaRequests.length === 0 ? (
-        <div className="border border-dashed rounded-md p-6 text-center text-muted-foreground text-sm">
+        <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
           You currently have no submitted MOA requests.
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           {moaRequests.map((moa) => (
             <Card key={moa.id}>
-              <CardContent className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <CardContent className="flex flex-col items-start justify-between gap-2 p-6 sm:flex-row sm:items-center">
                 <div>
-                  <h2 className="font-semibold text-lg text-foreground">
-                    {moa.company}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
+                  <h2 className="text-foreground text-lg font-semibold">{moa.company}</h2>
+                  <p className="text-muted-foreground text-sm">
                     {moa.type} MOA &middot; Submitted on {moa.submitted}
                   </p>
                 </div>
