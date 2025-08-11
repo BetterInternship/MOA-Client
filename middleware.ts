@@ -1,25 +1,37 @@
-// middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const reroute = (prefix: string, url: URL, originalUrl: string) =>
-  NextResponse.rewrite(new URL(`/${prefix}${url.pathname}`, originalUrl));
-
-// Only match non-static pages
 export const config = {
+  // skip static, api, etc.
   matcher: ["/((?!_next|api|favicon.ico|.*\\..*).*)"],
 };
 
 export function middleware(request: NextRequest) {
-  const hostname = request.headers.get("host") || "";
-  const url = request.nextUrl.clone();
+  const host = (request.headers.get("host") || "").toLowerCase();
+  const url = request.nextUrl;
 
-  if (hostname.startsWith("univ.local")) {
-    return reroute("univ", url, request.url);
+  // --- Local dev (works when you run next dev) ---
+  if (host.startsWith("univ.local")) {
+    // serve the univ portal within the same app
+    url.pathname = "/univ/login";
+    return NextResponse.rewrite(url);
+  }
+  if (host.startsWith("moa.local")) {
+    url.pathname = "/moa/login";
+    return NextResponse.rewrite(url);
   }
 
-  if (hostname.startsWith("moa.local")) {
-    return reroute("moa", url, request.url);
+  // --- Production domains on Vercel ---
+  // Both subdomains should be added in Vercel → Project → Settings → Domains
+  if (host === "moa.betterinternship.com") {
+    url.pathname = "/moa/login";
+    return NextResponse.rewrite(url);
   }
 
+  if (host === "uni.moa.betterinternship.com") {
+    url.pathname = "/univ/login";
+    return NextResponse.rewrite(url);
+  }
+
+  // Default passthrough
   return NextResponse.next();
 }
