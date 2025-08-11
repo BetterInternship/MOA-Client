@@ -1,37 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const config = {
-  // skip static, api, etc.
-  matcher: ["/((?!_next|api|favicon.ico|.*\\..*).*)"],
+  // run on everything except static files and api
+  matcher: ["/((?!_next|api|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)"],
 };
 
-export function middleware(request: NextRequest) {
-  const host = (request.headers.get("host") || "").toLowerCase();
-  const url = request.nextUrl;
+function getHost(req: NextRequest) {
+  const h = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+  return h.split(":")[0].toLowerCase();
+}
 
-  // --- Local dev (works when you run next dev) ---
-  if (host.startsWith("univ.local")) {
-    // serve the univ portal within the same app
-    url.pathname = "/univ/login";
-    return NextResponse.rewrite(url);
-  }
-  if (host.startsWith("moa.local")) {
-    url.pathname = "/moa/login";
-    return NextResponse.rewrite(url);
+const SUBPATH_BY_HOST: Record<string, string> = {
+  "moa.betterinternship.com": "moa",
+  "uni.moa.betterinternship.com": "univ",
+  "moa.localhost": "moa",
+  "univ.localhost": "univ",
+};
+
+
+export function middleware(req: NextRequest) {
+  const host = getHost(req);
+  const subpath = SUBPATH_BY_HOST[host];
+
+  if (!subpath) return NextResponse.next();
+
+  const url = req.nextUrl;
+
+  // avoid loops if already prefixed (/moa or /univ)
+  if (url.pathname === `/${subpath}` || url.pathname.startsWith(`/${subpath}/`)) {
+    return NextResponse.next();
   }
 
-  // --- Production domains on Vercel ---
-  // Both subdomains should be added in Vercel → Project → Settings → Domains
-  if (host === "moa.betterinternship.com") {
-    url.pathname = "/moa/login";
-    return NextResponse.rewrite(url);
-  }
-
-  if (host === "uni.moa.betterinternship.com") {
-    url.pathname = "/univ/login";
-    return NextResponse.rewrite(url);
-  }
-
-  // Default passthrough
-  return NextResponse.next();
+  // rewrite to the corresponding app subfolder while keeping the visible URL
+  const rewritten = new URL(`/${subpath}${url.pathname}${url.search}`, req.url);
+  return NextResponse.rewrite(rewritten);
 }
