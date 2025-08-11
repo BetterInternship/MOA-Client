@@ -2,7 +2,7 @@
 
 import { MoaRequest } from "@/types/moa-request";
 import { Button } from "@/components/ui/button";
-import FilesDialog from "@/components/shared/FilesDialog"; // your existing dialog
+import FilesDialog from "@/components/univ/dashboard/FilesDialog"; // your existing dialog
 
 export default function CompanyRequestHistory({ req }: { req: MoaRequest }) {
   const items = req.history;

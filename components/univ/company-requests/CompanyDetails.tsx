@@ -1,4 +1,4 @@
-import Detail from "../../../shared/Detail";
+import Detail from "@/components/univ/dashboard/Detail";
 import { CompanyRequest } from "@/types/company-request";
 
 export default function CompanyDetails({ req }: { req: CompanyRequest }) {

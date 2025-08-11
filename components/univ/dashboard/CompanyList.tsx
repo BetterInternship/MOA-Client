@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 import { Company } from "@/types/company";
-import StatusBadge from "../../shared/StatusBadge";
+import StatusBadge from "./StatusBadge";
 
 type Props = {
   companies: Company[];

@@ -1,4 +1,4 @@
-import { CompanyRegisterForm } from "@/components/auth/CompanyRegisterForm";
+import { CompanyRegisterForm } from "@/components/moa/auth/CompanyRegisterForm";
 import Image from "next/image";
 
 export default function CompanyRegisterPage() {

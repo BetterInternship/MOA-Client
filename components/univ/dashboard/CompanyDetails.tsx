@@ -1,10 +1,9 @@
-// /components/company/CompanyDetails.tsx
 "use client";
 
 import { Download, ShieldAlert } from "lucide-react";
 import { Company } from "@/types/company";
-import StatusBadge from "../../shared/StatusBadge";
-import Detail from "../../shared/Detail";
+import StatusBadge from "./StatusBadge";
+import Detail from "./Detail";
 
 export default function CompanyDetails({ company }: { company: Company }) {
   return (

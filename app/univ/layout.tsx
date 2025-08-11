@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import UnivTopbar from "@/components/nav/UnivTopbar";
+import UnivTopbar from "@/components/univ/nav/UnivTopbar";
 // import {
 //   SidebarProvider,
 //   SidebarInset,

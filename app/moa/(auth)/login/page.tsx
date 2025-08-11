@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CompanyAuthForm } from "@/components/auth/CompanyAuthForm";
+import { CompanyAuthForm } from "@/components/moa/auth/CompanyAuthForm";
 import Image from "next/image";
 
 const universityURL =

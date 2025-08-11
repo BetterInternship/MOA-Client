@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { companies as seedCompanies } from "../../../data/companies";
 import { Company } from "../../../types/company";
-import CompanyList from "@/components/dashboard/univ/CompanyList";
-import CompanyDetails from "@/components/dashboard/univ/CompanyDetails";
+import CompanyList from "@/components/univ/dashboard/CompanyList";
+import CompanyDetails from "@/components/univ/dashboard/CompanyDetails";
 
 export default function CompaniesPage() {
   const safeCompanies = seedCompanies?.length ? seedCompanies : [];

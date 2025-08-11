@@ -1,9 +1,9 @@
 "use client";
 
 import { FilePlus, ClipboardList, HelpCircle } from "lucide-react";
-import KpiGrid, { type Kpi } from "@/components/dashboard/moa/KpiGrid";
-import RecentActivity, { type RecentItem } from "@/components/dashboard/moa/RecentActivity";
-import ActionGrid, { type ActionItem } from "@/components/dashboard/moa/ActionGrid";
+import KpiGrid, { type Kpi } from "@/components/moa/dashboard/KpiGrid";
+import RecentActivity, { type RecentItem } from "@/components/moa/dashboard/RecentActivity";
+import ActionGrid, { type ActionItem } from "@/components/moa/dashboard/ActionGrid";
 
 export default function DashboardPage() {
   // KPIs — replace with API values

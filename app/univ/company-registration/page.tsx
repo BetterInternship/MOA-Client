@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import RequestsList from "@/components/dashboard/univ/requests/RequestsList";
-import CompanyDetails from "@/components/dashboard/univ/requests/CompanyDetails";
-import RequestMeta from "@/components/dashboard/univ/requests/RequestMeta";
-import RequestForResponse from "@/components/dashboard/univ/requests/RequestForResponse";
-import FinalDecision from "@/components/dashboard/univ/requests/FinalDecision";
+import RequestsList from "@/components/univ/company-requests/RequestsList";
+import CompanyDetails from "@/components/univ/company-requests/CompanyDetails";
+import RequestMeta from "@/components/univ/company-requests/RequestMeta";
+import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
+import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import { REQUESTS } from "@/data/company-requests";
 import { CompanyRequest } from "@/types/company-request";
 

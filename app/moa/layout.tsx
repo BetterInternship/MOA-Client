@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import MoaTopbar from "@/components/nav/MoaTopbar";
+import MoaTopbar from "@/components/moa/nav/MoaTopbar";
 // import {
 //   SidebarProvider,
 //   SidebarInset,

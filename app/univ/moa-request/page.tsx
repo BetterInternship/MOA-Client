@@ -3,18 +3,16 @@
 import { useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-import MoaMeta from "@/components/dashboard/univ/moa-requests/MoaMeta";
-import CompanyList from "@/components/dashboard/univ/moa-requests/CompanyList";
-import CompanyDetails from "@/components/dashboard/univ/moa-requests/CompanyDetails";
-import CompanyRequestHistory from "@/components/dashboard/univ/moa-requests/CompanyRequestHistory";
+import MoaMeta from "@/components/univ/moa-requests/MoaMeta";
+import CompanyList from "@/components/univ/moa-requests/CompanyList";
+import CompanyDetails from "@/components/univ/moa-requests/CompanyDetails";
+import CompanyRequestHistory from "@/components/univ/moa-requests/CompanyRequestHistory";
 
-import RequestForResponse from "@/components/dashboard/univ/requests/RequestForResponse";
-import FinalDecision from "@/components/dashboard/univ/requests/FinalDecision";
-import StatusChip from "@/components/shared/univ/StatusChip";
+import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
+import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 
 import { MOA_REQUESTS } from "@/data/moa-requests";
 import { MoaRequest } from "@/types/moa-request";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function MoaRequestsPage() {
   const [items, setItems] = useState<MoaRequest[]>(MOA_REQUESTS);
