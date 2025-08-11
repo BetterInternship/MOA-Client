@@ -1,4 +1,4 @@
-export type RequestStatus = "Pending" | "Needs Info" | "Approved" | "Denied";
+export type RequestStatus = "Pending" | "Needs Info" | "Approved" | "Denied" | "Under Review";
 
 export type CompanyRequest = {
   id: string;

@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import StatusChip from "../../../shared/univ/StatusChip";
+import StatusChip from "@/components/univ/dashboard/StatusChip";
 import { CompanyRequest } from "@/types/company-request";
 
 type Props = {
