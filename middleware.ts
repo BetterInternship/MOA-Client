@@ -21,5 +21,9 @@ export function middleware(request: NextRequest) {
     return reroute("moa", url, request.url);
   }
 
+  if (hostname.startsWith("docs.local")) {
+    return reroute("docs", url, request.url);
+  }
+
   return NextResponse.next();
 }
