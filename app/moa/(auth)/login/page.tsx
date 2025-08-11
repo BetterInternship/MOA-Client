@@ -4,8 +4,25 @@ import Image from "next/image";
 
 const universityURL =
   typeof window !== "undefined"
-    ? window.location.href.replace("moa", "univ").replace(/\/[^/]*$/, "/login")
-    : "http://univ.localhost:3000/login";
+    ? (() => {
+        const current = new URL(window.location.href);
+
+        // Map company host → university host (prod + local)
+        const hostMap: Record<string, string> = {
+          "moa.localhost:3000": "univ.localhost:3000",
+          "moa.betterinternship.com": "uni.moa.betterinternship.com",
+        };
+
+        const mapped =
+          hostMap[current.host] ||
+          // fallback: prod pattern first, then localhost
+          current.host.replace(/^moa\./, "uni.moa.").replace("moa", "univ");
+
+        current.host = mapped;
+        current.pathname = "/login"; // force the login path
+        return current.toString();
+      })()
+    : "https://uni.moa.betterinternship.com/login";
 
 export default function CompanyAuthPage() {
   return (

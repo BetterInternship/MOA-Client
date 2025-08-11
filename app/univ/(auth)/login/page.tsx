@@ -4,8 +4,21 @@ import Image from "next/image";
 
 const companyURL =
   typeof window !== "undefined"
-    ? window.location.href.replace("univ", "moa").replace(/\/[^/]*$/, "/login")
-    : "http://moa.localhost:3000/login";
+    ? (() => {
+        const current = new URL(window.location.href);
+        // Map university host → company host
+        const hostMap: Record<string, string> = {
+          "univ.localhost:3000": "moa.localhost:3000",
+          "uni.moa.betterinternship.com": "moa.betterinternship.com",
+        };
+        const newHost =
+          hostMap[current.host] || current.host.replace("univ", "moa").replace("uni.", "moa.");
+        current.host = newHost;
+        current.pathname = "/login";
+        return current.toString();
+      })()
+    : "https://moa.betterinternship.com/login";
+
 
 export default function UnivLoginPage() {
   return (
