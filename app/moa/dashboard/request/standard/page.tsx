@@ -26,9 +26,9 @@ import { Download } from "lucide-react";
 const FormSchema = z.object({
   signatoryName: z.string().trim().min(2, "Please enter the full name."),
   signatoryTitle: z.string().trim().min(2, "Please enter the title/position."),
-  accepted: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the declaration to proceed." }),
-  }),
+  accepted: z
+    .boolean()
+    .refine((v) => v === true, { message: "You must accept the declaration to proceed." }),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
