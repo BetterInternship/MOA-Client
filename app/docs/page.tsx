@@ -10,8 +10,15 @@ import type { VerificationResponse } from "@/types/docs";
 import { VerificationDetailsCard } from "@/components/docs/VerificationDetailsCard";
 import { PdfViewerPanel } from "@/components/docs/PdfViewerPanel";
 import { NotFoundCard } from "@/components/docs/NotFoundCard";
+import { SerialInput } from "@/components/docs/SerialInput";
 
-const SerialSchema = z.string().trim().min(6, "Enter at least 6 characters").max(64, "Too long");
+const SerialSchema = z
+  .string()
+  .trim()
+  .regex(
+    /^\d{10}-\d{10}-\d{10}$/,
+    "Serial must be 10-10-10 digits (e.g., 1691769600-1234567890-0987654321)"
+  );
 
 export default function VerifyDocsPage() {
   const [serial, setSerial] = useState("");
@@ -50,13 +57,65 @@ export default function VerifyDocsPage() {
   return (
     <section className="mx-auto w-full max-w-screen-2xl px-4 py-6">
       {/* FORM: centered on first load; pinned to top after search */}
-      {!hasValid && !result ? (
+      {!hasValid ? (
         <div className="flex min-h-[70vh] items-center justify-center">
-          <Form serial={serial} setSerial={setSerial} loading={loading} onSubmit={handleVerify} />
+          <div className="w-full">
+            {/* Header on the form */}
+            <div className="mb-6 space-y-2 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight">Verify a DLSU Document</h1>
+              <p className="text-muted-foreground text-sm">
+                Enter the <strong>Serial Number</strong> printed on the document to check its
+                authenticity.
+              </p>
+            </div>
+
+            <form
+              onSubmit={handleVerify}
+              className="mx-auto flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
+            >
+              <SerialInput
+                value={serial}
+                onChange={(v) => setSerial(v)}
+                aria-invalid={!!error}
+                className="flex-1"
+              />
+              <Button type="submit" className="h-11 sm:w-40" disabled={loading}>
+                <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying…" : "Verify"}
+              </Button>
+            </form>
+
+            {error && (
+              <p className="mt-2 text-center text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
         </div>
       ) : (
         <div className="mb-6">
-          <Form serial={serial} setSerial={setSerial} loading={loading} onSubmit={handleVerify} />
+          {/* Header stays above the form when pinned */}
+          <div className="mb-3 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">Verify a DLSU Document</h1>
+            <p className="text-muted-foreground text-sm">
+              Enter the <strong>Serial Number</strong> printed on the document to check its
+              authenticity.
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleVerify}
+            className="mx-auto flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
+          >
+            <SerialInput
+              value={serial}
+              onChange={(v) => setSerial(v)}
+              aria-invalid={!!error}
+              className="flex-1"
+            />
+            <Button type="submit" className="h-11 sm:w-40" disabled={loading}>
+              <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying…" : "Verify"}
+            </Button>
+          </form>
           {error && (
             <p className="mt-2 text-center text-sm text-red-600" role="alert">
               {error}
@@ -114,14 +173,16 @@ function Form({
 
       <form onSubmit={onSubmit} className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row">
         <Input
-          placeholder="e.g., DLSU-2025-ABC123"
+          placeholder="1691769600-1234567890-0987654321"
           value={serial}
-          onChange={(e) => setSerial(e.target.value)}
-          inputMode="text"
+          onChange={(e) => setSerial(e.target.value.trim())}
+          inputMode="numeric"
+          pattern="\d{10}-\d{10}-\d{10}"
           autoComplete="off"
           aria-label="Serial number"
           className="h-11 flex-1"
         />
+
         <Button type="submit" className="h-11 sm:w-40" disabled={loading}>
           <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying…" : "Verify"}
         </Button>

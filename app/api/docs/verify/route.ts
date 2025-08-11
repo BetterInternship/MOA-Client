@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   // Demo data — replace with your DB/service lookup
   const s = serial.toUpperCase();
 
-  if (s === "DLSU-2025-ABC123") {
+  if (s === "1234567890-1234567890-1234567890") {
     return NextResponse.json({
       status: "valid",
       serial: s,
@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
 
       organization: "De La Salle University",
       sha256: "f3b1…9c7a",
-      viewUrl: "/api/documents/DLSU-2025-ABC123/view",
-      downloadUrl: "/api/documents/DLSU-2025-ABC123/download",
+      viewUrl: "/api/documents/1234567890-1234567890-1234567890/view",
+      downloadUrl: "/api/documents/1234567890-1234567890-1234567890/download",
       meta: {
         "Document Type": "Memorandum of Agreement",
         Version: "1.0",
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  if (s === "DLSU-2025-REVOKE1") {
+  if (s === "0000000000-1234567890-1234567890") {
     return NextResponse.json({
       status: "revoked",
       serial: s,

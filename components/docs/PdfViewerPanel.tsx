@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { File as FileIcon } from "lucide-react";
+import { ExternalLink, Download } from "lucide-react";
 
 export function PdfViewerPanel({
   title,
@@ -21,15 +22,30 @@ export function PdfViewerPanel({
             <FileIcon className="h-5 w-5" />
             <span>Official Copy Preview</span>
           </div>
+
+          {/* Actions */}
           <div className="flex flex-wrap gap-2 text-sm">
             <Button asChild variant="outline">
-              <Link href={viewUrl} target="_blank" rel="noopener">
+              <Link
+                href={viewUrl}
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
                 Open in new tab
               </Link>
             </Button>
+
             {downloadUrl && (
-              <Button asChild variant="ghost">
-                <Link href={downloadUrl} target="_blank" rel="noopener">
+              <Button asChild>
+                <Link
+                  href={downloadUrl}
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center"
+                >
+                  <Download className="mr-2 h-4 w-4" />
                   Download PDF
                 </Link>
               </Button>
