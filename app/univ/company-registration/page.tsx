@@ -8,6 +8,7 @@ import RequestMeta from "@/components/univ/company-requests/RequestMeta";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import type { CompanyRequest } from "@/types/company-request";
+import { ClipboardCheck } from "lucide-react";
 
 export default function CompanyVerificationPage() {
   const [items, setItems] = useState<CompanyRequest[]>([]);
@@ -86,8 +87,11 @@ export default function CompanyVerificationPage() {
   return (
     <div className="h-full">
       {/* Page header */}
-      <div className="mb-6 space-y-1">
-        <h1 className="text-2xl font-semibold">Company Registration Approvals</h1>
+      <div className="mb-6 flex items-center gap-3 space-y-1">
+        <div className="inline-flex items-center gap-3 rounded-md bg-purple-100 px-3 py-1 text-2xl font-semibold text-purple-800">
+          <ClipboardCheck />
+          Company Approvals
+        </div>
         <p className="text-muted-foreground text-sm">
           Review new company registrations, request clarifications, and approve or deny submissions.
         </p>

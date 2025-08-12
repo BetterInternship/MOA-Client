@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import CompanyList from "@/components/univ/dashboard/CompanyList";
 import CompanyDetails from "@/components/univ/dashboard/CompanyDetails";
+import { Badge } from "@/components/ui/badge";
+import { Building2 } from "lucide-react";
 
 type CompanyRow = {
   id: string;
@@ -35,17 +37,20 @@ export default function CompaniesPage() {
     load();
   }, [query]);
 
-
   const selected = useMemo(
     () => companies.find((c) => c.id === selectedId),
     [companies, selectedId]
   );
 
   return (
-    <div className="h-dvh">
+    <div className="h-vh">
       {/* Page header */}
-      <div className="mb-6 space-y-1">
-        <h1 className="text-2xl font-semibold">Companies</h1>
+      <div className="mb-6 space-y-1 flex items-center gap-3">
+        <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
+          <Building2/>
+          Browse Companies
+        </div>
+
         <p className="text-muted-foreground text-sm">
           Browse partner companies and view MOA details.
         </p>
