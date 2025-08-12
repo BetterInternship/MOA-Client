@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { useEntities } from "@/app/api/school.api";
 
 type Stat = { label: string; value: number; color: string };
 type Activity = { date: string; company: string; action: string; performedBy: string };
