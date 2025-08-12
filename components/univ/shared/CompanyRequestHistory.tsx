@@ -8,14 +8,14 @@ export default function CompanyRequestHistory({ req }: { req: MoaRequest }) {
   const items = req.history;
 
   return (
-    <div className="rounded-lg border bg-white p-3">
+    <div className="rounded-lg border bg-white p-4">
       <div className="pb-2">
-        <h2 className="text-base leading-tight font-semibold">Company Request History</h2>
+        <h2 className="text-lg font-semibold">Company Request History</h2>
       </div>
 
       <ul className="divide-y">
         {items.map((h, i) => (
-          <div key={`${h.date}-${i}`} className="relative py-2 pl-3">
+          <div key={`${h.date}-${i}`} className="relative py-2 pl-1">
             {/* single-line row: date | text | button */}
             <div className="grid grid-cols-[96px_1fr_auto] items-center gap-3">
               {/* date (fixed width) */}

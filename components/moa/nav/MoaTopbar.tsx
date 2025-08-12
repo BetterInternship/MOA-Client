@@ -36,8 +36,7 @@ export default function MoaTopbar() {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
-            <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
-            <span className="font-semibold">BetterInternship | De La Salle University</span>
+            <span className="font-semibold">MOA Management Tool</span>
           </Link>
 
           <nav className="ml-4">

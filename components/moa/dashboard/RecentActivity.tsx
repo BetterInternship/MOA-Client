@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type RecentItem = {
   id: string;
@@ -12,20 +11,20 @@ export type RecentItem = {
 
 export default function RecentActivity({ items }: { items: RecentItem[] }) {
   return (
-    <Card className="bg-white lg:col-span-2">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="rounded-lg border bg-white p-6 lg:col-span-2">
+      <div className="pb-3">
+        <h2 className="text-lg font-semibold">Recent Activity</h2>
+      </div>
+      <div>
         {items.length === 0 ? (
           <p className="text-muted-foreground text-sm">No recent activity yet.</p>
         ) : (
           <div className="divide-y">
             {items.map((r) => (
-              <Link
+              <div
                 key={r.id}
-                href={`/dashboard/status/${r.id}`}
-                className="hover:bg-accent flex items-center justify-between rounded-md px-2 py-3 transition"
+                // href={`/dashboard/status/${r.id}`}
+                className="flex items-center justify-between rounded-md px-2 py-3 transition"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium">{r.id}</span>
@@ -37,11 +36,11 @@ export default function RecentActivity({ items }: { items: RecentItem[] }) {
                   </span>
                   <span className="text-muted-foreground text-xs">{r.date}</span>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

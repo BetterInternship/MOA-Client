@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { ForwardRefExoticComponent, RefAttributes } from "react";
 import type { LucideProps } from "lucide-react";
@@ -19,8 +18,8 @@ export default function ActionGrid({ actions }: { actions: ActionItem[] }) {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {actions.map((a) => (
         <Link key={a.label} href={a.href} className="group">
-          <Card className="hover:border-primary/40 h-full bg-white transition hover:shadow-sm">
-            <CardContent className="space-y-2">
+          <div className="hover:border-primary/40 h-full rounded-lg border bg-white p-6 transition hover:shadow-sm">
+            <div className="space-y-2">
               <div className="flex items-start gap-3">
                 <div className="bg-primary/10 text-primary group-hover:bg-primary/20 rounded-md p-3 transition">
                   <a.icon className="h-6 w-6" />
@@ -38,8 +37,8 @@ export default function ActionGrid({ actions }: { actions: ActionItem[] }) {
                   {a.cta} →
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </Link>
       ))}
     </div>

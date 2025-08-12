@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-import MoaMeta from "@/components/univ/moa-requests/MoaMeta";
+// import MoaMeta from "@/components/univ/moa-requests/MoaMeta";
 import CompanyList from "@/components/univ/moa-requests/CompanyList";
-import CompanyDetails from "@/components/univ/moa-requests/CompanyDetails";
-import CompanyRequestHistory from "@/components/univ/moa-requests/CompanyRequestHistory";
-
+// import CompanyDetails from "@/components/univ/moa-requests/CompanyDetails";
+import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
+import { FileSignature } from "lucide-react";
 
 import type { MoaRequest } from "@/types/moa-request";
 
@@ -87,10 +87,14 @@ export default function MoaRequestsPage() {
   }
 
   return (
-    <div>
+    <div className="">
       {/* Page header */}
-      <div className="mb-6 space-y-1">
-        <h1 className="text-2xl font-semibold">MOA Requests</h1>
+      <div className="mb-6 flex items-center gap-3 space-y-1">
+        <div className="inline-flex items-center gap-3 rounded-md bg-green-100 px-3 py-1 text-2xl font-semibold text-green-800">
+          <FileSignature />
+          <h1 className="text-2xl font-semibold">MOA Approvals</h1>
+        </div>
+
         <p className="text-muted-foreground text-sm">
           Review MOA requests, view history, request clarifications, and finalize decisions.
         </p>
@@ -100,7 +104,7 @@ export default function MoaRequestsPage() {
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId={`moa:requests:asideWidth`}
-        className="h-[calc(100vh-180px)] rounded-md border lg:overflow-hidden"
+        className="max-h-[80vh] rounded-md border lg:overflow-hidden"
       >
         {/* LEFT: Company list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
@@ -114,9 +118,9 @@ export default function MoaRequestsPage() {
           <div className="h-full space-y-6 overflow-y-auto p-4">
             {selected ? (
               <>
-                <MoaMeta req={selected} />
-                <CompanyDetails req={selected} />
-                <CompanyRequestHistory req={selected} />
+                {/* <MoaMeta req={selected} />
+                <CompanyDetails req={selected} /> */}
+                <CompanyHistoryTree req={selected} />
                 <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
                 <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />
               </>

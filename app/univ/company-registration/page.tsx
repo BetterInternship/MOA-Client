@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import RequestsList from "@/components/univ/company-requests/RequestsList";
 import CompanyDetails from "@/components/univ/company-requests/CompanyDetails";
+import DocumentsCard from "@/components/univ/dashboard/DocumentsCard";
 import RequestMeta from "@/components/univ/company-requests/RequestMeta";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import type { CompanyRequest } from "@/types/company-request";
+import { ClipboardCheck } from "lucide-react";
 
 export default function CompanyVerificationPage() {
   const [items, setItems] = useState<CompanyRequest[]>([]);
@@ -28,6 +30,26 @@ export default function CompanyVerificationPage() {
   }, []);
 
   const selected = useMemo(() => items.find((x) => x.id === selectedId), [items, selectedId]);
+
+  type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
+
+  const documents = useMemo(() => {
+    const raw: AnyDoc[] =
+      // prefer an explicit documents array if present
+      ((selected as any)?.documents as AnyDoc[]) ??
+      // else: entity nested docs
+      ((selected as any)?.entity?.entityDocuments as AnyDoc[]) ??
+      // else: flat entityDocuments on the request
+      ((selected as any)?.entityDocuments as AnyDoc[]) ??
+      [];
+
+    return raw
+      .map((d) => ({
+        label: d.label ?? d.documentType ?? "Document",
+        href: d.href ?? d.url ?? "",
+      }))
+      .filter((d) => d.href);
+  }, [selected]);
 
   async function sendRequestForResponse(msg: string) {
     if (!selectedId) return;
@@ -84,10 +106,13 @@ export default function CompanyVerificationPage() {
   }
 
   return (
-    <div className="h-full">
+    <div className="">
       {/* Page header */}
-      <div className="mb-6 space-y-1">
-        <h1 className="text-2xl font-semibold">Company Registration Approvals</h1>
+      <div className="mb-6 flex items-center gap-3 space-y-1">
+        <div className="inline-flex items-center gap-3 rounded-md bg-purple-100 px-3 py-1 text-2xl font-semibold text-purple-800">
+          <ClipboardCheck />
+          Company Approvals
+        </div>
         <p className="text-muted-foreground text-sm">
           Review new company registrations, request clarifications, and approve or deny submissions.
         </p>
@@ -97,7 +122,7 @@ export default function CompanyVerificationPage() {
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId={`moa:asideWidth:anon`}
-        className="h-[calc(100vh-180px)] rounded-md border lg:overflow-hidden"
+        className="max-h-[80vh] rounded-md border lg:overflow-hidden"
       >
         {/* Left */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
@@ -113,6 +138,7 @@ export default function CompanyVerificationPage() {
               <>
                 <RequestMeta req={selected} />
                 <CompanyDetails req={selected} />
+                <DocumentsCard documents={documents} />
                 <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
                 <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />
               </>
