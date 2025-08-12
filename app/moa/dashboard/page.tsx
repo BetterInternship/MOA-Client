@@ -1,22 +1,36 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { FilePlus, ClipboardList, HelpCircle } from "lucide-react";
 import KpiGrid, { type Kpi } from "@/components/moa/dashboard/KpiGrid";
 import RecentActivity, { type RecentItem } from "@/components/moa/dashboard/RecentActivity";
 import ActionGrid, { type ActionItem } from "@/components/moa/dashboard/ActionGrid";
 
 export default function DashboardPage() {
-  // KPIs — replace with API values
-  const kpis: Kpi[] = [
-    { label: "Total MOA Requests", value: 3, hint: "Includes Standard & Negotiated MOAs" },
-    { label: "Pending Actions", value: 1, hint: "Items awaiting your input" },
-  ];
+  const [kpis, setKpis] = useState<Kpi[]>([]);
+  const [recent, setRecent] = useState<RecentItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Recent Activity — replace with API values
-  const recent: RecentItem[] = [
-    { id: "REQ-2025-014", type: "Standard", status: "Under Review", date: "Aug 7, 2025" },
-    { id: "REQ-2025-013", type: "Negotiated", status: "Awaiting Signature", date: "Aug 5, 2025" },
-  ];
+  useEffect(() => {
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        setLoading(true);
+        // For mock/demo: the API defaults to the first mock entity account.
+        // If you want a specific entity, append: ?entityId=<uuid>
+        const res = await fetch(`/api/moa/dashboard`, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setKpis(data.kpis ?? []);
+        setRecent(data.recent ?? []);
+      } catch (err) {
+        if ((err as any).name !== "AbortError") console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => ctrl.abort();
+  }, []);
 
   const actions: ActionItem[] = [
     {
@@ -54,7 +68,16 @@ export default function DashboardPage() {
 
       {/* KPIs + Recent Activity */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <KpiGrid kpis={kpis} />
+        <KpiGrid
+          kpis={
+            kpis.length
+              ? kpis
+              : [
+                  { label: "Total MOA Requests", value: loading ? "…" : 0 },
+                  { label: "Pending Actions", value: loading ? "…" : 0 },
+                ]
+          }
+        />
         <RecentActivity items={recent} />
       </div>
 
