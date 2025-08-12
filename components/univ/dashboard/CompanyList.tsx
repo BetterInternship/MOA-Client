@@ -3,24 +3,11 @@
 import { useMemo } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Entity } from "@/types/db";
 // import StatusBadge from "./StatusBadge"; // optional
 
-type CompanyListItem = {
-  id: string;
-  name: string;
-  legalName?: string;
-  contactName?: string; // API list field
-  contactPerson?: string; // legacy/seed field
-  contactEmail?: string;
-  contactPhone?: string;
-  industry?: string;
-  status?: "registered" | "approved" | "blacklisted" | null;
-  moaStatus?: string;
-  // documents?: { documentType: string; url: string }[]; // if you ever need it here
-};
-
 type Props = {
-  companies: CompanyListItem[];
+  companies: Entity[];
   selectedId: string;
   onSelect: (id: string) => void;
   query: string;
@@ -42,12 +29,9 @@ export default function CompanyList({
 
     return companies.filter((c) => {
       return (
-        safeLower(c.name).includes(q) ||
-        safeLower(c.legalName).includes(q) ||
-        safeLower(c.contactName ?? c.contactPerson).includes(q) ||
-        safeLower(c.contactEmail).includes(q) ||
-        safeLower(c.contactPhone).includes(q) ||
-        safeLower(c.industry).includes(q)
+        safeLower(c.display_name).includes(q) ||
+        safeLower(c.legal_identifier).includes(q) ||
+        safeLower(c.contact_name).includes(q)
       );
     });
   }, [companies, query]);
@@ -69,13 +53,9 @@ export default function CompanyList({
           <ul className="divide-y">
             {filtered.map((c) => {
               const active = c.id === selectedId;
-              const subline =
-                c.industry ||
-                c.contactName ||
-                c.contactPerson ||
-                c.contactEmail ||
-                c.contactPhone ||
-                "—";
+              const subline = [c.type ? c.type : "", c.contact_name || c.contact_email || null]
+                .filter((s) => s)
+                .join(" • ");
 
               return (
                 <li key={c.id}>
@@ -86,7 +66,7 @@ export default function CompanyList({
                     }`}
                   >
                     <div className="min-w-0">
-                      <div className="truncate font-medium">{c.name}</div>
+                      <div className="truncate font-medium">{c.display_name}</div>
                       <div className="text-muted-foreground truncate text-xs">{subline}</div>
                     </div>
                     {/* <StatusBadge status={(c as any).status ?? (c as any).moaStatus} /> */}

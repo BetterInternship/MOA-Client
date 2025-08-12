@@ -17,14 +17,12 @@ export type EntityDocument = {
 };
 
 export type Entity = {
-  uid: UUID;
-  entityType: "company" | "ngo" | "individual"; // adjust as needed
-  entityDocuments: EntityDocument[];
-  displayName: string;
-  legalName: string;
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
+  id: string;
+  type: string;
+  display_name: string;
+  legal_identifier: string;
+  contact_name?: string;
+  contact_email?: string;
 };
 
 export type EntityLog = {

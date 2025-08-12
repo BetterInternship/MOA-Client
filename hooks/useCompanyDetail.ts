@@ -20,19 +20,6 @@ import type {
   MoaStatus,
 } from "@/types/moa-request";
 
-export type CompanyRow = {
-  id: string;
-  name: string;
-  legalName: string;
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  status: "registered" | "approved" | "blacklisted" | null;
-  lastActivity: string | null;
-  noteCount: number;
-  documents: { documentType: string; url: string }[];
-};
-
 type ApiDetail = {
   entity: Entity;
   schoolEntity?: SchoolEntity;
@@ -72,7 +59,7 @@ const fileToHistoryFile = (url: URLString, stamp: ISODate): MoaHistoryFile => {
   return { id: `${stamp}-${name}`, name, url };
 };
 
-export function useCompanyDetail(company: CompanyRow | undefined) {
+export function useCompanyDetail(company: Entity | undefined) {
   const [detail, setDetail] = useState<ApiDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -101,17 +88,17 @@ export function useCompanyDetail(company: CompanyRow | undefined) {
     const d = detail;
     if (!company) return null;
 
-    const name = firstNonEmpty(company.name, d?.entity.displayName);
-    const contactPerson = firstNonEmpty(company.contactName, d?.entity.contactName);
-    const email = firstNonEmpty(company.contactEmail, d?.entity.contactEmail);
-    const phone = firstNonEmpty(company.contactPhone, d?.entity.contactPhone);
+    const name = firstNonEmpty(company.display_name, d?.entity.display_name);
+    const contactPerson = firstNonEmpty(company.contact_name, d?.entity.contact_name);
+    const email = firstNonEmpty(company.contact_email, d?.entity.contact_email);
+    const phone = firstNonEmpty(company.contact_email, d?.entity.contact_email);
 
-    const documents = company.documents?.length
-      ? company.documents.map((doc) => ({ label: doc.documentType, href: doc.url }))
-      : (d?.entity.entityDocuments ?? []).map((doc) => ({
-          label: doc.documentType,
-          href: doc.url,
-        }));
+    // const documents = company.documents?.length
+    //   ? company.documents.map((doc: any) => ({ label: doc.documentType, href: doc.url }))
+    //   : (d?.entity.entityDocuments ?? []).map((doc: any) => ({
+    //       label: doc.documentType,
+    //       href: doc.url,
+    //     }));
 
     const badgeStatus = toMoaStatus(d?.schoolEntity?.status);
 
@@ -121,7 +108,7 @@ export function useCompanyDetail(company: CompanyRow | undefined) {
       contactPerson,
       email,
       phone,
-      documents,
+      // documents,
       badgeStatus,
       validUntil: undefined as string | undefined,
     };

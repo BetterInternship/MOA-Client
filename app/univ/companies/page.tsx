@@ -5,42 +5,23 @@ import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import CompanyList from "@/components/univ/dashboard/CompanyList";
 import CompanyDetails from "@/components/univ/dashboard/CompanyDetails";
-import { Badge } from "@/components/ui/badge";
 import { Building2 } from "lucide-react";
-
-type CompanyRow = {
-  id: string;
-  name: string;
-  legalName: string;
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  status: "registered" | "approved" | "blacklisted" | null;
-  lastActivity: string | null;
-  noteCount: number;
-  documents: { documentType: string; url: string }[];
-};
+import { useEntities } from "@/app/api/school.api";
+import { Entity } from "@/types/db";
 
 export default function CompaniesPage() {
   const [query, setQuery] = useState("");
 
-  const [companies, setCompanies] = useState<CompanyRow[]>([]);
+  const [entities, setEntities] = useState<Entity[]>([]);
   const [selectedId, setSelectedId] = useState("");
+  const e = useEntities();
 
   useEffect(() => {
-    const load = async () => {
-      const res = await fetch(`/api/univ/companies?limit=50&q=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      setCompanies(data.items);
-      setSelectedId((prev) => prev || data.items[0]?.id || "");
-    };
-    load();
-  }, [query]);
+    setEntities(e.entities as unknown as any[]);
+    console.log(e.entities);
+  }, [e.entities]);
 
-  const selected = useMemo(
-    () => companies.find((c) => c.id === selectedId),
-    [companies, selectedId]
-  );
+  const selected = useMemo(() => entities.find((c) => c.id === selectedId), [entities, selectedId]);
 
   return (
     <div className="">
@@ -63,7 +44,7 @@ export default function CompaniesPage() {
       >
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
           <CompanyList
-            companies={companies}
+            companies={entities}
             selectedId={selectedId}
             onSelect={setSelectedId}
             query={query}

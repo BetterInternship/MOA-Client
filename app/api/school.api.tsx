@@ -12,9 +12,8 @@ import {
 
 export const useEntities = () => {
   const entities = useSchoolEntitiesControllerGetMyPartners();
-
   return {
-    entities: entities.data,
+    entities: entities.data?.data?.entities,
   };
 };
 
