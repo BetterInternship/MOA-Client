@@ -16,7 +16,7 @@ export default function CompanyDetails({ req }: { req: CompanyRequest }) {
         <Detail label="Submitted" value={req.submittedAt} />
         <div className="sm:col-span-2">
           <div className="text-muted-foreground mb-1 text-sm">Reason</div>
-          <p className="text-sm">{req.reason}</p>
+          <p className="text-sm">{(req.reason ?? "").trim() || "--"}</p>
         </div>
       </div>
     </section>
