@@ -2,17 +2,18 @@
 
 import * as React from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { useState } from "react";
+import { useAuthControllerSignIn } from "@/app/api";
 
 export function CompanyAuthForm() {
   const router = useRouter();
   const [company, setCompany] = useState<string | null>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const signIn = useAuthControllerSignIn();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,8 +21,7 @@ export function CompanyAuthForm() {
     setLoading(true);
 
     alert(`Hello ${company}`);
-    // TODO: Call your real company auth endpoint here
-    await new Promise((r) => setTimeout(r, 600));
+    await signIn.mutate({ data: {} });
 
     setLoading(false);
     router.push("/dashboard");
