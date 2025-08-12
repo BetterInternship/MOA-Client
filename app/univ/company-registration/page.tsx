@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import RequestsList from "@/components/univ/company-requests/RequestsList";
 import CompanyDetails from "@/components/univ/company-requests/CompanyDetails";
+import DocumentsCard from "@/components/univ/dashboard/DocumentsCard";
 import RequestMeta from "@/components/univ/company-requests/RequestMeta";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
@@ -29,6 +30,26 @@ export default function CompanyVerificationPage() {
   }, []);
 
   const selected = useMemo(() => items.find((x) => x.id === selectedId), [items, selectedId]);
+
+  type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
+
+  const documents = useMemo(() => {
+    const raw: AnyDoc[] =
+      // prefer an explicit documents array if present
+      ((selected as any)?.documents as AnyDoc[]) ??
+      // else: entity nested docs
+      ((selected as any)?.entity?.entityDocuments as AnyDoc[]) ??
+      // else: flat entityDocuments on the request
+      ((selected as any)?.entityDocuments as AnyDoc[]) ??
+      [];
+
+    return raw
+      .map((d) => ({
+        label: d.label ?? d.documentType ?? "Document",
+        href: d.href ?? d.url ?? "",
+      }))
+      .filter((d) => d.href);
+  }, [selected]);
 
   async function sendRequestForResponse(msg: string) {
     if (!selectedId) return;
@@ -117,6 +138,7 @@ export default function CompanyVerificationPage() {
               <>
                 <RequestMeta req={selected} />
                 <CompanyDetails req={selected} />
+                <DocumentsCard documents={documents} />
                 <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
                 <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />
               </>
