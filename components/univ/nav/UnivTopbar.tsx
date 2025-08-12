@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Home } from "lucide-react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,23 +20,16 @@ import Image from "next/image";
 
 type NavLink = {
   href: string;
-  label: string;
-  match: string[]; // paths that should count as "active"
+  label: React.ReactNode;
+  match: string[];
 };
 
+
 const NAV_LINKS: NavLink[] = [
-  // { href: "/dashboard", label: "Dashboard", match: ["/dashboard"] },
+  { href: "/dashboard", label: <Home className="h-4 w-4 mt-0.5" />, match: ["/dashboard"] },
   { href: "/companies", label: "Browse Companies", match: ["/companies"] },
-  {
-    href: "/company-registration",
-    label: "Company Approval",
-    match: ["/company-registration"],
-  },
-  {
-    href: "/moa-request",
-    label: "MOA Approval",
-    match: ["/moa", "/moa-request"],
-  },
+  { href: "/company-registration", label: "Company Approval", match: ["/company-registration"] },
+  { href: "/moa-request", label: "MOA Approval", match: ["/moa", "/moa-request"] },
 ];
 
 function useIsActive(pathname: string, patterns: string[]) {
