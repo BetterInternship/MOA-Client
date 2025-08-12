@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { useEffect, useState } from "react";
-import { useAuthApi } from "@/app/api/entity.api";
+import { useAuth } from "@/app/api/entity.api";
 import { useEntities } from "@/app/api/school.api";
 import { Entity } from "@/types/db";
 
@@ -17,7 +17,7 @@ export function CompanyAuthForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const e = useEntities();
-  const auth = useAuthApi();
+  const auth = useAuth();
 
   useEffect(() => {
     setOptions(e.entities.map((entity: Entity) => ({ id: entity.id, name: entity.display_name })));
