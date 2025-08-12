@@ -5,15 +5,23 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthApi } from "@/app/api/entity.api";
+import { useEntities } from "@/app/api/school.api";
+import { Entity } from "@/types/db";
 
 export function CompanyAuthForm() {
   const router = useRouter();
+  const [options, setOptions] = useState<{ id: string; name: string }[]>([]);
   const [company, setCompany] = useState<string | null>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const e = useEntities();
   const auth = useAuthApi();
+
+  useEffect(() => {
+    setOptions(e.entities.map((entity: Entity) => ({ id: entity.id, name: entity.display_name })));
+  }, [e.entities]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,11 +46,7 @@ export function CompanyAuthForm() {
         <Autocomplete
           value={company}
           placeholder="Enter company name..."
-          options={[
-            { id: "ahh", name: "I AM A Company" },
-            { id: "lol", name: "WOOG" },
-            { id: "this shud be a uuid", name: "To be replaced later" },
-          ]}
+          options={options}
           setter={(value) => setCompany(value ?? null)}
         />
       </div>
