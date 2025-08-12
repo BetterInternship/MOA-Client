@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CompanyAuthForm } from "@/components/moa/auth/CompanyAuthForm";
 import Image from "next/image";
+import { useEntities } from "@/app/api/school.api";
 
 const universityURL =
   typeof window !== "undefined"
