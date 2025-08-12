@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { useMoaRequests } from "@/app/api/entity.api";
 
 type UiItem = {
   id: string;
@@ -28,26 +29,11 @@ function getStatusBadge(status: string) {
 export default function StatusPage() {
   const [items, setItems] = useState<UiItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const moaRequests = useMoaRequests();
 
   useEffect(() => {
-    const ctrl = new AbortController();
-    (async () => {
-      try {
-        setLoading(true);
-        // For mock/demo the API defaults to the first mock entity account.
-        // To test a specific company: /api/moa/status?entityId=<uuid>
-        const res = await fetch("/api/moa/status", { signal: ctrl.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setItems(data.items ?? []);
-      } catch (err) {
-        if ((err as any).name !== "AbortError") console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => ctrl.abort();
-  }, []);
+    setItems(moaRequests.requests);
+  }, [moaRequests]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -74,10 +60,10 @@ export default function StatusPage() {
                 <div>
                   <h2 className="text-foreground text-lg font-semibold">{moa.company}</h2>
                   <p className="text-muted-foreground text-sm">
-                    {moa.type} MOA &middot; Submitted on {moa.submitted}
+                    {moa.type} MOA &middot; Submitted on {moa.timestamp}
                   </p>
                 </div>
-                <div>{getStatusBadge(moa.status)}</div>
+                <div>{getStatusBadge(moa.outcome)}</div>
               </CardContent>
             </Card>
           ))}
