@@ -36,6 +36,7 @@ type FormValues = z.infer<typeof FormSchema>;
 export default function StandardMoaRequestPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const moaRequests = 
 
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -50,14 +51,7 @@ export default function StandardMoaRequestPage() {
   async function onSubmit(values: FormValues) {
     try {
       setSubmitting(true);
-      // TODO: replace with your API endpoint
-      // const res = await fetch("/api/moa/standard", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   credentials: "include",
-      //   body: JSON.stringify(values),
-      // });
-      // if (!res.ok) throw new Error("Submit failed");
+      
       console.log("Submitting Standard MOA request:", values);
       router.push("/dashboard/status"); // or push to the created request page
     } catch (err) {
