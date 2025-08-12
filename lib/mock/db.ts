@@ -16,28 +16,28 @@ import type {
   ISODate,
 } from "@/types/db";
 
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Types local to this mock
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export type EntityAccount = {
   id: string;
   entityId: string;
   email: string;
   name: string;
-  // 👇 plain text for dev ONLY
+  // PLAIN TEXT for dev ONLY
   password: string;
   role: "admin" | "member";
 };
 
-/**
- * Big, reproducible mock DB.
- * - Set MOCK_SEED env to a number/string for deterministic data.
- * - Tweak COUNTS for more/less data.
- */
-
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Config & RNG
+ *  ────────────────────────────────────────────────────────────────────────────*/
 const COUNTS = {
   schools: 4,
-  accountsPerSchool: [3, 6], // min/max
+  accountsPerSchool: [3, 6] as const, // [min, max]
   entities: 60,
-  logsPerEntity: [2, 8],
-  notesPerEntity: [0, 4],
+  logsPerEntity: [2, 8] as const,
+  notesPerEntity: [0, 4] as const,
   newEntityRequests: 12,
   moaRequests: 20,
   signedDocs: 40,
@@ -48,6 +48,10 @@ const rng = mulberry32(hashStringToInt(SEED));
 
 const now = () => new Date().toISOString();
 const id = () => randomUUID();
+
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Static pools
+ *  ────────────────────────────────────────────────────────────────────────────*/
 const docTypes: DocumentType[] = [
   "BIR registration",
   "SEC registration",
@@ -97,17 +101,6 @@ const personLast = [
   "Jimenez",
   "Gonzales",
 ];
-const titles = [
-  "Chief Executive Officer",
-  "Chief Operating Officer",
-  "General Counsel",
-  "University Legal Counsel",
-  "Authorized Company Signatory",
-  "Director",
-  "VP Legal",
-  "Partner",
-  "Manager",
-];
 
 const companyPrefixes = [
   "Aurora",
@@ -145,7 +138,7 @@ const companySuffixes = [
   "Analytics",
 ];
 
-const schoolNames = [
+const schoolNames: [string, string, string][] = [
   ["De La Salle University", "DLSU", "dlsu.edu.ph"],
   ["Ateneo de Manila University", "ADMU", "ateneo.edu"],
   ["University of the Philippines", "UP", "up.edu.ph"],
@@ -155,6 +148,9 @@ const schoolNames = [
 
 const schoolRoles = ["superadmin", "legal", "company_approver", "viewer"] as const;
 
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Tiny utils
+ *  ────────────────────────────────────────────────────────────────────────────*/
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(rng() * arr.length)];
 }
@@ -190,24 +186,25 @@ function companyName() {
   return `${pick(companyPrefixes)} ${pick(companySuffixes)}`;
 }
 function serial10() {
-  // returns a random 10-digit numeric string (no leading zeros constraint)
   let s = "";
   for (let i = 0; i < 10; i++) s += String(randInt(i === 0 ? 1 : 0, 9));
   return s;
 }
 function verificationCode() {
-  // 10-10-10 format
-  return `${serial10()}-${serial10()}-${serial10()}`;
+  return `${serial10()}-${serial10()}-${serial10()}`; // 10-10-10
 }
 
-// ---------- Generate Schools ----------
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Generate: Schools
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export const schools: School[] = Array.from({ length: COUNTS.schools }, (_, i) => {
-  const tuple = schoolNames[i % schoolNames.length];
-  const [full, short, domain] = tuple;
+  const [full, short, domain] = schoolNames[i % schoolNames.length];
   return { uid: id(), fullName: full, shortName: short, domain };
 });
 
-// ---------- Generate School Accounts ----------
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Generate: School Accounts
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export const schoolAccounts: SchoolAccount[] = schools.flatMap((s) => {
   const count = randInt(COUNTS.accountsPerSchool[0], COUNTS.accountsPerSchool[1]);
   return Array.from({ length: count }).map(() => {
@@ -224,7 +221,9 @@ export const schoolAccounts: SchoolAccount[] = schools.flatMap((s) => {
   });
 });
 
-// ---------- Generate Entities ----------
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Generate: Entities
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export const entities: Entity[] = Array.from({ length: COUNTS.entities }).map(() => {
   const disp = companyName();
   const legal = `${disp} Inc.`;
@@ -247,10 +246,11 @@ export const entities: Entity[] = Array.from({ length: COUNTS.entities }).map(()
   };
 });
 
-// ---------- Link Entities to Schools ----------
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Link: Entities ↔ Schools
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export const schoolEntities: SchoolEntity[] = [];
 for (const e of entities) {
-  // each entity associated with 1–2 schools
   const k = randInt(1, Math.min(2, schools.length));
   const chosen = pickMany(schools, k);
   chosen.forEach((s) => {
@@ -263,7 +263,9 @@ for (const e of entities) {
   });
 }
 
-// ---------- Private Notes ----------
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Generate: Private Notes
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export const privateNotes: PrivateNote[] = [];
 for (const se of schoolEntities) {
   const notes = randInt(COUNTS.notesPerEntity[0], COUNTS.notesPerEntity[1]);
@@ -287,7 +289,9 @@ for (const se of schoolEntities) {
   }
 }
 
-// ---------- Entity Logs ----------
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Generate: Entity Logs
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export const entityLogs: EntityLog[] = [];
 for (const e of entities) {
   const n = randInt(COUNTS.logsPerEntity[0], COUNTS.logsPerEntity[1]);
@@ -314,7 +318,9 @@ for (const e of entities) {
   }
 }
 
-// ---------- Requests ----------
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Generate: Requests (New Entity / MOA)
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export const newEntityRequests: NewEntityRequest[] = Array.from({
   length: COUNTS.newEntityRequests,
 }).map(() => {
@@ -358,7 +364,9 @@ export const moaRequests: MoaRequest[] = Array.from({ length: COUNTS.moaRequests
   };
 });
 
-// ---------- Documents (base + signed) ----------
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Generate: Documents (base + signed)
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export const baseDocuments: BaseDocument[] = [];
 export const signedDocuments: SignedDocument[] = [];
 
@@ -388,11 +396,9 @@ for (let i = 0; i < COUNTS.signedDocs; i++) {
   });
 }
 
-// ---------- Convenience lookups ----------
-export function findEntityById(uid: UUID) {
-  return entities.find((e) => e.uid === uid) || null;
-}
-
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Derived lookups & helpers (exports)
+ *  ────────────────────────────────────────────────────────────────────────────*/
 export function listEntities(params?: { q?: string; limit?: number; offset?: number }) {
   const q = (params?.q ?? "").toLowerCase();
   let out = entities;
@@ -424,18 +430,52 @@ export function appendEntityLog(
   return row;
 }
 
-// ---------- Extra helpers you might want ----------
 export function findSchoolById(uid: UUID) {
   return schools.find((s) => s.uid === uid) || null;
 }
+
 export function listSchoolEntities(schoolID: UUID) {
   return schoolEntities.filter((se) => se.schoolID === schoolID);
 }
+
 export function findSignedByVerificationCode(code: string) {
   return signedDocuments.find((d) => d.document_verification_code === code) || null;
 }
 
-// ---------- RNG + tiny hashes ----------
+export function findEntityAccountByEmail(email: string) {
+  const e = email.toLowerCase();
+  return entityAccounts.find((a) => a.email.toLowerCase() === e) || null;
+}
+
+export function findEntityById(uid: UUID) {
+  return entities.find((e) => e.uid === uid) || null;
+}
+
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  Mock entity accounts (after entities exist)
+ *  ────────────────────────────────────────────────────────────────────────────*/
+export const entityAccounts: EntityAccount[] = [
+  {
+    id: id(),
+    entityId: entities[0]?.uid || "entity-1",
+    email: "isabel@aurora.com",
+    name: "Isabel Reyes",
+    password: "pass1234",
+    role: "admin",
+  },
+  {
+    id: id(),
+    entityId: entities[1]?.uid || "entity-2",
+    email: "ops@example.com",
+    name: "Operations Team",
+    password: "password",
+    role: "member",
+  },
+];
+
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  RNG + tiny hashes (private)
+ *  ────────────────────────────────────────────────────────────────────────────*/
 function hashStringToInt(str: string) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < str.length; i++) {
@@ -456,35 +496,4 @@ function hashSmall(s: string) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
   return Math.abs(h).toString(16);
-}
-
-// If you already have `entities` array seeded, reference real IDs.
-// Otherwise, stub two entities here for the accounts to point to.
-export const entityAccounts: EntityAccount[] = [
-  {
-    id: id(),
-    entityId: (typeof entities !== "undefined" && entities[0]?.uid) || "entity-1",
-    email: "isabel@aurora.com",
-    name: "Isabel Reyes",
-    password: "pass1234",
-    role: "admin",
-  },
-  {
-    id: id(),
-    entityId: (typeof entities !== "undefined" && entities[1]?.uid) || "entity-2",
-    email: "ops@example.com",
-    name: "Operations Team",
-    password: "password",
-    role: "member",
-  },
-];
-
-// Lookups
-export function findEntityAccountByEmail(email: string) {
-  const e = email.toLowerCase();
-  return entityAccounts.find((a) => a.email.toLowerCase() === e) || null;
-}
-export function findEntityById(uid: string) {
-  // if you already exported this earlier, keep your existing version
-  return (typeof entities !== "undefined" && entities.find((x) => x.uid === uid)) || null;
 }
