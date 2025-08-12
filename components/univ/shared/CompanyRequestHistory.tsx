@@ -1,11 +1,43 @@
 "use client";
 
-import { MoaRequest } from "@/types/moa-request";
+import type { MoaRequest } from "@/types/moa-request";
 import { Button } from "@/components/ui/button";
-import FilesDialog from "@/components/univ/dashboard/FilesDialog"; // your existing dialog
+import FilesDialog from "@/components/univ/dashboard/FilesDialog";
 
-export default function CompanyRequestHistory({ req }: { req: MoaRequest }) {
-  const items = req.history;
+/** -------- Inline dummy request (used when no req is passed) -------- */
+const DUMMY_REQ: MoaRequest = {
+  id: "demo-req-1",
+  companyName: "Demo Company Inc.",
+  contactPerson: "Jane Manager",
+  email: "jane@demo.co",
+  tin: "000-000-000",
+  industry: "Demo",
+  requestedAt: "08/10/2025",
+  status: "Under Review",
+  notes: "",
+  history: [
+    {
+      date: "08/10/2025",
+      text: "Submitted MOA request",
+      files: [{ id: "f-001", name: "moa-request.pdf", url: "/docs/demo/moa-request.pdf" }],
+    },
+    { date: "08/11/2025", text: "University requested clarification — missing notarized page" },
+    {
+      date: "08/12/2025",
+      text: "Company uploaded additional documents",
+      files: [
+        { id: "f-002", name: "notarized-page.pdf", url: "/docs/demo/notarized-page.pdf" },
+        { id: "f-003", name: "bir-registration.pdf", url: "/docs/demo/bir-registration.pdf" },
+      ],
+    },
+    { date: "08/12/2025", text: "University noted: documents received, under review" },
+    { date: "08/13/2025", text: "MOA approved" },
+  ],
+};
+
+export default function CompanyRequestHistory({ req }: { req?: MoaRequest }) {
+  // Pick real history if provided, else dummy
+  const items = req?.history?.length ? req.history : DUMMY_REQ.history;
 
   return (
     <div className="rounded-lg border bg-white p-4">

@@ -32,8 +32,29 @@ function dummyDate(i: number) {
   return toMDY(d);
 }
 
+/** Inline dummy items — ONLY used if req.history is empty */
+const DUMMY_HISTORY: MoaRequest["history"] = [
+  {
+    date: "08/10/2025",
+    text: "Submitted MOA request",
+    files: [{ id: "f-001", name: "moa-request.pdf", url: "/docs/demo/moa-request.pdf" }],
+  },
+  { date: "08/11/2025", text: "University requested clarification — missing notarized page" },
+  {
+    date: "08/12/2025",
+    text: "Company uploaded additional documents",
+    files: [
+      { id: "f-002", name: "notarized-page.pdf", url: "/docs/demo/notarized-page.pdf" },
+      { id: "f-003", name: "bir-registration.pdf", url: "/docs/demo/bir-registration.pdf" },
+    ],
+  },
+  { date: "08/12/2025", text: "University noted: documents received, under review" },
+  { date: "08/13/2025", text: "MOA approved" },
+];
+
 export default function CompanyRequestHistory({ req }: { req: MoaRequest }) {
-  const items = req.history;
+  // keep behavior the same; only fallback when empty
+  const items = req?.history?.length ? req.history : DUMMY_HISTORY;
 
   return (
     <div className="rounded-lg border bg-white p-4">
@@ -52,33 +73,37 @@ export default function CompanyRequestHistory({ req }: { req: MoaRequest }) {
             >
               <div
                 className={cn(
-                  "max-w-[80%] rounded-2xl border px-3 py-2 text-sm shadow-sm",
+                  "w-fit rounded-2xl border px-3 py-1.5 text-sm shadow-sm",
                   isUniv
                     ? "rounded-tr-none border-emerald-200 bg-emerald-50 text-emerald-900"
                     : "rounded-tl-none border-slate-200 bg-slate-100 text-slate-900"
                 )}
               >
-                <p className="break-words whitespace-pre-wrap">{h.text}</p>
+                {/* ONE-LINER CONTENT */}
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate whitespace-nowrap">{h.text}</span>
 
-                {h.files?.length ? (
-                  <div
-                    className={cn(
-                      "mt-2 flex items-center gap-2",
-                      isUniv ? "justify-end" : "justify-start"
-                    )}
-                  >
+                  {h.files?.length ? (
                     <FilesDialog
                       files={h.files}
                       trigger={
-                        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 shrink-0 gap-1 px-2 text-xs"
+                          title={`${h.files.length} file${h.files.length > 1 ? "s" : ""}`}
+                        >
                           <Paperclip className="h-3.5 w-3.5" />
-                          {h.files.length} file{h.files.length > 1 ? "s" : ""}
+                          <span className="hidden sm:inline">
+                            {h.files.length} file{h.files.length > 1 ? "s" : ""}
+                          </span>
                         </Button>
                       }
                     />
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
 
+                {/* FOOTER (tiny second line) */}
                 <div
                   className={cn(
                     "text-muted-foreground mt-1 text-[10px]",
