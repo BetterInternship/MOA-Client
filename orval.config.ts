@@ -17,6 +17,10 @@ export default defineConfig({
           signal: true,
           useSuspenseQuery: true,
         },
+        mutator: {
+          path: "./preconfig.axios.ts",
+          name: "preconfiguredAxios",
+        },
       },
     },
   },

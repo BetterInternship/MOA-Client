@@ -13,9 +13,6 @@ import type {
   UseMutationResult,
 } from "@tanstack/react-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import type {
   LoginEntityDto,
   LoginSchoolDto,
@@ -23,15 +20,23 @@ import type {
   RegisterSchoolDto,
 } from "../../models";
 
+import { preconfiguredAxios } from "../../../../preconfig.axios";
+
 export const authControllerRegister = (
   registerEntityDto: RegisterEntityDto,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<null>> => {
-  return axios.post(`/api/auth/register`, registerEntityDto, options);
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxios<null>({
+    url: `/api/auth/register`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: registerEntityDto,
+    signal,
+  });
 };
 
 export const getAuthControllerRegisterMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -40,7 +45,6 @@ export const getAuthControllerRegisterMutationOptions = <
     { data: RegisterEntityDto },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authControllerRegister>>,
   TError,
@@ -48,11 +52,11 @@ export const getAuthControllerRegisterMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authControllerRegister"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authControllerRegister>>,
@@ -60,7 +64,7 @@ export const getAuthControllerRegisterMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authControllerRegister(data, axiosOptions);
+    return authControllerRegister(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -70,9 +74,9 @@ export type AuthControllerRegisterMutationResult = NonNullable<
   Awaited<ReturnType<typeof authControllerRegister>>
 >;
 export type AuthControllerRegisterMutationBody = RegisterEntityDto;
-export type AuthControllerRegisterMutationError = AxiosError<unknown>;
+export type AuthControllerRegisterMutationError = unknown;
 
-export const useAuthControllerRegister = <TError = AxiosError<unknown>, TContext = unknown>(
+export const useAuthControllerRegister = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof authControllerRegister>>,
@@ -80,7 +84,6 @@ export const useAuthControllerRegister = <TError = AxiosError<unknown>, TContext
       { data: RegisterEntityDto },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -93,15 +96,18 @@ export const useAuthControllerRegister = <TError = AxiosError<unknown>, TContext
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authControllerSignIn = (
-  loginEntityDto: LoginEntityDto,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<null>> => {
-  return axios.post(`/api/auth/login`, loginEntityDto, options);
+export const authControllerSignIn = (loginEntityDto: LoginEntityDto, signal?: AbortSignal) => {
+  return preconfiguredAxios<null>({
+    url: `/api/auth/login`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: loginEntityDto,
+    signal,
+  });
 };
 
 export const getAuthControllerSignInMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -110,7 +116,6 @@ export const getAuthControllerSignInMutationOptions = <
     { data: LoginEntityDto },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authControllerSignIn>>,
   TError,
@@ -118,11 +123,11 @@ export const getAuthControllerSignInMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authControllerSignIn"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authControllerSignIn>>,
@@ -130,7 +135,7 @@ export const getAuthControllerSignInMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authControllerSignIn(data, axiosOptions);
+    return authControllerSignIn(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -140,9 +145,9 @@ export type AuthControllerSignInMutationResult = NonNullable<
   Awaited<ReturnType<typeof authControllerSignIn>>
 >;
 export type AuthControllerSignInMutationBody = LoginEntityDto;
-export type AuthControllerSignInMutationError = AxiosError<unknown>;
+export type AuthControllerSignInMutationError = unknown;
 
-export const useAuthControllerSignIn = <TError = AxiosError<unknown>, TContext = unknown>(
+export const useAuthControllerSignIn = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof authControllerSignIn>>,
@@ -150,7 +155,6 @@ export const useAuthControllerSignIn = <TError = AxiosError<unknown>, TContext =
       { data: LoginEntityDto },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -163,14 +167,12 @@ export const useAuthControllerSignIn = <TError = AxiosError<unknown>, TContext =
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authControllerSignOut = (
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<null>> => {
-  return axios.post(`/api/auth/logout`, undefined, options);
+export const authControllerSignOut = (signal?: AbortSignal) => {
+  return preconfiguredAxios<null>({ url: `/api/auth/logout`, method: "POST", signal });
 };
 
 export const getAuthControllerSignOutMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -179,7 +181,6 @@ export const getAuthControllerSignOutMutationOptions = <
     void,
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authControllerSignOut>>,
   TError,
@@ -187,17 +188,17 @@ export const getAuthControllerSignOutMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authControllerSignOut"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authControllerSignOut>>,
     void
   > = () => {
-    return authControllerSignOut(axiosOptions);
+    return authControllerSignOut();
   };
 
   return { mutationFn, ...mutationOptions };
@@ -207,9 +208,9 @@ export type AuthControllerSignOutMutationResult = NonNullable<
   Awaited<ReturnType<typeof authControllerSignOut>>
 >;
 
-export type AuthControllerSignOutMutationError = AxiosError<unknown>;
+export type AuthControllerSignOutMutationError = unknown;
 
-export const useAuthControllerSignOut = <TError = AxiosError<unknown>, TContext = unknown>(
+export const useAuthControllerSignOut = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof authControllerSignOut>>,
@@ -217,7 +218,6 @@ export const useAuthControllerSignOut = <TError = AxiosError<unknown>, TContext 
       void,
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseMutationResult<Awaited<ReturnType<typeof authControllerSignOut>>, TError, void, TContext> => {
@@ -227,13 +227,19 @@ export const useAuthControllerSignOut = <TError = AxiosError<unknown>, TContext 
 };
 export const authControllerSchoolRegister = (
   registerSchoolDto: RegisterSchoolDto,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<null>> => {
-  return axios.post(`/api/auth/school/register`, registerSchoolDto, options);
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxios<null>({
+    url: `/api/auth/school/register`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: registerSchoolDto,
+    signal,
+  });
 };
 
 export const getAuthControllerSchoolRegisterMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -242,7 +248,6 @@ export const getAuthControllerSchoolRegisterMutationOptions = <
     { data: RegisterSchoolDto },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authControllerSchoolRegister>>,
   TError,
@@ -250,11 +255,11 @@ export const getAuthControllerSchoolRegisterMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authControllerSchoolRegister"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authControllerSchoolRegister>>,
@@ -262,7 +267,7 @@ export const getAuthControllerSchoolRegisterMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authControllerSchoolRegister(data, axiosOptions);
+    return authControllerSchoolRegister(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -272,9 +277,9 @@ export type AuthControllerSchoolRegisterMutationResult = NonNullable<
   Awaited<ReturnType<typeof authControllerSchoolRegister>>
 >;
 export type AuthControllerSchoolRegisterMutationBody = RegisterSchoolDto;
-export type AuthControllerSchoolRegisterMutationError = AxiosError<unknown>;
+export type AuthControllerSchoolRegisterMutationError = unknown;
 
-export const useAuthControllerSchoolRegister = <TError = AxiosError<unknown>, TContext = unknown>(
+export const useAuthControllerSchoolRegister = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof authControllerSchoolRegister>>,
@@ -282,7 +287,6 @@ export const useAuthControllerSchoolRegister = <TError = AxiosError<unknown>, TC
       { data: RegisterSchoolDto },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -297,13 +301,19 @@ export const useAuthControllerSchoolRegister = <TError = AxiosError<unknown>, TC
 };
 export const authControllerSchoolSignIn = (
   loginSchoolDto: LoginSchoolDto,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<null>> => {
-  return axios.post(`/api/auth/school/login`, loginSchoolDto, options);
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxios<null>({
+    url: `/api/auth/school/login`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: loginSchoolDto,
+    signal,
+  });
 };
 
 export const getAuthControllerSchoolSignInMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -312,7 +322,6 @@ export const getAuthControllerSchoolSignInMutationOptions = <
     { data: LoginSchoolDto },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authControllerSchoolSignIn>>,
   TError,
@@ -320,11 +329,11 @@ export const getAuthControllerSchoolSignInMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authControllerSchoolSignIn"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authControllerSchoolSignIn>>,
@@ -332,7 +341,7 @@ export const getAuthControllerSchoolSignInMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authControllerSchoolSignIn(data, axiosOptions);
+    return authControllerSchoolSignIn(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -342,9 +351,9 @@ export type AuthControllerSchoolSignInMutationResult = NonNullable<
   Awaited<ReturnType<typeof authControllerSchoolSignIn>>
 >;
 export type AuthControllerSchoolSignInMutationBody = LoginSchoolDto;
-export type AuthControllerSchoolSignInMutationError = AxiosError<unknown>;
+export type AuthControllerSchoolSignInMutationError = unknown;
 
-export const useAuthControllerSchoolSignIn = <TError = AxiosError<unknown>, TContext = unknown>(
+export const useAuthControllerSchoolSignIn = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof authControllerSchoolSignIn>>,
@@ -352,7 +361,6 @@ export const useAuthControllerSchoolSignIn = <TError = AxiosError<unknown>, TCon
       { data: LoginSchoolDto },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -365,14 +373,12 @@ export const useAuthControllerSchoolSignIn = <TError = AxiosError<unknown>, TCon
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authControllerSchoolSignOut = (
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<null>> => {
-  return axios.post(`/api/auth/school/logout`, undefined, options);
+export const authControllerSchoolSignOut = (signal?: AbortSignal) => {
+  return preconfiguredAxios<null>({ url: `/api/auth/school/logout`, method: "POST", signal });
 };
 
 export const getAuthControllerSchoolSignOutMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -381,7 +387,6 @@ export const getAuthControllerSchoolSignOutMutationOptions = <
     void,
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authControllerSchoolSignOut>>,
   TError,
@@ -389,17 +394,17 @@ export const getAuthControllerSchoolSignOutMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authControllerSchoolSignOut"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authControllerSchoolSignOut>>,
     void
   > = () => {
-    return authControllerSchoolSignOut(axiosOptions);
+    return authControllerSchoolSignOut();
   };
 
   return { mutationFn, ...mutationOptions };
@@ -409,9 +414,9 @@ export type AuthControllerSchoolSignOutMutationResult = NonNullable<
   Awaited<ReturnType<typeof authControllerSchoolSignOut>>
 >;
 
-export type AuthControllerSchoolSignOutMutationError = AxiosError<unknown>;
+export type AuthControllerSchoolSignOutMutationError = unknown;
 
-export const useAuthControllerSchoolSignOut = <TError = AxiosError<unknown>, TContext = unknown>(
+export const useAuthControllerSchoolSignOut = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof authControllerSchoolSignOut>>,
@@ -419,7 +424,6 @@ export const useAuthControllerSchoolSignOut = <TError = AxiosError<unknown>, TCo
       void,
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseMutationResult<

@@ -6,28 +6,26 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { useState } from "react";
-import { useAuthControllerSignIn } from "@/app/api";
+import { useAuthApi } from "@/app/api/entity.api";
 
 export function CompanyAuthForm() {
   const router = useRouter();
   const [company, setCompany] = useState<string | null>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const signIn = useAuthControllerSignIn();
+  const auth = useAuthApi();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    const result = await signIn.mutate({
+    await auth.signIn({
       data: {
         legal_entity_name: "",
         password: "",
       },
     });
-
-    // ! TODO: check if valid login
 
     setLoading(false);
     router.push("/dashboard");

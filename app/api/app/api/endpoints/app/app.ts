@@ -20,11 +20,10 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
+import { preconfiguredAxios } from "../../../../preconfig.axios";
 
-export const appControllerGetApi = (options?: AxiosRequestConfig): Promise<AxiosResponse<null>> => {
-  return axios.get(`/api`, options);
+export const appControllerGetApi = (signal?: AbortSignal) => {
+  return preconfiguredAxios<null>({ url: `/api`, method: "GET", signal });
 };
 
 export const getAppControllerGetApiQueryKey = () => {
@@ -33,17 +32,16 @@ export const getAppControllerGetApiQueryKey = () => {
 
 export const getAppControllerGetApiQueryOptions = <
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof appControllerGetApi>>, TError, TData>>;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getAppControllerGetApiQueryKey();
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof appControllerGetApi>>> = ({ signal }) =>
-    appControllerGetApi({ signal, ...axiosOptions });
+    appControllerGetApi(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof appControllerGetApi>>,
@@ -55,11 +53,11 @@ export const getAppControllerGetApiQueryOptions = <
 export type AppControllerGetApiQueryResult = NonNullable<
   Awaited<ReturnType<typeof appControllerGetApi>>
 >;
-export type AppControllerGetApiQueryError = AxiosError<unknown>;
+export type AppControllerGetApiQueryError = unknown;
 
 export function useAppControllerGetApi<
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(
   options: {
     query: Partial<
@@ -73,13 +71,12 @@ export function useAppControllerGetApi<
         >,
         "initialData"
       >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useAppControllerGetApi<
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(
   options?: {
     query?: Partial<
@@ -93,32 +90,29 @@ export function useAppControllerGetApi<
         >,
         "initialData"
       >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useAppControllerGetApi<
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof appControllerGetApi>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
 export function useAppControllerGetApi<
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof appControllerGetApi>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -135,19 +129,18 @@ export function useAppControllerGetApi<
 
 export const getAppControllerGetApiSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(options?: {
   query?: Partial<
     UseSuspenseQueryOptions<Awaited<ReturnType<typeof appControllerGetApi>>, TError, TData>
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getAppControllerGetApiQueryKey();
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof appControllerGetApi>>> = ({ signal }) =>
-    appControllerGetApi({ signal, ...axiosOptions });
+    appControllerGetApi(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
     Awaited<ReturnType<typeof appControllerGetApi>>,
@@ -159,54 +152,50 @@ export const getAppControllerGetApiSuspenseQueryOptions = <
 export type AppControllerGetApiSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof appControllerGetApi>>
 >;
-export type AppControllerGetApiSuspenseQueryError = AxiosError<unknown>;
+export type AppControllerGetApiSuspenseQueryError = unknown;
 
 export function useAppControllerGetApiSuspense<
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(
   options: {
     query: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof appControllerGetApi>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useAppControllerGetApiSuspense<
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof appControllerGetApi>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useAppControllerGetApiSuspense<
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof appControllerGetApi>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
 export function useAppControllerGetApiSuspense<
   TData = Awaited<ReturnType<typeof appControllerGetApi>>,
-  TError = AxiosError<unknown>,
+  TError = unknown,
 >(
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof appControllerGetApi>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

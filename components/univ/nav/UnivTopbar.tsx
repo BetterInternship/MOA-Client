@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Fragment, useMemo } from "react";
 import Image from "next/image";
+import { useAuthControllerSignOut } from "@/app/api";
 
 type NavLink = {
   href: string;
@@ -72,9 +73,11 @@ function NavItem({ item, pathname }: { item: NavLink; pathname: string }) {
 export default function UnivTopbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const signOut = useAuthControllerSignOut();
 
   async function handleLogout() {
     try {
+      signOut.mutate();
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     } finally {
       router.push("/login");
