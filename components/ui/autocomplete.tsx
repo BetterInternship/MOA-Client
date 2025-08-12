@@ -22,10 +22,10 @@ export const Autocomplete = <ID extends number | string>({
   value?: ID | null;
 }) => {
   const [query, setQuery] = useState("");
-  const [is_open, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<IAutocompleteOption<ID> | null>(null);
-  const ref = useOnclickOutside(() => setIsOpen(false));
   const [filteredOptions, setFilteredOptions] = useState<IAutocompleteOption<ID>[]>([]);
+  const ref = useOnclickOutside(() => setIsOpen(false));
 
   useEffect(() => {
     setSelected(options.find((o) => o.id === value) || null);
@@ -70,7 +70,7 @@ export const Autocomplete = <ID extends number | string>({
         }}
         onFocus={() => setIsOpen(true)}
       />
-      {is_open && !selected ? (
+      {isOpen && !selected ? (
         <ul className="ring-opacity-5 absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-[0.33em] bg-white py-1 text-sm shadow-lg ring-1 ring-black">
           {filteredOptions.length ? (
             filteredOptions
