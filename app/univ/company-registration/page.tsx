@@ -1,51 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import RequestsList from "@/components/univ/company-requests/RequestsList";
 import CompanyDetails from "@/components/univ/company-requests/CompanyDetails";
 import RequestMeta from "@/components/univ/company-requests/RequestMeta";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
-import { REQUESTS } from "@/data/company-requests";
-import { CompanyRequest } from "@/types/company-request";
+import type { CompanyRequest } from "@/types/company-request";
 
 export default function CompanyVerificationPage() {
-  const [items, setItems] = useState<CompanyRequest[]>(REQUESTS);
-  const [selectedId, setSelectedId] = useState(items[0].id);
-  const selected = items.find((x) => x.id === selectedId)!;
+  const [items, setItems] = useState<CompanyRequest[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
+  // Load list on mount
+  useEffect(() => {
+    const ctrl = new AbortController();
+    (async () => {
+      const res = await fetch(`/api/univ/requests?limit=100`, { signal: ctrl.signal });
+      const data = await res.json();
+      const list: CompanyRequest[] = data.items ?? [];
+      setItems(list);
+      setSelectedId((prev) => prev || list[0]?.id || "");
+    })().catch(console.error);
+    return () => ctrl.abort();
+  }, []);
+
+  const selected = useMemo(() => items.find((x) => x.id === selectedId), [items, selectedId]);
+
   async function sendRequestForResponse(msg: string) {
+    if (!selectedId) return;
     setBusy(true);
     try {
-      // TODO: POST /api/univ/requests/{id}/request-info
-      console.log("Requesting more info:", { id: selectedId, msg });
-      setItems((prev) =>
-        prev.map((x) => (x.id === selectedId ? { ...x, status: "Needs Info" } : x))
-      );
+      const res = await fetch(`/api/univ/requests/${selectedId}/request-info`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg }),
+      });
+      const data = await res.json();
+      if (res.ok && data.item) {
+        setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
+      }
     } finally {
       setBusy(false);
     }
   }
 
   async function approve(note: string) {
+    if (!selectedId) return;
     setBusy(true);
     try {
-      // TODO: POST /api/univ/requests/{id}/approve
-      console.log("Approve:", { id: selectedId, note });
-      setItems((prev) => prev.map((x) => (x.id === selectedId ? { ...x, status: "Approved" } : x)));
+      const res = await fetch(`/api/univ/requests/${selectedId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      const data = await res.json();
+      if (res.ok && data.item) {
+        setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
+      }
     } finally {
       setBusy(false);
     }
   }
 
   async function deny(note: string) {
+    if (!selectedId) return;
     setBusy(true);
     try {
-      // TODO: POST /api/univ/requests/{id}/deny
-      console.log("Deny:", { id: selectedId, note });
-      setItems((prev) => prev.map((x) => (x.id === selectedId ? { ...x, status: "Denied" } : x)));
+      const res = await fetch(`/api/univ/requests/${selectedId}/deny`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      const data = await res.json();
+      if (res.ok && data.item) {
+        setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
+      }
     } finally {
       setBusy(false);
     }
@@ -77,10 +109,16 @@ export default function CompanyVerificationPage() {
         {/* Right */}
         <ResizablePanel defaultSize={74} minSize={40}>
           <div className="h-full space-y-6 overflow-y-auto p-4">
-            <RequestMeta req={selected} />
-            <CompanyDetails req={selected} />
-            <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
-            <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />
+            {selected ? (
+              <>
+                <RequestMeta req={selected} />
+                <CompanyDetails req={selected} />
+                <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
+                <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />
+              </>
+            ) : (
+              <div className="text-muted-foreground">No request selected.</div>
+            )}
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
