@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Document Verification | BetterInternship × DLSU",
@@ -12,15 +13,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       <body className={cn("min-h-screen bg-gradient-to-b from-white to-emerald-50/30")}>
         {/* Topbar */}
         <header className="bg-background/70 border-b backdrop-blur">
-          <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between px-4">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <span>BetterInternship</span>
-              <span className="text-muted-foreground">|</span>
-              <span>De La Salle University</span>
-            </div>
-            <span className="bg-secondary text-secondary-foreground hidden rounded-md px-2 py-1 text-xs sm:inline">
-              Public Verification
-            </span>
+          <div className="mx-auto flex h-16 max-w-screen-xl items-center gap-2">
+            <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
+            <div className="flex items-center gap-2 font-semibold">BetterInternship</div>
           </div>
         </header>
 

@@ -62,7 +62,9 @@ export default function VerifyDocsPage() {
           <div className="w-full">
             {/* Header on the form */}
             <div className="mb-6 space-y-2 text-center">
-              <h1 className="text-2xl font-semibold tracking-tight">Verify a DLSU Document</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                BetterInternship Document Verifier
+              </h1>
               <p className="text-muted-foreground text-sm">
                 Enter the <strong>Serial Number</strong> printed on the document to check its
                 authenticity.
@@ -71,7 +73,7 @@ export default function VerifyDocsPage() {
 
             <form
               onSubmit={handleVerify}
-              className="mx-auto flex w-full max-w-lg flex-col gap-3 sm:flex-row"
+              className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row"
             >
               <SerialInput
                 value={serial}
@@ -95,7 +97,9 @@ export default function VerifyDocsPage() {
         <div className="mb-6">
           {/* Header stays above the form when pinned */}
           <div className="mb-3 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight">Verify a DLSU Document</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              BetterInternship Document Verifier
+            </h1>
             <p className="text-muted-foreground text-sm">
               Enter the <strong>Serial Number</strong> printed on the document to check its
               authenticity.
@@ -104,7 +108,7 @@ export default function VerifyDocsPage() {
 
           <form
             onSubmit={handleVerify}
-            className="mx-auto flex w-full max-w-lg flex-col gap-3 sm:flex-row"
+            className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row"
           >
             <SerialInput
               value={serial}
