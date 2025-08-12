@@ -12,6 +12,10 @@ import {
 
 export const useEntities = () => {
   const entities = useSchoolEntitiesControllerGetMyPartners();
+
+  return {
+    entities: entities.data,
+  };
 };
 
 export const useMoaRequests = () => {
