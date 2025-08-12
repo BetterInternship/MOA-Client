@@ -23,6 +23,8 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
+import type { RequestNewMoaDto } from "../../models";
+
 import { preconfiguredAxios } from "../../../../preconfig.axios";
 
 export const schoolMoaControllerGetMine = (signal?: AbortSignal) => {
@@ -218,6 +220,80 @@ export function useSchoolMoaControllerGetMineSuspense<
   return query;
 }
 
+export const schoolMoaControllerRequestNew = (
+  requestNewMoaDto: RequestNewMoaDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxios<null>({
+    url: `/api/school/moa/request`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: requestNewMoaDto,
+    signal,
+  });
+};
+
+export const getSchoolMoaControllerRequestNewMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof schoolMoaControllerRequestNew>>,
+    TError,
+    { data: RequestNewMoaDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof schoolMoaControllerRequestNew>>,
+  TError,
+  { data: RequestNewMoaDto },
+  TContext
+> => {
+  const mutationKey = ["schoolMoaControllerRequestNew"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof schoolMoaControllerRequestNew>>,
+    { data: RequestNewMoaDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return schoolMoaControllerRequestNew(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SchoolMoaControllerRequestNewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof schoolMoaControllerRequestNew>>
+>;
+export type SchoolMoaControllerRequestNewMutationBody = RequestNewMoaDto;
+export type SchoolMoaControllerRequestNewMutationError = unknown;
+
+export const useSchoolMoaControllerRequestNew = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof schoolMoaControllerRequestNew>>,
+      TError,
+      { data: RequestNewMoaDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof schoolMoaControllerRequestNew>>,
+  TError,
+  { data: RequestNewMoaDto },
+  TContext
+> => {
+  const mutationOptions = getSchoolMoaControllerRequestNewMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const schoolMoaControllerGetOneHistory = (
   id: string | undefined | null,
   signal?: AbortSignal
