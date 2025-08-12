@@ -15,6 +15,8 @@ const SUBPATH_BY_HOST: Record<string, string> = {
   "uni.moa.betterinternship.com": "univ",
   "moa.localhost": "moa",
   "univ.localhost": "univ",
+  "docs.localhost": "docs",
+  "docs.betterinternship.com": "docs",
 };
 
 
