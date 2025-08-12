@@ -30,7 +30,7 @@ export default function CompanyList({ items, selectedId, onSelect }: Props) {
   }, [q, items]);
 
   return (
-    <aside className="h-full overflow-y-auto">
+    <aside className="h-full">
       <div className="space-y-3 p-3">
         {/* Single impact stat */}
         <div className="flex items-end gap-2 rounded-lg border border-rose-300 bg-rose-50 p-3">
@@ -40,7 +40,7 @@ export default function CompanyList({ items, selectedId, onSelect }: Props) {
           </div>
         </div>
 
-        <div className="max-h-[75vh] overflow-y-auto rounded-md border">
+        <div className="max-h-[71vh] overflow-y-auto rounded-md border">
           <ul className="divide-y">
             {filtered.map((r) => {
               const active = r.id === selectedId;

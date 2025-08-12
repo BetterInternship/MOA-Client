@@ -87,7 +87,7 @@ export default function MoaRequestsPage() {
   }
 
   return (
-    <div>
+    <div className="">
       {/* Page header */}
       <div className="mb-6 flex items-center gap-3 space-y-1">
         <div className="inline-flex items-center gap-3 rounded-md bg-green-100 px-3 py-1 text-2xl font-semibold text-green-800">
@@ -104,7 +104,7 @@ export default function MoaRequestsPage() {
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId={`moa:requests:asideWidth`}
-        className="h-[calc(100vh-180px)] rounded-md border lg:overflow-hidden"
+        className="max-h-[80vh] rounded-md border lg:overflow-hidden"
       >
         {/* LEFT: Company list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>

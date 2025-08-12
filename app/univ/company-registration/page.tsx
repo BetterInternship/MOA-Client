@@ -85,7 +85,7 @@ export default function CompanyVerificationPage() {
   }
 
   return (
-    <div className="h-full">
+    <div className="">
       {/* Page header */}
       <div className="mb-6 flex items-center gap-3 space-y-1">
         <div className="inline-flex items-center gap-3 rounded-md bg-purple-100 px-3 py-1 text-2xl font-semibold text-purple-800">
@@ -101,7 +101,7 @@ export default function CompanyVerificationPage() {
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId={`moa:asideWidth:anon`}
-        className="h-[calc(100vh-180px)] rounded-md border lg:overflow-hidden"
+        className="max-h-[80vh] rounded-md border lg:overflow-hidden"
       >
         {/* Left */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
