@@ -3,12 +3,24 @@
 import { useMemo } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+// import StatusBadge from "./StatusBadge"; // optional
 
-import { Company } from "@/types/company";
-import StatusBadge from "./StatusBadge";
+type CompanyListItem = {
+  id: string;
+  name: string;
+  legalName?: string;
+  contactName?: string; // API list field
+  contactPerson?: string; // legacy/seed field
+  contactEmail?: string;
+  contactPhone?: string;
+  industry?: string;
+  status?: "registered" | "approved" | "blacklisted" | null;
+  moaStatus?: string;
+  // documents?: { documentType: string; url: string }[]; // if you ever need it here
+};
 
 type Props = {
-  companies: Company[];
+  companies: CompanyListItem[];
   selectedId: string;
   onSelect: (id: string) => void;
   query: string;
@@ -29,14 +41,13 @@ export default function CompanyList({
     if (!q) return companies;
 
     return companies.filter((c) => {
-      const anyC = c as any; // to read optional fields from API rows
       return (
         safeLower(c.name).includes(q) ||
-        safeLower(anyC.legalName).includes(q) ||
-        safeLower(anyC.contactName ?? c.contactPerson).includes(q) ||
-        safeLower(anyC.contactEmail ?? (c as any).email).includes(q) ||
-        safeLower(anyC.contactPhone).includes(q) ||
-        safeLower((c as any).industry).includes(q)
+        safeLower(c.legalName).includes(q) ||
+        safeLower(c.contactName ?? c.contactPerson).includes(q) ||
+        safeLower(c.contactEmail).includes(q) ||
+        safeLower(c.contactPhone).includes(q) ||
+        safeLower(c.industry).includes(q)
       );
     });
   }, [companies, query]);
@@ -58,13 +69,12 @@ export default function CompanyList({
           <ul className="divide-y">
             {filtered.map((c) => {
               const active = c.id === selectedId;
-              const anyC = c as any;
               const subline =
-                anyC.industry ||
-                anyC.contactName ||
+                c.industry ||
+                c.contactName ||
                 c.contactPerson ||
-                anyC.contactEmail ||
-                anyC.contactPhone ||
+                c.contactEmail ||
+                c.contactPhone ||
                 "—";
 
               return (
@@ -77,9 +87,9 @@ export default function CompanyList({
                   >
                     <div className="min-w-0">
                       <div className="truncate font-medium">{c.name}</div>
-                      {/* <div className="text-muted-foreground truncate text-xs">{subline}</div> */}
+                      <div className="text-muted-foreground truncate text-xs">{subline}</div>
                     </div>
-                    {/* <StatusBadge status={anyC.status ?? c.moaStatus} /> */}
+                    {/* <StatusBadge status={(c as any).status ?? (c as any).moaStatus} /> */}
                   </button>
                 </li>
               );
