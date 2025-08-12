@@ -15,7 +15,8 @@ type Props = {
 };
 
 export default function CompanyList({ items, selectedId, onSelect }: Props) {
-  const [q, setQ] = useState("");
+  const count = items.length;
+  const [q] = useState("");
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -31,17 +32,15 @@ export default function CompanyList({ items, selectedId, onSelect }: Props) {
   return (
     <aside className="h-full overflow-y-auto">
       <div className="space-y-3 p-3">
-        <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
-          <Input
-            className="pl-8"
-            placeholder="Search company..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+        {/* Single impact stat */}
+        <div className="flex items-end gap-2 rounded-lg border border-rose-300 bg-rose-50 p-3">
+          <div className="-mt-1 text-4xl leading-none font-bold text-rose-900">{count}</div>
+          <div className="text-xs font-semibold tracking-wider text-rose-700/90 uppercase">
+            outstanding MOA requests
+          </div>
         </div>
 
-        <div className="max-h-[68vh] overflow-y-auto rounded-md border">
+        <div className="max-h-[75vh] overflow-y-auto rounded-md border">
           <ul className="divide-y">
             {filtered.map((r) => {
               const active = r.id === selectedId;
