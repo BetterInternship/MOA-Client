@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MoaRequest } from "@/types/moa-request";
 
 function Row({ label, value }: { label: string; value?: string }) {
@@ -18,10 +17,10 @@ export default function CompanyDetails({ req }: { req: MoaRequest }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Row label="Company Name" value={req.companyName} />
-        <Row label="TIN" value={req.tin} />
+        {/* <Row label="TIN" value={req.tin} /> */}
         <Row label="Contact Person" value={req.contactPerson} />
         <Row label="Email Address" value={req.email} />
-        <Row label="Industry" value={req.industry} />
+        {/* <Row label="Industry" value={req.industry} /> */}
         <Row label="Requested On" value={req.requestedAt} />
         {req.notes && (
           <div className="sm:col-span-2">
