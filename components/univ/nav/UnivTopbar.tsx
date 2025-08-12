@@ -82,11 +82,10 @@ export default function UnivTopbar() {
       <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4">
         {/* Left: Brand + Nav */}
         <div className="flex min-w-0 items-center gap-3">
-          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
           <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
-
+          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
           <Link href="/dashboard" className="shrink-0 font-semibold">
-            BetterInternship | De La Salle University
+            MOA Management Tool
           </Link>
 
           {/* Scrollable nav on mobile */}
