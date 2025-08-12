@@ -24,9 +24,8 @@ type NavLink = {
   match: string[];
 };
 
-
 const NAV_LINKS: NavLink[] = [
-  { href: "/dashboard", label: <Home className="h-4 w-4 mt-0.5" />, match: ["/dashboard"] },
+  // { href: "/dashboard", label: <Home className="h-4 w-4 mt-0.5" />, match: ["/dashboard"] },
   { href: "/companies", label: "Browse Companies", match: ["/companies"] },
   { href: "/company-registration", label: "Company Approval", match: ["/company-registration"] },
   { href: "/moa-request", label: "MOA Approval", match: ["/moa", "/moa-request"] },
@@ -82,11 +81,24 @@ export default function UnivTopbar() {
       <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4">
         {/* Left: Brand + Nav */}
         <div className="flex min-w-0 items-center gap-3">
-          <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
-          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
-          <Link href="/dashboard" className="shrink-0 font-semibold">
-            MOA Management Tool
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
+              <span className="font-semibold">MOA Management Tool</span>
+            </Link>
+
+            <nav className="ml-4">
+              <Link
+                href="/dashboard"
+                className={cn(
+                  "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
+                  pathname === "/dashboard" && "bg-accent text-foreground"
+                )}
+              >
+                Dashboard
+              </Link>
+            </nav>
+          </div>
 
           {/* Scrollable nav on mobile */}
           <nav className="ml-2 hidden gap-2 sm:flex">
