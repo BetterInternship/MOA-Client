@@ -1,5 +1,8 @@
 import { useAuthControllerSignIn, useAuthControllerSignOut } from "./app/api/endpoints/auth/auth";
-import { useSchoolMoaControllerRequestNew } from "./app/api/endpoints/school-moa/school-moa";
+import {
+  useEntityMoaControllerGetMine,
+  useEntityMoaControllerRequestNew,
+} from "./app/api/endpoints/entity-moa/entity-moa";
 
 export const useAuth = () => {
   const signIn = useAuthControllerSignIn();
@@ -12,9 +15,11 @@ export const useAuth = () => {
 };
 
 export const useMoaRequests = () => {
-  const moaRequests = useSchoolMoaControllerRequestNew();
+  const requests = useEntityMoaControllerGetMine();
+  const create = useEntityMoaControllerRequestNew();
 
   return {
-    create: moaRequests.mutateAsync,
+    requests: requests.data?.data?.requests,
+    create: create.mutateAsync,
   };
 };
