@@ -20,8 +20,14 @@ export function CompanyAuthForm() {
     setError(null);
     setLoading(true);
 
-    alert(`Hello ${company}`);
-    await signIn.mutate({ data: {} });
+    const result = await signIn.mutate({
+      data: {
+        legal_entity_name: "",
+        password: "",
+      },
+    });
+
+    // ! TODO: check if valid login
 
     setLoading(false);
     router.push("/dashboard");
@@ -45,7 +51,7 @@ export function CompanyAuthForm() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <Button type="submit" disabled={loading}>
+      <Button disabled={loading} onClick={(e) => onSubmit}>
         {loading ? "Verifying..." : "Continue"}
       </Button>
     </form>

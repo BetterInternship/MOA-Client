@@ -7,5 +7,6 @@
  */
 
 export interface LoginEntityDto {
-  [key: string]: unknown;
+  legal_entity_name: string;
+  password: string;
 }

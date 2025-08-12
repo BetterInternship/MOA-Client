@@ -7,5 +7,6 @@
  */
 
 export interface LoginSchoolDto {
-  [key: string]: unknown;
+  name: string;
+  password: string;
 }
