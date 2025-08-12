@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
+import { useMoaRequests } from "@/app/api/entity.api";
 
 const FormSchema = z.object({
   signatoryName: z.string().trim().min(2, "Please enter the full name."),
@@ -36,7 +37,7 @@ type FormValues = z.infer<typeof FormSchema>;
 export default function StandardMoaRequestPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const moaRequests = 
+  const moaRequests = useMoaRequests();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -51,7 +52,7 @@ export default function StandardMoaRequestPage() {
   async function onSubmit(values: FormValues) {
     try {
       setSubmitting(true);
-      
+
       console.log("Submitting Standard MOA request:", values);
       router.push("/dashboard/status"); // or push to the created request page
     } catch (err) {
