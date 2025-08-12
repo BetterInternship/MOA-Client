@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-import MoaMeta from "@/components/univ/moa-requests/MoaMeta";
+// import MoaMeta from "@/components/univ/moa-requests/MoaMeta";
 import CompanyList from "@/components/univ/moa-requests/CompanyList";
-import CompanyDetails from "@/components/univ/moa-requests/CompanyDetails";
-import CompanyRequestHistory from "@/components/univ/shared/CompanyRequestHistory";
+// import CompanyDetails from "@/components/univ/moa-requests/CompanyDetails";
+import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import { FileSignature } from "lucide-react";
@@ -118,9 +118,9 @@ export default function MoaRequestsPage() {
           <div className="h-full space-y-6 overflow-y-auto p-4">
             {selected ? (
               <>
-                <MoaMeta req={selected} />
-                <CompanyDetails req={selected} />
-                <CompanyRequestHistory req={selected} />
+                {/* <MoaMeta req={selected} />
+                <CompanyDetails req={selected} /> */}
+                <CompanyHistoryTree req={selected} />
                 <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
                 <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />
               </>

@@ -21,11 +21,8 @@ export default function CompanyDetails({ req }: { req: MoaRequest }) {
         <Row label="Contact Person" value={req.contactPerson} />
         <Row label="Email Address" value={req.email} />
         {/* <Row label="Industry" value={req.industry} /> */}
-        <Row label="Requested On" value={req.requestedAt} />
-        <div className="sm:col-span-2">
-          <div className="text-muted-foreground mb-1 text-sm">Notes</div>
-          <p className="text-sm">{(req.notes ?? "").trim() || "--"}</p>
-        </div>
+        <Row label="Notes" value={req.notes}>
+        </Row>
       </div>
     </section>
   );
