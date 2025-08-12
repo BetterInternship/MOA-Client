@@ -34,7 +34,7 @@ persistQueryClient({
  *
  * @provider
  */
-export default function APIQueryProvider({ children }: { children: React.ReactNode }) {
+export default function ApiQueryProvider({ children }: { children: React.ReactNode }) {
   return (
     <PersistQueryClientProvider
       client={queryClient}
