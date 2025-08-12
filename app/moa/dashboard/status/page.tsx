@@ -1,18 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
-// Dummy data
-const moaRequests = [
-  {
-    id: "MOA-001",
-    company: "TechCorp Inc.",
-    type: "Standard",
-    submitted: "August 1, 2025",
-    status: "Pending",
-  },
-];
+type UiItem = {
+  id: string;
+  company: string;
+  type: "Standard" | "Negotiated" | string;
+  submitted: string; // already formatted by API
+  status: "Approved" | "Pending" | "Rejected" | string;
+};
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -28,6 +26,29 @@ function getStatusBadge(status: string) {
 }
 
 export default function StatusPage() {
+  const [items, setItems] = useState<UiItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        setLoading(true);
+        // For mock/demo the API defaults to the first mock entity account.
+        // To test a specific company: /api/moa/status?entityId=<uuid>
+        const res = await fetch("/api/moa/status", { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setItems(data.items ?? []);
+      } catch (err) {
+        if ((err as any).name !== "AbortError") console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => ctrl.abort();
+  }, []);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="space-y-1">
@@ -37,15 +58,19 @@ export default function StatusPage() {
         </p>
       </div>
 
-      {moaRequests.length === 0 ? (
+      {loading ? (
+        <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
+          Loading…
+        </div>
+      ) : items.length === 0 ? (
         <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
           You currently have no submitted MOA requests.
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {moaRequests.map((moa) => (
+          {items.map((moa) => (
             <Card key={moa.id}>
-              <CardContent className="flex flex-col items-start justify-between gap-2 p-6 sm:flex-row sm:items-center">
+              <CardContent className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                 <div>
                   <h2 className="text-foreground text-lg font-semibold">{moa.company}</h2>
                   <p className="text-muted-foreground text-sm">
