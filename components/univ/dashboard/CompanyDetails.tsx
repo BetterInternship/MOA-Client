@@ -1,36 +1,129 @@
+// components/univ/dashboard/CompanyDetails.tsx
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Download, ShieldAlert } from "lucide-react";
-import { Company } from "@/types/company";
 import StatusBadge from "./StatusBadge";
 import Detail from "./Detail";
 
-export default function CompanyDetails({ company }: { company: Company }) {
+type ApiDetail = {
+  entity: {
+    uid: string;
+    displayName: string;
+    legalName: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    entityDocuments: { documentType: string; url: string }[];
+  };
+  status: "registered" | "approved" | "blacklisted" | null;
+  logs: { timestamp: string; update: string; file: string | null }[];
+  notes: { id: string; authorName: string; message: string; timestamp: string }[];
+  requests: { newEntity: { timestamp: string }[]; moa: { timestamp: string; schoolID: string }[] };
+};
+
+// Use the same shape as your list rows:
+type CompanyRow = {
+  id: string;
+  name: string;
+  legalName: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  status: "registered" | "approved" | "blacklisted" | null;
+  lastActivity: string | null;
+  noteCount: number;
+  documents: { documentType: string; url: string }[];
+};
+
+const firstNonEmpty = (...vals: (string | undefined | null)[]) =>
+  vals.find((v) => v !== undefined && v !== null && String(v).trim() !== "") ?? "";
+
+export default function CompanyDetails({ company }: { company: CompanyRow }) {
+  const [detail, setDetail] = useState<ApiDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!company?.id) return;
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/univ/companies/${company.id}`, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: ApiDetail = await res.json();
+        setDetail(data);
+        console.log("Company detail loaded:", data);
+      } catch (e) {
+        if ((e as any).name !== "AbortError") console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => ctrl.abort();
+  }, [company.id]);
+
+  const view = useMemo(() => {
+    const d = detail;
+    return {
+      id: company.id,
+      moaStatus: company.status ?? d?.status ?? "registered",
+      validUntil: undefined, // not modeled yet
+
+      // Prefer non-empty seed, else API value
+      name: firstNonEmpty(company.name, d?.entity.displayName),
+      contactPerson: firstNonEmpty(company.contactName, d?.entity.contactName),
+      email: firstNonEmpty(company.contactEmail, d?.entity.contactEmail),
+      phone: firstNonEmpty(company.contactPhone, d?.entity.contactPhone),
+
+      documents: company.documents?.length
+        ? company.documents.map((doc) => ({ label: doc.documentType, href: doc.url }))
+        : (d?.entity.entityDocuments ?? []).map((doc) => ({
+            label: doc.documentType,
+            href: doc.url,
+          })),
+
+      activity: d
+        ? [
+            ...d.logs.map((l) => ({
+              date: new Date(l.timestamp).toLocaleDateString("en-US"),
+              text: `${l.update}${l.file ? ` (ref: ${l.file.split("/").pop()})` : ""}`,
+            })),
+            ...d.notes.map((n) => ({
+              date: new Date(n.timestamp).toLocaleDateString("en-US"),
+              text: `Note by ${n.authorName}: ${n.message}`,
+            })),
+          ].sort((a, b) => +new Date(b.date) - +new Date(a.date))
+        : [],
+    };
+  }, [company, detail]);
+
   return (
     <section className="h-full space-y-6 overflow-y-auto p-4">
       {/* MOA Details */}
       <div className="rounded-lg border bg-white p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">MOA Details</h2>
+          {/* Use a dummy link for now */}
           <a
-            href={`/docs/${company.id}/moa.pdf`}
+            href={`/docs/${view.id}/moa.pdf`}
             download
             className="border-primary bg-primary hover:bg-primary/90 inline-flex items-center rounded-md border px-3 py-2 text-sm font-medium text-white"
           >
             <Download className="mr-2 h-4 w-4" />
-            Download MOA
+            {loading ? "Preparing..." : "Download MOA"}
           </a>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <div className="text-muted-foreground text-sm">MOA Status</div>
             <div className="mt-1">
-              <StatusBadge status={company.moaStatus} />
+              <StatusBadge status={view.moaStatus} />
             </div>
           </div>
           <div>
             <div className="text-muted-foreground text-sm">Valid Until</div>
-            <div className="mt-1 font-medium">{company.validUntil ?? "—"}</div>
+            <div className="mt-1 font-medium">{view.validUntil ?? "—"}</div>
           </div>
         </div>
       </div>
@@ -39,15 +132,10 @@ export default function CompanyDetails({ company }: { company: Company }) {
       <div className="rounded-lg border bg-white p-4">
         <h2 className="mb-3 text-lg font-semibold">Company Details</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Detail label="Company Name" value={company.name} />
-          <Detail label="TIN" value={company.tin} />
-          <Detail label="Contact Person" value={company.contactPerson} />
-          <Detail label="Email Address" value={company.email} />
-          <Detail label="Industry" value={company.industry} />
-        </div>
-        <div className="mt-4">
-          <div className="text-muted-foreground text-sm">Reason</div>
-          <p className="mt-1 text-sm">{company.reason?.trim() ? company.reason : "—"}</p>
+          <Detail label="Company Name" value={view.name} />
+          <Detail label="Contact Person" value={view.contactPerson} />
+          <Detail label="Email Address" value={view.email} />
+          <Detail label="Phone" value={view.phone} />
         </div>
       </div>
 
@@ -55,10 +143,10 @@ export default function CompanyDetails({ company }: { company: Company }) {
       <div className="rounded-lg border bg-white p-4">
         <h2 className="mb-3 text-lg font-semibold">Company Documents</h2>
         <div className="flex flex-wrap gap-2">
-          {company.documents.length ? (
-            company.documents.map((d) => (
+          {view.documents.length ? (
+            view.documents.map((d) => (
               <a
-                key={d.label}
+                key={`${d.label}-${d.href}`}
                 href={d.href}
                 download
                 className="border-primary text-primary hover:bg-primary/5 inline-flex items-center rounded-md border bg-white px-3 py-1.5 text-sm font-medium shadow-sm"
@@ -76,12 +164,14 @@ export default function CompanyDetails({ company }: { company: Company }) {
       {/* Activity Log */}
       <div className="rounded-lg border bg-white p-4">
         <h2 className="mb-3 text-lg font-semibold">Activity Log</h2>
-        {company.activity.length ? (
+        {view.activity.length ? (
           <pre className="bg-muted/50 rounded-md border p-3 text-sm leading-6">
-            {company.activity.map((a) => `[${a.date}] ${a.text}`).join("\n")}
+            {view.activity.map((a) => `[${a.date}] ${a.text}`).join("\n")}
           </pre>
         ) : (
-          <p className="text-muted-foreground text-sm">No activity yet.</p>
+          <p className="text-muted-foreground text-sm">
+            {loading ? "Loading…" : "No activity yet."}
+          </p>
         )}
       </div>
 

@@ -7,7 +7,7 @@ export type Company = {
   industry: string;
   reason?: string;
   date: string; // MM/DD/YYYY
-  moaStatus: "Active" | "Expired" | "Under Review";
+  moaStatus: "registered" | "approved" | "blacklisted";
   validUntil?: string; // MM/DD/YY
   documents: { label: string; href: string }[];
   activity: { date: string; text: string }[];

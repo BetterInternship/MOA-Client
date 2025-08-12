@@ -15,6 +15,8 @@ type Props = {
   onQueryChange: (q: string) => void;
 };
 
+const safeLower = (v?: string | null) => (v ? v.toLowerCase() : "");
+
 export default function CompanyList({
   companies,
   selectedId,
@@ -25,12 +27,18 @@ export default function CompanyList({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return companies;
-    return companies.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.contactPerson.toLowerCase().includes(q) ||
-        c.industry.toLowerCase().includes(q)
-    );
+
+    return companies.filter((c) => {
+      const anyC = c as any; // to read optional fields from API rows
+      return (
+        safeLower(c.name).includes(q) ||
+        safeLower(anyC.legalName).includes(q) ||
+        safeLower(anyC.contactName ?? c.contactPerson).includes(q) ||
+        safeLower(anyC.contactEmail ?? (c as any).email).includes(q) ||
+        safeLower(anyC.contactPhone).includes(q) ||
+        safeLower((c as any).industry).includes(q)
+      );
+    });
   }, [companies, query]);
 
   return (
@@ -50,6 +58,15 @@ export default function CompanyList({
           <ul className="divide-y">
             {filtered.map((c) => {
               const active = c.id === selectedId;
+              const anyC = c as any;
+              const subline =
+                anyC.industry ||
+                anyC.contactName ||
+                c.contactPerson ||
+                anyC.contactEmail ||
+                anyC.contactPhone ||
+                "—";
+
               return (
                 <li key={c.id}>
                   <button
@@ -58,11 +75,11 @@ export default function CompanyList({
                       active ? "bg-accent" : "hover:bg-accent/60"
                     }`}
                   >
-                    <div>
-                      <div className="font-medium">{c.name}</div>
-                      <div className="text-muted-foreground text-xs">{c.industry}</div>
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{c.name}</div>
+                      {/* <div className="text-muted-foreground truncate text-xs">{subline}</div> */}
                     </div>
-                    {/* <StatusBadge status={c.moaStatus} /> */}
+                    {/* <StatusBadge status={anyC.status ?? c.moaStatus} /> */}
                   </button>
                 </li>
               );

@@ -1,12 +1,14 @@
+// components/univ/company-requests/RequestsList.tsx
 "use client";
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import StatusChip from "@/components/univ/dashboard/StatusChip";
-import { CompanyRequest } from "@/types/company-request";
+import type { CompanyRequest } from "@/types/company-request";
+// import StatusChip from "@/components/univ/dashboard/StatusChip";
+
+const safeLower = (v?: string | null) => (v ? v.toLowerCase() : "");
 
 type Props = {
   items: CompanyRequest[];
@@ -22,9 +24,9 @@ export default function RequestsList({ items, selectedId, onSelect }: Props) {
     if (!s) return items;
     return items.filter(
       (r) =>
-        r.companyName.toLowerCase().includes(s) ||
-        r.contactPerson.toLowerCase().includes(s) ||
-        r.industry.toLowerCase().includes(s)
+        safeLower(r.companyName).includes(s) ||
+        safeLower(r.contactPerson).includes(s) ||
+        safeLower(r.industry).includes(s)
     );
   }, [q, items]);
 
@@ -57,10 +59,10 @@ export default function RequestsList({ items, selectedId, onSelect }: Props) {
                     <div>
                       <div className="font-medium">{r.companyName}</div>
                       <div className="text-muted-foreground text-xs">
-                        Requested: {r.submittedAt}
+                        Submitted: {r.submittedAt}
                       </div>
                     </div>
-                    {/* <StatusChip status={r.status} /> */}
+                    {/* <StatusChip status={r.status as any} /> */}
                   </button>
                 </li>
               );
