@@ -7,7 +7,7 @@ export default defineConfig({
       mode: "tags-split",
       target: "./app/api/endpoints",
       schemas: "./app/api/models",
-      workspace: "./app/api",
+      workspace: "./",
       client: "react-query",
       prettier: true,
       allParamsOptional: true,
