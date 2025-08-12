@@ -6,7 +6,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import MoaMeta from "@/components/univ/moa-requests/MoaMeta";
 import CompanyList from "@/components/univ/moa-requests/CompanyList";
 import CompanyDetails from "@/components/univ/moa-requests/CompanyDetails";
-import CompanyRequestHistory from "@/components/univ/moa-requests/CompanyRequestHistory";
+import CompanyRequestHistory from "@/components/univ/shared/CompanyRequestHistory";
 
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
