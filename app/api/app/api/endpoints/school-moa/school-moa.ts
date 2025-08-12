@@ -218,6 +218,236 @@ export function useSchoolMoaControllerGetMineSuspense<
   return query;
 }
 
+export const schoolMoaControllerGetOneHistory = (
+  id: string | undefined | null,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxios<null>({ url: `/api/school/moa/history/${id}`, method: "GET", signal });
+};
+
+export const getSchoolMoaControllerGetOneHistoryQueryKey = (id?: string | undefined | null) => {
+  return [`/api/school/moa/history/${id}`] as const;
+};
+
+export const getSchoolMoaControllerGetOneHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolMoaControllerGetOneHistoryQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>> = ({
+    signal,
+  }) => schoolMoaControllerGetOneHistory(id, signal);
+
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolMoaControllerGetOneHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>
+>;
+export type SchoolMoaControllerGetOneHistoryQueryError = unknown;
+
+export function useSchoolMoaControllerGetOneHistory<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+          TError,
+          Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolMoaControllerGetOneHistory<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+          TError,
+          Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolMoaControllerGetOneHistory<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolMoaControllerGetOneHistory<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolMoaControllerGetOneHistoryQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolMoaControllerGetOneHistorySuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolMoaControllerGetOneHistoryQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>> = ({
+    signal,
+  }) => schoolMoaControllerGetOneHistory(id, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolMoaControllerGetOneHistorySuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>
+>;
+export type SchoolMoaControllerGetOneHistorySuspenseQueryError = unknown;
+
+export function useSchoolMoaControllerGetOneHistorySuspense<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolMoaControllerGetOneHistorySuspense<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolMoaControllerGetOneHistorySuspense<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolMoaControllerGetOneHistorySuspense<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolMoaControllerGetOneHistorySuspenseQueryOptions(id, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
 export const schoolMoaControllerGetOne = (id: string | undefined | null, signal?: AbortSignal) => {
   return preconfiguredAxios<null>({ url: `/api/school/moa/${id}`, method: "GET", signal });
 };
