@@ -1,12 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import StatusChip from "@/components/univ/dashboard/StatusChip";
 import { MoaRequest } from "@/types/moa-request";
+import { useEntities } from "@/app/api/school.api";
+import { Entity } from "@/types/db";
 
 type Props = {
   items: MoaRequest[];
@@ -16,18 +14,20 @@ type Props = {
 
 export default function CompanyList({ items, selectedId, onSelect }: Props) {
   const count = items.length;
+  const entities = useEntities();
   const [q] = useState("");
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return items;
     return items.filter(
-      (r) =>
-        r.companyName.toLowerCase().includes(s) ||
-        r.contactPerson.toLowerCase().includes(s) ||
-        r.industry.toLowerCase().includes(s)
+      (r) => true
+      // r.companyName.toLowerCase().includes(s) ||
+      // r.contactPerson.toLowerCase().includes(s) ||
+      // r.industry.toLowerCase().includes(s)
     );
   }, [q, items]);
+  console.log(entities.entities, items);
 
   return (
     <aside className="h-full">
@@ -54,9 +54,15 @@ export default function CompanyList({ items, selectedId, onSelect }: Props) {
                     )}
                   >
                     <div>
-                      <div className="font-medium">{r.companyName}</div>
+                      <div className="font-medium">
+                        {entities.entities?.find((e: Entity) => e.id === r.entity_id)
+                          ?.display_name ?? ""}
+                      </div>
                       <div className="text-muted-foreground text-xs">
-                        Requested: {r.requestedAt}
+                        Requested:{" "}
+                        {new Date(Date.parse(r.timestamp)).toLocaleDateString() +
+                          ", " +
+                          new Date(Date.parse(r.timestamp)).toLocaleTimeString()}
                       </div>
                     </div>
                     {/* <StatusChip status={r.status as any} /> */}

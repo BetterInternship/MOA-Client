@@ -23,7 +23,7 @@ export const useMoaRequests = () => {
   const deny = useSchoolMoaControllerDeny();
 
   return {
-    requests: requests.data,
+    requests: requests.data?.data?.requests,
     approve: approve.mutateAsync,
     deny: deny.mutateAsync,
   };

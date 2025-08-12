@@ -6,8 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 
-export * from "./loginEntityDto";
-export * from "./loginSchoolDto";
-export * from "./registerEntityDto";
-export * from "./registerSchoolDto";
-export * from "./requestNewMoaDto";
+export interface RequestNewMoaDto {
+  [key: string]: unknown;
+}
