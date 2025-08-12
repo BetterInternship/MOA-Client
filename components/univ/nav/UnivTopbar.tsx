@@ -23,17 +23,17 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/dashboard", label: "Dashboard", match: ["/dashboard"] },
-  { href: "/companies", label: "Companies", match: ["/companies"] },
-  {
-    href: "/moa-request",
-    label: "MOA Requests",
-    match: ["/moa", "/moa-request"],
-  },
+  // { href: "/dashboard", label: "Dashboard", match: ["/dashboard"] },
+  { href: "/companies", label: "Browse Companies", match: ["/companies"] },
   {
     href: "/company-registration",
-    label: "Company Registration Approvals",
+    label: "Company Approval",
     match: ["/company-registration"],
+  },
+  {
+    href: "/moa-request",
+    label: "MOA Approval",
+    match: ["/moa", "/moa-request"],
   },
 ];
 
