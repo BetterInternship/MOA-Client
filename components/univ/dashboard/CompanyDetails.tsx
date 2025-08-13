@@ -24,6 +24,7 @@ export default function CompanyDetails({ company }: { company: Entity }) {
       />
 
       <CompanyInfoCard
+        id={view.id}
         name={view.name}
         contactPerson={view.contactPerson}
         email={view.email}
