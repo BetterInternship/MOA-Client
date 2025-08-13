@@ -12,6 +12,7 @@ import { PdfViewerPanel } from "@/components/docs/PdfViewerPanel";
 import { NotFoundCard } from "@/components/docs/NotFoundCard";
 import { SerialInput } from "@/components/docs/SerialInput";
 import { useDocsControllerGetByVerificationCode } from "../api";
+import { SignedDocument } from "@/types/db";
 
 const SerialSchema = z
   .string()
@@ -24,15 +25,14 @@ const SerialSchema = z
 export default function VerifyDocsPage() {
   const [serial, setSerial] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<VerificationResponse | null>(null);
+  const [result, setResult] = useState<SignedDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
   const signedDocument = useDocsControllerGetByVerificationCode(serial);
 
-  const hasValid = !!result && result.status !== "not_found";
-
   useEffect(() => {
     const doc = signedDocument.data?.data?.signedDocument;
-    if (doc) console.log(signedDocument.data?.data?.signedDocument);
+    if (doc) setResult(doc ?? ({} as SignedDocument));
+    setLoading(signedDocument.isFetching);
   }, [signedDocument]);
 
   async function handleVerify(e: React.FormEvent) {
@@ -45,14 +45,12 @@ export default function VerifyDocsPage() {
       setError(parsed.error.issues[0]?.message ?? "Invalid serial");
       return;
     }
-
-    setLoading(true);
   }
 
   return (
     <section className="mx-auto w-full max-w-screen-2xl px-4 py-6">
       {/* FORM: centered on first load; pinned to top after search */}
-      {!hasValid ? (
+      {!result ? (
         <div className="flex min-h-[70vh] items-center justify-center">
           <div className="w-full">
             {/* Header on the form */}
@@ -73,7 +71,7 @@ export default function VerifyDocsPage() {
               <Input
                 value={serial}
                 placeholder="0123456789-0123abcd-4567defa"
-                onChange={(v) => setSerial(v.target.value)}
+                onChange={(v) => (setSerial(v.target.value), setResult(null))}
                 aria-invalid={!!error}
                 className="h-12 flex-1 font-mono"
               />
@@ -125,24 +123,20 @@ export default function VerifyDocsPage() {
       )}
 
       {/* RESULTS */}
-      {hasValid ? (
+      {!!result ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
           {/* Left: document data */}
           <div>
-            <VerificationDetailsCard result={result} />
+            <VerificationDetailsCard signedDocument={result as SignedDocument} />
           </div>
           {/* Right: PDF viewer */}
           <div className="sticky top-24 self-start">
             <PdfViewerPanel
-              title={result.documentTitle}
-              viewUrl={result.viewUrl}
-              downloadUrl={"downloadUrl" in result ? result.downloadUrl : undefined}
+              title={"Memorandum of Agreement"}
+              viewUrl={result.url}
+              downloadUrl={result.url}
             />
           </div>
-        </div>
-      ) : result?.status === "not_found" ? (
-        <div className="mx-auto max-w-2xl">
-          <NotFoundCard />
         </div>
       ) : null}
     </section>

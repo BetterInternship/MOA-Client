@@ -55,12 +55,7 @@ export function PdfViewerPanel({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="h-[80vh] w-full overflow-hidden rounded border">
-          <iframe
-            src={viewUrl}
-            title={title}
-            className="h-full w-full"
-            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-          />
+          <iframe src={viewUrl} title={title} className="h-full w-full" />
         </div>
       </CardContent>
     </Card>

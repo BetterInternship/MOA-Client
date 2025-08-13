@@ -1,5 +1,5 @@
 // lib/types/db.ts
-import { EntityTables, SchoolTables } from "@betterinternship/schema.moa";
+import { DocumentTables, EntityTables, SchoolTables } from "@betterinternship/schema.moa";
 
 // ---------- Shared ----------
 export type UUID = string; // randomUUID
@@ -79,14 +79,4 @@ export type BaseImage = {
 
 export type SignedDocumentParty = { name: string; email?: string };
 
-export type SignedDocument = {
-  base_document_id: UUID;
-  inputs?: Record<string, string>;
-  inputs_hash?: string;
-  document_verification_code: string; // your 10-10-10
-  parties: SignedDocumentParty[];
-  type?: string;
-  notarized_link?: URLString | null;
-  effective_date?: ISODate | null;
-  expiry_date?: ISODate | null;
-};
+export type SignedDocument = DocumentTables<"signed_documents">;
