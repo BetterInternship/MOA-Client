@@ -127,8 +127,6 @@ export default function UnivDashboardPage() {
           <DataTable columns={columns} data={activities} searchKey="company" />
         </CardContent>
       </Card>
-
-      {/* <CompanyHistoryTree /> */}
     </div>
   );
 }
