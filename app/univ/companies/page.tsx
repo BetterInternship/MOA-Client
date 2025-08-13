@@ -17,11 +17,13 @@ export default function CompaniesPage() {
   const e = useEntities();
 
   useEffect(() => {
-    setEntities(e.entities as unknown as any[]);
-    console.log(e.entities);
+    setEntities((e.entities as unknown as any[]) ?? []);
   }, [e.entities]);
 
-  const selected = useMemo(() => entities.find((c) => c.id === selectedId), [entities, selectedId]);
+  const selected = useMemo(
+    () => entities?.find((c) => c.id === selectedId),
+    [entities, selectedId]
+  );
 
   return (
     <div className="">

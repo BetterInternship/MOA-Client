@@ -12,7 +12,7 @@ type Props = {
 
 export default function CompanyInfoCard({ name, contactPerson, email, phone }: Props) {
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <div className="rounded-[0.33em] border bg-white p-4">
       <h2 className="mb-3 text-lg font-semibold">Company Details</h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <Detail label="Company Name" value={name} />

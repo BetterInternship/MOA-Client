@@ -46,7 +46,7 @@ export default function CompanyRequestHistory({
   const items = req?.history?.length ? req.history : DUMMY_REQ.history;
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <div className="rounded-[0.33em] border bg-white p-4">
       {showTitle && (
         <div className="pb-2">
           <h2 className="text-lg font-semibold">Company Request History</h2>
