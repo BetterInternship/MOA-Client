@@ -16,7 +16,7 @@ export default function RequestMeta({ req }: { req: CompanyRequest }) {
         </div>
         <div>
           <div className="text-muted-foreground text-sm">Submitted On</div>
-          <div className="mt-1 font-medium">{req.submittedAt}</div>
+          <div className="mt-1 font-medium">{req.submittedAt || "—"}</div>
         </div>
       </div>
     </section>

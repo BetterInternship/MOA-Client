@@ -1,13 +1,20 @@
-export type RequestStatus = "Pending" | "Needs Info" | "Approved" | "Denied" | "Under Review";
+// types/company-request.ts
+export type RequestStatus = "Pending" | "Needs Info" | "Approved" | "Denied";
 
 export type CompanyRequest = {
-  id: string;
+  id: string; // messageID
+  entityId: string; // DB entityID
   companyName: string;
-  contactPerson: string;
-  email: string;
-  tin: string;
-  industry: string;
-  submittedAt: string; // MM/DD/YYYY
-  reason: string;
+  contactPerson?: string | null;
+  email?: string | null;
+  tin?: string | null;
+  industry?: string | null;
+
+  submittedAt: string; // ISODate
   status: RequestStatus;
+  notes?: string; // last action note / RFI message (mock)
+
+  // either of these will work with your DocumentsCard mapping
+  documents?: { label?: string; href?: string }[];
+  entityDocuments?: { documentType: string; url: string }[];
 };

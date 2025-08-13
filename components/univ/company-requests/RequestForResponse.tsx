@@ -13,6 +13,13 @@ type Props = {
 export default function RequestForResponse({ onSend, loading }: Props) {
   const [message, setMessage] = useState("");
 
+  async function handleSend() {
+    const msg = message.trim();
+    if (!msg || loading) return;
+    await onSend(msg);
+    setMessage("");
+  }
+
   return (
     <section className="rounded-lg border bg-white p-4">
       <div className="pb-2">
@@ -24,17 +31,23 @@ export default function RequestForResponse({ onSend, loading }: Props) {
           placeholder="Ask for missing documents or clarifications. This will be sent to the contact person."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+              e.preventDefault();
+              void handleSend();
+            }
+          }}
         />
         <div className="flex items-center justify-end gap-2">
           <Button
             variant="secondary"
             size="sm"
             className="gap-2"
-            disabled={!message.trim() || loading}
-            onClick={() => onSend(message)}
+            disabled={!message.trim() || !!loading}
+            onClick={handleSend}
           >
             <MessageSquare className="h-4 w-4" />
-            Send Request
+            {loading ? "Sending…" : "Send Request"}
           </Button>
         </div>
       </div>

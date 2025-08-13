@@ -15,39 +15,45 @@ export default function CompanyVerificationPage() {
   const [items, setItems] = useState<CompanyRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true); // ← add
+  const [error, setError] = useState<string | null>(null); // ← add
 
   // Load list on mount
   useEffect(() => {
     const ctrl = new AbortController();
     (async () => {
-      const res = await fetch(`/api/univ/requests?limit=100`, { signal: ctrl.signal });
-      const data = await res.json();
-      const list: CompanyRequest[] = data.items ?? [];
-      setItems(list);
-      setSelectedId((prev) => prev || list[0]?.id || "");
-    })().catch(console.error);
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(`/api/univ/requests?limit=100`, {
+          signal: ctrl.signal,
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list: CompanyRequest[] = data.items ?? [];
+        setItems(list);
+        setSelectedId((prev) => prev || list[0]?.id || "");
+      } catch (e: any) {
+        if (e.name !== "AbortError") setError(e?.message ?? "Failed to load requests.");
+      } finally {
+        setLoading(false);
+      }
+    })();
     return () => ctrl.abort();
   }, []);
 
   const selected = useMemo(() => items.find((x) => x.id === selectedId), [items, selectedId]);
 
   type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
-
   const documents = useMemo(() => {
     const raw: AnyDoc[] =
-      // prefer an explicit documents array if present
       ((selected as any)?.documents as AnyDoc[]) ??
-      // else: entity nested docs
       ((selected as any)?.entity?.entityDocuments as AnyDoc[]) ??
-      // else: flat entityDocuments on the request
       ((selected as any)?.entityDocuments as AnyDoc[]) ??
       [];
-
     return raw
-      .map((d) => ({
-        label: d.label ?? d.documentType ?? "Document",
-        href: d.href ?? d.url ?? "",
-      }))
+      .map((d) => ({ label: d.label ?? d.documentType ?? "Document", href: d.href ?? d.url ?? "" }))
       .filter((d) => d.href);
   }, [selected]);
 
@@ -61,9 +67,8 @@ export default function CompanyVerificationPage() {
         body: JSON.stringify({ message: msg }),
       });
       const data = await res.json();
-      if (res.ok && data.item) {
+      if (res.ok && data.item)
         setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
-      }
     } finally {
       setBusy(false);
     }
@@ -79,9 +84,8 @@ export default function CompanyVerificationPage() {
         body: JSON.stringify({ note }),
       });
       const data = await res.json();
-      if (res.ok && data.item) {
+      if (res.ok && data.item)
         setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
-      }
     } finally {
       setBusy(false);
     }
@@ -97,9 +101,8 @@ export default function CompanyVerificationPage() {
         body: JSON.stringify({ note }),
       });
       const data = await res.json();
-      if (res.ok && data.item) {
+      if (res.ok && data.item)
         setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
-      }
     } finally {
       setBusy(false);
     }
@@ -126,7 +129,12 @@ export default function CompanyVerificationPage() {
       >
         {/* Left */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
-          <RequestsList items={items} selectedId={selectedId} onSelect={setSelectedId} />
+          <RequestsList
+            items={items}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            loading={loading}
+          />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
@@ -134,7 +142,11 @@ export default function CompanyVerificationPage() {
         {/* Right */}
         <ResizablePanel defaultSize={74} minSize={40}>
           <div className="h-full space-y-6 overflow-y-auto p-4">
-            {selected ? (
+            {error && <div className="text-sm text-rose-600">{error}</div>}
+
+            {loading && !selected ? (
+              <div className="text-muted-foreground">Loading…</div>
+            ) : selected ? (
               <>
                 <RequestMeta req={selected} />
                 <CompanyDetails req={selected} />

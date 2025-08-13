@@ -2,6 +2,8 @@ import Detail from "@/components/univ/dashboard/Detail";
 import { CompanyRequest } from "@/types/company-request";
 
 export default function CompanyDetails({ req }: { req: CompanyRequest }) {
+  const reason = (req as any).notes ?? req.reason ?? "";
+
   return (
     <section className="rounded-lg border bg-white p-4">
       <div className="pb-2">
@@ -16,7 +18,7 @@ export default function CompanyDetails({ req }: { req: CompanyRequest }) {
         <Detail label="Submitted" value={req.submittedAt} />
         <div className="sm:col-span-2">
           <div className="text-muted-foreground mb-1 text-sm">Reason</div>
-          <p className="text-sm">{(req.reason ?? "").trim() || "--"}</p>
+          <p className="text-sm">{reason.trim() || "--"}</p>
         </div>
       </div>
     </section>

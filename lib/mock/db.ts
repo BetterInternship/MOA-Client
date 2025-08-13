@@ -37,7 +37,7 @@ const COUNTS = {
   entities: 60,
   logsPerEntity: [2, 5] as const,
   notesPerEntity: [0, 3] as const,
-  newEntityRequests: 12,
+  newEntityRequests: 19,
   moaRequests: 24,
   signedDocs: 24,
 };
