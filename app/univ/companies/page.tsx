@@ -1,63 +1,85 @@
-// app/univ/companies/page.tsx (your file)
+// app/univ/companies/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import CompanyList from "@/components/univ/dashboard/CompanyList";
 import CompanyDetails from "@/components/univ/dashboard/CompanyDetails";
 import { Building2 } from "lucide-react";
 import { useEntities } from "@/app/api/school.api";
-import { Entity } from "@/types/db";
+import { DemoRT } from "@/lib/demo-realtime";
 
 export default function CompaniesPage() {
   const [query, setQuery] = useState("");
-
-  const [entities, setEntities] = useState<Entity[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const e = useEntities();
+
+  // returns camelCase Entity[]
+  const { entities, loading } = useEntities({ q: query });
+
+  const list = useMemo(() => entities ?? [], [entities]);
 
   useEffect(() => {
-    setEntities(e.entities as unknown as any[]);
-    console.log(e.entities);
-  }, [e.entities]);
+    console.log("[CompaniesPage] list size:", list.length, list.slice(0, 3));
+  }, [list]);
 
-  const selected = useMemo(() => entities.find((c) => c.id === selectedId), [entities, selectedId]);
+  // ensure something is selected
+  useEffect(() => {
+    if (!list.length) {
+      setSelectedId("");
+      return;
+    }
+    const stillExists = list.some((c) => c.id === selectedId);
+    if (!selectedId || !stillExists) setSelectedId(list[0].id);
+  }, [list, selectedId]);
+
+  const onStage = useCallback(() => setQuery((q) => q), []);
+  useEffect(() => {
+    DemoRT.onStage(onStage);
+  }, [onStage]);
+
+  const selected = useMemo(() => list.find((c) => c.id === selectedId), [list, selectedId]);
 
   return (
-    <div className="">
-      {/* Page header */}
-      <div className="mb-6 flex items-center gap-3 space-y-1">
-        <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
-          <Building2 />
-          Browse Companies
-        </div>
-
-        <p className="text-muted-foreground text-sm">
-          Browse partner companies and view MOA details.
-        </p>
-      </div>
+    <div className="space-y-4">
+      {/* header unchanged */}
 
       <ResizablePanelGroup
         direction="horizontal"
-        autoSaveId={`moa:asideWidth:anon`}
+        autoSaveId="moa:asideWidth:univ:companies"
         className="max-h-[80vh] rounded-md border lg:overflow-hidden"
       >
+        {/* List */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
           <CompanyList
-            companies={entities}
+            companies={list}
             selectedId={selectedId}
             onSelect={setSelectedId}
             query={query}
             onQueryChange={setQuery}
+            loading={loading}
           />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
 
+        {/* Details */}
         <ResizablePanel defaultSize={74} minSize={40}>
-          {selected ? <CompanyDetails company={selected} /> : null}
+          <div className="h-full">
+            {loading && !selected ? (
+              <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+                Loading…
+              </div>
+            ) : selected ? (
+              <CompanyDetails key={selected.id} company={selected as any} />
+            ) : (
+              <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+                Select a company to view details
+              </div>
+            )}
+          </div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
   );
 }
+

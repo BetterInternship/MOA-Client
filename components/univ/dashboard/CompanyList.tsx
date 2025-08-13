@@ -1,20 +1,42 @@
+// components/univ/dashboard/CompanyList.tsx
 "use client";
 
 import { useMemo } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Entity } from "@/types/db";
-// import StatusBadge from "./StatusBadge"; // optional
+
+// Accept either camelCase Entity or snake_case API rows
+type AnyCompany = {
+  id: string;
+  // camelCase
+  displayName?: string;
+  legalIdentifier?: string;
+  contactName?: string;
+  contactEmail?: string;
+  type?: string;
+  // snake_case (API)
+  display_name?: string;
+  legal_identifier?: string;
+  contact_name?: string | null;
+  contact_email?: string | null;
+};
 
 type Props = {
-  companies: Entity[];
+  companies: AnyCompany[];
   selectedId: string;
   onSelect: (id: string) => void;
   query: string;
   onQueryChange: (q: string) => void;
+  loading?: boolean;
+  emptyText?: string;
 };
 
 const safeLower = (v?: string | null) => (v ? v.toLowerCase() : "");
+
+const getDisplayName = (c: AnyCompany) => c.displayName ?? c.display_name ?? "";
+const getLegalId = (c: AnyCompany) => c.legalIdentifier ?? c.legal_identifier ?? "";
+const getContactName = (c: AnyCompany) => c.contactName ?? c.contact_name ?? "";
+const getContactEmail = (c: AnyCompany) => c.contactEmail ?? c.contact_email ?? "";
 
 export default function CompanyList({
   companies,
@@ -22,6 +44,8 @@ export default function CompanyList({
   onSelect,
   query,
   onQueryChange,
+  loading,
+  emptyText = "No companies found.",
 }: Props) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -29,9 +53,9 @@ export default function CompanyList({
 
     return companies.filter((c) => {
       return (
-        safeLower(c.display_name).includes(q) ||
-        safeLower(c.legal_identifier).includes(q) ||
-        safeLower(c.contact_name).includes(q)
+        safeLower(getDisplayName(c)).includes(q) ||
+        safeLower(getLegalId(c)).includes(q) ||
+        safeLower(getContactName(c)).includes(q)
       );
     });
   }, [companies, query]);
@@ -51,31 +75,34 @@ export default function CompanyList({
 
         <div className="rounded-md border">
           <ul className="divide-y">
-            {filtered.map((c) => {
-              const active = c.id === selectedId;
-              const subline = [c.type ? c.type : "", c.contact_name || c.contact_email || null]
-                .filter((s) => s)
-                .join(" • ");
+            {loading && !companies.length ? (
+              <li className="text-muted-foreground px-3 py-2 text-sm">Loading…</li>
+            ) : filtered.length === 0 ? (
+              <li className="text-muted-foreground px-3 py-2 text-sm">{emptyText}</li>
+            ) : (
+              filtered.map((c) => {
+                const active = c.id === selectedId;
+                const name = getDisplayName(c);
+                const subline = [c.type || "", getContactName(c) || getContactEmail(c) || null]
+                  .filter(Boolean)
+                  .join(" • ");
 
-              return (
-                <li key={c.id}>
-                  <button
-                    onClick={() => onSelect(c.id)}
-                    className={`flex w-full items-center justify-between px-3 py-2 text-left transition ${
-                      active ? "bg-accent" : "hover:bg-accent/60"
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{c.display_name}</div>
-                      <div className="text-muted-foreground truncate text-xs">{subline}</div>
-                    </div>
-                    {/* <StatusBadge status={(c as any).status ?? (c as any).moaStatus} /> */}
-                  </button>
-                </li>
-              );
-            })}
-            {filtered.length === 0 && (
-              <li className="text-muted-foreground px-3 py-2 text-sm">No matches found.</li>
+                return (
+                  <li key={c.id}>
+                    <button
+                      onClick={() => onSelect(c.id)}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left transition ${
+                        active ? "bg-accent" : "hover:bg-accent/60"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{name}</div>
+                        <div className="text-muted-foreground truncate text-xs">{subline}</div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })
             )}
           </ul>
         </div>

@@ -8,9 +8,11 @@ import DocumentsCard from "./DocumentsCard";
 import ActionsBar from "./ActionsBar";
 import { useCompanyDetail } from "@/hooks/useCompanyDetail";
 import { Entity } from "@/types/db";
+import { useState } from "react";
 
 export default function CompanyDetails({ company }: { company: Entity }) {
   const { loading, view, reqData } = useCompanyDetail(company);
+  const [blacklisting, setBlacklisting] = useState(false);
 
   if (!view || !reqData) return null;
 
@@ -30,13 +32,26 @@ export default function CompanyDetails({ company }: { company: Entity }) {
         phone={view.phone}
       />
 
-      {/* <DocumentsCard documents={view.documents} /> */}
+      <DocumentsCard documents={view.documents} />
 
       <CompanyRequestHistory req={reqData} />
 
       <ActionsBar
-        onBlacklist={() => {
-          /* TODO: hook up blacklist API */
+        onBlacklist={async () => {
+          if (blacklisting) return;
+          try {
+            setBlacklisting(true);
+            await fetch(`/api/univ/companies/${view.id}/blacklist`, {
+              method: "POST",
+              cache: "no-store",
+            });
+            // Optional: refetch after blacklist to reflect status/logs if you show them
+            // location.reload();
+          } catch (e) {
+            console.error(e);
+          } finally {
+            setBlacklisting(false);
+          }
         }}
       />
     </section>

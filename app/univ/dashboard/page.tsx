@@ -1,17 +1,18 @@
+// app/univ/(dashboard)/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import CompanyRequestHistory from "@/components/univ/shared/CompanyRequestHistory";
-import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
+import { Button } from "@/components/ui/button";
+import { DemoRT } from "@/lib/demo-realtime";
 
-// import { useEntities } from "@/app/api/school.api"; // keep if you'll use later
-
+// ── Types aligned with your API handlers ─────────────────────────────────────
 type Stat = { label: string; value: number; color: string };
 type Activity = { date: string; company: string; action: string; performedBy: string };
 
+// ── Table columns ────────────────────────────────────────────────────────────
 const columns: ColumnDef<Activity>[] = [
   { accessorKey: "date", header: "Date" },
   { accessorKey: "company", header: "Company" },
@@ -19,12 +20,12 @@ const columns: ColumnDef<Activity>[] = [
   { accessorKey: "performedBy", header: "Performed by" },
 ];
 
-// ---- Inline dummy data (rendered immediately, replaced after fetch) ----
+// ── Safe immediate UI while API loads (same look as before) ──────────────────
 const DUMMY_STATS: Stat[] = [
   { label: "Active MOAs", value: 18, color: "bg-emerald-600" },
   { label: "Pending MOA Requests", value: 7, color: "bg-amber-500" },
   { label: "Companies Registered", value: 124, color: "bg-blue-600" },
-  { label: "Under Review", value: 2, color: "bg-rose-400 text-rose-100" },
+  { label: "Under Review", value: 2, color: "bg-rose-500" },
 ];
 
 const DUMMY_ACTIVITIES: Activity[] = [
@@ -32,19 +33,19 @@ const DUMMY_ACTIVITIES: Activity[] = [
     date: "08/10/2025",
     company: "Aboitiz Power Corporation",
     action: "MOA Approved",
-    performedBy: "Legal - DLSU",
+    performedBy: "Legal – DLSU",
   },
   {
     date: "08/09/2025",
     company: "Globe Telecom",
     action: "Requested Clarification",
-    performedBy: "Approver - DLSU",
+    performedBy: "Approver – DLSU",
   },
   {
     date: "08/08/2025",
     company: "Jollibee Foods Corp.",
     action: "Company Registered",
-    performedBy: "Admin - DLSU",
+    performedBy: "Admin – DLSU",
   },
   { date: "08/07/2025", company: "Accenture", action: "MOA Uploaded", performedBy: "Company Rep" },
 ];
@@ -52,42 +53,48 @@ const DUMMY_ACTIVITIES: Activity[] = [
 export default function UnivDashboardPage() {
   const [stats, setStats] = useState<Stat[]>(DUMMY_STATS);
   const [activities, setActivities] = useState<Activity[]>(DUMMY_ACTIVITIES);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [sRes, aRes] = await Promise.all([
+        fetch("/api/univ/dashboard/stats", { cache: "no-store" }),
+        fetch("/api/univ/dashboard/activity?days=180&limit=100", { cache: "no-store" }),
+      ]);
+
+      if (sRes.ok) {
+        const sj = await sRes.json();
+        if (Array.isArray(sj?.stats) && sj.stats.length) setStats(sj.stats);
+      }
+      if (aRes.ok) {
+        const aj = await aRes.json();
+        if (Array.isArray(aj?.activities) && aj.activities.length) setActivities(aj.activities);
+      }
+    } catch (e) {
+      // keep dummies on error
+      console.error("Univ dashboard fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      try {
-        const [sRes, aRes] = await Promise.all([
-          fetch("/api/univ/dashboard/stats"),
-          fetch("/api/univ/dashboard/activity?days=180&limit=100"),
-        ]);
+    load();
 
-        if (sRes.ok) {
-          const sJson = await sRes.json();
-          // Expecting { stats: Stat[] }, fallback safely
-          const nextStats: Stat[] =
-            Array.isArray(sJson?.stats) && sJson.stats.length ? sJson.stats : DUMMY_STATS;
-          if (alive) setStats(nextStats);
-        }
+    // realtime: react to company submit / uni approve
+    DemoRT.onStage(() => alive && load());
 
-        if (aRes.ok) {
-          const aJson = await aRes.json();
-          // Expecting { activities: Activity[] }, fallback safely
-          const nextActivities: Activity[] =
-            Array.isArray(aJson?.activities) && aJson.activities.length
-              ? aJson.activities
-              : DUMMY_ACTIVITIES;
-          if (alive) setActivities(nextActivities);
-        }
-      } catch (err) {
-        // Keep dummy data if network/API fails
-        console.error("Dashboard fetch error:", err);
-      }
-    })();
+    // refresh when tab regains focus (handy during demos)
+    const onVis = () => document.visibilityState === "visible" && alive && load();
+    document.addEventListener("visibilitychange", onVis);
+
     return () => {
       alive = false;
+      document.removeEventListener("visibilitychange", onVis);
     };
-  }, []);
+  }, [load]);
 
   return (
     <div className="space-y-8">
@@ -106,7 +113,7 @@ export default function UnivDashboardPage() {
             key={stat.label}
             className="flex flex-col items-center justify-center rounded-lg border bg-white p-6"
           >
-            <div className="text-4xl font-bold text-slate-600">{stat.value}</div>
+            <div className="text-4xl font-bold text-slate-600">{loading ? "…" : stat.value}</div>
             <span
               className={`mt-2 rounded-md px-3 py-1 text-sm font-medium ${
                 stat.color.includes("bg-gray") ? stat.color : `${stat.color} text-white`
@@ -120,15 +127,17 @@ export default function UnivDashboardPage() {
 
       {/* Activity Data Table */}
       <Card className="bg-white">
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-lg">Recent Activity</CardTitle>
+          {/* Optional: quick dev reset */}
+          {/* <Button variant="outline" size="sm" onClick={async () => { await fetch("/api/moa/reset", { method: "POST" }); DemoRT.sendStage(0 as any); load(); }}>
+            Reset Demo
+          </Button> */}
         </CardHeader>
         <CardContent>
           <DataTable columns={columns} data={activities} searchKey="company" />
         </CardContent>
       </Card>
-
-      {/* <CompanyHistoryTree /> */}
     </div>
   );
 }

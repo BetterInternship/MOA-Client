@@ -17,51 +17,48 @@ import type {
 } from "@/types/db";
 
 /** ─────────────────────────────────────────────────────────────────────────────
- *  Types local to this mock
- *  ────────────────────────────────────────────────────────────────────────────*/
+ * Local types
+ * ────────────────────────────────────────────────────────────────────────────*/
 export type EntityAccount = {
   id: string;
   entityId: string;
   email: string;
   name: string;
-  // PLAIN TEXT for dev ONLY
-  password: string;
+  password: string; // dev only
   role: "admin" | "member";
 };
 
 /** ─────────────────────────────────────────────────────────────────────────────
- *  Config & RNG (DLSU‑weighted)
- *  ────────────────────────────────────────────────────────────────────────────*/
+ * Config & RNG
+ * ────────────────────────────────────────────────────────────────────────────*/
 const COUNTS = {
   schools: 5,
-  accountsPerSchool: [4, 8] as const,
+  accountsPerSchool: [3, 6] as const,
   entities: 60,
-  logsPerEntity: [2, 8] as const,
-  notesPerEntity: [0, 4] as const,
+  logsPerEntity: [2, 5] as const,
+  notesPerEntity: [0, 3] as const,
   newEntityRequests: 12,
-  moaRequests: 28, // a bit more to showcase MOA flows
-  signedDocs: 40,
+  moaRequests: 24,
+  signedDocs: 24,
 };
 
-// deterministic seed so data is stable across HMR
 const SEED = String(process.env.MOCK_SEED ?? "dlsu-moa-seed-2025");
 const rng = mulberry32(hashStringToInt(SEED));
 
-const now = () => new Date().toISOString();
-const id = () => randomUUID();
+const now = (): ISODate => new Date().toISOString();
+const genId = () => randomUUID();
 
 /** ─────────────────────────────────────────────────────────────────────────────
- *  Static pools (PH + DLSU flavored)
- *  ────────────────────────────────────────────────────────────────────────────*/
+ * Static pools (PH flavored)
+ * ────────────────────────────────────────────────────────────────────────────*/
 const docTypes: DocumentType[] = [
   "BIR registration",
   "SEC registration",
   "Business Permit",
-  "Notarized Signature Page",
   "Other",
 ];
 
-const personFirst = [
+const firstNames = [
   "Maria",
   "Jose",
   "Juan",
@@ -83,7 +80,7 @@ const personFirst = [
   "Enzo",
   "Bianca",
 ];
-const personLast = [
+const lastNames = [
   "Santos",
   "Reyes",
   "Cruz",
@@ -140,7 +137,6 @@ const companySuffixes = [
   "Analytics",
 ];
 
-// Put DLSU first; keep other PH HEIs for realism
 const schoolNames: [string, string, string][] = [
   ["De La Salle University", "DLSU", "dlsu.edu.ph"],
   ["Ateneo de Manila University", "ADMU", "ateneo.edu"],
@@ -149,20 +145,11 @@ const schoolNames: [string, string, string][] = [
   ["University of Santo Tomas", "UST", "ust.edu.ph"],
 ];
 
-// Roles aligned to the script/process you described
-const schoolRoles = [
-  "superadmin",
-  "legal",
-  "ssc", // Student Services / central student support
-  "provost",
-  "internship_coordinator",
-  "company_approver",
-  "viewer",
-] as const;
+const schoolRoles: SchoolAccount["role"][] = ["superadmin", "legal", "company_approver", "viewer"];
 
 /** ─────────────────────────────────────────────────────────────────────────────
- *  Tiny utils
- *  ────────────────────────────────────────────────────────────────────────────*/
+ * Tiny utils
+ * ────────────────────────────────────────────────────────────────────────────*/
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(rng() * arr.length)];
 }
@@ -188,22 +175,17 @@ function tsOffsetDays(days: number): ISODate {
 function phone() {
   return `+63 9${randInt(10, 99)} ${randInt(100, 999)} ${randInt(1000, 9999)}`;
 }
-function emailFor(name: string, domain: string) {
-  return `${name.toLowerCase().replace(/\s+/g, ".")}@${domain}`;
-}
 function personName() {
-  return `${pick(personFirst)} ${pick(personLast)}`;
+  return `${pick(firstNames)} ${pick(lastNames)}`;
 }
 function companyName() {
   return `${pick(companyPrefixes)} ${pick(companySuffixes)}`;
 }
-function serial10() {
-  let s = "";
-  for (let i = 0; i < 10; i++) s += String(randInt(i === 0 ? 1 : 0, 9));
-  return s;
+function safePick<T>(arr: T[]): T | undefined {
+  return arr.length ? pick(arr) : undefined;
 }
-function verificationCode() {
-  return `${serial10()}-${serial10()}-${serial10()}`; // 10-10-10
+function emailFor(name: string, domain: string) {
+  return `${name.toLowerCase().replace(/\s+/g, ".")}@${domain}`;
 }
 function weighted<T>(items: T[], weights: number[]) {
   const sum = weights.reduce((a, b) => a + b, 0);
@@ -215,26 +197,24 @@ function weighted<T>(items: T[], weights: number[]) {
 }
 
 /** ─────────────────────────────────────────────────────────────────────────────
- *  Builder (HMR-safe) — DLSU‑tailored
- *  ────────────────────────────────────────────────────────────────────────────*/
+ * Builder (HMR-safe)
+ * ────────────────────────────────────────────────────────────────────────────*/
 function buildMockDB() {
-  /** Generate: Schools */
+  /** Schools */
   const schools: School[] = Array.from({ length: COUNTS.schools }, (_, i) => {
     const [full, short, domain] = schoolNames[i % schoolNames.length];
-    return { uid: id(), fullName: full, shortName: short, domain };
+    return { uid: genId(), fullName: full, shortName: short, domain };
   });
 
-  // convenience
   const getDlsu = () => schools.find((s) => s.shortName === "DLSU")!;
-  const isDlsuSchool = (s: School) => s.shortName === "DLSU";
+  const isDlsu = (s: School) => s.shortName === "DLSU";
 
-  /** Generate: School Accounts (seed some deterministic DLSU roles) */
+  /** School Accounts (seed a predictable core for DLSU) */
   const schoolAccounts: SchoolAccount[] = schools.flatMap((s) => {
-    // deterministic core accounts for DLSU so demos are predictable
-    const coreDlsu: SchoolAccount[] = isDlsuSchool(s)
+    const core: SchoolAccount[] = isDlsu(s)
       ? [
           {
-            id: id(),
+            id: genId(),
             schoolId: s.uid,
             role: "superadmin",
             name: "DLSU Admin",
@@ -242,34 +222,18 @@ function buildMockDB() {
             receiveMoaRequests: true,
           },
           {
-            id: id(),
+            id: genId(),
             schoolId: s.uid,
             role: "legal",
-            name: "Atty. Regina Valdez",
+            name: "Atty. R. Valdez",
             receiveNewOrgRequests: false,
             receiveMoaRequests: true,
           },
           {
-            id: id(),
+            id: genId(),
             schoolId: s.uid,
-            role: "ssc",
-            name: "SSC Desk",
-            receiveNewOrgRequests: true,
-            receiveMoaRequests: true,
-          },
-          {
-            id: id(),
-            schoolId: s.uid,
-            role: "provost",
-            name: "Provost Office",
-            receiveNewOrgRequests: false,
-            receiveMoaRequests: true,
-          },
-          {
-            id: id(),
-            schoolId: s.uid,
-            role: "internship_coordinator",
-            name: "COE Internship Coordinator",
+            role: "company_approver",
+            name: "MOA Approver",
             receiveNewOrgRequests: true,
             receiveMoaRequests: true,
           },
@@ -277,49 +241,37 @@ function buildMockDB() {
       : [];
 
     const count = randInt(COUNTS.accountsPerSchool[0], COUNTS.accountsPerSchool[1]);
-    const randoms = Array.from({ length: count }).map(() => {
-      const name = personName();
-      const role = pick([...schoolRoles]);
-      return {
-        id: id(),
-        schoolId: s.uid,
-        role,
-        name,
-        receiveNewOrgRequests: chance(0.6),
-        receiveMoaRequests: chance(0.7),
-      } as SchoolAccount;
-    });
+    const randoms = Array.from({ length: count }).map(() => ({
+      id: genId(),
+      schoolId: s.uid,
+      role: pick(schoolRoles),
+      name: personName(),
+      receiveNewOrgRequests: chance(0.6),
+      receiveMoaRequests: chance(0.7),
+    }));
 
-    return [...coreDlsu, ...randoms];
+    return [...core, ...randoms];
   });
 
-  /** Generate: Entities */
+  /** Entities — matches your types exactly */
   const entities: Entity[] = Array.from({ length: COUNTS.entities }).map(() => {
-    const disp = companyName();
-    const legal = `${disp} Inc.`;
+    const display = companyName();
+    const legalId = `TIN-${randInt(100000000, 999999999)}`;
     const contact = personName();
     const domain = "example.com";
-    const docsCount = randInt(1, 3);
-    const entityDocuments = Array.from({ length: docsCount }).map(() => ({
-      documentType: pick(docTypes),
-      url: `/docs/mock/${disp.toLowerCase().replace(/\s+/g, "-")}-${randInt(1, 9)}.pdf`,
-    }));
     return {
-      uid: id(),
-      entityType: pick(["company", "ngo", "individual"] as const),
-      entityDocuments,
-      displayName: disp,
-      legalName: legal,
+      id: genId(),
+      type: pick(["company", "ngo", "individual"]),
+      displayName: display,
+      legalIdentifier: legalId,
       contactName: contact,
       contactEmail: emailFor(contact, domain),
-      contactPhone: phone(),
     };
   });
 
-  /** Link: Entities ↔ Schools (weight DLSU higher) */
+  /** Link: Entities ↔ Schools (bias DLSU presence a bit) */
   const schoolEntities: SchoolEntity[] = [];
   for (const e of entities) {
-    // DLSU gets picked 60% of the time as one of the linked schools
     const k = randInt(1, Math.min(2, schools.length));
     const dlsu = getDlsu();
     const pool = schools.slice();
@@ -328,31 +280,29 @@ function buildMockDB() {
     while (chosen.length < k) {
       const s = weighted(
         pool,
-        pool.map((x) => (isDlsuSchool(x) ? 0.6 : 0.4 / (pool.length - 1)))
+        pool.map((x) => (isDlsu(x) ? 0.6 : 0.4 / (pool.length - 1)))
       );
       if (!chosen.includes(s)) chosen.push(s);
     }
     for (const s of chosen) {
       schoolEntities.push({
-        id: id(),
-        entityId: e.uid,
+        id: genId(),
+        entityId: e.id, // IMPORTANT: id (not uid)
         schoolID: s.uid,
-        status: pick(["registered", "approved", "blacklisted"] as const),
+        status: pick(["registered", "approved", "blacklisted"]),
       });
     }
   }
 
-  /** Generate: Private Notes (more activity under DLSU) */
+  /** Private Notes */
   const privateNotes: PrivateNote[] = [];
   for (const se of schoolEntities) {
-    const notes =
-      randInt(COUNTS.notesPerEntity[0], COUNTS.notesPerEntity[1]) +
-      (chance(0.5) && se.schoolID === getDlsu().uid ? 1 : 0);
+    const notes = randInt(COUNTS.notesPerEntity[0], COUNTS.notesPerEntity[1]);
     for (let i = 0; i < notes; i++) {
       const author =
-        pick(schoolAccounts.filter((a) => a.schoolId === se.schoolID)) || pick(schoolAccounts);
+        safePick(schoolAccounts.filter((a) => a.schoolId === se.schoolID)) ?? pick(schoolAccounts);
       privateNotes.push({
-        id: id(),
+        id: genId(),
         authorId: author.id,
         entityId: se.entityId,
         message: pick([
@@ -360,140 +310,104 @@ function buildMockDB() {
           "Pending updated business permit.",
           "Requested notarized signature page.",
           "Clarify signatory authority.",
-          "Legal review required (DLSU Legal).",
-          "SSC follow-up with coordinator.",
+          "Legal review required.",
         ]),
         timestamp: tsOffsetDays(-randInt(0, 120)),
       });
     }
   }
 
-  /** Generate: Entity Logs (bias target toward DLSU) */
+  /** Entity Logs */
   const entityLogs: EntityLog[] = [];
   for (const e of entities) {
     const n = randInt(COUNTS.logsPerEntity[0], COUNTS.logsPerEntity[1]);
-    const updates: EntityLog["update"][] = [
-      "registered",
-      "requested",
-      "approved",
-      "blacklisted",
-      "note",
-    ];
     for (let i = 0; i < n; i++) {
       const school = weighted(
         schools,
-        schools.map((s) => (isDlsuSchool(s) ? 0.55 : 0.45 / (schools.length - 1)))
+        schools.map((s) => (isDlsu(s) ? 0.55 : 0.45 / (schools.length - 1)))
       );
       entityLogs.push({
-        uuid: id(),
-        update: pick(updates),
+        uuid: genId(),
+        update: pick(["registered", "requested", "approved", "blacklisted", "note"]),
         source: pick(["school", "entity"]),
-        target: school.shortName, // e.g. "DLSU"
+        target: school.shortName,
         file: chance(0.25)
           ? `/docs/mock/${e.displayName.toLowerCase().replace(/\s+/g, "-")}-ref-${i + 1}.pdf`
           : null,
         timestamp: tsOffsetDays(-randInt(0, 200)),
-        entityId: e.uid,
+        entityId: e.id, // IMPORTANT
       });
     }
   }
 
-  /** Generate: Requests (New Entity / MOA) — DLSU seen more often */
+  /** Requests — SAFE picking school accounts (no undefined.id) */
   const newEntityRequests: NewEntityRequest[] = Array.from({
     length: COUNTS.newEntityRequests,
   }).map(() => {
     const e = pick(entities);
-    const school = weighted(
-      schools,
-      schools.map((s) => (isDlsuSchool(s) ? 0.5 : 0.5 / (schools.length - 1)))
-    );
+    const school = pick(schools);
     const processed = chance(0.5);
-    const processedBy = processed
-      ? pick(schoolAccounts.filter((a) => a.schoolId === school.uid)).id
-      : undefined;
-    const processedDate = processed ? tsOffsetDays(-randInt(0, 60)) : undefined;
-    const resultAction = processed
-      ? pick(["approved", "denied", "continuedDialogue"] as const)
-      : undefined;
+    const eligible = schoolAccounts.filter((a) => a.schoolId === school.uid);
+    const processedBy = processed ? safePick(eligible)?.id : undefined;
+
     return {
-      entityID: e.uid,
-      messageID: id(),
+      entityID: e.id,
+      messageID: genId(),
       processedBy,
-      processedDate,
-      resultAction,
+      processedDate: processed ? tsOffsetDays(-randInt(0, 60)) : undefined,
+      resultAction: processed ? pick(["approved", "denied", "continuedDialogue"]) : undefined,
       timestamp: tsOffsetDays(-randInt(0, 90)),
     };
   });
 
   const moaRequests: MoaRequest[] = Array.from({ length: COUNTS.moaRequests }).map(() => {
     const e = pick(entities);
-    const school = weighted(
-      schools,
-      schools.map((s) => (isDlsuSchool(s) ? 0.65 : 0.35 / (schools.length - 1)))
-    );
+    const school = pick(schools);
     const processed = chance(0.6);
-    const processedBy = processed
-      ? pick(schoolAccounts.filter((a) => a.schoolId === school.uid)).id
-      : undefined;
-    const processedDate = processed ? tsOffsetDays(-randInt(0, 45)) : undefined;
-    const resultAction = processed
-      ? pick(["approved", "denied", "continuedDialogue"] as const)
-      : undefined;
+    const eligible = schoolAccounts.filter((a) => a.schoolId === school.uid);
+    const notifySchoolAccount = safePick(eligible)?.id;
+    const processedBy = processed ? safePick(eligible)?.id : undefined;
+
     return {
-      messageID: id(),
-      entityID: e.uid,
+      messageID: genId(),
+      entityID: e.id,
       schoolID: school.uid,
-      notifySchoolAccount: pick(schoolAccounts.filter((a) => a.schoolId === school.uid)).id,
+      notifySchoolAccount,
       processedBy,
-      processedDate,
-      resultAction,
+      processedDate: processed ? tsOffsetDays(-randInt(0, 45)) : undefined,
+      resultAction: processed ? pick(["approved", "denied", "continuedDialogue"]) : undefined,
       timestamp: tsOffsetDays(-randInt(0, 60)),
     };
   });
 
-  /** Generate: Documents (base + signed) */
-  const baseDocuments: BaseDocument[] = [];
-  const signedDocuments: SignedDocument[] = [];
+  /** Documents (minimal demo) */
+  const baseDocuments: BaseDocument[] = Array.from({ length: COUNTS.signedDocs }).map((_, i) => ({
+    uid: genId(),
+    url: `/docs/mock/moa/moa-${i + 1}.pdf`,
+  }));
+  const signedDocuments: SignedDocument[] = baseDocuments.map((b, i) => ({
+    base_document_id: b.uid,
+    document_verification_code: `MOA-${1000 + i}-${2000 + i}-${3000 + i}`,
+    parties: [{ name: personName(), email: emailFor(personName(), "example.com") }],
+    type: "Standard MOA",
+    notarized_link: chance(0.5) ? `/docs/mock/notaries/notary-${i + 1}.pdf` : null,
+    effective_date: tsOffsetDays(-randInt(10, 180)),
+    expiry_date: chance(0.5) ? tsOffsetDays(randInt(30, 365)) : null,
+  }));
 
-  for (let i = 0; i < COUNTS.signedDocs; i++) {
-    const baseId = id();
-    baseDocuments.push({
-      uid: baseId,
-      url: `/docs/mock/moa/dlsu-moa-${i + 1}.pdf`,
-    });
-    const partiesCount = randInt(1, 3);
-    const parties = Array.from({ length: partiesCount }).map(() => ({
-      name: personName(),
-      email: chance(0.7) ? emailFor(personName(), "example.com") : undefined,
-    }));
-    signedDocuments.push({
-      base_document_id: baseId,
-      document_verification_code: verificationCode(),
-      parties,
-      type: pick(["Standard MOA", "Addendum", "NDA", "LOI"]),
-      notarized_link: chance(0.6) ? `/docs/mock/notaries/notary-${i + 1}.pdf` : null,
-      effective_date: tsOffsetDays(-randInt(10, 180)),
-      expiry_date: chance(0.5) ? tsOffsetDays(randInt(30, 365)) : null,
-      inputs: chance(0.45)
-        ? { term_months: String(randInt(6, 24)), internship_slots: String(randInt(3, 50)) }
-        : undefined,
-      inputs_hash: chance(0.4) ? hashSmall(JSON.stringify({ i })) : undefined,
-    });
-  }
-
-  /** Mock entity accounts (after entities exist) */
+  /** Mock entity accounts */
   const entityAccounts: EntityAccount[] = [
     {
-      id: id(),
-      entityId: entities[0]?.uid || "entity-1",
+      id: genId(),
+      entityId: entities[0]?.id ?? "entity-1",
       email: "isabel@aurora.com",
       name: "Isabel Reyes",
       password: "pass1234",
       role: "admin",
     },
     {
-      id: id(),
-      entityId: entities[1]?.uid || "entity-2",
+      id: genId(),
+      entityId: entities[1]?.id ?? "entity-2",
       email: "ops@example.com",
       name: "Operations Team",
       password: "password",
@@ -501,7 +415,7 @@ function buildMockDB() {
     },
   ];
 
-  /** Derived lookups & helpers (bound to this dataset) */
+  /** Helpers (entity id everywhere) */
   function listEntities(params?: { q?: string; limit?: number; offset?: number }) {
     const q = (params?.q ?? "").toLowerCase();
     let out = entities;
@@ -509,7 +423,7 @@ function buildMockDB() {
       out = out.filter(
         (e) =>
           e.displayName.toLowerCase().includes(q) ||
-          e.legalName.toLowerCase().includes(q) ||
+          e.legalIdentifier.toLowerCase().includes(q) ||
           (e.contactEmail ?? "").toLowerCase().includes(q) ||
           (e.contactName ?? "").toLowerCase().includes(q)
       );
@@ -526,7 +440,7 @@ function buildMockDB() {
   }
 
   function appendEntityLog(log: Omit<EntityLog, "uuid" | "timestamp"> & { timestamp?: ISODate }) {
-    const row: EntityLog = { uuid: id(), timestamp: log.timestamp ?? now(), ...log };
+    const row: EntityLog = { uuid: genId(), timestamp: log.timestamp ?? now(), ...log };
     entityLogs.push(row);
     return row;
   }
@@ -548,8 +462,8 @@ function buildMockDB() {
     return entityAccounts.find((a) => a.email.toLowerCase() === e) || null;
   }
 
-  function findEntityById(uid: UUID) {
-    return entities.find((e) => e.uid === uid) || null;
+  function findEntityById(eid: UUID) {
+    return entities.find((e) => e.id === eid) || null;
   }
 
   return {
@@ -574,15 +488,12 @@ function buildMockDB() {
     findSignedByVerificationCode,
     findEntityAccountByEmail,
     findEntityById,
-    // dlsu helpers
-    getDlsu,
-    isDlsuSchool,
   };
 }
 
 /** ─────────────────────────────────────────────────────────────────────────────
- *  HMR-safe global singleton + re-exports
- *  ────────────────────────────────────────────────────────────────────────────*/
+ * HMR-safe singleton + re-exports
+ * ────────────────────────────────────────────────────────────────────────────*/
 type MockDB = ReturnType<typeof buildMockDB>;
 
 declare global {
@@ -612,13 +523,11 @@ export const {
   findSignedByVerificationCode,
   findEntityAccountByEmail,
   findEntityById,
-  getDlsu,
-  isDlsuSchool,
 } = DB;
 
 /** ─────────────────────────────────────────────────────────────────────────────
- *  RNG + tiny hashes (private)
- *  ────────────────────────────────────────────────────────────────────────────*/
+ * RNG + tiny hashes
+ * ────────────────────────────────────────────────────────────────────────────*/
 function hashStringToInt(str: string) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < str.length; i++) {

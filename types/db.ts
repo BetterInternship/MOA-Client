@@ -19,10 +19,10 @@ export type EntityDocument = {
 export type Entity = {
   id: string;
   type: string;
-  display_name: string;
-  legal_identifier: string;
-  contact_name?: string;
-  contact_email?: string;
+  displayName: string;
+  legalIdentifier: string;
+  contactName?: string;
+  contactEmail?: string;
 };
 
 export type EntityLog = {

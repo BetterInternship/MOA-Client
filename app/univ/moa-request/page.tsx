@@ -12,13 +12,13 @@ import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import { FileSignature } from "lucide-react";
 
 import type { MoaRequest } from "@/types/moa-request";
-import { useMoaRequests } from "@/app/api/school.api";
+// import { useMoaRequests } from "@/app/api/school.api";
 
 export default function MoaRequestsPage() {
   const [items, setItems] = useState<MoaRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  const moaRequests = useMoaRequests();
+  // const moaRequests = useMoaRequests();
 
   // Load list on mount (and whenever you want to refetch, add deps)
   useEffect(() => {
