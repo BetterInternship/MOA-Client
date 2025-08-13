@@ -23,7 +23,6 @@ function toMDY(d: Date) {
   const yyyy = d.getFullYear();
   return `${mm}/${dd}/${yyyy}`;
 }
-
 function dummyDate(i: number) {
   const d = new Date();
   d.setDate(d.getDate() - i);
@@ -65,182 +64,136 @@ const DUMMY_HISTORY: MoaRequest["history"] = [
 export default function CompanyRequestHistory({
   req,
   title = "Company Request Timeline",
+  showTitle = true,
 }: {
-  req: MoaRequest;
+  req?: MoaRequest;
   title?: string;
+  showTitle?: boolean;
 }) {
   const items = req?.history?.length ? req.history : DUMMY_HISTORY;
 
   return (
     <section className="rounded-lg border bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold">{title}</h2>
+      {showTitle && <h2 className="mb-3 text-lg font-semibold">{title}</h2>}
 
-      <div className="relative isolate">
-        {/* CENTER LINE (more visible + properly centered on md+) */}
-        <div
-          className={cn(
-            "pointer-events-none absolute top-0 bottom-0 z-0",
-            "left-5 md:left-1/2 md:-translate-x-1/2",
-            "w-[2px] bg-neutral-300 dark:bg-neutral-600"
-          )}
-          aria-hidden
-        />
+      {/* Chat column */}
+      <ol className="space-y-4">
+        {items.map((h, i) => {
+          const side = guessSide(h as any, i);
+          const isUniv = side === "univ"; // univ = right bubble
+          const date = h.date?.trim()?.length ? h.date : dummyDate(i);
 
-        <ol className="space-y-6">
-          {items.map((h, i) => {
-            const side = guessSide(h as any, i);
-            const isUniv = side === "univ";
-            const date = h.date?.trim()?.length ? h.date : dummyDate(i);
+          return (
+            <li
+              key={`${date}-${i}`}
+              className={cn("flex", isUniv ? "justify-end" : "justify-start")}
+            >
+              <ChatBubble
+                side={side}
+                date={date}
+                text={h.text}
+                files={h.files}
+                comment={(h as any).comment ?? (h as any).note}
+                dateAlign={isUniv ? "right" : "left"}
+              />
+            </li>
+          );
+        })}
 
-            return (
-              <li
-                key={`${date}-${i}`}
-                className="relative grid grid-cols-1 gap-3 md:grid-cols-[1fr_2rem_1fr] md:gap-6"
-              >
-                {/* LEFT (Company) */}
-                <div
-                  className={cn(
-                    "flex justify-end md:col-start-1",
-                    isUniv && "md:pointer-events-none md:opacity-0"
-                  )}
-                >
-                  <TimelineCard
-                    side="company"
-                    date={date}
-                    text={h.text}
-                    files={h.files}
-                    comment={(h as any).comment ?? (h as any).note}
-                    className="pl-10 md:pl-0"
-                    dateAlign="right"
-                  />
-                </div>
-
-                {/* CENTER DOT (desktop) */}
-                <div className="relative hidden md:col-start-2 md:block">
-                  <span
-                    className={cn(
-                      "absolute top-3 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full ring-4 ring-white",
-                      isUniv ? "bg-emerald-500" : "bg-slate-500"
-                    )}
-                    aria-hidden
-                  />
-                </div>
-
-                {/* RIGHT (University) */}
-                <div
-                  className={cn("md:col-start-3", !isUniv && "md:pointer-events-none md:opacity-0")}
-                >
-                  <TimelineCard
-                    side="univ"
-                    date={date}
-                    text={h.text}
-                    files={h.files}
-                    comment={(h as any).comment ?? (h as any).note}
-                    className="pl-10 md:pl-0"
-                  />
-                </div>
-
-                {/* MOBILE DOT */}
-                <span
-                  className={cn(
-                    "absolute top-3 left-5 h-3 w-3 -translate-x-1/2 rounded-full ring-4 ring-white md:hidden",
-                    isUniv ? "bg-emerald-500" : "bg-slate-500"
-                  )}
-                  aria-hidden
-                />
-              </li>
-            );
-          })}
-
-          {items.length === 0 && <li className="text-muted-foreground text-sm">No history yet.</li>}
-        </ol>
-      </div>
+        {items.length === 0 && <li className="text-muted-foreground text-sm">No history yet.</li>}
+      </ol>
     </section>
   );
 }
 
-/* --------------------------------- Card --------------------------------- */
+/* ============================== Chat Bubble ============================== */
 
-function TimelineCard({
+function ChatBubble({
   side,
   date,
   text,
   files,
   comment,
-  className,
-  dateAlign = "left", // <- default alignment
+  dateAlign = "left",
 }: {
   side: Side;
   date: string;
   text: string;
   files?: { id: string; name: string; url: string }[];
   comment?: string;
-  className?: string;
   dateAlign?: "left" | "right" | "center";
 }) {
   const isUniv = side === "univ";
   const hasDetails = !!comment || !!files?.length;
 
-  const dateAlignClass = {
-    left: "text-left",
-    right: "text-right",
-    center: "text-center",
-  }[dateAlign];
+  const dateAlignClass =
+    dateAlign === "center" ? "text-center" : dateAlign === "right" ? "text-right" : "text-left";
 
   return (
-    <Collapsible className={cn("w-fit", className)}>
-      {/* Date on top */}
-      <div className={cn("text-muted-foreground mb-1 text-xs font-medium", dateAlignClass)}>
-        {date}
-      </div>
-
+    <Collapsible
+      className={cn(
+        "max-w-[min(42rem,85%)]",
+        isUniv ? "items-end" : "items-start",
+        "flex flex-col gap-1"
+      )}
+    >
+      {/* Bubble */}
       <div
         className={cn(
-          "rounded-lg border bg-white/70 shadow-sm transition",
-          isUniv ? "border-emerald-200" : "border-slate-200"
+          "rounded-2xl border bg-white/80 shadow-sm transition",
+          "focus-within:shadow-md hover:shadow-md",
+          // side color accents
+          isUniv ? "border-emerald-200" : "border-slate-200",
+          // bubble padding
+          "px-3 py-2"
         )}
       >
-        {/* Summary row */}
-        <div className="flex items-start justify-between gap-3 p-3">
+        {/* Header row: role + paperclip + chevron */}
+        <div className="mb-1 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-muted-foreground mb-0.5 flex items-center gap-2 text-xs">
-              <span
-                className={cn(
-                  "rounded px-1.5 py-0.5 font-medium",
-                  isUniv ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-800"
-                )}
-              >
-                {isUniv ? "University" : "Company"}
-              </span>
-
-              {/* Paperclip + count */}
-              {files?.length ? (
-                <span className="inline-flex items-center gap-1">
-                  <Paperclip className="h-3.5 w-3.5" />
-                  {files.length}
+            <div className="flex justify-between gap-2">
+              <div className="text-muted-foreground mb-1 flex items-center gap-2 text-xs">
+                <span
+                  className={cn(
+                    "rounded px-1.5 py-0.5 font-medium",
+                    isUniv ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-800"
+                  )}
+                >
+                  {isUniv ? "University" : "Company"}
                 </span>
+
+                <time>{date}</time>
+                {/* Paperclip + count */}
+                {files?.length ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Paperclip className="h-3.5 w-3.5" />
+                    {files.length}
+                  </span>
+                ) : null}
+              </div>
+
+              {hasDetails ? (
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-foreground h-7 w-7 shrink-0"
+                    aria-label="Toggle details"
+                  >
+                    <ChevronDown className="h-4 w-4 transition data-[state=open]:rotate-180" />
+                  </Button>
+                </CollapsibleTrigger>
               ) : null}
             </div>
-            <p className="text-foreground ml-0.5 min-w-0 truncate text-sm font-medium">{text}</p>
-          </div>
 
-          {hasDetails ? (
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-foreground h-7 w-7 shrink-0"
-                aria-label="Toggle details"
-              >
-                <ChevronDown className="h-4 w-4 transition data-[state=open]:rotate-180" />
-              </Button>
-            </CollapsibleTrigger>
-          ) : null}
+            {/* Message text */}
+            <p className="text-foreground min-w-0 text-sm font-medium break-words">{text}</p>
+          </div>
         </div>
 
-        {/* Details */}
+        {/* Dropdown content */}
         {hasDetails && (
-          <CollapsibleContent className="border-t p-3 text-sm">
+          <CollapsibleContent className="border-t pt-2 text-sm">
             {comment ? <p className="text-foreground mb-2">{comment}</p> : null}
 
             {files?.length ? (
@@ -272,5 +225,3 @@ function TimelineCard({
     </Collapsible>
   );
 }
-
-
