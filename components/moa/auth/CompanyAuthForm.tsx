@@ -9,11 +9,13 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/app/api/entity.api";
 import { useEntities } from "@/app/api/school.api";
 import { Entity } from "@/types/db";
+import { Input } from "@/components/ui/input";
 
 export function CompanyAuthForm() {
   const router = useRouter();
   const [options, setOptions] = useState<{ id: string; name: string }[]>([]);
   const [company, setCompany] = useState<string | null>("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const e = useEntities();
@@ -42,13 +44,13 @@ export function CompanyAuthForm() {
   return (
     <form className="grid gap-4" onSubmit={onSubmit}>
       <div className="grid gap-2">
-        <Label htmlFor="tin">Company TIN</Label>
+        <Label htmlFor="tin">Select Company</Label>
         <Autocomplete
-          value={company}
           placeholder="Enter company name..."
           options={options}
           setter={(value) => setCompany(value ?? null)}
         />
+        <Input placeholder="Enter password..."></Input>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
