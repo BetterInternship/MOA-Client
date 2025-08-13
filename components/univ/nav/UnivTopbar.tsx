@@ -87,20 +87,8 @@ export default function UnivTopbar() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
-              <span className="font-semibold">MOA Management Tool</span>
+              <span className="font-semibold">MOA Management</span>
             </Link>
-
-            <nav className="ml-4">
-              <Link
-                href="/dashboard"
-                className={cn(
-                  "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
-                  pathname === "/dashboard" && "bg-accent text-foreground"
-                )}
-              >
-                Dashboard
-              </Link>
-            </nav>
           </div>
 
           {/* Scrollable nav on mobile */}
