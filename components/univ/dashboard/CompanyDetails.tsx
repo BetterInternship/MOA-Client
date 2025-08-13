@@ -6,9 +6,10 @@ import MoaDetailsCard from "./MoaDetailsCard";
 import CompanyInfoCard from "./CompanyInfoCard";
 import DocumentsCard from "./DocumentsCard";
 import ActionsBar from "./ActionsBar";
-import { useCompanyDetail, type CompanyRow } from "@/hooks/useCompanyDetail";
+import { useCompanyDetail } from "@/hooks/useCompanyDetail";
+import { Entity } from "@/types/db";
 
-export default function CompanyDetails({ company }: { company: CompanyRow }) {
+export default function CompanyDetails({ company }: { company: Entity }) {
   const { loading, view, reqData } = useCompanyDetail(company);
 
   if (!view || !reqData) return null;
@@ -29,7 +30,7 @@ export default function CompanyDetails({ company }: { company: CompanyRow }) {
         phone={view.phone}
       />
 
-      <DocumentsCard documents={view.documents} />
+      {/* <DocumentsCard documents={view.documents} /> */}
 
       <CompanyRequestHistory req={reqData} />
 

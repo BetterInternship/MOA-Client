@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import CompanyRequestHistory from "@/components/univ/shared/CompanyRequestHistory";
+import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
+
+// import { useEntities } from "@/app/api/school.api"; // keep if you'll use later
 
 type Stat = { label: string; value: number; color: string };
 type Activity = { date: string; company: string; action: string; performedBy: string };
@@ -15,20 +19,74 @@ const columns: ColumnDef<Activity>[] = [
   { accessorKey: "performedBy", header: "Performed by" },
 ];
 
-export default function UnivDashboardPage() {
-  const [stats, setStats] = useState<Stat[] | null>(null);
-  const [activities, setActivities] = useState<Activity[] | null>(null);
+// ---- Inline dummy data (rendered immediately, replaced after fetch) ----
+const DUMMY_STATS: Stat[] = [
+  { label: "Active MOAs", value: 18, color: "bg-emerald-600" },
+  { label: "Pending MOA Requests", value: 7, color: "bg-amber-500" },
+  { label: "Companies Registered", value: 124, color: "bg-blue-600" },
+  { label: "Under Review", value: 2, color: "bg-rose-400 text-rose-100" },
+];
 
-  // Optional: if you know DLSU's schoolId, pass ?schoolId=...
+const DUMMY_ACTIVITIES: Activity[] = [
+  {
+    date: "08/10/2025",
+    company: "Aboitiz Power Corporation",
+    action: "MOA Approved",
+    performedBy: "Legal - DLSU",
+  },
+  {
+    date: "08/09/2025",
+    company: "Globe Telecom",
+    action: "Requested Clarification",
+    performedBy: "Approver - DLSU",
+  },
+  {
+    date: "08/08/2025",
+    company: "Jollibee Foods Corp.",
+    action: "Company Registered",
+    performedBy: "Admin - DLSU",
+  },
+  { date: "08/07/2025", company: "Accenture", action: "MOA Uploaded", performedBy: "Company Rep" },
+];
+
+export default function UnivDashboardPage() {
+  const [stats, setStats] = useState<Stat[]>(DUMMY_STATS);
+  const [activities, setActivities] = useState<Activity[]>(DUMMY_ACTIVITIES);
+
   useEffect(() => {
+    let alive = true;
     (async () => {
-      const [s, a] = await Promise.all([
-        fetch("/api/univ/dashboard/stats").then((r) => r.json()),
-        fetch("/api/univ/dashboard/activity?days=180&limit=100").then((r) => r.json()),
-      ]);
-      setStats(s.stats);
-      setActivities(a.activities);
+      try {
+        const [sRes, aRes] = await Promise.all([
+          fetch("/api/univ/dashboard/stats"),
+          fetch("/api/univ/dashboard/activity?days=180&limit=100"),
+        ]);
+
+        if (sRes.ok) {
+          const sJson = await sRes.json();
+          // Expecting { stats: Stat[] }, fallback safely
+          const nextStats: Stat[] =
+            Array.isArray(sJson?.stats) && sJson.stats.length ? sJson.stats : DUMMY_STATS;
+          if (alive) setStats(nextStats);
+        }
+
+        if (aRes.ok) {
+          const aJson = await aRes.json();
+          // Expecting { activities: Activity[] }, fallback safely
+          const nextActivities: Activity[] =
+            Array.isArray(aJson?.activities) && aJson.activities.length
+              ? aJson.activities
+              : DUMMY_ACTIVITIES;
+          if (alive) setActivities(nextActivities);
+        }
+      } catch (err) {
+        // Keep dummy data if network/API fails
+        console.error("Dashboard fetch error:", err);
+      }
     })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   return (
@@ -43,7 +101,7 @@ export default function UnivDashboardPage() {
 
       {/* Stats Summary */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {(stats ?? []).map((stat) => (
+        {stats.map((stat) => (
           <div
             key={stat.label}
             className="flex flex-col items-center justify-center rounded-lg border bg-white p-6"
@@ -66,9 +124,11 @@ export default function UnivDashboardPage() {
           <CardTitle className="text-lg">Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={activities ?? []} searchKey="company" />
+          <DataTable columns={columns} data={activities} searchKey="company" />
         </CardContent>
       </Card>
+
+      {/* <CompanyHistoryTree /> */}
     </div>
   );
 }

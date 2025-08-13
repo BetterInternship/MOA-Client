@@ -12,25 +12,20 @@ import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import { FileSignature } from "lucide-react";
 
 import type { MoaRequest } from "@/types/moa-request";
+import { useMoaRequests } from "@/app/api/school.api";
 
 export default function MoaRequestsPage() {
   const [items, setItems] = useState<MoaRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const moaRequests = useMoaRequests();
 
   // Load list on mount (and whenever you want to refetch, add deps)
   useEffect(() => {
-    const ctrl = new AbortController();
-    (async () => {
-      const res = await fetch(`/api/univ/moa-requests?limit=100`, { signal: ctrl.signal });
-      const data = await res.json();
-      setItems(data.items ?? []);
-      setSelectedId((prev) => prev || data.items?.[0]?.id || "");
-    })().catch(console.error);
-    return () => ctrl.abort();
-  }, []);
+    setItems(moaRequests.requests ?? []);
+  }, [moaRequests]);
 
-  const selected = useMemo(() => items.find((x) => x.id === selectedId), [items, selectedId]);
+  const selected = useMemo(() => items?.find((x) => x.id === selectedId), [items, selectedId]);
 
   async function sendRequestForResponse(msg: string) {
     if (!selectedId) return;

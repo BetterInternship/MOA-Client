@@ -2,26 +2,40 @@
 
 import * as React from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/app/api/entity.api";
+import { useEntities } from "@/app/api/school.api";
+import { Entity } from "@/types/db";
+import { Input } from "@/components/ui/input";
 
 export function CompanyAuthForm() {
   const router = useRouter();
+  const [options, setOptions] = useState<{ id: string; name: string }[]>([]);
   const [company, setCompany] = useState<string | null>("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const e = useEntities();
+  const auth = useAuth();
+
+  useEffect(() => {
+    setOptions(e.entities.map((entity: Entity) => ({ id: entity.id, name: entity.display_name })));
+  }, [e.entities]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    alert(`Hello ${company}`);
-    // TODO: Call your real company auth endpoint here
-    await new Promise((r) => setTimeout(r, 600));
+    await auth.signIn({
+      data: {
+        legal_entity_name: "",
+        password: "",
+      },
+    });
 
     setLoading(false);
     router.push("/dashboard");
@@ -30,22 +44,18 @@ export function CompanyAuthForm() {
   return (
     <form className="grid gap-4" onSubmit={onSubmit}>
       <div className="grid gap-2">
-        <Label htmlFor="tin">Company TIN</Label>
+        <Label htmlFor="tin">Select Company</Label>
         <Autocomplete
-          value={company}
           placeholder="Enter company name..."
-          options={[
-            { id: "ahh", name: "I AM A Company" },
-            { id: "lol", name: "WOOG" },
-            { id: "this shud be a uuid", name: "To be replaced later" },
-          ]}
+          options={options}
           setter={(value) => setCompany(value ?? null)}
         />
+        <Input placeholder="Enter password..."></Input>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <Button type="submit" disabled={loading}>
+      <Button disabled={loading} onClick={(e) => onSubmit}>
         {loading ? "Verifying..." : "Continue"}
       </Button>
     </form>

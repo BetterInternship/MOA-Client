@@ -14,13 +14,8 @@ export type MoaHistoryItem = {
 
 export type MoaRequest = {
   id: string;
-  companyName: string;
-  contactPerson: string;
-  email: string;
-  tin: string;
-  industry: string;
-  requestedAt: string; // MM/DD/YYYY
-  status: MoaStatus;
-  notes?: string;
-  history: MoaHistoryItem[];
+  entity_id: string;
+  school_id: string;
+  status: string;
+  timestamp: string;
 };

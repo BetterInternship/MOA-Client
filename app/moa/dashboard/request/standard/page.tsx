@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
+import { useMoaRequests } from "@/app/api/entity.api";
 
 const FormSchema = z.object({
   signatoryName: z.string().trim().min(2, "Please enter the full name."),
@@ -36,6 +37,7 @@ type FormValues = z.infer<typeof FormSchema>;
 export default function StandardMoaRequestPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const moaRequests = useMoaRequests();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -50,14 +52,13 @@ export default function StandardMoaRequestPage() {
   async function onSubmit(values: FormValues) {
     try {
       setSubmitting(true);
-      // TODO: replace with your API endpoint
-      // const res = await fetch("/api/moa/standard", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   credentials: "include",
-      //   body: JSON.stringify(values),
-      // });
-      // if (!res.ok) throw new Error("Submit failed");
+      const r = await moaRequests.create({
+        data: {
+          entity_id: "e2ba4aec-4680-49cf-9499-f5ff09760827",
+          school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
+        },
+      });
+
       console.log("Submitting Standard MOA request:", values);
       router.push("/dashboard/status"); // or push to the created request page
     } catch (err) {
@@ -81,7 +82,7 @@ export default function StandardMoaRequestPage() {
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <span>Processing time:</span>
           <Badge variant="secondary" className="text-sm font-medium">
-            2–4 weeks
+            1 minute
           </Badge>
         </div>
 
