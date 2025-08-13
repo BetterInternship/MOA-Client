@@ -1,4 +1,5 @@
 // lib/types/db.ts
+import { EntityTables, SchoolTables } from "@betterinternship/schema.moa";
 
 // ---------- Shared ----------
 export type UUID = string; // randomUUID
@@ -16,63 +17,15 @@ export type EntityDocument = {
   url: URLString;
 };
 
-export type Entity = {
-  id: string;
-  type: string;
-  display_name: string;
-  legal_identifier: string;
-  contact_name?: string;
-  contact_email?: string;
-};
-
-export type EntityLog = {
-  uuid: UUID;
-  update: "registered" | "requested" | "approved" | "blacklisted" | "revoked" | "note";
-  source: SourceType;
-  target: string; // e.g., school short name or entity id
-  file: URLString | null; // link to related doc if any
-  timestamp: ISODate;
-  entityId: UUID;
-};
-
-export type NewEntityRequest = {
-  entityID: UUID;
-  messageID: UUID;
-  processedBy?: UUID; // schoolAccountId
-  processedDate?: ISODate;
-  resultAction?: RequestResult;
-  timestamp: ISODate;
-};
-
-export type MoaRequest = {
-  messageID: UUID;
-  entityID: UUID;
-  notifySchoolAccount?: UUID; // schoolAccountId
-  schoolID: UUID;
-  processedBy?: UUID; // schoolAccountId
-  processedDate?: ISODate;
-  resultAction?: RequestResult;
-  timestamp: ISODate;
-};
-
-export type Thread = {
-  uid: UUID;
-};
-
-export type Message = {
-  uid: UUID;
-  sourceType: SourceType;
-  sourceId: UUID;
-  targetId: UUID;
-  threadID: UUID;
-  MOADocument?: URLString | null;
-  action: "approve" | "deny" | "reply";
-  comments?: string;
-  attachments?: URLString[];
-  timestamp: ISODate;
-};
+export type Entity = EntityTables<"entities">;
+export type MoaRequest = EntityTables<"moa_requests">;
+export type NewEntityRequet = EntityTables<"new_entity_requests">;
+export type EntityLog = EntityTables<"entity_logs">;
+export type Thread = EntityTables<"threads">;
+export type Message = EntityTables<"messages">;
 
 // ---------- UNIV SIDE ----------
+export type MoaHistory = SchoolTables<"moa_histories">;
 export type School = {
   uid: UUID;
   fullName: string;
@@ -94,12 +47,6 @@ export type SchoolLog = {
   actionType: string;
   entity_id: UUID;
   datetime: ISODate;
-};
-
-export type MoaHistory = {
-  date: ISODate;
-  action: string;
-  details?: string;
 };
 
 export type SchoolEntity = {

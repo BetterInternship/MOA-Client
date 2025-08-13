@@ -48,37 +48,19 @@ export default function MoaRequestsPage() {
   async function approve(note: string) {
     if (!selectedId) return;
     setBusy(true);
-    try {
-      const res = await fetch(`/api/univ/moa-requests/${selectedId}/approve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note }),
-      });
-      const data = await res.json();
-      if (res.ok && data.item) {
-        setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
-      }
-    } finally {
-      setBusy(false);
-    }
+    await moaRequests.approve({
+      id: selectedId,
+    });
+    window.location.reload();
   }
 
   async function deny(note: string) {
     if (!selectedId) return;
     setBusy(true);
-    try {
-      const res = await fetch(`/api/univ/moa-requests/${selectedId}/deny`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note }),
-      });
-      const data = await res.json();
-      if (res.ok && data.item) {
-        setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
-      }
-    } finally {
-      setBusy(false);
-    }
+    await moaRequests.deny({
+      id: selectedId,
+    });
+    window.location.reload();
   }
 
   return (

@@ -22,7 +22,9 @@ export function CompanyAuthForm() {
   const auth = useAuth();
 
   useEffect(() => {
-    setOptions(e.entities.map((entity: Entity) => ({ id: entity.id, name: entity.display_name })));
+    setOptions(
+      e.entities?.map((entity: Entity) => ({ id: entity.id, name: entity.display_name })) ?? []
+    );
   }, [e.entities]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -50,7 +52,7 @@ export function CompanyAuthForm() {
           options={options}
           setter={(value) => setCompany(value ?? null)}
         />
-        <Input placeholder="Enter password..."></Input>
+        <Input type="password" placeholder="Enter password..."></Input>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

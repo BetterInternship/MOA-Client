@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { MoaRequest } from "@/types/moa-request";
 import { useEntities } from "@/app/api/school.api";
-import { Entity } from "@/types/db";
+import { Entity, MoaRequest } from "@/types/db";
+import { formatWhen } from "@/lib/format";
 
 type Props = {
   items: MoaRequest[];
@@ -19,22 +19,23 @@ export default function CompanyList({ items, selectedId, onSelect }: Props) {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return items;
+    if (!s) return items.filter((r) => r.outcome == "pending");
     return items.filter(
-      (r) => true
+      (r) => r.outcome == "pending"
       // r.companyName.toLowerCase().includes(s) ||
       // r.contactPerson.toLowerCase().includes(s) ||
       // r.industry.toLowerCase().includes(s)
     );
   }, [q, items]);
-  console.log(entities.entities, items);
 
   return (
     <aside className="h-full">
       <div className="space-y-3 p-3">
         {/* Single impact stat */}
         <div className="flex items-end gap-2 rounded-lg border border-rose-300 bg-rose-50 p-3">
-          <div className="-mt-1 text-4xl leading-none font-bold text-rose-900">{count}</div>
+          <div className="-mt-1 text-4xl leading-none font-bold text-rose-900">
+            {filtered.length}
+          </div>
           <div className="text-xs font-semibold tracking-wider text-rose-700/90 uppercase">
             outstanding MOA requests
           </div>
@@ -59,10 +60,7 @@ export default function CompanyList({ items, selectedId, onSelect }: Props) {
                           ?.display_name ?? ""}
                       </div>
                       <div className="text-muted-foreground text-xs">
-                        Requested:{" "}
-                        {new Date(Date.parse(r.timestamp)).toLocaleDateString() +
-                          ", " +
-                          new Date(Date.parse(r.timestamp)).toLocaleTimeString()}
+                        Requested: {formatWhen(r.timestamp)}
                       </div>
                     </div>
                     {/* <StatusChip status={r.status as any} /> */}

@@ -4,10 +4,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "./StatusBadge";
 import { cn } from "@/lib/utils";
-import type { MoaItem, MoaStatus } from "@/types/moa";
+import type { MoaStatus } from "@/types/moa";
+import { MoaRequest } from "@/types/db";
+import { formatWhen } from "@/lib/format";
+import { useDocsControllerGetMoaSignedDocument } from "@/app/api";
 
 type Props = {
-  items: MoaItem[];
+  requests: MoaRequest[];
   loading?: boolean;
   title?: string;
 };
@@ -22,10 +25,11 @@ const statusColors: Record<MoaStatus, string> = {
   Pending: "bg-muted border-muted",
 };
 
-export default function MoaStatus({ items, loading, title = "MOA Status" }: Props) {
-  const moa = (items ?? [])
-    .filter((i) => (i.type || "").toLowerCase().includes("moa"))
-    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0];
+export default function MoaStatus({ requests, loading, title = "MOA Status" }: Props) {
+  const moa = (requests ?? []).sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  )[0];
+  const signedDocument = useDocsControllerGetMoaSignedDocument(moa?.id ?? "");
 
   return (
     <section aria-label={title} className="space-y-4">
@@ -40,16 +44,22 @@ export default function MoaStatus({ items, loading, title = "MOA Status" }: Prop
           No MOA on file yet.
         </div>
       ) : (
-        <Card className={cn(statusColors[moa.status as MoaStatus] || "bg-white")}>
+        <Card className={cn(statusColors[moa.outcome as MoaStatus] || "bg-white")}>
           <CardContent className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-              <span className="text-xl font-semibold">{moa.type}</span>
-              <div className="text-muted-foreground flex gap-1">
-                Valid until
-                <span className="font-semibold">{moa.submittedAt}</span>
+              <div className="text-muted-foreground flex flex-col gap-1">
+                <span className="">
+                  Requested at <span className="font-semibold">{formatWhen(moa.timestamp)}</span>
+                </span>
+                <span className="">
+                  Document Verification Code:{" "}
+                  <pre className="inline-block rounded-[0.25em] bg-gray-200 px-2 py-1 hover:cursor-pointer">
+                    {signedDocument.data?.data?.signedDocument?.verification_code ?? "loading..."}
+                  </pre>
+                </span>
               </div>
             </div>
-            <StatusBadge status={moa.status} className="text-base font-semibold uppercase" />
+            <StatusBadge status={moa.outcome ?? ""} className="text-base font-semibold uppercase" />
           </CardContent>
         </Card>
       )}

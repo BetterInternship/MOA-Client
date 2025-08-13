@@ -52,15 +52,13 @@ export default function StandardMoaRequestPage() {
   async function onSubmit(values: FormValues) {
     try {
       setSubmitting(true);
-      const r = await moaRequests.create({
+      const r = await moaRequests.createTemplated({
         data: {
           entity_id: "e2ba4aec-4680-49cf-9499-f5ff09760827",
           school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
         },
       });
-
-      console.log("Submitting Standard MOA request:", values);
-      router.push("/dashboard/status"); // or push to the created request page
+      router.push("/dashboard");
     } catch (err) {
       console.error(err);
     } finally {
@@ -87,7 +85,10 @@ export default function StandardMoaRequestPage() {
         </div>
 
         <Button asChild variant="outline">
-          <Link href="/templates/standard-moa.pdf" target="_blank">
+          <Link
+            href="https://storage.googleapis.com/better-internship-public-bucket/dlsu-standard-moa-template.pdf"
+            target="_blank"
+          >
             <Download className="mr-2 h-4 w-4" />
             Download Standard MOA Template
           </Link>

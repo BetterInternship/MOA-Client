@@ -17,20 +17,20 @@ export default function StatusBadge({ status, className }: Props) {
     </Badge>
   );
 
-  switch (status) {
-    case "Active":
+  switch (status.toLowerCase()) {
+    case "active":
       return base("success", "Active");
-    case "Inactive":
+    case "inactive":
       return base("outline", "Inactive");
-    case "Approved":
+    case "approved":
       return base("success", "Approved");
-    case "Rejected":
+    case "rejected":
       return base("destructive", "Rejected");
-    case "Needs Info":
+    case "needs info":
       return base("outline", "Needs Info");
-    case "Under Review":
+    case "under review":
       return base("secondary", "Under Review");
-    case "Pending":
+    case "pending":
     default:
       return base("default", "Pending");
   }

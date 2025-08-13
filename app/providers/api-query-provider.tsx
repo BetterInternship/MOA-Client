@@ -12,8 +12,8 @@ import {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      gcTime: 24 * 60 * 60 * 1000,
-      staleTime: 24 * 60 * 60 * 1000,
+      gcTime: 1000, // ! lol change this back to 1 day eventually
+      staleTime: 1000, // ! lol change this back to 1 day eventually
     },
   },
 });
@@ -26,7 +26,7 @@ const asyncStoragePersister = createAsyncStoragePersister({
 persistQueryClient({
   queryClient,
   persister: asyncStoragePersister,
-  maxAge: 24 * 60 * 60 * 1000,
+  maxAge: 1000, // ! lol change this back to 1 day eventually
 });
 
 /**

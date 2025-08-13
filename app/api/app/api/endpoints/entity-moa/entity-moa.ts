@@ -220,7 +220,7 @@ export function useEntityMoaControllerGetMineSuspense<
   return query;
 }
 
-export const entityMoaControllerRequestNew = (
+export const entityMoaControllerRequestNewTemplated = (
   requestNewMoaDto: RequestNewMoaDto,
   signal?: AbortSignal
 ) => {
@@ -233,23 +233,23 @@ export const entityMoaControllerRequestNew = (
   });
 };
 
-export const getEntityMoaControllerRequestNewMutationOptions = <
+export const getEntityMoaControllerRequestNewTemplatedMutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof entityMoaControllerRequestNew>>,
+    Awaited<ReturnType<typeof entityMoaControllerRequestNewTemplated>>,
     TError,
     { data: RequestNewMoaDto },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof entityMoaControllerRequestNew>>,
+  Awaited<ReturnType<typeof entityMoaControllerRequestNewTemplated>>,
   TError,
   { data: RequestNewMoaDto },
   TContext
 > => {
-  const mutationKey = ["entityMoaControllerRequestNew"];
+  const mutationKey = ["entityMoaControllerRequestNewTemplated"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -257,27 +257,27 @@ export const getEntityMoaControllerRequestNewMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof entityMoaControllerRequestNew>>,
+    Awaited<ReturnType<typeof entityMoaControllerRequestNewTemplated>>,
     { data: RequestNewMoaDto }
   > = (props) => {
     const { data } = props ?? {};
 
-    return entityMoaControllerRequestNew(data);
+    return entityMoaControllerRequestNewTemplated(data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type EntityMoaControllerRequestNewMutationResult = NonNullable<
-  Awaited<ReturnType<typeof entityMoaControllerRequestNew>>
+export type EntityMoaControllerRequestNewTemplatedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof entityMoaControllerRequestNewTemplated>>
 >;
-export type EntityMoaControllerRequestNewMutationBody = RequestNewMoaDto;
-export type EntityMoaControllerRequestNewMutationError = unknown;
+export type EntityMoaControllerRequestNewTemplatedMutationBody = RequestNewMoaDto;
+export type EntityMoaControllerRequestNewTemplatedMutationError = unknown;
 
-export const useEntityMoaControllerRequestNew = <TError = unknown, TContext = unknown>(
+export const useEntityMoaControllerRequestNewTemplated = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof entityMoaControllerRequestNew>>,
+      Awaited<ReturnType<typeof entityMoaControllerRequestNewTemplated>>,
       TError,
       { data: RequestNewMoaDto },
       TContext
@@ -285,12 +285,86 @@ export const useEntityMoaControllerRequestNew = <TError = unknown, TContext = un
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof entityMoaControllerRequestNew>>,
+  Awaited<ReturnType<typeof entityMoaControllerRequestNewTemplated>>,
   TError,
   { data: RequestNewMoaDto },
   TContext
 > => {
-  const mutationOptions = getEntityMoaControllerRequestNewMutationOptions(options);
+  const mutationOptions = getEntityMoaControllerRequestNewTemplatedMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const entityMoaControllerRequestNewCustom = (
+  requestNewMoaDto: RequestNewMoaDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxios<null>({
+    url: `/api/entity/moa/request-custom`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: requestNewMoaDto,
+    signal,
+  });
+};
+
+export const getEntityMoaControllerRequestNewCustomMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
+    TError,
+    { data: RequestNewMoaDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
+  TError,
+  { data: RequestNewMoaDto },
+  TContext
+> => {
+  const mutationKey = ["entityMoaControllerRequestNewCustom"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
+    { data: RequestNewMoaDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return entityMoaControllerRequestNewCustom(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EntityMoaControllerRequestNewCustomMutationResult = NonNullable<
+  Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>
+>;
+export type EntityMoaControllerRequestNewCustomMutationBody = RequestNewMoaDto;
+export type EntityMoaControllerRequestNewCustomMutationError = unknown;
+
+export const useEntityMoaControllerRequestNewCustom = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
+      TError,
+      { data: RequestNewMoaDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
+  TError,
+  { data: RequestNewMoaDto },
+  TContext
+> => {
+  const mutationOptions = getEntityMoaControllerRequestNewCustomMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

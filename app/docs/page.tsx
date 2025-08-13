@@ -1,7 +1,7 @@
 // app/docs/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,14 @@ import { VerificationDetailsCard } from "@/components/docs/VerificationDetailsCa
 import { PdfViewerPanel } from "@/components/docs/PdfViewerPanel";
 import { NotFoundCard } from "@/components/docs/NotFoundCard";
 import { SerialInput } from "@/components/docs/SerialInput";
+import { useDocsControllerGetByVerificationCode } from "../api";
 
 const SerialSchema = z
   .string()
   .trim()
   .regex(
-    /^\d{10}-\d{10}-\d{10}$/,
-    "Serial must be 10-10-10 digits (e.g., 1691769600-1234567890-0987654321)"
+    /^\d{10}-[A-Fa-f0-9]{8}-[A-Fa-f0-9]{8}$/,
+    "Serial must be 10-8-8 characters (e.g., 1234567890-aaaaaaaa-bbbbbbbb)"
   );
 
 export default function VerifyDocsPage() {
@@ -25,8 +26,14 @@ export default function VerifyDocsPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerificationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const signedDocument = useDocsControllerGetByVerificationCode(serial);
 
   const hasValid = !!result && result.status !== "not_found";
+
+  useEffect(() => {
+    const doc = signedDocument.data?.data?.signedDocument;
+    if (doc) console.log(signedDocument.data?.data?.signedDocument);
+  }, [signedDocument]);
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
@@ -40,18 +47,6 @@ export default function VerifyDocsPage() {
     }
 
     setLoading(true);
-    try {
-      const res = await fetch(`/api/docs/verify?serial=${encodeURIComponent(parsed.data)}`, {
-        cache: "no-store",
-      });
-      if (!res.ok) throw new Error("Request failed");
-      const data = (await res.json()) as VerificationResponse;
-      setResult(data);
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
   }
 
   return (
@@ -75,11 +70,12 @@ export default function VerifyDocsPage() {
               onSubmit={handleVerify}
               className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row"
             >
-              <SerialInput
+              <Input
                 value={serial}
-                onChange={(v) => setSerial(v)}
+                placeholder="0123456789-0123abcd-4567defa"
+                onChange={(v) => setSerial(v.target.value)}
                 aria-invalid={!!error}
-                className="flex-1"
+                className="h-12 flex-1 font-mono"
               />
               <Button type="submit" className="h-11 sm:w-40" disabled={loading}>
                 <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying…" : "Verify"}
@@ -110,9 +106,9 @@ export default function VerifyDocsPage() {
             onSubmit={handleVerify}
             className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row"
           >
-            <SerialInput
+            <Input
               value={serial}
-              onChange={(v) => setSerial(v)}
+              onChange={(v) => setSerial(v.target.value)}
               aria-invalid={!!error}
               className="flex-1"
             />
@@ -150,47 +146,5 @@ export default function VerifyDocsPage() {
         </div>
       ) : null}
     </section>
-  );
-}
-
-function Form({
-  serial,
-  setSerial,
-  loading,
-  onSubmit,
-}: {
-  serial: string;
-  setSerial: (v: string) => void;
-  loading: boolean;
-  onSubmit: (e: React.FormEvent) => void;
-}) {
-  return (
-    <div className="w-full">
-      {/* Title (header on the form) */}
-      <div className="mb-6 space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Verify a DLSU Document</h1>
-        <p className="text-muted-foreground text-sm">
-          Enter the <strong>Serial Number</strong> printed on the document to check its
-          authenticity.
-        </p>
-      </div>
-
-      <form onSubmit={onSubmit} className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row">
-        <Input
-          placeholder="1691769600-1234567890-0987654321"
-          value={serial}
-          onChange={(e) => setSerial(e.target.value.trim())}
-          inputMode="numeric"
-          pattern="\d{10}-\d{10}-\d{10}"
-          autoComplete="off"
-          aria-label="Serial number"
-          className="h-11 flex-1"
-        />
-
-        <Button type="submit" className="h-11 sm:w-40" disabled={loading}>
-          <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying…" : "Verify"}
-        </Button>
-      </form>
-    </div>
   );
 }
