@@ -74,14 +74,14 @@ export default function NegotiatedMoaRequestPage() {
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <span>Processing time:</span>
           <Badge variant="secondary" className="text-sm font-medium">
-            3–6 weeks
+            4 weeks
           </Badge>
         </div>
       </div>
 
       <Alert variant="destructive">
         <Info className="h-4 w-4" />
-        <AlertTitle>Heads up</AlertTitle>
+        <AlertTitle className="font-semibold">Heads up</AlertTitle>
         <AlertDescription>
           Custom MOA requests require detailed review by our legal team.
         </AlertDescription>

@@ -1,19 +1,28 @@
+// components/moa/dashboard/MoaActions.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
+import { ClipboardList, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export default function RequestMOA() {
+type Props = {
+  onStandard?: () => void;
+  onNegotiated?: () => void;
+};
+
+export default function MoaActions({ onStandard, onNegotiated }: Props) {
   const router = useRouter();
 
+  const handleStandard = onStandard ?? (() => router.push("/dashboard/request/standard"));
+  const handleNegotiated = onNegotiated ?? (() => router.push("/dashboard/request/negotiated"));
+
   return (
-    <div className="flex flex-col gap-6">
+    <section aria-label="Primary actions" className="flex flex-col gap-5">
       <div className="space-y-1">
-        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
-          Request a Memorandum of Agreement
-        </h1>
+        <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+          Request MOA Renewal
+        </h2>
         <p className="text-muted-foreground text-sm">
           Choose the type of MOA that best fits your partnership needs.
         </p>
@@ -21,11 +30,13 @@ export default function RequestMOA() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Standard MOA */}
-        <Card className="p-6 transition-shadow hover:shadow-lg">
+        <div className="hover:border-primary/40 h-full rounded-lg border bg-white p-6 transition hover:shadow-sm">
           <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between">
-              <h2 className="text-foreground text-xl font-semibold">Standard MOA</h2>
-              <Badge variant="success">Recommended</Badge>
+              <h3 className="text-foreground flex items-center gap-2 text-xl font-semibold">
+                <FileText className="h-5 w-5" /> Standard MOA
+              </h3>
+              <Badge variant="success" className="font-semibold">Recommended</Badge>
             </div>
 
             <p className="text-muted-foreground text-sm">
@@ -33,51 +44,45 @@ export default function RequestMOA() {
             </p>
 
             <div className="text-muted-foreground flex items-center gap-1 text-sm">
-              <div>Processing time: </div>
+              <div>Processing time:</div>
               <Badge variant="secondary" className="text-sm! font-medium">
                 1 minute
               </Badge>
             </div>
 
             <div className="flex justify-end">
-              <Button
-                onClick={() => router.push("/dashboard/request/standard")}
-                variant="outline"
-                className="mt-auto w-fit"
-              >
+              <Button onClick={handleStandard} className="mt-auto w-fit">
                 Get Started
               </Button>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Negotiated MOA */}
-        <Card className="p-6 transition-shadow hover:shadow-lg">
+        <div className="hover:border-primary/40 h-full rounded-lg border bg-white p-6 transition hover:shadow-sm">
           <div className="flex flex-col gap-4">
-            <h2 className="text-foreground text-xl font-semibold">Negotiated MOA</h2>
+            <h3 className="text-foreground flex items-center gap-2 text-xl font-semibold">
+              <ClipboardList className="h-5 w-5" /> Negotiated MOA
+            </h3>
             <p className="text-muted-foreground text-sm">
               Submit custom terms for specialized partnerships requiring unique conditions.
             </p>
 
             <div className="text-muted-foreground flex items-center gap-1 text-sm">
-              <div>Processing time: </div>
+              <div>Processing time:</div>
               <Badge variant="secondary" className="text-sm! font-medium">
-                2–4 weeks
+                4 weeks
               </Badge>
             </div>
 
             <div className="flex justify-end">
-              <Button
-                onClick={() => router.push("/dashboard/request/negotiated")}
-                variant="outline"
-                className="mt-auto w-fit"
-              >
+              <Button onClick={handleNegotiated} className="mt-auto w-fit">
                 Get Started
               </Button>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

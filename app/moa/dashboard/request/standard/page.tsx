@@ -82,7 +82,7 @@ export default function StandardMoaRequestPage() {
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <span>Processing time:</span>
           <Badge variant="secondary" className="text-sm font-medium">
-            2–4 weeks
+            1 minute
           </Badge>
         </div>
 
