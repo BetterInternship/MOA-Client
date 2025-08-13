@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "./StatusBadge";
 import { cn } from "@/lib/utils";
 import type { MoaItem, MoaStatus } from "@/types/moa";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   items: MoaItem[];
@@ -36,7 +37,7 @@ export default function MoaStatus({ items, loading, title = "MOA Status" }: Prop
           Loading…
         </div>
       ) : !moa ? (
-        <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
+        <div className="text-muted-foreground rounded-md border border-blue-200 bg-blue-50 p-6  text-sm">
           No MOA requests yet.
         </div>
       ) : (
@@ -48,8 +49,12 @@ export default function MoaStatus({ items, loading, title = "MOA Status" }: Prop
                 Valid until
                 <span className="font-semibold">{moa.submittedAt}</span>
               </div>
+
+              <StatusBadge status={moa.status} className="text-base font-semibold uppercase" />
             </div>
-            <StatusBadge status={moa.status} className="text-base font-semibold uppercase" />
+            <div className="gap-2">
+              <Button className="">Download MOA</Button>
+            </div>
           </CardContent>
         </Card>
       )}

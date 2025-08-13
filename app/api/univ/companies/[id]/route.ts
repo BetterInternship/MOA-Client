@@ -4,13 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import {
-  findEntityById,
-  listEntityLogs,
-  schoolEntities,
-  findSchoolById,
-  schools,
-} from "@/lib/mock/db";
+import { findEntityById, listEntityLogs, schoolEntities, findSchoolById } from "@/lib/mock/db";
 import { DemoStore } from "@/lib/demo-store";
 
 function toMDY(d: Date) {
@@ -21,7 +15,7 @@ function toMDY(d: Date) {
 }
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const entity = findEntityById(params.id); // now searches by id
+  const entity = findEntityById(params.id);
   if (!entity) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const links = schoolEntities
@@ -48,12 +42,14 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const submittedDate = toMDY(new Date());
   const approvedDate = toMDY(new Date());
   const validUntil = toMDY(new Date(new Date().setFullYear(new Date().getFullYear() + 1)));
-  const status = stage === 2 ? "Approved" : stage === 1 ? "Under Review" : "Inactive";
+
+  // ✅ keep status terms consistent across the app
+  const status = stage === 2 ? "Approved" : stage === 1 ? "Needs Info" : "Inactive";
 
   const moa = {
     status,
     validUntil: stage === 2 ? validUntil : undefined,
-    downloadUrl: `/docs/${entity.id}/moa.pdf`, // ← id
+    downloadUrl: `/docs/${entity.id}/moa.pdf`,
   };
 
   const request = {
@@ -64,8 +60,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     tin: "—",
     industry: "—",
     requestedAt: submittedDate,
-    status:
-      status === "Approved" ? "Approved" : status === "Under Review" ? "Under Review" : "Pending",
+    status: status === "Approved" ? "Approved" : status === "Needs Info" ? "Needs Info" : "Pending",
     notes: "",
     history:
       stage === 0
@@ -81,7 +76,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
               },
               {
                 date: submittedDate,
-                text: "University received request — Under review",
+                text: "University requested clarification",
                 sourceType: "univ",
               },
             ]
@@ -105,13 +100,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return NextResponse.json(
     {
       entity: {
-        id: entity.id, // ← id
+        id: entity.id,
         displayName: entity.displayName,
-        legalName: entity.legalName,
+        legalName: (entity as any).legalName,
         contactName: entity.contactName,
         contactEmail: entity.contactEmail,
-        contactPhone: entity.contactPhone,
-        entityDocuments: entity.entityDocuments,
+        contactPhone: (entity as any).contactPhone,
+        entityDocuments: (entity as any).entityDocuments,
       },
       links,
       logs,

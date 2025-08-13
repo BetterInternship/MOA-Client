@@ -71,7 +71,7 @@ export default function StandardMoaRequestPage() {
       }
 
       // 📣 notify other tabs/pages (dashboard will auto-refresh)
-      DemoRT.sendStage(1);
+      DemoRT.sendStage(2);
 
       // optional: form.reset();
       router.push("/moa/dashboard"); // back to the company dashboard

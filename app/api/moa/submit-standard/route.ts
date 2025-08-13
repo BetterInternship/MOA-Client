@@ -1,13 +1,8 @@
-// app/api/moa/submit/route.ts
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
+// app/api/company/moa/submit-standard/route.ts
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import {
   findEntityById,
-  entities,
   moaRequests,
   schools,
   schoolAccounts,
@@ -17,31 +12,23 @@ import { DemoStore } from "@/lib/demo-store";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
-  // Allow optional entityId; fall back to the first entity for the demo
-  const entityId: string | undefined = body?.entityId ?? entities[0]?.id;
-  const name: string | undefined = body?.name;
-  const title: string | undefined = body?.title;
+  const { entityId, signatory } = body ?? {};
 
-  if (!entityId) {
-    return NextResponse.json({ error: "No entity available for submission." }, { status: 400 });
-  }
+  if (!entityId) return NextResponse.json({ error: "entityId required" }, { status: 400 });
 
   const entity = findEntityById(entityId);
-  if (!entity) {
-    return NextResponse.json({ error: "Entity not found." }, { status: 404 });
-  }
+  if (!entity) return NextResponse.json({ error: "Entity not found" }, { status: 404 });
 
-  // Use DLSU (or first school) as the university side
   const dlsu = schools.find((s) => s.shortName === "DLSU") ?? schools[0];
   const approver =
     schoolAccounts.find((a) => a.schoolId === dlsu.uid && a.role === "company_approver") ??
     schoolAccounts.find((a) => a.schoolId === dlsu.uid) ??
     schoolAccounts[0];
 
+  // 1) upsert a MOA request row for this entity, mark as APPROVED immediately
   const nowIso = new Date().toISOString();
-
-  // Upsert a MOA request row for this entity and mark as APPROVED immediately
   let row = moaRequests.find((r) => r.entityID === entity.id);
+
   if (!row) {
     row = {
       messageID: randomUUID(),
@@ -58,14 +45,17 @@ export async function POST(req: Request) {
     row.processedBy = approver?.id;
     row.processedDate = nowIso;
     row.resultAction = "approved";
+    // keep original timestamp (submission time) if you prefer; otherwise update:
     row.timestamp = row.timestamp ?? nowIso;
   }
 
-  // DemoStore drives all “status” UIs (Univ + Corp)
-  if (name && title) DemoStore.setSignatory(name, title);
-  DemoStore.setStage(2); // ← INSTANT APPROVAL
+  // 2) demo store (drives UI badge & corp site)
+  if (signatory?.name && signatory?.title) {
+    DemoStore.setSignatory(signatory.name, signatory.title);
+  }
+  DemoStore.setStage(2);
 
-  // Write logs so Dashboard Recent Activity shows both sides
+  // 3) logs (dashboard already reads these)
   appendEntityLog({
     update: "requested",
     source: "entity",
@@ -86,7 +76,6 @@ export async function POST(req: Request) {
       ok: true,
       messageID: row.messageID,
       stage: 2,
-      signatory: { name: name ?? "", title: title ?? "" },
     },
     { headers: { "Cache-Control": "no-store" } }
   );

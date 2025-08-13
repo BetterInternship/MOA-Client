@@ -1,29 +1,56 @@
+// app/univ/moa-requests/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-
-// import MoaMeta from "@/components/univ/moa-requests/MoaMeta";
 import CompanyList from "@/components/univ/moa-requests/CompanyList";
-// import CompanyDetails from "@/components/univ/moa-requests/CompanyDetails";
 import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import { FileSignature } from "lucide-react";
-
 import type { MoaRequest } from "@/types/moa-request";
-// import { useMoaRequests } from "@/app/api/school.api";
+import { DemoRT } from "@/lib/demo-realtime";
 
 export default function MoaRequestsPage() {
   const [items, setItems] = useState<MoaRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  // const moaRequests = useMoaRequests();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load list on mount (and whenever you want to refetch, add deps)
+  async function fetchList(signal?: AbortSignal) {
+    const res = await fetch(`/api/univ/moa-requests?limit=100`, { cache: "no-store", signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const list: MoaRequest[] = data.items ?? [];
+    setItems(list);
+    setSelectedId((prev) => prev || list[0]?.id || "");
+  }
+
+  // Load list on mount
   useEffect(() => {
-    setItems(moaRequests.requests ?? []);
-  }, [moaRequests]);
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        await fetchList(ctrl.signal);
+      } catch (e: any) {
+        if (e.name !== "AbortError") setError(e?.message ?? "Failed to load MOA requests.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => ctrl.abort();
+  }, []);
+
+  // Optional: refetch when a stage event comes from another tab
+  useEffect(() => {
+    const off = DemoRT.onStage(() => {
+      void fetchList();
+    });
+    return () => off?.();
+  }, []);
 
   const selected = useMemo(() => items?.find((x) => x.id === selectedId), [items, selectedId]);
 
@@ -39,6 +66,7 @@ export default function MoaRequestsPage() {
       const data = await res.json();
       if (res.ok && data.item) {
         setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
+        DemoRT.sendStage(1); // notify same-origin tabs
       }
     } finally {
       setBusy(false);
@@ -57,6 +85,7 @@ export default function MoaRequestsPage() {
       const data = await res.json();
       if (res.ok && data.item) {
         setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
+        DemoRT.sendStage(2);
       }
     } finally {
       setBusy(false);
@@ -75,6 +104,7 @@ export default function MoaRequestsPage() {
       const data = await res.json();
       if (res.ok && data.item) {
         setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
+        DemoRT.sendStage(0);
       }
     } finally {
       setBusy(false);
@@ -99,11 +129,16 @@ export default function MoaRequestsPage() {
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId={`moa:requests:asideWidth`}
-        className="max-h-[80vh] rounded-md border lg:overflow-hidden"
+        className="rounded-md border lg:overflow-hidden"
       >
         {/* LEFT: Company list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
-          <CompanyList items={items} selectedId={selectedId} onSelect={setSelectedId} />
+          <CompanyList
+            items={items}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            loading={loading}
+          />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
@@ -111,10 +146,12 @@ export default function MoaRequestsPage() {
         {/* RIGHT: Details */}
         <ResizablePanel defaultSize={74} minSize={40}>
           <div className="h-full space-y-6 overflow-y-auto p-4">
-            {selected ? (
+            {error && <div className="text-sm text-rose-600">{error}</div>}
+
+            {loading && !selected ? (
+              <div className="text-muted-foreground">Loading…</div>
+            ) : selected ? (
               <>
-                {/* <MoaMeta req={selected} />
-                <CompanyDetails req={selected} /> */}
                 <CompanyHistoryTree req={selected} />
                 <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
                 <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />

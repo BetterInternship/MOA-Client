@@ -12,6 +12,7 @@ import { DemoRT } from "@/lib/demo-realtime";
 export default function CompaniesPage() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
+  const [stageVer, setStageVer] = useState(0); // bump to force detail remount
 
   // returns camelCase Entity[]
   const { entities, loading } = useEntities({ q: query });
@@ -32,16 +33,28 @@ export default function CompaniesPage() {
     if (!selectedId || !stillExists) setSelectedId(list[0].id);
   }, [list, selectedId]);
 
-  const onStage = useCallback(() => setQuery((q) => q), []);
+  // bump version whenever a stage event arrives
+  const onStage = useCallback(() => setStageVer((v) => v + 1), []);
   useEffect(() => {
-    DemoRT.onStage(onStage);
+    const off = DemoRT.onStage(onStage);
+    return () => off?.();
   }, [onStage]);
 
   const selected = useMemo(() => list.find((c) => c.id === selectedId), [list, selectedId]);
 
   return (
     <div className="space-y-4">
-      {/* header unchanged */}
+      {/* Page header */}
+      <div className="mb-6 flex items-center gap-3 space-y-1">
+        <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
+          <Building2 />
+          Browse Companies
+        </div>
+
+        <p className="text-muted-foreground text-sm">
+          Browse partner companies and view MOA details.
+        </p>
+      </div>
 
       <ResizablePanelGroup
         direction="horizontal"
@@ -70,7 +83,8 @@ export default function CompaniesPage() {
                 Loading…
               </div>
             ) : selected ? (
-              <CompanyDetails key={selected.id} company={selected as any} />
+              // 👇 force remount on stage changes so useCompanyDetail() refetches
+              <CompanyDetails key={`${selected.id}:${stageVer}`} company={selected as any} />
             ) : (
               <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
                 Select a company to view details
@@ -82,4 +96,3 @@ export default function CompaniesPage() {
     </div>
   );
 }
-
