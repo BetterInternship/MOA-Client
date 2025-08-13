@@ -79,6 +79,8 @@ export default function DashboardPage() {
         <h2 className="text-foreground text-2xl font-semibold">Company Log</h2>
         <CompanyRequestHistory showTitle={false} />
       </div>
+
+      
     </div>
   );
 }
