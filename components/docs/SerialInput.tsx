@@ -62,7 +62,7 @@ export function SerialInput({ value, onChange, disabled, className }: Props) {
         onKeyDown={back(0)}
         onPaste={pasteFirst}
         disabled={disabled}
-        placeholder="0000000000"
+        placeholder="0123456789"
         aria-label="Serial number part 1 of 3"
       />
       <Dash />
@@ -72,7 +72,7 @@ export function SerialInput({ value, onChange, disabled, className }: Props) {
         onChange={onPart(1)}
         onKeyDown={back(1)}
         disabled={disabled}
-        placeholder="0000000000"
+        placeholder="aabbccdd"
         aria-label="Serial number part 2 of 3"
       />
       <Dash />
@@ -82,7 +82,7 @@ export function SerialInput({ value, onChange, disabled, className }: Props) {
         onChange={onPart(2)}
         onKeyDown={back(2)}
         disabled={disabled}
-        placeholder="0000000000"
+        placeholder="ff001122"
         aria-label="Serial number part 3 of 3"
       />
     </div>
@@ -110,10 +110,7 @@ const Segment = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTM
 
 function Dash() {
   return (
-    <span
-      aria-hidden
-      className="text-muted-foreground/60 leading-none select-none"
-    >
+    <span aria-hidden className="text-muted-foreground/60 leading-none select-none">
       –
     </span>
   );

@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import CompanyRequestHistory from "@/components/univ/shared/CompanyRequestHistory";
-import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
 
 // import { useEntities } from "@/app/api/school.api"; // keep if you'll use later
 

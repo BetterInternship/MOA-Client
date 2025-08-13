@@ -1,7 +1,8 @@
 import { useAuthControllerSignIn, useAuthControllerSignOut } from "./app/api/endpoints/auth/auth";
 import {
   useEntityMoaControllerGetMine,
-  useEntityMoaControllerRequestNew,
+  useEntityMoaControllerRequestNewCustom,
+  useEntityMoaControllerRequestNewTemplated,
 } from "./app/api/endpoints/entity-moa/entity-moa";
 
 export const useAuth = () => {
@@ -16,10 +17,12 @@ export const useAuth = () => {
 
 export const useMoaRequests = () => {
   const requests = useEntityMoaControllerGetMine();
-  const create = useEntityMoaControllerRequestNew();
+  const createTemplated = useEntityMoaControllerRequestNewTemplated();
+  const createCustom = useEntityMoaControllerRequestNewCustom();
 
   return {
     requests: requests.data?.data?.requests,
-    create: create.mutateAsync,
+    createTemplated: createTemplated.mutateAsync,
+    createCustom: createCustom.mutateAsync,
   };
 };

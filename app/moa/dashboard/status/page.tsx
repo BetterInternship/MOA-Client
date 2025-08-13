@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMoaRequests } from "@/app/api/entity.api";
+import { useEntities } from "@/app/api/school.api";
+import { Entity, MoaRequest } from "@/types/db";
+import { formatWhen } from "@/lib/format";
 
 type UiItem = {
   id: string;
@@ -27,12 +30,13 @@ function getStatusBadge(status: string) {
 }
 
 export default function StatusPage() {
-  const [items, setItems] = useState<UiItem[]>([]);
+  const [items, setItems] = useState<MoaRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const moaRequests = useMoaRequests();
+  const entities = useEntities();
 
   useEffect(() => {
-    setItems(moaRequests.requests);
+    setItems(moaRequests.requests ?? []);
   }, [moaRequests]);
 
   return (
@@ -54,16 +58,18 @@ export default function StatusPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {items.map((moa) => (
+          {items.toReversed().map((moa) => (
             <Card key={moa.id}>
               <CardContent className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                 <div>
-                  <h2 className="text-foreground text-lg font-semibold">{moa.company}</h2>
+                  <h2 className="text-foreground text-lg font-semibold">
+                    {entities.entities?.find((e: Entity) => e.id === moa.entity_id)?.display_name}
+                  </h2>
                   <p className="text-muted-foreground text-sm">
-                    {moa.type} MOA &middot; Submitted on {moa.timestamp}
+                    Submitted on {formatWhen(moa.timestamp)}
                   </p>
                 </div>
-                <div>{getStatusBadge(moa.outcome)}</div>
+                <div>{getStatusBadge(moa.outcome ?? "")}</div>
               </CardContent>
             </Card>
           ))}

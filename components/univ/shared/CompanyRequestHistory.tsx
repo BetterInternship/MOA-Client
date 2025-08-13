@@ -35,28 +35,30 @@ const DUMMY_REQ: MoaRequest = {
   ],
 };
 
-export default function CompanyRequestHistory({ req }: { req?: MoaRequest }) {
+export default function CompanyRequestHistory({
+  req,
+  showTitle = true,
+}: {
+  req?: MoaRequest;
+  showTitle?: boolean;
+}) {
   // Pick real history if provided, else dummy
   const items = req?.history?.length ? req.history : DUMMY_REQ.history;
 
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <div className="pb-2">
-        <h2 className="text-lg font-semibold">Company Request History</h2>
-      </div>
+    <div className="rounded-[0.33em] border bg-white p-4">
+      {showTitle && (
+        <div className="pb-2">
+          <h2 className="text-lg font-semibold">Company Request History</h2>
+        </div>
+      )}
 
       <ul className="divide-y">
         {items.map((h, i) => (
           <div key={`${h.date}-${i}`} className="relative py-2 pl-1">
-            {/* single-line row: date | text | button */}
             <div className="grid grid-cols-[96px_1fr_auto] items-center gap-3">
-              {/* date (fixed width) */}
               <div className="text-muted-foreground text-[11px] leading-none">{h.date}</div>
-
-              {/* event text (truncated) */}
               <p className="min-w-0 truncate text-sm leading-tight">{h.text}</p>
-
-              {/* button at the end (only if there are files) */}
               {h.files?.length ? (
                 <FilesDialog
                   files={h.files}
@@ -72,7 +74,6 @@ export default function CompanyRequestHistory({ req }: { req?: MoaRequest }) {
                   }
                 />
               ) : (
-                // keep grid alignment consistent when no files
                 <span className="text-muted-foreground text-[11px]">—</span>
               )}
             </div>
