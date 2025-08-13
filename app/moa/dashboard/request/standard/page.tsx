@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
-import { useMoaRequests } from "@/app/api/entity.api";
+import { DemoRT } from "@/lib/demo-realtime"; // 👈 broadcast updates
 
 const FormSchema = z.object({
   signatoryName: z.string().trim().min(2, "Please enter the full name."),
@@ -37,7 +37,6 @@ type FormValues = z.infer<typeof FormSchema>;
 export default function StandardMoaRequestPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const moaRequests = useMoaRequests();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -52,17 +51,33 @@ export default function StandardMoaRequestPage() {
   async function onSubmit(values: FormValues) {
     try {
       setSubmitting(true);
-      const r = await moaRequests.create({
-        data: {
-          entity_id: "e2ba4aec-4680-49cf-9499-f5ff09760827",
-          school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
-        },
+
+      // 🔗 Call your demo API to move to stage 1 (Under Review)
+      const res = await fetch("/api/moa/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          name: values.signatoryName,
+          title: values.signatoryTitle,
+        }),
       });
 
-      console.log("Submitting Standard MOA request:", values);
-      router.push("/dashboard/status"); // or push to the created request page
+      if (!res.ok) {
+        const msg = `Failed to submit (HTTP ${res.status})`;
+        console.error(msg);
+        form.setError("root", { message: msg });
+        return;
+      }
+
+      // 📣 notify other tabs/pages (dashboard will auto-refresh)
+      DemoRT.sendStage(1);
+
+      // optional: form.reset();
+      router.push("/moa/dashboard"); // back to the company dashboard
     } catch (err) {
       console.error(err);
+      form.setError("root", { message: "Something went wrong. Please try again." });
     } finally {
       setSubmitting(false);
     }
@@ -161,8 +176,16 @@ export default function StandardMoaRequestPage() {
                 )}
               />
 
+              {form.formState.errors.root?.message && (
+                <p className="text-sm text-red-600">{form.formState.errors.root.message}</p>
+              )}
+
               <div className="flex items-center justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => router.push("/dashboard")}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/moa/dashboard")}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={submitting}>

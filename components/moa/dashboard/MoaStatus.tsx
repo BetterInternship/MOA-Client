@@ -37,7 +37,7 @@ export default function MoaStatus({ items, loading, title = "MOA Status" }: Prop
         </div>
       ) : !moa ? (
         <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
-          No MOA on file yet.
+          No MOA requests yet.
         </div>
       ) : (
         <Card className={cn(statusColors[moa.status as MoaStatus] || "bg-white")}>

@@ -34,7 +34,7 @@ export default function MoaTopbar() {
       <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4">
         {/* Left: Logo + Home */}
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
             <span className="font-semibold">MOA Management</span>
           </Link>
