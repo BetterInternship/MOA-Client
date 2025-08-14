@@ -8,6 +8,9 @@ import type { MoaStatus } from "@/types/moa";
 import { MoaRequest } from "@/types/db";
 import { formatWhen } from "@/lib/format";
 import { useDocsControllerGetMoaSignedDocument } from "@/app/api";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
 
 type Props = {
   requests: MoaRequest[];
@@ -56,6 +59,15 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                   <pre className="inline-block rounded-[0.25em] bg-gray-200 px-2 py-1 hover:cursor-pointer">
                     {signedDocument.data?.data?.signedDocument?.verification_code ?? "loading..."}
                   </pre>
+                  <div className="gap-2">
+                    <Link
+                      href="https://storage.googleapis.com/better-internship-public-bucket/signed-moa-e2ba4aec-4680-49cf-9499-f5ff09760827-0fde7360-7c13-4d27-82e9-7db8413a08a5-1755139811838.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button>Download MOA</Button>
+                    </Link>
+                  </div>
                 </span>
               </div>
             </div>
