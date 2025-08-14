@@ -60,13 +60,15 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                     {signedDocument.data?.data?.signedDocument?.verification_code ?? "loading..."}
                   </pre>
                   <div className="gap-2">
-                    <Link
-                      href={signedDocument.data?.data?.signedDocument?.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button>Download MOA</Button>
-                    </Link>
+                    <Button asChild>
+                      <a
+                        href={signedDocument.data?.data?.signedDocument?.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Download MOA
+                      </a>
+                    </Button>
                   </div>
                 </span>
               </div>
