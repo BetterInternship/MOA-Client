@@ -40,7 +40,7 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
           Loading…
         </div>
       ) : !moa ? (
-        <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
+        <div className="text-muted-foreground rounded-md border border-blue-200 bg-blue-50 p-6 text-sm">
           No MOA on file yet.
         </div>
       ) : (
