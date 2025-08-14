@@ -1,4 +1,4 @@
-// components/univ/shared/CompanyRequestHistory.tsx
+// components/univ/moa-requests/CompanyHistoryTree.tsx
 "use client";
 
 import { MoaRequest } from "@/types/moa-request";
@@ -23,45 +23,85 @@ function toMDY(d: Date) {
   const yyyy = d.getFullYear();
   return `${mm}/${dd}/${yyyy}`;
 }
-function dummyDate(i: number) {
+function addYears(d: Date, years: number) {
+  const copy = new Date(d);
+  copy.setFullYear(copy.getFullYear() + years);
+  return copy;
+}
+function dateAgo(days: number) {
   const d = new Date();
-  d.setDate(d.getDate() - i);
+  d.setDate(d.getDate() - days);
   return toMDY(d);
 }
 
-/** Fallback demo data (only used when req.history is empty) */
+const EXPIRY = toMDY(addYears(new Date(), 1));
+
+/** Hard-coded, meaningful back-and-forth timeline (customized comments + files) */
 const DUMMY_HISTORY: MoaRequest["history"] = [
   {
-    date: "08/10/2025",
-    text: "Submitted MOA request",
-    files: [{ id: "f-001", name: "moa-request.pdf", url: "/docs/demo/moa-request.pdf" }],
+    date: dateAgo(4),
+    text: "We need to update the NDA part because we work with an international company. They require: (A) a longer confidentiality period, (B) permission to share with our overseas teams when needed, and (C) clear rules to return or delete files after the project. Please see attached draft contract.",
     sourceType: "company",
-    comment: "Initial submission via portal.",
-  },
-  {
-    date: "08/11/2025",
-    text: "University requested clarification — missing notarized page",
-    sourceType: "univ",
-    comment: "Please include the notarized signature page.",
-  },
-  {
-    date: "08/12/2025",
-    text: "Company uploaded additional documents",
+    comment:
+      "Goal: protect sensitive client info and allow limited sharing within our group only for this project.",
     files: [
-      { id: "f-002", name: "notarized-page.pdf", url: "/docs/demo/notarized-page.pdf" },
-      { id: "f-003", name: "bir-registration.pdf", url: "/docs/demo/bir-registration.pdf" },
+      { id: "f-001", name: "MOA_draft_company.pdf", url: "/docs/demo/MOA_draft_company.pdf" },
+      { id: "f-001a", name: "change-summary.pdf", url: "/docs/demo/change-summary.pdf" },
     ],
-    sourceType: "company",
   },
   {
-    date: "08/12/2025",
-    text: "University noted: documents received, under review",
+    date: dateAgo(4),
+    text: "Yes, we can accommodate that. Let’s make the confidentiality last for the contract term + 5 years, and allow sharing only with named teams for this project. Please review our updated draft.",
     sourceType: "univ",
+    comment:
+      "We added a time limit, narrowed who can see the info, and kept the same purpose of use.",
+    files: [
+      { id: "f-002", name: "MOA_updated_school.pdf", url: "/docs/demo/MOA_updated_school.pdf" },
+      {
+        id: "f-002a",
+        name: "signature-page-template.docx",
+        url: "/docs/demo/signature-page-template.docx",
+      },
+    ],
   },
-  { date: "08/13/2025", text: "MOA approved", sourceType: "univ" },
+  {
+    date: dateAgo(3),
+    text: "That works for us. Here’s the updated contract with our signatory details.",
+    sourceType: "company",
+    comment:
+      "No more wording changes from our side. We fixed formatting and added the signatory block.",
+    files: [
+      { id: "f-003", name: "MOA_updated_company.pdf", url: "/docs/demo/MOA_updated_company.pdf" },
+      { id: "f-003a", name: "signatory-id-proof.pdf", url: "/docs/demo/signatory-proof.pdf" },
+    ],
+  },
+  {
+    date: dateAgo(3),
+    text: "Approved. Here is the final contract for signing.",
+    sourceType: "univ",
+    comment: "Please sign and upload. We will countersign right after we receive your signed copy.",
+    files: [
+      {
+        id: "f-004",
+        name: "MOA_final_for_signing.pdf",
+        url: "/docs/demo/MOA_final_for_signing.pdf",
+      },
+    ],
+  },
+  {
+    date: dateAgo(2),
+    text: "Signed copy uploaded",
+    sourceType: "company",
+    comment: "Our authorized signatory has signed the document. Attaching the signed PDF.",
+    files: [
+      { id: "f-005", name: "MOA_signed_by_company.pdf", url: "/docs/demo/MOA_signed_company.pdf" },
+    ],
+  },
 ];
 
-export default function CompanyRequestHistory({
+/* ============================== Component ============================== */
+
+export default function CompanyHistoryTree({
   req,
   title = "Company Request Timeline",
   showTitle = true,
@@ -70,18 +110,17 @@ export default function CompanyRequestHistory({
   title?: string;
   showTitle?: boolean;
 }) {
-  const items = req?.history?.length ? req.history : DUMMY_HISTORY;
+  const items = DUMMY_HISTORY; // always show the curated demo timeline
 
   return (
     <section className="rounded-lg border bg-white p-4">
       {showTitle && <h2 className="mb-3 text-lg font-semibold">{title}</h2>}
 
-      {/* Chat column */}
       <ol className="space-y-4">
         {items.map((h, i) => {
           const side = guessSide(h as any, i);
           const isUniv = side === "univ"; // univ = right bubble
-          const date = h.date?.trim()?.length ? h.date : dummyDate(i);
+          const date = h.date?.trim()?.length ? h.date : dateAgo(items.length - i);
 
           return (
             <li
@@ -137,18 +176,14 @@ function ChatBubble({
         "flex flex-col gap-1"
       )}
     >
-      {/* Bubble */}
       <div
         className={cn(
           "rounded-2xl border bg-white/80 shadow-sm transition",
           "focus-within:shadow-md hover:shadow-md",
-          // side color accents
           isUniv ? "border-emerald-200" : "border-slate-200",
-          // bubble padding
           "px-3 py-2"
         )}
       >
-        {/* Header row: role + paperclip + chevron */}
         <div className="mb-1 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex justify-between gap-2">
@@ -162,8 +197,7 @@ function ChatBubble({
                   {isUniv ? "University" : "Company"}
                 </span>
 
-                <time>{date}</time>
-                {/* Paperclip + count */}
+                <time className={dateAlignClass}>{date}</time>
                 {files?.length ? (
                   <span className="inline-flex items-center gap-1">
                     <Paperclip className="h-3.5 w-3.5" />
@@ -186,12 +220,10 @@ function ChatBubble({
               ) : null}
             </div>
 
-            {/* Message text */}
             <p className="text-foreground min-w-0 text-sm font-medium break-words">{text}</p>
           </div>
         </div>
 
-        {/* Dropdown content */}
         {hasDetails && (
           <CollapsibleContent className="border-t pt-2 text-sm">
             {comment ? <p className="text-foreground mb-2">{comment}</p> : null}
