@@ -61,7 +61,7 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                   </pre>
                   <div className="gap-2">
                     <Link
-                      href="https://storage.googleapis.com/better-internship-public-bucket/signed-moa-e2ba4aec-4680-49cf-9499-f5ff09760827-0fde7360-7c13-4d27-82e9-7db8413a08a5-1755139811838.pdf"
+                      href={signedDocument.data?.data?.signedDocument?.url}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
