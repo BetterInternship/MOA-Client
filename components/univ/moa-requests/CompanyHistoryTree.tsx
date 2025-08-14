@@ -36,14 +36,16 @@ function dateAgo(days: number) {
 
 const EXPIRY = toMDY(addYears(new Date(), 1));
 
-/** Hard-coded, meaningful back-and-forth timeline (customized comments + files) */
+/** Hard-coded, meaningful back-and-forth timeline (short headers + long comments) */
 const DUMMY_HISTORY: MoaRequest["history"] = [
   {
     date: dateAgo(4),
-    text: "We need to update the NDA part because we work with an international company. They require: (A) a longer confidentiality period, (B) permission to share with our overseas teams when needed, and (C) clear rules to return or delete files after the project. Please see attached draft contract.",
+    // SHORT HEADER (new)
+    text: "Company requests NDA & data-sharing changes",
     sourceType: "company",
+    // LONG BODY moved here (kept verbatim, plus note that was previously in `comment`)
     comment:
-      "Goal: protect sensitive client info and allow limited sharing within our group only for this project.",
+      "We need to update the NDA part because we work with an international company. They require: (A) a longer confidentiality period, (B) permission to share with our overseas teams when needed, and (C) clear rules to return or delete files after the project. Please see attached draft contract.\n\nGoal: protect sensitive client info and allow limited sharing within our group only for this project.",
     files: [
       { id: "f-001", name: "MOA_draft_company.pdf", url: "/docs/demo/MOA_draft_company.pdf" },
       { id: "f-001a", name: "change-summary.pdf", url: "/docs/demo/change-summary.pdf" },
@@ -51,10 +53,10 @@ const DUMMY_HISTORY: MoaRequest["history"] = [
   },
   {
     date: dateAgo(4),
-    text: "Yes, we can accommodate that. Let’s make the confidentiality last for the contract term + 5 years, and allow sharing only with named teams for this project. Please review our updated draft.",
+    text: "University proposes +5-year confidentiality, limited sharing",
     sourceType: "univ",
     comment:
-      "We added a time limit, narrowed who can see the info, and kept the same purpose of use.",
+      "Yes, we can accommodate that. Let’s make the confidentiality last for the contract term + 5 years, and allow sharing only with named teams for this project. Please review our updated draft.\n\nWe added a time limit, narrowed who can see the info, and kept the same purpose of use.",
     files: [
       { id: "f-002", name: "MOA_updated_school.pdf", url: "/docs/demo/MOA_updated_school.pdf" },
       {
@@ -66,10 +68,10 @@ const DUMMY_HISTORY: MoaRequest["history"] = [
   },
   {
     date: dateAgo(3),
-    text: "That works for us. Here’s the updated contract with our signatory details.",
+    text: "Company submits updated contract + signatory details",
     sourceType: "company",
     comment:
-      "No more wording changes from our side. We fixed formatting and added the signatory block.",
+      "That works for us. Here’s the updated contract with our signatory details.\n\nNo more wording changes from our side. We fixed formatting and added the signatory block.",
     files: [
       { id: "f-003", name: "MOA_updated_company.pdf", url: "/docs/demo/MOA_updated_company.pdf" },
       { id: "f-003a", name: "signatory-id-proof.pdf", url: "/docs/demo/signatory-proof.pdf" },
@@ -77,9 +79,10 @@ const DUMMY_HISTORY: MoaRequest["history"] = [
   },
   {
     date: dateAgo(3),
-    text: "Approved. Here is the final contract for signing.",
+    text: "Approved — final MOA for signing",
     sourceType: "univ",
-    comment: "Please sign and upload. We will countersign right after we receive your signed copy.",
+    comment:
+      "Approved. Here is the final contract for signing.\n\nPlease sign and upload. We will countersign right after we receive your signed copy.",
     files: [
       {
         id: "f-004",
@@ -90,9 +93,10 @@ const DUMMY_HISTORY: MoaRequest["history"] = [
   },
   {
     date: dateAgo(2),
-    text: "Signed copy uploaded",
+    text: "Company uploads signed copy",
     sourceType: "company",
-    comment: "Our authorized signatory has signed the document. Attaching the signed PDF.",
+    comment:
+      "Signed copy uploaded.\n\nOur authorized signatory has signed the document. Attaching the signed PDF.",
     files: [
       { id: "f-005", name: "MOA_signed_by_company.pdf", url: "/docs/demo/MOA_signed_company.pdf" },
     ],
@@ -220,13 +224,15 @@ function ChatBubble({
               ) : null}
             </div>
 
+            {/* short header */}
             <p className="text-foreground min-w-0 text-sm font-medium break-words">{text}</p>
           </div>
         </div>
 
+        {/* long body (collapsible) */}
         {hasDetails && (
           <CollapsibleContent className="border-t pt-2 text-sm">
-            {comment ? <p className="text-foreground mb-2">{comment}</p> : null}
+            {comment ? <p className="text-foreground mb-2 whitespace-pre-line">{comment}</p> : null}
 
             {files?.length ? (
               <div className="flex items-center gap-2">
