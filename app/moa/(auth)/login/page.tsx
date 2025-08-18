@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CompanyAuthForm } from "@/components/moa/auth/CompanyAuthForm";
-import Image from "next/image";
 
 export default function CompanyAuthPage() {
   return (
@@ -50,8 +49,8 @@ export default function CompanyAuthPage() {
         <div className="bg-primary/60 absolute inset-0" />
 
         <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-white">
-          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
-          <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
+          <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
+          <img src="/dlsu-logo.png" alt="Logo" width={28} height={28} />
           BetterInternship | De La Salle University
         </div>
 

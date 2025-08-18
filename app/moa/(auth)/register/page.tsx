@@ -1,5 +1,4 @@
 import { CompanyRegisterForm } from "@/components/moa/auth/CompanyRegisterForm";
-import Image from "next/image";
 
 export default function CompanyRegisterPage() {
   return (
@@ -20,8 +19,8 @@ export default function CompanyRegisterPage() {
         <div className="bg-primary/60 absolute inset-0" />
 
         <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-white">
-          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
-          <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
+          <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
+          <img src="/dlsu-logo.png" alt="Logo" width={28} height={28} />
           BetterInternship | De La Salle University
         </div>
 

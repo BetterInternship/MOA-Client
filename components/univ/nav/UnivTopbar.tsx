@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Fragment, useMemo } from "react";
-import Image from "next/image";
 import { useAuthControllerSignOut } from "@/app/api";
 
 type NavLink = {
@@ -86,7 +84,7 @@ export default function UnivTopbar() {
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
+              <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
               <span className="font-semibold">MOA Management Tool</span>
             </Link>
 
