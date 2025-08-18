@@ -2,24 +2,6 @@ import Link from "next/link";
 import { UnivAuthForm } from "@/components/univ/auth/UnivAuthForm";
 import Image from "next/image";
 
-const companyURL =
-  typeof window !== "undefined"
-    ? (() => {
-        const current = new URL(window.location.href);
-        // Map university host → company host
-        const hostMap: Record<string, string> = {
-          "univ.localhost:3000": "moa.localhost:3000",
-          "uni.moa.betterinternship.com": "moa.betterinternship.com",
-        };
-        const newHost =
-          hostMap[current.host] || current.host.replace("univ", "moa").replace("uni.", "moa.");
-        current.host = newHost;
-        current.pathname = "/login";
-        return current.toString();
-      })()
-    : "https://moa.betterinternship.com/login";
-
-
 export default function UnivLoginPage() {
   return (
     <div className="relative grid min-h-[100svh] w-full items-stretch lg:grid-cols-2 lg:px-0">
@@ -68,13 +50,6 @@ export default function UnivLoginPage() {
               Privacy Policy
             </Link>
             .
-          </p>
-
-          <p className="text-center text-sm">
-            Not from DLSU?{" "}
-            <Link href={companyURL} className="hover:text-primary underline">
-              Go to company login
-            </Link>
           </p>
         </div>
       </div>
