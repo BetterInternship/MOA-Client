@@ -117,41 +117,11 @@ export function DataTable<TData, TValue>({
     }
   }
 
-  function exportCsv() {
-    // Export currently visible (filtered/sorted) rows
-    const rows = table.getRowModel().rows;
-    if (!rows.length) return;
-
-    const visibleLeafColumns = table.getVisibleLeafColumns();
-    const header = visibleLeafColumns.map((c) => (c.columnDef.header as any)?.toString?.() ?? c.id);
-    const lines = [header.join(",")];
-
-    rows.forEach((row) => {
-      const vals = row.getVisibleCells().map((cell) => {
-        const v = cell.getValue() as any;
-        const s = v == null ? "" : String(v);
-        // naive CSV escaping
-        const needsQuote = s.includes(",") || s.includes('"') || s.includes("\n");
-        const escaped = s.replace(/"/g, '""');
-        return needsQuote ? `"${escaped}"` : escaped;
-      });
-      lines.push(vals.join(","));
-    });
-
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "export.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <div className={cn("space-y-3", className)}>
       {/* Toolbar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex w-full gap-2 sm:w-auto">
+      <div className="flex flex-col gap-2 border sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex w-full items-stretch gap-2 sm:w-auto">
           {searchKey && (
             <Input
               placeholder={`Search ${searchKey}...`}
@@ -160,15 +130,6 @@ export function DataTable<TData, TValue>({
               className="w-full sm:w-64"
             />
           )}
-          {isFiltered && (
-            <Button variant="outline" onClick={resetFilters}>
-              Clear
-            </Button>
-          )}
-          <Button variant="outline" onClick={exportCsv} className="gap-2">
-            <Download className="h-4 w-4" />
-            CSV
-          </Button>
         </div>
 
         <div className="flex items-center gap-2">
