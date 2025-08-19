@@ -5,9 +5,16 @@ import {
   useEntityMoaControllerRequestNewTemplated,
 } from "./app/api/endpoints/entity-moa/entity-moa";
 
-export const useAuth = () => {
+export const useAuth = async () => {
   const signIn = useAuthControllerSignIn();
   const signOut = useAuthControllerSignOut();
+
+  const test = await signIn.mutateAsync({
+    data: {
+      legal_entity_name: "",
+      password: "",
+    },
+  });
 
   return {
     signIn: signIn.mutateAsync,
