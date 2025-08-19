@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import CustomCard from "@/components/shared/CustomCard";
 
 // If you use shadcn Form primitives, uncomment these imports and swap to <FormField/> usage.
 // import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -128,7 +129,15 @@ export default function NewCompanyPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl p-6 md:p-8">
+    <div className="space-y-3">
+      {/* Actions */}
+      <div className="">
+        {/* Back button to /companies */}
+        <Button type="button" variant="outline" size="xs" onClick={() => router.push("/companies")}>
+          ← Back
+        </Button>
+      </div>
+
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Add Company</h1>
@@ -140,13 +149,13 @@ export default function NewCompanyPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* General Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>General Information</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+        <CustomCard className="space-y-4">
+          <h1 className="text-lg font-semibold">General Information</h1>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="doingBusinessAs">Doing Business As *</Label>
+              <Label htmlFor="doingBusinessAs">
+                Doing Business As <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="doingBusinessAs"
                 placeholder="Acme Corp"
@@ -158,7 +167,9 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="legalEntityName">Legal Entity Name *</Label>
+              <Label htmlFor="legalEntityName">
+                Legal Entity Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="legalEntityName"
                 placeholder="Acme Corporation, Inc."
@@ -170,7 +181,9 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="space-y-1 md:col-span-2">
-              <Label htmlFor="generalOfficeLocation">General Office Location *</Label>
+              <Label htmlFor="generalOfficeLocation">
+                General Office Location <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="generalOfficeLocation"
                 placeholder="Makati City, NCR, Philippines"
@@ -182,7 +195,9 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="website">Website *</Label>
+              <Label htmlFor="website">
+                Website <span className="text-destructive">*</span>
+              </Label>
               <Input id="website" placeholder="https://acme.com" {...register("website")} />
               {errors.website && (
                 <p className="text-destructive text-xs">{errors.website.message}</p>
@@ -190,7 +205,9 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="industry">Industry *</Label>
+              <Label htmlFor="industry">
+                Industry <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="industry"
                 placeholder="Software, Healthcare, Finance..."
@@ -203,7 +220,9 @@ export default function NewCompanyPage() {
 
             <div className="space-y-1 md:col-span-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">
+                  Description <span className="text-destructive">*</span>
+                </Label>
                 <span className="text-muted-foreground text-xs">{descCount}/500</span>
               </div>
               <Textarea
@@ -217,17 +236,17 @@ export default function NewCompanyPage() {
                 <p className="text-destructive text-xs">{errors.description.message}</p>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CustomCard>
 
         {/* Contact Person Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact Person Information</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+        <CustomCard className="space-y-4">
+          <h1 className="text-lg font-semibold">Contact Person Information</h1>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="contactName">Contact Name *</Label>
+              <Label htmlFor="contactName">
+                Contact Name <span className="text-destructive">*</span>
+              </Label>
               <Input id="contactName" placeholder="Juan Dela Cruz" {...register("contactName")} />
               {errors.contactName && (
                 <p className="text-destructive text-xs">{errors.contactName.message}</p>
@@ -235,7 +254,9 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="contactPhone">Contact Phone Number *</Label>
+              <Label htmlFor="contactPhone">
+                Contact Phone Number <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="contactPhone"
                 placeholder="+63 912 345 6789"
@@ -247,7 +268,9 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="space-y-1 md:col-span-2">
-              <Label htmlFor="contactEmail">Contact Email *</Label>
+              <Label htmlFor="contactEmail">
+                Contact Email <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="contactEmail"
                 type="email"
@@ -258,15 +281,13 @@ export default function NewCompanyPage() {
                 <p className="text-destructive text-xs">{errors.contactEmail.message}</p>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CustomCard>
 
         {/* Profile Agreements */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Agreements</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <CustomCard className="space-y-4">
+          <h1 className="text-lg font-semibold">Profile Agreements</h1>
+          <div className="space-y-4">
             <div className="flex items-center justify-between rounded-md border p-3">
               <div>
                 <p className="font-medium">Accept Non-University Interns?</p>
@@ -322,14 +343,14 @@ export default function NewCompanyPage() {
                 >
                   Privacy Policy
                 </a>
-                .
+                <span className="text-destructive">*</span>
               </Label>
             </div>
             {errors.acceptedTerms && (
               <p className="text-destructive text-xs">{errors.acceptedTerms.message}</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </CustomCard>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3">
