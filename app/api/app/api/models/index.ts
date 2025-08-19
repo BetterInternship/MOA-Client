@@ -11,3 +11,7 @@ export * from "./loginSchoolDto";
 export * from "./registerEntityDto";
 export * from "./registerSchoolDto";
 export * from "./requestNewMoaDto";
+export * from "./baseResponse";
+export * from "./errorResponse";
+export * from "./registerEntityResponse";
+export * from "./registerEntityResponseEntity";

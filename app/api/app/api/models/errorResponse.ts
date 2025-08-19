@@ -6,7 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface LoginSchoolDto {
-  email: string;
-  password: string;
+export interface ErrorResponse {
+  success: boolean;
+  status: number;
+  message: string;
 }

@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,7 +14,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function MoaTopbar() {
-  const pathname = usePathname();
   const router = useRouter();
 
   async function handleLogout() {
@@ -35,7 +32,7 @@ export default function MoaTopbar() {
         {/* Left: Logo + Home */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
+            <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
             <span className="font-semibold">MOA Management</span>
           </Link>
         </div>
