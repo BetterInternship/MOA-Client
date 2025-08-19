@@ -2,12 +2,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import CompanyList from "@/components/univ/dashboard/CompanyList";
 import CompanyDetails from "@/components/univ/dashboard/CompanyDetails";
-import { Building2 } from "lucide-react";
+import { Building2, Plus } from "lucide-react";
 import { useEntities } from "@/app/api/school.api";
 import { Entity } from "@/types/db";
+import { Button } from "@/components/ui/button";
 
 export default function CompaniesPage() {
   const [query, setQuery] = useState("");
@@ -26,23 +28,32 @@ export default function CompaniesPage() {
   );
 
   return (
-    <div className="">
+    <div className="min-h-[88vh]">
       {/* Page header */}
-      <div className="mb-6 flex items-center gap-3 space-y-1">
-        <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
-          <Building2 />
-          Browse Companies
+      <div className="mb-6 flex items-center justify-between gap-3 space-y-1">
+        <div className="flex items-center gap-3 space-y-1">
+          <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
+            <Building2 />
+            Browse Companies
+          </div>
+
+          <p className="text-muted-foreground text-sm">
+            Browse partner companies and view MOA details.
+          </p>
         </div>
 
-        <p className="text-muted-foreground text-sm">
-          Browse partner companies and view MOA details.
-        </p>
+        <Link href="/companies/add">
+          <Button>
+            <Plus />
+            Add new company
+          </Button>
+        </Link>
       </div>
 
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId={`moa:asideWidth:anon`}
-        className="max-h-[80vh] rounded-md border lg:overflow-hidden"
+        className="max-h-[80vh] min-h-[80vh] rounded-md border lg:overflow-hidden"
       >
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
           <CompanyList
