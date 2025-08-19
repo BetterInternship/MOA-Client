@@ -9,13 +9,6 @@ export const useAuth = async () => {
   const signIn = useAuthControllerSignIn();
   const signOut = useAuthControllerSignOut();
 
-  const test = await signIn.mutateAsync({
-    data: {
-      legal_entity_name: "",
-      password: "",
-    },
-  });
-
   return {
     signIn: signIn.mutateAsync,
     signOut: signOut.mutateAsync,

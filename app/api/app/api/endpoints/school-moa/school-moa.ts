@@ -23,10 +23,22 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
+import type {
+  BaseResponse,
+  ErrorResponse,
+  MoaHistoryResponse,
+  MoaRequestResponse,
+  MoaRequestsResponse,
+} from "../../models";
+
 import { preconfiguredAxios } from "../../../../preconfig.axios";
 
 export const schoolMoaControllerGetMine = (signal?: AbortSignal) => {
-  return preconfiguredAxios<null>({ url: `/api/school/moa/me`, method: "GET", signal });
+  return preconfiguredAxios<MoaRequestsResponse>({
+    url: `/api/school/moa/me`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getSchoolMoaControllerGetMineQueryKey = () => {
@@ -35,7 +47,7 @@ export const getSchoolMoaControllerGetMineQueryKey = () => {
 
 export const getSchoolMoaControllerGetMineQueryOptions = <
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(options?: {
   query?: Partial<
     UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetMine>>, TError, TData>
@@ -59,11 +71,11 @@ export const getSchoolMoaControllerGetMineQueryOptions = <
 export type SchoolMoaControllerGetMineQueryResult = NonNullable<
   Awaited<ReturnType<typeof schoolMoaControllerGetMine>>
 >;
-export type SchoolMoaControllerGetMineQueryError = unknown;
+export type SchoolMoaControllerGetMineQueryError = ErrorResponse;
 
 export function useSchoolMoaControllerGetMine<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   options: {
     query: Partial<
@@ -82,7 +94,7 @@ export function useSchoolMoaControllerGetMine<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetMine<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   options?: {
     query?: Partial<
@@ -101,7 +113,7 @@ export function useSchoolMoaControllerGetMine<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetMine<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   options?: {
     query?: Partial<
@@ -113,7 +125,7 @@ export function useSchoolMoaControllerGetMine<
 
 export function useSchoolMoaControllerGetMine<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   options?: {
     query?: Partial<
@@ -135,7 +147,7 @@ export function useSchoolMoaControllerGetMine<
 
 export const getSchoolMoaControllerGetMineSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(options?: {
   query?: Partial<
     UseSuspenseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetMine>>, TError, TData>
@@ -159,11 +171,11 @@ export const getSchoolMoaControllerGetMineSuspenseQueryOptions = <
 export type SchoolMoaControllerGetMineSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof schoolMoaControllerGetMine>>
 >;
-export type SchoolMoaControllerGetMineSuspenseQueryError = unknown;
+export type SchoolMoaControllerGetMineSuspenseQueryError = ErrorResponse;
 
 export function useSchoolMoaControllerGetMineSuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   options: {
     query: Partial<
@@ -174,7 +186,7 @@ export function useSchoolMoaControllerGetMineSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetMineSuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   options?: {
     query?: Partial<
@@ -185,7 +197,7 @@ export function useSchoolMoaControllerGetMineSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetMineSuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   options?: {
     query?: Partial<
@@ -197,7 +209,7 @@ export function useSchoolMoaControllerGetMineSuspense<
 
 export function useSchoolMoaControllerGetMineSuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetMine>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   options?: {
     query?: Partial<
@@ -222,7 +234,11 @@ export const schoolMoaControllerGetOneHistory = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<null>({ url: `/api/school/moa/history/${id}`, method: "GET", signal });
+  return preconfiguredAxios<MoaHistoryResponse>({
+    url: `/api/school/moa/history/${id}`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getSchoolMoaControllerGetOneHistoryQueryKey = (id?: string | undefined | null) => {
@@ -231,7 +247,7 @@ export const getSchoolMoaControllerGetOneHistoryQueryKey = (id?: string | undefi
 
 export const getSchoolMoaControllerGetOneHistoryQueryOptions = <
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -258,11 +274,11 @@ export const getSchoolMoaControllerGetOneHistoryQueryOptions = <
 export type SchoolMoaControllerGetOneHistoryQueryResult = NonNullable<
   Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>
 >;
-export type SchoolMoaControllerGetOneHistoryQueryError = unknown;
+export type SchoolMoaControllerGetOneHistoryQueryError = ErrorResponse;
 
 export function useSchoolMoaControllerGetOneHistory<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options: {
@@ -282,7 +298,7 @@ export function useSchoolMoaControllerGetOneHistory<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetOneHistory<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -302,7 +318,7 @@ export function useSchoolMoaControllerGetOneHistory<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetOneHistory<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -315,7 +331,7 @@ export function useSchoolMoaControllerGetOneHistory<
 
 export function useSchoolMoaControllerGetOneHistory<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -338,7 +354,7 @@ export function useSchoolMoaControllerGetOneHistory<
 
 export const getSchoolMoaControllerGetOneHistorySuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -369,11 +385,11 @@ export const getSchoolMoaControllerGetOneHistorySuspenseQueryOptions = <
 export type SchoolMoaControllerGetOneHistorySuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>
 >;
-export type SchoolMoaControllerGetOneHistorySuspenseQueryError = unknown;
+export type SchoolMoaControllerGetOneHistorySuspenseQueryError = ErrorResponse;
 
 export function useSchoolMoaControllerGetOneHistorySuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options: {
@@ -389,7 +405,7 @@ export function useSchoolMoaControllerGetOneHistorySuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetOneHistorySuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -405,7 +421,7 @@ export function useSchoolMoaControllerGetOneHistorySuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetOneHistorySuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -422,7 +438,7 @@ export function useSchoolMoaControllerGetOneHistorySuspense<
 
 export function useSchoolMoaControllerGetOneHistorySuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneHistory>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -449,7 +465,11 @@ export function useSchoolMoaControllerGetOneHistorySuspense<
 }
 
 export const schoolMoaControllerGetOne = (id: string | undefined | null, signal?: AbortSignal) => {
-  return preconfiguredAxios<null>({ url: `/api/school/moa/${id}`, method: "GET", signal });
+  return preconfiguredAxios<MoaRequestResponse>({
+    url: `/api/school/moa/${id}`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getSchoolMoaControllerGetOneQueryKey = (id?: string | undefined | null) => {
@@ -458,7 +478,7 @@ export const getSchoolMoaControllerGetOneQueryKey = (id?: string | undefined | n
 
 export const getSchoolMoaControllerGetOneQueryOptions = <
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -485,11 +505,11 @@ export const getSchoolMoaControllerGetOneQueryOptions = <
 export type SchoolMoaControllerGetOneQueryResult = NonNullable<
   Awaited<ReturnType<typeof schoolMoaControllerGetOne>>
 >;
-export type SchoolMoaControllerGetOneQueryError = unknown;
+export type SchoolMoaControllerGetOneQueryError = ErrorResponse;
 
 export function useSchoolMoaControllerGetOne<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options: {
@@ -509,7 +529,7 @@ export function useSchoolMoaControllerGetOne<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetOne<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -529,7 +549,7 @@ export function useSchoolMoaControllerGetOne<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetOne<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -542,7 +562,7 @@ export function useSchoolMoaControllerGetOne<
 
 export function useSchoolMoaControllerGetOne<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -565,7 +585,7 @@ export function useSchoolMoaControllerGetOne<
 
 export const getSchoolMoaControllerGetOneSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -592,11 +612,11 @@ export const getSchoolMoaControllerGetOneSuspenseQueryOptions = <
 export type SchoolMoaControllerGetOneSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof schoolMoaControllerGetOne>>
 >;
-export type SchoolMoaControllerGetOneSuspenseQueryError = unknown;
+export type SchoolMoaControllerGetOneSuspenseQueryError = ErrorResponse;
 
 export function useSchoolMoaControllerGetOneSuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options: {
@@ -608,7 +628,7 @@ export function useSchoolMoaControllerGetOneSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetOneSuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -620,7 +640,7 @@ export function useSchoolMoaControllerGetOneSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSchoolMoaControllerGetOneSuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -633,7 +653,7 @@ export function useSchoolMoaControllerGetOneSuspense<
 
 export function useSchoolMoaControllerGetOneSuspense<
   TData = Awaited<ReturnType<typeof schoolMoaControllerGetOne>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -656,11 +676,15 @@ export function useSchoolMoaControllerGetOneSuspense<
 }
 
 export const schoolMoaControllerApprove = (id: string | undefined | null, signal?: AbortSignal) => {
-  return preconfiguredAxios<null>({ url: `/api/school/moa/${id}/approve`, method: "POST", signal });
+  return preconfiguredAxios<BaseResponse>({
+    url: `/api/school/moa/${id}/approve`,
+    method: "POST",
+    signal,
+  });
 };
 
 export const getSchoolMoaControllerApproveMutationOptions = <
-  TError = unknown,
+  TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -698,9 +722,9 @@ export type SchoolMoaControllerApproveMutationResult = NonNullable<
   Awaited<ReturnType<typeof schoolMoaControllerApprove>>
 >;
 
-export type SchoolMoaControllerApproveMutationError = unknown;
+export type SchoolMoaControllerApproveMutationError = ErrorResponse;
 
-export const useSchoolMoaControllerApprove = <TError = unknown, TContext = unknown>(
+export const useSchoolMoaControllerApprove = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof schoolMoaControllerApprove>>,
@@ -721,11 +745,15 @@ export const useSchoolMoaControllerApprove = <TError = unknown, TContext = unkno
   return useMutation(mutationOptions, queryClient);
 };
 export const schoolMoaControllerDeny = (id: string | undefined | null, signal?: AbortSignal) => {
-  return preconfiguredAxios<null>({ url: `/api/school/moa/${id}/deny`, method: "POST", signal });
+  return preconfiguredAxios<BaseResponse>({
+    url: `/api/school/moa/${id}/deny`,
+    method: "POST",
+    signal,
+  });
 };
 
 export const getSchoolMoaControllerDenyMutationOptions = <
-  TError = unknown,
+  TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -763,9 +791,9 @@ export type SchoolMoaControllerDenyMutationResult = NonNullable<
   Awaited<ReturnType<typeof schoolMoaControllerDeny>>
 >;
 
-export type SchoolMoaControllerDenyMutationError = unknown;
+export type SchoolMoaControllerDenyMutationError = ErrorResponse;
 
-export const useSchoolMoaControllerDeny = <TError = unknown, TContext = unknown>(
+export const useSchoolMoaControllerDeny = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof schoolMoaControllerDeny>>,

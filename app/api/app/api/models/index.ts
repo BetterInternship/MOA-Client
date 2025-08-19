@@ -6,12 +6,29 @@
  * OpenAPI spec version: 1.0
  */
 
+export * from "./baseResponse";
+export * from "./entitiesDto";
+export * from "./entitiesResponse";
+export * from "./errorResponse";
 export * from "./loginEntityDto";
 export * from "./loginSchoolDto";
 export * from "./registerEntityDto";
-export * from "./registerSchoolDto";
-export * from "./requestNewMoaDto";
-export * from "./baseResponse";
-export * from "./errorResponse";
 export * from "./registerEntityResponse";
 export * from "./registerEntityResponseEntity";
+export * from "./registerSchoolDto";
+export * from "./requestNewMoaDto";
+export * from "./requestsResponse";
+export * from "./moaHistoryResponse";
+export * from "./moaHistoryResponseHistory";
+export * from "./moaRequestResponse";
+export * from "./moaRequestResponseRequest";
+export * from "./moaRequestsResponse";
+export * from "./newCustomMoaRequestResponse";
+export * from "./newMoaRequestDto";
+export * from "./newTemplatedMoaRequestResponse";
+export * from "./queryDocResponse";
+export * from "./queryDocResponseSignedDocument";
+export * from "./queryMoaResponse";
+export * from "./queryMoaResponseSignedDocument";
+export * from "./schoolEntitiesDto";
+export * from "./schoolEntitiesResponse";
