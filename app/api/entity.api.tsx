@@ -1,4 +1,4 @@
-import { Entity } from "@/types/db";
+import { Entity, MoaRequest } from "@/types/db";
 import { useAuthControllerSignIn, useAuthControllerSignOut } from "./app/api/endpoints/auth/auth";
 import { useEntitiesControllerGetList } from "./app/api/endpoints/entities/entities";
 import {
@@ -11,6 +11,12 @@ import {
   useSchoolEntitiesControllerGetAPartner,
 } from "./app/api/endpoints/school-entities/school-entities";
 
+/**
+ * Auth hook for entities.
+ *
+ * @hook
+ * @returns
+ */
 export const useAuth = () => {
   const signIn = useAuthControllerSignIn();
   const signOut = useAuthControllerSignOut();
@@ -21,57 +27,73 @@ export const useAuth = () => {
   };
 };
 
+/**
+ * Grabs a public list of lean entity DTOs.
+ * Only names and ids are included.
+ *
+ * @returns
+ */
 export const usePublicEntityList = () => {
-  const entities = useEntitiesControllerGetList();
+  const { data } = useEntitiesControllerGetList();
   return {
-    entities: entities.data?.entities as unknown as Entity[],
+    entities: (data?.entities as unknown as Entity[]) ?? [],
   };
 };
 
+/**
+ * Grabs moa requests tied to an entity.
+ *
+ * @returns
+ */
 export const useMoaRequests = () => {
-  const requests = useEntityMoaControllerGetMine();
-  const createTemplated = useEntityMoaControllerRequestNewStandard();
+  const { data } = useEntityMoaControllerGetMine();
+  const createStandard = useEntityMoaControllerRequestNewStandard();
   const createCustom = useEntityMoaControllerRequestNewCustom();
 
-  // robust unwrap (supports {data:{...}} or flat)
-  const ax = requests.data as any;
-  const root = ax?.data ?? ax;
-
   return {
-    requests: root?.requests ?? root?.data?.requests ?? [],
-    createTemplated: createTemplated.mutateAsync,
+    requests: (data?.requests as unknown as MoaRequest[]) ?? [],
+    createStandard: createStandard.mutateAsync,
     createCustom: createCustom.mutateAsync,
   };
 };
 
-/** List the school's partner entities */
+/**
+ * Returns a schools partner entities.
+ *
+ * @param opts
+ * @returns
+ */
 export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) => {
   const { offset = 0, limit = 100 } = opts ?? {};
-  const q = useSchoolEntitiesControllerGetMyPartners({ offset, limit });
-
-  // axios may return {data: <payload>} or already the payload (depending on orval config)
-  const ax = q.data as any;
-  const root = ax?.data ?? ax;
+  const { data, isLoading, isFetching, error, refetch } = useSchoolEntitiesControllerGetMyPartners({
+    offset,
+    limit,
+  });
 
   return {
-    partners: root?.entities ?? root?.data?.entities ?? [],
-    isLoading: q.isLoading || q.isFetching,
-    isError: !!q.error,
-    refetch: q.refetch,
+    partners: (data?.entities as unknown as Entity[]) ?? [],
+    isLoading: isLoading || isFetching,
+    error: error,
+    refetch: refetch,
   };
 };
 
-/** Get one partner entity’s full details (when a row is selected) */
+/**
+ * Returns the information about a single partner.
+ *
+ * @param id
+ * @returns
+ */
 export const useSchoolPartner = (id?: string) => {
-  const q = useSchoolEntitiesControllerGetAPartner(id, { query: { enabled: !!id } });
-
-  const ax = q.data as any;
-  const root = ax?.data ?? ax;
+  const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetAPartner(
+    id,
+    { query: { enabled: !!id } }
+  );
 
   return {
-    partner: root?.entity ?? root?.data?.entity ?? null,
-    isLoading: q.isFetching || q.isLoading,
-    isError: !!q.error,
-    refetch: q.refetch,
+    partner: (data?.entity as unknown as Entity) ?? null,
+    isLoading: isFetching || isLoading,
+    error: error,
+    refetch: refetch,
   };
 };

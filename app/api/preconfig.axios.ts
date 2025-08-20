@@ -7,5 +7,8 @@ const preconfiguredAxios = axios.create({
 
 export const preconfiguredAxiosFunction = async <T>(config: any): Promise<T> => {
   const response = await preconfiguredAxios.request<T>(config);
+
+  // ! todo: add some handlers here that check for the .success
+  // ! correspondingly, if success is false it should handle it properly and log the message
   return response.data;
 };
