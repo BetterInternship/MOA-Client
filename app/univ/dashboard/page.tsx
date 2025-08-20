@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import CustomCard from "@/components/shared/CustomCard";
 
 // import { useEntities } from "@/app/api/school.api"; // keep if you'll use later
 
@@ -100,7 +101,7 @@ export default function UnivDashboardPage() {
       {/* Stats Summary */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <div
+          <CustomCard
             key={stat.label}
             className="flex flex-col items-center justify-center rounded-lg border bg-white p-6"
           >
@@ -112,19 +113,17 @@ export default function UnivDashboardPage() {
             >
               {stat.label}
             </span>
-          </div>
+          </CustomCard>
         ))}
       </div>
 
       {/* Activity Data Table */}
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <CustomCard className="space-y-2">
+        <h2 className="text-lg font-semibold">Recent Activity</h2>
+        <div>
           <DataTable columns={columns} data={activities} searchKey="company" />
-        </CardContent>
-      </Card>
+        </div>
+      </CustomCard>
     </div>
   );
 }

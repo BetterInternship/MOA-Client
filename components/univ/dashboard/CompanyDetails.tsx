@@ -15,9 +15,10 @@ export default function CompanyDetails({ company }: { company: Entity }) {
   if (!view || !reqData) return null;
 
   return (
-    <section className="h-full space-y-6 overflow-y-auto p-4">
+    <section className="h-full space-y-3 overflow-y-auto p-4">
       <MoaDetailsCard
         companyId={view.id}
+        companyName={view.name}
         status={view.badgeStatus}
         validUntil={view.validUntil}
         loading={loading}

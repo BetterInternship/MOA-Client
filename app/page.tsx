@@ -4,22 +4,18 @@ import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   function redirectToSubdomain(subdomain: string) {
-    const baseUrl = typeof window !== "undefined" ? window.location.hostname : "";
-    const port = typeof window !== "undefined" ? window.location.port : "";
+    if (typeof window === "undefined") return;
 
+    // Deconstruct url components
+    const baseUrl = window.location.hostname;
     const domainParts = baseUrl.split(".");
     const rootDomain = domainParts.slice(-2).join(".");
-
     const protocol = window?.location.protocol || "http:";
-    const fullUrl =
-      protocol +
-      "//" +
-      subdomain +
-      "." +
-      rootDomain +
-      (port && port !== "80" && port !== "443" ? `:${port}` : "") +
-      "/login";
+    let port = window.location.port;
+    port = port && port !== "80" && port !== "443" ? `:${port}` : "";
 
+    // Reconstruct and redirect
+    const fullUrl = `${protocol}//${subdomain}.${rootDomain}${port}/login`;
     window.location.href = fullUrl;
   }
 

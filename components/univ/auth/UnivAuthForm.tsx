@@ -5,11 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/api/school.api";
 
 export function UnivAuthForm() {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const auth = useAuth();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,11 +22,18 @@ export function UnivAuthForm() {
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
 
-    // TODO: Call your university auth endpoint here
-    await new Promise((r) => setTimeout(r, 600));
-
-    setLoading(false);
-    router.push("/dashboard")
+    await auth
+      .signIn({
+        data: {
+          email,
+          password,
+        },
+      })
+      .then((r) =>
+        r.data.success
+          ? (setLoading(false), router.push("/dashboard"))
+          : (setLoading(false), alert("Invalid credentials."))
+      );
   }
 
   return (

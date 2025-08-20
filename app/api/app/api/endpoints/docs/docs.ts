@@ -20,13 +20,19 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
+import type { ErrorResponse, QueryDocResponse, QueryMoaResponse } from "../../models";
+
 import { preconfiguredAxios } from "../../../../preconfig.axios";
 
 export const docsControllerGetByVerificationCode = (
   code: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<null>({ url: `/api/docs/query/${code}`, method: "GET", signal });
+  return preconfiguredAxios<QueryDocResponse>({
+    url: `/api/docs/query/${code}`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getDocsControllerGetByVerificationCodeQueryKey = (
@@ -37,7 +43,7 @@ export const getDocsControllerGetByVerificationCodeQueryKey = (
 
 export const getDocsControllerGetByVerificationCodeQueryOptions = <
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options?: {
@@ -68,11 +74,11 @@ export const getDocsControllerGetByVerificationCodeQueryOptions = <
 export type DocsControllerGetByVerificationCodeQueryResult = NonNullable<
   Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>
 >;
-export type DocsControllerGetByVerificationCodeQueryError = unknown;
+export type DocsControllerGetByVerificationCodeQueryError = ErrorResponse;
 
 export function useDocsControllerGetByVerificationCode<
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options: {
@@ -96,7 +102,7 @@ export function useDocsControllerGetByVerificationCode<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useDocsControllerGetByVerificationCode<
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options?: {
@@ -120,7 +126,7 @@ export function useDocsControllerGetByVerificationCode<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useDocsControllerGetByVerificationCode<
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options?: {
@@ -137,7 +143,7 @@ export function useDocsControllerGetByVerificationCode<
 
 export function useDocsControllerGetByVerificationCode<
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options?: {
@@ -164,7 +170,7 @@ export function useDocsControllerGetByVerificationCode<
 
 export const getDocsControllerGetByVerificationCodeSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options?: {
@@ -195,11 +201,11 @@ export const getDocsControllerGetByVerificationCodeSuspenseQueryOptions = <
 export type DocsControllerGetByVerificationCodeSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>
 >;
-export type DocsControllerGetByVerificationCodeSuspenseQueryError = unknown;
+export type DocsControllerGetByVerificationCodeSuspenseQueryError = ErrorResponse;
 
 export function useDocsControllerGetByVerificationCodeSuspense<
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options: {
@@ -215,7 +221,7 @@ export function useDocsControllerGetByVerificationCodeSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useDocsControllerGetByVerificationCodeSuspense<
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options?: {
@@ -231,7 +237,7 @@ export function useDocsControllerGetByVerificationCodeSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useDocsControllerGetByVerificationCodeSuspense<
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options?: {
@@ -248,7 +254,7 @@ export function useDocsControllerGetByVerificationCodeSuspense<
 
 export function useDocsControllerGetByVerificationCodeSuspense<
   TData = Awaited<ReturnType<typeof docsControllerGetByVerificationCode>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   code: string | undefined | null,
   options?: {
@@ -278,7 +284,11 @@ export const docsControllerGetMoaSignedDocument = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<null>({ url: `/api/docs/moa/${id}`, method: "GET", signal });
+  return preconfiguredAxios<QueryMoaResponse>({
+    url: `/api/docs/moa/${id}`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getDocsControllerGetMoaSignedDocumentQueryKey = (id?: string | undefined | null) => {
@@ -287,7 +297,7 @@ export const getDocsControllerGetMoaSignedDocumentQueryKey = (id?: string | unde
 
 export const getDocsControllerGetMoaSignedDocumentQueryOptions = <
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -314,11 +324,11 @@ export const getDocsControllerGetMoaSignedDocumentQueryOptions = <
 export type DocsControllerGetMoaSignedDocumentQueryResult = NonNullable<
   Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>
 >;
-export type DocsControllerGetMoaSignedDocumentQueryError = unknown;
+export type DocsControllerGetMoaSignedDocumentQueryError = ErrorResponse;
 
 export function useDocsControllerGetMoaSignedDocument<
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options: {
@@ -338,7 +348,7 @@ export function useDocsControllerGetMoaSignedDocument<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useDocsControllerGetMoaSignedDocument<
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -358,7 +368,7 @@ export function useDocsControllerGetMoaSignedDocument<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useDocsControllerGetMoaSignedDocument<
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -371,7 +381,7 @@ export function useDocsControllerGetMoaSignedDocument<
 
 export function useDocsControllerGetMoaSignedDocument<
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -394,7 +404,7 @@ export function useDocsControllerGetMoaSignedDocument<
 
 export const getDocsControllerGetMoaSignedDocumentSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -425,11 +435,11 @@ export const getDocsControllerGetMoaSignedDocumentSuspenseQueryOptions = <
 export type DocsControllerGetMoaSignedDocumentSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>
 >;
-export type DocsControllerGetMoaSignedDocumentSuspenseQueryError = unknown;
+export type DocsControllerGetMoaSignedDocumentSuspenseQueryError = ErrorResponse;
 
 export function useDocsControllerGetMoaSignedDocumentSuspense<
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options: {
@@ -445,7 +455,7 @@ export function useDocsControllerGetMoaSignedDocumentSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useDocsControllerGetMoaSignedDocumentSuspense<
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -461,7 +471,7 @@ export function useDocsControllerGetMoaSignedDocumentSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useDocsControllerGetMoaSignedDocumentSuspense<
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {
@@ -478,7 +488,7 @@ export function useDocsControllerGetMoaSignedDocumentSuspense<
 
 export function useDocsControllerGetMoaSignedDocumentSuspense<
   TData = Awaited<ReturnType<typeof docsControllerGetMoaSignedDocument>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   id: string | undefined | null,
   options?: {

@@ -124,3 +124,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Base card */
+  .bi-card {
+    @apply rounded-lg border bg-white p-6;
+    @apply dark:bg-red-50 dark:border-slate-800;
+  }
+
+  .bi-card-interactive {
+    @apply transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/60;
+  }
+}
+

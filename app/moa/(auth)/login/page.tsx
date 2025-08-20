@@ -1,29 +1,5 @@
 import Link from "next/link";
 import { CompanyAuthForm } from "@/components/moa/auth/CompanyAuthForm";
-import Image from "next/image";
-import { useEntities } from "@/app/api/school.api";
-
-const universityURL =
-  typeof window !== "undefined"
-    ? (() => {
-        const current = new URL(window.location.href);
-
-        // Map company host → university host (prod + local)
-        const hostMap: Record<string, string> = {
-          "moa.localhost:3000": "univ.localhost:3000",
-          "moa.betterinternship.com": "uni.moa.betterinternship.com",
-        };
-
-        const mapped =
-          hostMap[current.host] ||
-          // fallback: prod pattern first, then localhost
-          current.host.replace(/^moa\./, "uni.moa.").replace("moa", "univ");
-
-        current.host = mapped;
-        current.pathname = "/login"; // force the login path
-        return current.toString();
-      })()
-    : "https://uni.moa.betterinternship.com/login";
 
 export default function CompanyAuthPage() {
   return (
@@ -54,14 +30,7 @@ export default function CompanyAuthPage() {
           </p>
 
           <p className="text-center text-sm">
-            Not a company?{" "}
-            <Link href={universityURL} className="hover:text-primary underline">
-              Go to University login
-            </Link>
-          </p>
-
-          <p className="text-center text-sm">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <Link href="/register" className="hover:text-primary underline">
               Register your company
             </Link>
@@ -80,8 +49,8 @@ export default function CompanyAuthPage() {
         <div className="bg-primary/60 absolute inset-0" />
 
         <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-white">
-          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
-          <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
+          <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
+          <img src="/dlsu-logo.png" alt="Logo" width={28} height={28} />
           BetterInternship | De La Salle University
         </div>
 

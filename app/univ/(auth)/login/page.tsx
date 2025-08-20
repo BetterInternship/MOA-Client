@@ -1,24 +1,5 @@
 import Link from "next/link";
 import { UnivAuthForm } from "@/components/univ/auth/UnivAuthForm";
-import Image from "next/image";
-
-const companyURL =
-  typeof window !== "undefined"
-    ? (() => {
-        const current = new URL(window.location.href);
-        // Map university host → company host
-        const hostMap: Record<string, string> = {
-          "univ.localhost:3000": "moa.localhost:3000",
-          "uni.moa.betterinternship.com": "moa.betterinternship.com",
-        };
-        const newHost =
-          hostMap[current.host] || current.host.replace("univ", "moa").replace("uni.", "moa.");
-        current.host = newHost;
-        current.pathname = "/login";
-        return current.toString();
-      })()
-    : "https://moa.betterinternship.com/login";
-
 
 export default function UnivLoginPage() {
   return (
@@ -27,15 +8,15 @@ export default function UnivLoginPage() {
       <div
         className="relative hidden flex-col border-r bg-cover bg-center p-10 lg:flex"
         style={{
-          backgroundImage: "url('/university-login.jpg')",
+          backgroundImage: "url('/backgrounds/university-login.jpg')",
         }}
       >
         {/* Overlay for better text readability */}
         <div className="bg-primary/60 absolute inset-0" />
 
         <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-white">
-          <Image src="/betterinternship-logo.png" alt="Logo" width={28} height={28} priority />
-          <Image src="/dlsu-logo.png" alt="Logo" width={28} height={28} priority />
+          <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28}></img>
+          <img src="/dlsu-logo.png" alt="Logo" width={28} height={28}></img>
 
           <span>BetterInternship | De La Salle University</span>
         </div>
@@ -68,13 +49,6 @@ export default function UnivLoginPage() {
               Privacy Policy
             </Link>
             .
-          </p>
-
-          <p className="text-center text-sm">
-            Not from DLSU?{" "}
-            <Link href={companyURL} className="hover:text-primary underline">
-              Go to company login
-            </Link>
           </p>
         </div>
       </div>
