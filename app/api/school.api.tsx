@@ -1,4 +1,8 @@
 import {
+  useAuthControllerSchoolSignIn,
+  useAuthControllerSchoolSignOut,
+} from "./app/api/endpoints/auth/auth";
+import {
   useSchoolEntitiesControllerApproveRequest,
   useSchoolEntitiesControllerDenyRequest,
   useSchoolEntitiesControllerGetMyPartners,
@@ -9,6 +13,16 @@ import {
   useSchoolMoaControllerDeny,
   useSchoolMoaControllerGetMine,
 } from "./app/api/endpoints/school-moa/school-moa";
+
+export const useAuth = () => {
+  const signIn = useAuthControllerSchoolSignIn();
+  const signOut = useAuthControllerSchoolSignOut();
+
+  return {
+    signIn: signIn.mutateAsync,
+    signOut: signOut.mutateAsync,
+  };
+};
 
 export const useEntities = async ({ offset, limit }: { offset?: number; limit?: number }) => {
   const entities = useSchoolEntitiesControllerGetMyPartners({

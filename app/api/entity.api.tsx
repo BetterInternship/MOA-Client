@@ -5,7 +5,7 @@ import {
   useEntityMoaControllerRequestNewTemplated,
 } from "./app/api/endpoints/entity-moa/entity-moa";
 
-export const useAuth = async () => {
+export const useAuth = () => {
   const signIn = useAuthControllerSignIn();
   const signOut = useAuthControllerSignOut();
 
