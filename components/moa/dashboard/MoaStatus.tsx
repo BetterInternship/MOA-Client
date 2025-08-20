@@ -8,6 +8,9 @@ import type { MoaStatus } from "@/types/moa";
 import { MoaRequest } from "@/types/db";
 import { formatWhen } from "@/lib/format";
 import { useDocsControllerGetMoaSignedDocument } from "@/app/api";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
 
 type Props = {
   requests: MoaRequest[];
@@ -40,7 +43,7 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
           Loading…
         </div>
       ) : !moa ? (
-        <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
+        <div className="text-muted-foreground rounded-md border border-blue-200 bg-blue-50 p-6 text-sm">
           No MOA on file yet.
         </div>
       ) : (
@@ -56,6 +59,17 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                   <pre className="inline-block rounded-[0.25em] bg-gray-200 px-2 py-1 hover:cursor-pointer">
                     {signedDocument.data?.data?.signedDocument?.verification_code ?? "loading..."}
                   </pre>
+                  <div className="gap-2">
+                    <Button asChild>
+                      <a
+                        href={signedDocument.data?.data?.signedDocument?.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Download MOA
+                      </a>
+                    </Button>
+                  </div>
                 </span>
               </div>
             </div>

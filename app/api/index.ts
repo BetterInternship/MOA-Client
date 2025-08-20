@@ -6,3 +6,5 @@ export * from "./app/api/endpoints/school-entities/school-entities";
 export * from "./app/api/endpoints/entity-moa/entity-moa";
 export * from "./app/api/endpoints/docs/docs";
 export * from "./app/api/endpoints/schools/schools";
+export * from "./app/api/endpoints/entities/entities";
+export * from "./app/api/endpoints/entity-schools/entity-schools";
