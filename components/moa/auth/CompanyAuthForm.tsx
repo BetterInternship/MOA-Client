@@ -51,17 +51,19 @@ export function CompanyAuthForm() {
   }
 
   return (
-    <form className="grid gap-4" onSubmit={onSubmit}>
-      <div className="grid gap-2">
-        <Label htmlFor="tin">Select Company</Label>
+    <form className="mt-4 grid gap-5" onSubmit={onSubmit}>
+      <div className="grid gap-1">
+        <Label className="text-muted-foreground text-xs font-normal">Select Company</Label>
         <Autocomplete
-          placeholder="Enter company name..."
+          placeholder="Legal Company Name"
           options={options}
           setter={(value) => setCompany(value ?? null)}
         />
+        <div className="h-1"></div>
+        <Label className="text-muted-foreground text-xs font-normal">Enter password</Label>
         <Input
           type="password"
-          placeholder="Enter password..."
+          placeholder="password"
           onChange={(e) => setPassword(e.currentTarget.value)}
         ></Input>
       </div>
@@ -69,7 +71,7 @@ export function CompanyAuthForm() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <Button disabled={loading} onClick={(e) => onSubmit}>
-        {loading ? "Verifying..." : "Continue"}
+        {loading ? "Verifying..." : "Login"}
       </Button>
     </form>
   );

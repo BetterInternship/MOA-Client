@@ -41,15 +41,13 @@ export function UnivAuthForm() {
   }
 
   return (
-    <form className="grid gap-4" onSubmit={onSubmit}>
-      <div className="grid gap-2">
-        <Label htmlFor="email">University Email</Label>
+    <form className="grid gap-5" onSubmit={onSubmit}>
+      <div className="grid gap-1">
+        <Label className="text-muted-foreground text-xs font-normal">University email</Label>
         <Input id="email" name="email" placeholder="student@dlsu.edu.ph" type="email" required />
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="password">Password</Label>
-        <Input id="password" name="password" type="password" required />
+        <div className="h-1"></div>
+        <Label className="text-muted-foreground text-xs font-normal">Password</Label>
+        <Input id="password" name="password" type="password" placeholder="password" required />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
