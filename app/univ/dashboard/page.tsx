@@ -5,10 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import CustomCard from "@/components/shared/CustomCard";
+import { Badge } from "@/components/ui/badge";
 
 // import { useEntities } from "@/app/api/school.api"; // keep if you'll use later
 
-type Stat = { label: string; value: number; color: string };
+type Stat = {
+  label: string;
+  value: number;
+  color: "supportive" | "primary" | "warning" | "destructive";
+};
 type Activity = { date: string; company: string; action: string; performedBy: string };
 
 const columns: ColumnDef<Activity>[] = [
@@ -20,10 +25,10 @@ const columns: ColumnDef<Activity>[] = [
 
 // ---- Inline dummy data (rendered immediately, replaced after fetch) ----
 const DUMMY_STATS: Stat[] = [
-  { label: "Active MOAs", value: 18, color: "bg-emerald-600" },
-  { label: "Pending MOA Requests", value: 7, color: "bg-amber-500" },
-  { label: "Companies Registered", value: 124, color: "bg-blue-600" },
-  { label: "Under Review", value: 2, color: "bg-rose-400 text-rose-100" },
+  { label: "Active MOAs", value: 18, color: "supportive" },
+  { label: "Pending MOA Requests", value: 7, color: "warning" },
+  { label: "Companies Registered", value: 124, color: "primary" },
+  { label: "Under Review", value: 2, color: "destructive" },
 ];
 
 const DUMMY_ACTIVITIES: Activity[] = [
@@ -103,16 +108,12 @@ export default function UnivDashboardPage() {
         {stats.map((stat) => (
           <CustomCard
             key={stat.label}
-            className="flex flex-col items-center justify-center rounded-lg border bg-white p-6"
+            className="flex flex-col items-center justify-center border bg-white p-6"
           >
-            <div className="text-4xl font-bold text-slate-600">{stat.value}</div>
-            <span
-              className={`mt-2 rounded-md px-3 py-1 text-sm font-medium ${
-                stat.color.includes("bg-gray") ? stat.color : `${stat.color} text-white`
-              }`}
-            >
-              {stat.label}
-            </span>
+            <div className="mb-2 font-mono text-4xl font-bold tracking-tight text-slate-600">
+              {stat.value}
+            </div>
+            <Badge type={stat.color}>{stat.label}</Badge>
           </CustomCard>
         ))}
       </div>
