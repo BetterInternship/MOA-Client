@@ -28,8 +28,8 @@ const DUMMY_STATS: Stat[] = [
 
 const DUMMY_ACTIVITIES: Activity[] = [
   {
-    date: "08/10/2025",
-    company: "Aboitiz Power Corporation",
+    date: "08/14/2025",
+    company: "BetterInternship",
     action: "MOA Approved",
     performedBy: "Legal - DLSU",
   },

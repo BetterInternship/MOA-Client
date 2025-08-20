@@ -24,7 +24,6 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  // { href: "/dashboard", label: <Home className="h-4 w-4 mt-0.5" />, match: ["/dashboard"] },
   { href: "/companies", label: "Browse Companies", match: ["/companies"] },
   { href: "/company-registration", label: "Company Approval", match: ["/company-registration"] },
   { href: "/moa-request", label: "MOA Approval", match: ["/moa", "/moa-request"] },
@@ -87,18 +86,6 @@ export default function UnivTopbar() {
               <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
               <span className="font-semibold">MOA Management Tool</span>
             </Link>
-
-            <nav className="ml-4">
-              <Link
-                href="/dashboard"
-                className={cn(
-                  "text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-1.5 text-sm",
-                  pathname === "/dashboard" && "bg-accent text-foreground"
-                )}
-              >
-                Dashboard
-              </Link>
-            </nav>
           </div>
 
           {/* Scrollable nav on mobile */}
