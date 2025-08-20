@@ -52,7 +52,7 @@ export default function StandardMoaRequestPage() {
   async function onSubmit(values: FormValues) {
     try {
       setSubmitting(true);
-      const r = await moaRequests.createTemplated({
+      const r = await moaRequests.createStandard({
         data: {
           entity_id: "e2ba4aec-4680-49cf-9499-f5ff09760827",
           school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
