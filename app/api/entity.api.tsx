@@ -3,9 +3,7 @@ import {
   useEntityMoaControllerGetMine,
   useEntityMoaControllerRequestNewCustom,
   useEntityMoaControllerRequestNewStandard,
-  // useEntityMoaControllerRequestNewTemplated,
 } from "./app/api/endpoints/entity-moa/entity-moa";
-
 import {
   useSchoolEntitiesControllerGetMyPartners,
   useSchoolEntitiesControllerGetAPartner,
@@ -26,8 +24,12 @@ export const useMoaRequests = () => {
   const createTemplated = useEntityMoaControllerRequestNewStandard();
   const createCustom = useEntityMoaControllerRequestNewCustom();
 
+  // robust unwrap (supports {data:{...}} or flat)
+  const ax = requests.data as any;
+  const root = ax?.data ?? ax;
+
   return {
-    requests: requests.data?.data?.requests,
+    requests: root?.requests ?? root?.data?.requests ?? [],
     createTemplated: createTemplated.mutateAsync,
     createCustom: createCustom.mutateAsync,
   };
@@ -38,23 +40,28 @@ export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) =>
   const { offset = 0, limit = 100 } = opts ?? {};
   const q = useSchoolEntitiesControllerGetMyPartners({ offset, limit });
 
+  // axios may return {data: <payload>} or already the payload (depending on orval config)
+  const ax = q.data as any;
+  const root = ax?.data ?? ax;
+
   return {
-    partners: q.data?.data?.entities ?? [], // BaseResponse -> { data: { entities: [...] } }
-    isLoading: q.isLoading,
-    isError: q.isError,
+    partners: root?.entities ?? root?.data?.entities ?? [],
+    isLoading: q.isLoading || q.isFetching,
+    isError: !!q.error,
     refetch: q.refetch,
   };
 };
 
 /** Get one partner entity’s full details (when a row is selected) */
 export const useSchoolPartner = (id?: string) => {
-  const q = useSchoolEntitiesControllerGetAPartner(id, {
-    query: { enabled: !!id },
-  });
+  const q = useSchoolEntitiesControllerGetAPartner(id, { query: { enabled: !!id } });
+
+  const ax = q.data as any;
+  const root = ax?.data ?? ax;
 
   return {
-    partner: q.data?.data?.entity ?? null,
-    isLoading: q.isFetching,
+    partner: root?.entity ?? root?.data?.entity ?? null,
+    isLoading: q.isFetching || q.isLoading,
     isError: !!q.error,
     refetch: q.refetch,
   };

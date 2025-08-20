@@ -2,15 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type {
-  Entity,
-  EntityLog,
-  PrivateNote,
-  NewEntityRequest,
-  Message,
-  URLString,
-  ISODate,
-} from "@/types/db";
+import type { Entity, Message, URLString, ISODate } from "@/types/db";
 import type {
   MoaRequest as UiMoaRequest,
   MoaHistoryItem,
@@ -19,7 +11,7 @@ import type {
 } from "@/types/moa-request";
 import { useSchoolPartner } from "@/app/api/entity.api";
 
-/* helpers */
+/* ── helpers ─────────────────────────────────────────────────────────────── */
 
 const firstNonEmpty = (...vals: (string | undefined | null)[]) =>
   vals.find((v) => v !== undefined && v !== null && String(v).trim() !== "") ?? "";
@@ -32,27 +24,29 @@ const toMDY = (d: Date | string) => {
   return `${mm}/${dd}/${yyyy}`;
 };
 
-// map backend/raw status -> UI badge text
+// map backend/raw status -> UI badge text (nullable while loading)
 type BackendMoa =
   | "approved"
   | "denied"
   | "under_review"
   | "pending"
   | "blacklisted"
+  | "registered"
   | string
   | null
   | undefined;
-const toMoaStatus = (s?: BackendMoa): MoaStatus => {
+
+const toMoaStatus = (s?: BackendMoa): MoaStatus | null => {
   switch ((s ?? "").toString().toLowerCase()) {
     case "approved":
       return "Approved";
     case "denied":
-    case "registered":
-      return "Registered";
     case "blacklisted":
       return "Denied";
+    case "registered":
+      return "Registered";
     default:
-      return null;
+      return null; // unknown yet → let UI show a skeleton/placeholder
   }
 };
 
@@ -61,86 +55,91 @@ const fileToHistoryFile = (url: URLString, stamp: ISODate): MoaHistoryFile => {
   return { id: `${stamp}-${name}`, name, url };
 };
 
-/* optional Next aggregator payload (logs/notes/requests) */
+/* ── history API (response shape) ────────────────────────────────────────── */
 
-type ApiDetail = {
-  entity: Entity;
-  schoolEntity?: { status?: string | null } | null;
-  logs: EntityLog[];
-  notes: PrivateNote[];
-  requests: { newEntity: NewEntityRequest[]; moa: { timestamp: ISODate; schoolID: string }[] };
-  messages?: Message[];
-};
+type HistoryApiFile = { id: string; name: string; url: string };
+type HistoryApiItem = { timestamp: ISODate; text: string; files?: HistoryApiFile[] };
+type HistoryApiResponse =
+  | { success: true; history: HistoryApiItem[] }
+  | { success: true; data: { history: HistoryApiItem[] } }
+  | any;
 
-/* hook */
+/* ── hook ────────────────────────────────────────────────────────────────── */
 
 export function useCompanyDetail(company?: Entity) {
   const companyId = company?.id ?? "";
 
-  // A) primary: backend partner (merged entity + status from school_entities)
+  /* A) partner details (entity + status from school_entities) */
   const { partner, isLoading: partnerLoading } = useSchoolPartner(companyId);
 
-  // B) optional: local Next aggregator for history; ignore if 404
-  const [extra, setExtra] = useState<ApiDetail | null>(null);
-  const [extraLoading, setExtraLoading] = useState(false);
+  /* B) history fetch */
+  const [history, setHistory] = useState<MoaHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     if (!companyId) {
-      setExtra(null);
+      setHistory([]);
       return;
     }
     const ctrl = new AbortController();
     (async () => {
       try {
-        setExtraLoading(true);
-        const res = await fetch(`/api/univ/companies/${companyId}`, { signal: ctrl.signal });
-        if (!res.ok) return; // silently ignore (404, 401, etc.)
-        const data: ApiDetail = await res.json();
-        setExtra(data);
+        setHistoryLoading(true);
+        const base = process.env.NEXT_PUBLIC_CLIENT_URL || "";
+        const res = await fetch(`${base}/api/school/entities/${companyId}/history`, {
+          credentials: "include",
+          signal: ctrl.signal,
+        });
+        if (!res.ok) {
+          setHistory([]); // keep empty if 404/401/etc.
+          return;
+        }
+        const json: HistoryApiResponse = await res.json();
+        const list: HistoryApiItem[] = json?.data?.history ?? json?.history ?? [];
+
+        const items: MoaHistoryItem[] = list
+          .map((it) => ({
+            date: toMDY(it.timestamp),
+            text: it.text,
+            files: (it.files ?? []).map((f) => ({
+              id: f.id,
+              name: f.name,
+              url: f.url,
+            })) as MoaHistoryFile[],
+          }))
+          .sort((a, b) => +new Date(b.date) - +new Date(a.date));
+
+        setHistory(items);
       } catch (e: any) {
         if (e?.name !== "AbortError") {
           // console.error(e);
         }
       } finally {
-        setExtraLoading(false);
+        setHistoryLoading(false);
       }
     })();
     return () => ctrl.abort();
   }, [companyId]);
 
-  const loading = partnerLoading || extraLoading;
+  const loading = partnerLoading || historyLoading;
 
-  /* view model (top cards) */
+  /* C) view model (top cards) */
 
-  const backendStatusRaw: BackendMoa =
-    (partner as any)?.moaStatus ?? (extra?.schoolEntity?.status as BackendMoa);
+  const backendStatusRaw: BackendMoa = (partner as any)?.moaStatus ?? (company as any)?.moaStatus;
 
-  const moaStatus: MoaStatus = toMoaStatus(backendStatusRaw);
+  const moaStatus: MoaStatus | null = toMoaStatus(backendStatusRaw);
 
   const name = firstNonEmpty(
     (company as any)?.display_name,
     (partner as any)?.display_name,
-    extra?.entity?.display_name,
     company?.legal_identifier
   );
 
-  const contactPerson = firstNonEmpty(
-    company?.contact_name,
-    (partner as any)?.contact_name,
-    extra?.entity?.contact_name
-  );
+  const contactPerson = firstNonEmpty(company?.contact_name, (partner as any)?.contact_name);
 
-  const email = firstNonEmpty(
-    company?.contact_email,
-    (partner as any)?.contact_email,
-    extra?.entity?.contact_email
-  );
+  const email = firstNonEmpty(company?.contact_email, (partner as any)?.contact_email);
 
-  const phone = firstNonEmpty(
-    (company as any)?.contact_phone,
-    (partner as any)?.contact_phone,
-    extra?.entity?.contact_phone
-  );
+  const phone = firstNonEmpty((company as any)?.contact_phone, (partner as any)?.contact_phone);
 
   const view = useMemo(() => {
     if (!companyId) return null;
@@ -150,68 +149,22 @@ export function useCompanyDetail(company?: Entity) {
       contactPerson,
       email,
       phone,
-      moaStatus, // <-- use this in UI
+      moaStatus, // <- pass this to MoaDetailsCard.status
       validUntil: undefined as string | undefined,
     };
   }, [companyId, name, contactPerson, email, phone, moaStatus]);
 
-  /* history / request view model */
+  /* D) request/history view model for CompanyRequestHistory */
 
   const reqData: UiMoaRequest | null = useMemo(() => {
     if (!companyId) return null;
-    const d = extra;
 
-    const allReqTimes: ISODate[] = [
-      ...(d?.requests?.newEntity ?? []).map((r) => r.timestamp),
-      ...(d?.requests?.moa ?? []).map((r) => r.timestamp),
-    ];
+    // earliest date across history items; if none, use "today"
+    const allDates = history.map((h) => h.date);
     const earliestIso =
-      allReqTimes.length > 0
-        ? new Date(Math.min(...allReqTimes.map((t) => +new Date(t)))).toISOString()
+      allDates.length > 0
+        ? new Date(Math.min(...allDates.map((d) => +new Date(d)))).toISOString()
         : new Date().toISOString();
-
-    const logItems: MoaHistoryItem[] =
-      d?.logs.map((l) => {
-        const files = l.file ? [fileToHistoryFile(l.file, l.timestamp)] : undefined;
-        const text =
-          l.update === "note" ? "Note added" : l.update.charAt(0).toUpperCase() + l.update.slice(1);
-        return { date: toMDY(l.timestamp), text, files };
-      }) ?? [];
-
-    const noteItems: MoaHistoryItem[] =
-      d?.notes.map((n) => ({
-        date: toMDY(n.timestamp),
-        text: `Private note by ${n.authorId}: ${n.message}`,
-      })) ?? [];
-
-    const messageItems: MoaHistoryItem[] =
-      (d?.messages ?? []).map((m) => {
-        const label =
-          m.action === "approve" ? "Approved" : m.action === "deny" ? "Denied" : "Reply";
-        const files: MoaHistoryFile[] | undefined = (m.attachments ?? []).length
-          ? (m.attachments ?? []).map((u, idx) => {
-              const name = u.split("/").pop() || `attachment-${idx + 1}`;
-              return { id: `${m.timestamp}-${name}`, name, url: u };
-            })
-          : undefined;
-        const extra = m.comments ? ` — ${m.comments}` : "";
-        return { date: toMDY(m.timestamp), text: `${label}${extra}`, files };
-      }) ?? [];
-
-    const requestItems: MoaHistoryItem[] = [
-      ...(d?.requests?.newEntity ?? []).map((r) => ({
-        date: toMDY(r.timestamp),
-        text: "Submitted new company registration request",
-      })),
-      ...(d?.requests?.moa ?? []).map((r) => ({
-        date: toMDY(r.timestamp),
-        text: `Submitted MOA request (School ID: ${r.schoolID})`,
-      })),
-    ];
-
-    const history = [...logItems, ...noteItems, ...messageItems, ...requestItems].sort(
-      (a, b) => +new Date(b.date) - +new Date(a.date)
-    );
 
     return {
       id: companyId,
@@ -221,11 +174,12 @@ export function useCompanyDetail(company?: Entity) {
       tin: "",
       industry: "",
       requestedAt: toMDY(earliestIso),
-      status: moaStatus,
+      status: (moaStatus ?? "Under Review") as MoaStatus,
       notes: undefined,
       history,
     };
-  }, [companyId, extra, name, contactPerson, email, moaStatus]);
+  }, [companyId, name, contactPerson, email, moaStatus, history]);
 
-  return { loading, detail: extra, view, reqData };
+  // You don't use `detail` in the component; keep it for API compatibility.
+  return { loading, detail: null, view, reqData };
 }
