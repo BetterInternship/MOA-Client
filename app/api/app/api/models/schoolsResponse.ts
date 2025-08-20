@@ -5,10 +5,9 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { EntitiesResponseEntities } from "./entitiesResponseEntities";
 
-export interface EntitiesResponse {
+export interface SchoolsResponse {
   success: boolean;
   message: string;
-  entities: EntitiesResponseEntities;
+  schools: string[];
 }

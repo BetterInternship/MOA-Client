@@ -5,8 +5,10 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { SchoolAccountResponseSchoolAccount } from "./schoolAccountResponseSchoolAccount";
 
 export interface SchoolAccountResponse {
   success: boolean;
   message: string;
+  school_account: SchoolAccountResponseSchoolAccount;
 }
