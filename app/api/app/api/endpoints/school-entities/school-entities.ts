@@ -29,6 +29,7 @@ import type {
   RequestsResponse,
   SchoolEntitiesDto,
   SchoolEntitiesResponse,
+  SchoolEntityResponse,
 } from "../../models";
 
 import { preconfiguredAxios } from "../../../../preconfig.axios";
@@ -38,7 +39,7 @@ export const schoolEntitiesControllerGetMyPartners = (
   signal?: AbortSignal
 ) => {
   return preconfiguredAxios<SchoolEntitiesResponse>({
-    url: `/api/school/entities/me`,
+    url: `/api/school/entities/my-partners`,
     method: "GET",
     headers: { "Content-Type": "application/json" },
     signal,
@@ -48,7 +49,7 @@ export const schoolEntitiesControllerGetMyPartners = (
 export const getSchoolEntitiesControllerGetMyPartnersQueryKey = (
   schoolEntitiesDto?: SchoolEntitiesDto
 ) => {
-  return [`/api/school/entities/me`, schoolEntitiesDto] as const;
+  return [`/api/school/entities/my-partners`, schoolEntitiesDto] as const;
 };
 
 export const getSchoolEntitiesControllerGetMyPartnersQueryOptions = <
@@ -916,3 +917,256 @@ export const useSchoolEntitiesControllerDenyRequest = <TError = ErrorResponse, T
 
   return useMutation(mutationOptions, queryClient);
 };
+export const schoolEntitiesControllerGetAPartner = (
+  id: string | undefined | null,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxios<SchoolEntityResponse>({
+    url: `/api/school/entities/${id}`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getSchoolEntitiesControllerGetAPartnerQueryKey = (id?: string | undefined | null) => {
+  return [`/api/school/entities/${id}`] as const;
+};
+
+export const getSchoolEntitiesControllerGetAPartnerQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolEntitiesControllerGetAPartnerQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>> = ({
+    signal,
+  }) => schoolEntitiesControllerGetAPartner(id, signal);
+
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolEntitiesControllerGetAPartnerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>
+>;
+export type SchoolEntitiesControllerGetAPartnerQueryError = ErrorResponse;
+
+export function useSchoolEntitiesControllerGetAPartner<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+          TError,
+          Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolEntitiesControllerGetAPartner<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+          TError,
+          Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolEntitiesControllerGetAPartner<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolEntitiesControllerGetAPartner<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolEntitiesControllerGetAPartnerQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolEntitiesControllerGetAPartnerSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolEntitiesControllerGetAPartnerQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>> = ({
+    signal,
+  }) => schoolEntitiesControllerGetAPartner(id, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolEntitiesControllerGetAPartnerSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>
+>;
+export type SchoolEntitiesControllerGetAPartnerSuspenseQueryError = ErrorResponse;
+
+export function useSchoolEntitiesControllerGetAPartnerSuspense<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolEntitiesControllerGetAPartnerSuspense<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolEntitiesControllerGetAPartnerSuspense<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolEntitiesControllerGetAPartnerSuspense<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetAPartner>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolEntitiesControllerGetAPartnerSuspenseQueryOptions(id, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}

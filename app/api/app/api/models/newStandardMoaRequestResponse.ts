@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface SchoolEntitiesResponse {
-  success: boolean;
-  message: string;
-  entities: string[];
+export interface NewStandardMoaRequestResponse {
+  moaRequestId: string;
+  signedDocumentId: string;
+  verificationCode: string;
 }

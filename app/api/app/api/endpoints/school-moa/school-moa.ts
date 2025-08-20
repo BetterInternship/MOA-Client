@@ -35,14 +35,14 @@ import { preconfiguredAxios } from "../../../../preconfig.axios";
 
 export const schoolMoaControllerGetMine = (signal?: AbortSignal) => {
   return preconfiguredAxios<MoaRequestsResponse>({
-    url: `/api/school/moa/me`,
+    url: `/api/school/moa/mine`,
     method: "GET",
     signal,
   });
 };
 
 export const getSchoolMoaControllerGetMineQueryKey = () => {
-  return [`/api/school/moa/me`] as const;
+  return [`/api/school/moa/mine`] as const;
 };
 
 export const getSchoolMoaControllerGetMineQueryOptions = <

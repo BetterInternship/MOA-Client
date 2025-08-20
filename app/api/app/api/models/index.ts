@@ -34,3 +34,6 @@ export * from "./schoolAccountResponse";
 export * from "./schoolEntitiesDto";
 export * from "./schoolEntitiesResponse";
 export * from "./schoolResponse";
+export * from "./newStandardMoaRequestResponse";
+export * from "./schoolEntityResponse";
+export * from "./schoolEntityResponseEntity";

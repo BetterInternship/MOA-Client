@@ -6,8 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface SchoolEntitiesResponse {
-  success: boolean;
-  message: string;
-  entities: string[];
-}
+export type SchoolEntityResponseEntity = { [key: string]: unknown };
