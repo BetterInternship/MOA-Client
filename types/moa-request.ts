@@ -1,4 +1,4 @@
-export type MoaStatus = "Pending" | "Needs Info" | "Under Review" | "Approved" | "Denied";
+export type MoaStatus = "Pending" | "Needs Info" | "Under Review" | "Approved" | "Denied" | "Registered" | "Blacklisted" ;
 
 export type MoaHistoryFile = {
   id: string; // stable id for selection

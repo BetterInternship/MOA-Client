@@ -19,7 +19,7 @@ export default function CompanyDetails({ company }: { company: Entity }) {
       <MoaDetailsCard
         companyId={view.id}
         companyName={view.name}
-        status={view.badgeStatus}
+        status={view.moaStatus}
         validUntil={view.validUntil}
         loading={loading}
       />
