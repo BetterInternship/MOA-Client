@@ -197,16 +197,17 @@ const LOLOLOL: Record<string, string> = {
 
 type Props = {
   companyId: string;
+  companyName: string;
   status: MoaStatus;
   validUntil?: string;
   loading?: boolean;
 };
 
-export default function MoaDetailsCard({ companyId, status, validUntil, loading }: Props) {
+export default function MoaDetailsCard({ companyId, companyName, status, validUntil, loading }: Props) {
   return (
     <div className="rounded-[0.33em] border bg-white p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">MOA Details</h2>
+        <h2 className="text-lg font-semibold">{companyName}</h2>
         <a
           href={LOLOLOL[companyId] as string}
           target="_blank"

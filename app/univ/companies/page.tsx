@@ -82,7 +82,21 @@ export default function CompaniesPage() {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={74} minSize={40}>
-          {selected ? <CompanyDetails company={selected as Entity} /> : null}
+          {isLoading ? (
+            <div className="space-y-4 p-6">
+              <div className="flex items-center justify-between">
+                <div className="bg-muted h-6 w-1/3 animate-pulse rounded" />
+                <div className="bg-muted h-5 w-24 animate-pulse rounded" />
+              </div>
+              <div className="bg-muted h-24 w-full animate-pulse rounded" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="bg-muted h-16 w-full animate-pulse rounded" />
+                <div className="bg-muted h-16 w-full animate-pulse rounded" />
+              </div>
+            </div>
+          ) : selected ? (
+            <CompanyDetails company={selected as Entity} />
+          ) : null}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
