@@ -15,7 +15,6 @@ import {
  * Auth hook for entities.
  *
  * @hook
- * @returns
  */
 export const useAuth = () => {
   const signIn = useAuthControllerSignIn();
@@ -31,7 +30,7 @@ export const useAuth = () => {
  * Grabs a public list of lean entity DTOs.
  * Only names and ids are included.
  *
- * @returns
+ * @hook
  */
 export const usePublicEntityList = () => {
   const { data } = useEntitiesControllerGetList();
@@ -43,7 +42,7 @@ export const usePublicEntityList = () => {
 /**
  * Grabs moa requests tied to an entity.
  *
- * @returns
+ * @hook
  */
 export const useMoaRequests = () => {
   const { data } = useEntityMoaControllerGetMine();
@@ -59,9 +58,10 @@ export const useMoaRequests = () => {
 
 /**
  * Returns a schools partner entities.
+ * // ! move to school api
  *
  * @param opts
- * @returns
+ * @hook
  */
 export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) => {
   const { offset = 0, limit = 100 } = opts ?? {};
@@ -80,9 +80,10 @@ export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) =>
 
 /**
  * Returns the information about a single partner.
+ * // ! move to school api
  *
  * @param id
- * @returns
+ * @hook
  */
 export const useSchoolPartner = (id?: string) => {
   const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetAPartner(

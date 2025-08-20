@@ -1,3 +1,4 @@
+import { Entity, MoaRequest } from "@/types/db";
 import {
   useAuthControllerSchoolSignIn,
   useAuthControllerSchoolSignOut,
@@ -6,7 +7,6 @@ import {
   useSchoolEntitiesControllerApproveRequest,
   useSchoolEntitiesControllerDenyRequest,
   useSchoolEntitiesControllerGetMyPartners,
-  useSchoolEntitiesControllerGetMyRequests,
 } from "./app/api/endpoints/school-entities/school-entities";
 import {
   useSchoolMoaControllerApprove,
@@ -14,6 +14,11 @@ import {
   useSchoolMoaControllerGetMine,
 } from "./app/api/endpoints/school-moa/school-moa";
 
+/**
+ * Auth hook for schools.
+ *
+ * @hook
+ */
 export const useAuth = () => {
   const signIn = useAuthControllerSchoolSignIn();
   const signOut = useAuthControllerSchoolSignOut();
@@ -24,41 +29,43 @@ export const useAuth = () => {
   };
 };
 
+/**
+ * Gives information about school partners.
+ *
+ * @param opts
+ * @hook
+ */
 export const useEntities = async (opts?: { offset?: number; limit?: number }) => {
-  const entities = useSchoolEntitiesControllerGetMyPartners({
+  const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetMyPartners({
     offset: opts?.offset ?? 0,
     limit: opts?.limit ?? 100,
   });
-  const requests = useSchoolEntitiesControllerGetMyRequests();
-  const approveRequest = useSchoolEntitiesControllerApproveRequest();
+  const approveNewEntityRequest = useSchoolEntitiesControllerApproveRequest();
+  const denyNewEntityRequest = useSchoolEntitiesControllerDenyRequest();
 
   return {
-    entities: entities.data,
-    isFetchingEntities: entities.isFetching,
-    approveRequest: approveRequest.mutateAsync,
+    entities: (data?.entities as unknown as Entity[]) ?? [],
+    isLoading: isFetching || isLoading,
+    error,
+    refetch,
+    approve: approveNewEntityRequest.mutateAsync,
+    deny: denyNewEntityRequest.mutateAsync,
   };
 };
 
+/**
+ * Gives information about a school's moa requests.
+ *
+ * @hook
+ */
 export const useMoaRequests = () => {
-  const requests = useSchoolMoaControllerGetMine();
-  const approve = useSchoolMoaControllerApprove();
-  const deny = useSchoolMoaControllerDeny();
+  const { data } = useSchoolMoaControllerGetMine();
+  const approveMoaRequest = useSchoolMoaControllerApprove();
+  const denyMoaRequest = useSchoolMoaControllerDeny();
 
   return {
-    requests: requests.data,
-    approve: approve.mutateAsync,
-    deny: deny.mutateAsync,
-  };
-};
-
-export const useNewEntityRequests = () => {
-  const requests = useSchoolEntitiesControllerGetMyRequests();
-  const approve = useSchoolEntitiesControllerApproveRequest();
-  const deny = useSchoolEntitiesControllerDenyRequest();
-
-  return {
-    requests: requests.data,
-    approve: approve.mutateAsync,
-    deny: deny.mutateAsync,
+    requests: (data?.requests as unknown as MoaRequest) ?? [],
+    approve: approveMoaRequest.mutateAsync,
+    deny: denyMoaRequest.mutateAsync,
   };
 };
