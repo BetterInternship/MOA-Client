@@ -22,10 +22,10 @@ import type {
 
 import type { ErrorResponse, SchoolsResponse } from "../../models";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const entitySchoolsControllerGetMyPartners = (signal?: AbortSignal) => {
-  return preconfiguredAxios<SchoolsResponse>({
+  return preconfiguredAxiosFunction<SchoolsResponse>({
     url: `/api/entity/schools/my-partners`,
     method: "GET",
     signal,

@@ -22,13 +22,13 @@ import type {
   RegisterEntityResponse,
 } from "../../models";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const authControllerRegister = (
   registerEntityDto: RegisterEntityDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<RegisterEntityResponse>({
+  return preconfiguredAxiosFunction<RegisterEntityResponse>({
     url: `/api/auth/register`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -99,7 +99,7 @@ export const useAuthControllerRegister = <TError = ErrorResponse, TContext = unk
   return useMutation(mutationOptions, queryClient);
 };
 export const authControllerSignIn = (loginEntityDto: LoginEntityDto, signal?: AbortSignal) => {
-  return preconfiguredAxios<BaseResponse>({
+  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/auth/login`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -170,7 +170,11 @@ export const useAuthControllerSignIn = <TError = ErrorResponse, TContext = unkno
   return useMutation(mutationOptions, queryClient);
 };
 export const authControllerSignOut = (signal?: AbortSignal) => {
-  return preconfiguredAxios<BaseResponse>({ url: `/api/auth/logout`, method: "POST", signal });
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/auth/logout`,
+    method: "POST",
+    signal,
+  });
 };
 
 export const getAuthControllerSignOutMutationOptions = <
@@ -231,7 +235,7 @@ export const authControllerSchoolSignIn = (
   loginSchoolDto: LoginSchoolDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<BaseResponse>({
+  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/auth/school/login`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -302,7 +306,7 @@ export const useAuthControllerSchoolSignIn = <TError = ErrorResponse, TContext =
   return useMutation(mutationOptions, queryClient);
 };
 export const authControllerSchoolSignOut = (signal?: AbortSignal) => {
-  return preconfiguredAxios<BaseResponse>({
+  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/auth/school/logout`,
     method: "POST",
     signal,

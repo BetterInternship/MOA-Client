@@ -31,10 +31,10 @@ import type {
   MoaRequestsResponse,
 } from "../../models";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const schoolMoaControllerGetMine = (signal?: AbortSignal) => {
-  return preconfiguredAxios<MoaRequestsResponse>({
+  return preconfiguredAxiosFunction<MoaRequestsResponse>({
     url: `/api/school/moa/mine`,
     method: "GET",
     signal,
@@ -234,7 +234,7 @@ export const schoolMoaControllerGetOneHistory = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<MoaHistoryResponse>({
+  return preconfiguredAxiosFunction<MoaHistoryResponse>({
     url: `/api/school/moa/history/${id}`,
     method: "GET",
     signal,
@@ -465,7 +465,7 @@ export function useSchoolMoaControllerGetOneHistorySuspense<
 }
 
 export const schoolMoaControllerGetOne = (id: string | undefined | null, signal?: AbortSignal) => {
-  return preconfiguredAxios<MoaRequestResponse>({
+  return preconfiguredAxiosFunction<MoaRequestResponse>({
     url: `/api/school/moa/${id}`,
     method: "GET",
     signal,
@@ -676,7 +676,7 @@ export function useSchoolMoaControllerGetOneSuspense<
 }
 
 export const schoolMoaControllerApprove = (id: string | undefined | null, signal?: AbortSignal) => {
-  return preconfiguredAxios<BaseResponse>({
+  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/school/moa/${id}/approve`,
     method: "POST",
     signal,
@@ -745,7 +745,7 @@ export const useSchoolMoaControllerApprove = <TError = ErrorResponse, TContext =
   return useMutation(mutationOptions, queryClient);
 };
 export const schoolMoaControllerDeny = (id: string | undefined | null, signal?: AbortSignal) => {
-  return preconfiguredAxios<BaseResponse>({
+  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/school/moa/${id}/deny`,
     method: "POST",
     signal,

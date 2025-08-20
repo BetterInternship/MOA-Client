@@ -29,11 +29,15 @@ export function UnivAuthForm() {
           password,
         },
       })
-      .then((r) =>
-        r.data.success
-          ? (setLoading(false), router.push("/dashboard"))
-          : (setLoading(false), alert("Invalid credentials."))
-      );
+      .then(
+        (r) => (
+          console.log(r),
+          r.success
+            ? (setLoading(false), router.push("/dashboard"))
+            : (setLoading(false), alert("Invalid credentials."))
+        )
+      )
+      .catch((e) => console.log(e));
   }
 
   return (

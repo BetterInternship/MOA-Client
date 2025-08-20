@@ -22,13 +22,13 @@ import type {
 
 import type { ErrorResponse, QueryDocResponse, QueryMoaResponse } from "../../models";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const docsControllerGetByVerificationCode = (
   code: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<QueryDocResponse>({
+  return preconfiguredAxiosFunction<QueryDocResponse>({
     url: `/api/docs/query/${code}`,
     method: "GET",
     signal,
@@ -284,7 +284,7 @@ export const docsControllerGetMoaSignedDocument = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<QueryMoaResponse>({
+  return preconfiguredAxiosFunction<QueryMoaResponse>({
     url: `/api/docs/moa/${id}`,
     method: "GET",
     signal,

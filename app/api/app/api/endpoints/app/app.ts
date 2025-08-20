@@ -20,10 +20,10 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const appControllerGetApi = (signal?: AbortSignal) => {
-  return preconfiguredAxios<null>({ url: `/api`, method: "GET", signal });
+  return preconfiguredAxiosFunction<null>({ url: `/api`, method: "GET", signal });
 };
 
 export const getAppControllerGetApiQueryKey = () => {

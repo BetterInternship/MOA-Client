@@ -19,7 +19,7 @@ export default defineConfig({
         },
         mutator: {
           path: "./preconfig.axios.ts",
-          name: "preconfiguredAxios",
+          name: "preconfiguredAxiosFunction",
         },
       },
     },

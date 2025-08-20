@@ -24,10 +24,10 @@ export const useAuth = () => {
   };
 };
 
-export const useEntities = async ({ offset, limit }: { offset?: number; limit?: number }) => {
+export const useEntities = async (opts?: { offset?: number; limit?: number }) => {
   const entities = useSchoolEntitiesControllerGetMyPartners({
-    offset: offset ?? 0,
-    limit: limit ?? 100,
+    offset: opts?.offset ?? 0,
+    limit: opts?.limit ?? 100,
   });
   const requests = useSchoolEntitiesControllerGetMyRequests();
   const approveRequest = useSchoolEntitiesControllerApproveRequest();

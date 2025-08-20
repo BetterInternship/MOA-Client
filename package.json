@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "spec": "npx orval",
-    "build": "next build",
+    "build": "npx orval && next build",
     "start": "next start",
     "lint": "next lint"
   },
