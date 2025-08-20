@@ -13,7 +13,7 @@ type Props = {
   onSelect: (id: string) => void;
   query: string;
   onQueryChange: (q: string) => void;
-  isLoading?: boolean; // ⬅️ add this
+  isLoading?: boolean;
 };
 
 export default function CompanyList({
