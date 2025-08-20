@@ -22,10 +22,14 @@ import type {
 
 import type { EntitiesResponse, EntityResponse, ErrorResponse } from "../../models";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const entitiesControllerGetList = (signal?: AbortSignal) => {
-  return preconfiguredAxios<EntitiesResponse>({ url: `/api/entities/list`, method: "GET", signal });
+  return preconfiguredAxiosFunction<EntitiesResponse>({
+    url: `/api/entities/list`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getEntitiesControllerGetListQueryKey = () => {
@@ -218,7 +222,11 @@ export function useEntitiesControllerGetListSuspense<
 }
 
 export const entitiesControllerGetSelf = (signal?: AbortSignal) => {
-  return preconfiguredAxios<EntityResponse>({ url: `/api/entities/me`, method: "GET", signal });
+  return preconfiguredAxiosFunction<EntityResponse>({
+    url: `/api/entities/me`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getEntitiesControllerGetSelfQueryKey = () => {

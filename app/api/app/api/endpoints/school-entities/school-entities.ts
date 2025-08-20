@@ -32,13 +32,13 @@ import type {
   SchoolEntityResponse,
 } from "../../models";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const schoolEntitiesControllerGetMyPartners = (
   schoolEntitiesDto: SchoolEntitiesDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<SchoolEntitiesResponse>({
+  return preconfiguredAxiosFunction<SchoolEntitiesResponse>({
     url: `/api/school/entities/my-partners`,
     method: "GET",
     headers: { "Content-Type": "application/json" },
@@ -300,7 +300,7 @@ export function useSchoolEntitiesControllerGetMyPartnersSuspense<
 }
 
 export const schoolEntitiesControllerGetMyRequests = (signal?: AbortSignal) => {
-  return preconfiguredAxios<RequestsResponse>({
+  return preconfiguredAxiosFunction<RequestsResponse>({
     url: `/api/school/entities/requests`,
     method: "GET",
     signal,
@@ -540,7 +540,7 @@ export const schoolEntitiesControllerGetRequest = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<RequestsResponse>({
+  return preconfiguredAxiosFunction<RequestsResponse>({
     url: `/api/school/entities/requests/${id}`,
     method: "GET",
     signal,
@@ -774,7 +774,7 @@ export const schoolEntitiesControllerApproveRequest = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<BaseResponse>({
+  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/school/entities/requests/${id}/approve`,
     method: "POST",
     signal,
@@ -849,7 +849,7 @@ export const schoolEntitiesControllerDenyRequest = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<BaseResponse>({
+  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/school/entities/requests/${id}/deny`,
     method: "POST",
     signal,
@@ -921,7 +921,7 @@ export const schoolEntitiesControllerGetAPartner = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<SchoolEntityResponse>({
+  return preconfiguredAxiosFunction<SchoolEntityResponse>({
     url: `/api/school/entities/${id}`,
     method: "GET",
     signal,

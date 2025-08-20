@@ -22,10 +22,10 @@ import type {
 
 import type { ErrorResponse, SchoolAccountResponse, SchoolResponse } from "../../models";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const schoolsControllerGetSelfAccount = (signal?: AbortSignal) => {
-  return preconfiguredAxios<SchoolAccountResponse>({
+  return preconfiguredAxiosFunction<SchoolAccountResponse>({
     url: `/api/schools/me`,
     method: "GET",
     signal,
@@ -242,7 +242,11 @@ export function useSchoolsControllerGetSelfAccountSuspense<
 }
 
 export const schoolsControllerGetSelfSchool = (signal?: AbortSignal) => {
-  return preconfiguredAxios<SchoolResponse>({ url: `/api/schools/own`, method: "GET", signal });
+  return preconfiguredAxiosFunction<SchoolResponse>({
+    url: `/api/schools/own`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getSchoolsControllerGetSelfSchoolQueryKey = () => {

@@ -32,10 +32,10 @@ import type {
   NewStandardMoaRequestResponse,
 } from "../../models";
 
-import { preconfiguredAxios } from "../../../../preconfig.axios";
+import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const entityMoaControllerGetMine = (signal?: AbortSignal) => {
-  return preconfiguredAxios<MoaRequestsResponse>({
+  return preconfiguredAxiosFunction<MoaRequestsResponse>({
     url: `/api/entity/moa/mine`,
     method: "GET",
     signal,
@@ -232,7 +232,7 @@ export function useEntityMoaControllerGetMineSuspense<
 }
 
 export const entityMoaControllerGetLatestMoaRequest = (signal?: AbortSignal) => {
-  return preconfiguredAxios<MoaRequestResponse>({
+  return preconfiguredAxiosFunction<MoaRequestResponse>({
     url: `/api/entity/moa/me/latest`,
     method: "GET",
     signal,
@@ -472,7 +472,7 @@ export const entityMoaControllerRequestNewStandard = (
   newMoaRequestDto: NewMoaRequestDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<NewStandardMoaRequestResponse>({
+  return preconfiguredAxiosFunction<NewStandardMoaRequestResponse>({
     url: `/api/entity/moa/request`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -549,7 +549,7 @@ export const entityMoaControllerRequestNewCustom = (
   newMoaRequestDto: NewMoaRequestDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxios<NewCustomMoaRequestResponse>({
+  return preconfiguredAxiosFunction<NewCustomMoaRequestResponse>({
     url: `/api/entity/moa/request-custom`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
