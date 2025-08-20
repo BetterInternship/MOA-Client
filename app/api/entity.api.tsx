@@ -1,4 +1,6 @@
+import { Entity } from "@/types/db";
 import { useAuthControllerSignIn, useAuthControllerSignOut } from "./app/api/endpoints/auth/auth";
+import { useEntitiesControllerGetList } from "./app/api/endpoints/entities/entities";
 import {
   useEntityMoaControllerGetMine,
   useEntityMoaControllerRequestNewCustom,
@@ -16,6 +18,13 @@ export const useAuth = () => {
   return {
     signIn: signIn.mutateAsync,
     signOut: signOut.mutateAsync,
+  };
+};
+
+export const usePublicEntityList = () => {
+  const entities = useEntitiesControllerGetList();
+  return {
+    entities: entities.data?.entities as unknown as Entity[],
   };
 };
 

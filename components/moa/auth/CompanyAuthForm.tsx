@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/app/api/entity.api";
-import { useEntities } from "@/app/api/school.api";
+import { useAuth, usePublicEntityList } from "@/app/api/entity.api";
 import { Entity } from "@/types/db";
 import { Input } from "@/components/ui/input";
 
@@ -18,29 +17,37 @@ export function CompanyAuthForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const e = useEntities();
+  const entities = usePublicEntityList();
   const auth = useAuth();
 
   useEffect(() => {
     setOptions(
-      e.entities?.map((entity: Entity) => ({ id: entity.id, name: entity.display_name })) ?? []
+      entities.entities?.map((entity: Entity) => ({
+        id: entity.id,
+        name: entity.legal_identifier ?? "",
+      })) ?? []
     );
-  }, [e.entities]);
+  }, [entities.entities]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    await auth.signIn({
-      data: {
-        legal_entity_name: "",
-        password: "",
-      },
-    });
-
-    setLoading(false);
-    router.push("/dashboard");
+    await auth
+      .signIn({
+        data: {
+          legal_entity_name:
+            entities.entities.find((e) => e.id === company)?.legal_identifier ?? "",
+          password: password,
+        },
+      })
+      .then((r) =>
+        r.success
+          ? (setLoading(false), router.push("/dashboard"))
+          : (setLoading(false), alert("Invalid credentials."))
+      )
+      .catch((e) => (setLoading(false), console.log(e)));
   }
 
   return (
@@ -52,7 +59,11 @@ export function CompanyAuthForm() {
           options={options}
           setter={(value) => setCompany(value ?? null)}
         />
-        <Input type="password" placeholder="Enter password..."></Input>
+        <Input
+          type="password"
+          placeholder="Enter password..."
+          onChange={(e) => setPassword(e.currentTarget.value)}
+        ></Input>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
