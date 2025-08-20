@@ -30,7 +30,7 @@ export * from "./registerEntityResponseEntity";
 export * from "./registerSchoolDto";
 export * from "./requestNewMoaDto";
 export * from "./requestsResponse";
+export * from "./schoolAccountResponse";
 export * from "./schoolEntitiesDto";
 export * from "./schoolEntitiesResponse";
-export * from "./schoolAccountResponse";
 export * from "./schoolResponse";

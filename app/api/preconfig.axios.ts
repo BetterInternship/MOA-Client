@@ -4,4 +4,5 @@ import axios from "axios";
 // ! autogenerate on deploy on vercel
 export const preconfiguredAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_CLIENT_URL as string,
+  withCredentials: true,
 });
