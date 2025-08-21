@@ -8,7 +8,7 @@ import CompanyDetails from "@/components/univ/dashboard/CompanyDetails";
 import { Building2, Plus } from "lucide-react";
 import { Entity } from "@/types/db";
 import { Button } from "@/components/ui/button";
-import { useSchoolPartners, useSchoolPartner } from "@/app/api/entity.api";
+import { useSchoolPartners, useSchoolPartner } from "@/app/api/school.api";
 
 export default function CompaniesPage() {
   const [query, setQuery] = useState("");

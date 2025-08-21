@@ -9,7 +9,7 @@ import type {
   MoaHistoryFile,
   MoaStatus,
 } from "@/types/moa-request";
-import { useSchoolPartner } from "@/app/api/entity.api";
+import { useSchoolPartner } from "@/app/api/school.api";
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 

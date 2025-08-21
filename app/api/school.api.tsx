@@ -7,6 +7,7 @@ import {
   useSchoolEntitiesControllerApproveRequest,
   useSchoolEntitiesControllerDenyRequest,
   useSchoolEntitiesControllerGetMyPartners,
+  useSchoolEntitiesControllerGetAPartner
 } from "./app/api/endpoints/school-entities/school-entities";
 import {
   useSchoolMoaControllerApprove,
@@ -67,5 +68,46 @@ export const useMoaRequests = () => {
     requests: (data?.requests as unknown as MoaRequest) ?? [],
     approve: approveMoaRequest.mutateAsync,
     deny: denyMoaRequest.mutateAsync,
+  };
+};
+
+/**
+ * Returns a schools partner entities.
+ *
+ * @param opts
+ * @hook
+ */
+export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) => {
+  const { offset = 0, limit = 100 } = opts ?? {};
+  const { data, isLoading, isFetching, error, refetch } = useSchoolEntitiesControllerGetMyPartners({
+    offset,
+    limit,
+  });
+
+  return {
+    partners: (data?.entities as unknown as Entity[]) ?? [],
+    isLoading: isLoading || isFetching,
+    error: error,
+    refetch: refetch,
+  };
+};
+
+/**
+ * Returns the information about a single partner.
+ *
+ * @param id
+ * @hook
+ */
+export const useSchoolPartner = (id?: string) => {
+  const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetAPartner(
+    id,
+    { query: { enabled: !!id } }
+  );
+
+  return {
+    partner: (data?.entity as unknown as Entity) ?? null,
+    isLoading: isFetching || isLoading,
+    error: error,
+    refetch: refetch,
   };
 };
