@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MoaActions from "@/components/moa/dashboard/MoaActions";
 import MoaStatus from "@/components/moa/dashboard/MoaStatus";
-import CompanyRequestHistory from "@/components/univ/shared/CompanyRequestHistory";
+import CompanyRequestHistory from "@/components/univ/shared/CompanyHistory";
 import { useMoaRequests } from "@/app/api/entity.api";
 import { MoaRequest } from "@/types/db";
 
@@ -43,8 +43,6 @@ export default function DashboardPage() {
         <h2 className="text-foreground text-2xl font-semibold">Company Log</h2>
         <CompanyRequestHistory showTitle={false} />
       </div>
-
-      
     </div>
   );
 }

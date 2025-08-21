@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Entity, MoaRequest } from "@/types/db";
 import {
   useAuthControllerSchoolSignIn,
@@ -7,12 +8,13 @@ import {
   useSchoolEntitiesControllerApproveRequest,
   useSchoolEntitiesControllerDenyRequest,
   useSchoolEntitiesControllerGetMyPartners,
-  useSchoolEntitiesControllerGetAPartner
+  useSchoolEntitiesControllerGetAPartner,
 } from "./app/api/endpoints/school-entities/school-entities";
 import {
   useSchoolMoaControllerApprove,
   useSchoolMoaControllerDeny,
   useSchoolMoaControllerGetMine,
+  useSchoolMoaControllerGetOneHistory
 } from "./app/api/endpoints/school-moa/school-moa";
 
 /**
@@ -109,5 +111,25 @@ export const useSchoolPartner = (id?: string) => {
     isLoading: isFetching || isLoading,
     error: error,
     refetch: refetch,
+  };
+};
+
+/**
+ * Returns the history about a single partner.
+ *
+ * @param entityId
+ * @hook
+ */
+export const useSchoolMoaHistory = (entityId?: string) => {
+  const q = useSchoolMoaControllerGetOneHistory(entityId, {
+    query: { enabled: !!entityId },
+  });
+
+  return {
+    // Orval base response is often { success, data: { history } }
+    items: (q.data?.history?.history ?? []) as any[],
+    isLoading: q.isLoading || q.isFetching,
+    isError: !!q.error,
+    refetch: q.refetch,
   };
 };
