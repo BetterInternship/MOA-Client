@@ -1,21 +1,25 @@
 "use client";
 
+type AnyStatus = string | null | undefined;
+
+const toKey = (s: AnyStatus) => {
+  const raw = (s ?? "").toString().trim().toLowerCase();
+  return raw;
+};
+
 import { Company } from "@/types/company";
 
 export default function StatusBadge({ status }: { status: Company["moaStatus"] }) {
-  const map: Record<Company["moaStatus"], string> = {
+  const key = toKey(status);
+
+  const map: Record<string, string> = {
     registered: "bg-amber-100 text-amber-800", // Pending-like
     approved: "bg-emerald-100 text-emerald-700", // Success
     blacklisted: "bg-rose-100 text-rose-700", // Danger
   };
 
-  return (
-    <span
-      className={`rounded px-2 py-0.5 text-xs font-medium ${
-        map[status] || "bg-gray-100 text-gray-700"
-      }`}
-    >
-      {status ? status.charAt(0).toUpperCase() + status.slice(1) : "—"}
-    </span>
-  );
+  const cls = map[key] ?? "bg-gray-100 text-gray-700";
+  const label = key ? key.charAt(0).toUpperCase() + key.slice(1) : "—";
+
+  return <span className={`rounded px-2 py-0.5 text-xs font-medium ${cls}`}>{label}</span>;
 }
