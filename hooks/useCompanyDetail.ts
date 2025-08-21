@@ -1,17 +1,17 @@
 // hooks/useCompanyDetail.ts
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { Entity, Message, URLString, ISODate } from "@/types/db";
+import { useMemo } from "react";
+import type { Entity, URLString, ISODate } from "@/types/db";
 import type {
   MoaRequest as UiMoaRequest,
   MoaHistoryItem,
   MoaHistoryFile,
-  MoaStatus,
 } from "@/types/moa-request";
-import { useSchoolPartner } from "@/app/api/entity.api";
+import { useSchoolPartner } from "@/app/api/school.api";
+import { useSchoolMoaHistory } from "@/app/api/school.api";
 
-/* ── helpers ─────────────────────────────────────────────────────────────── */
+/* ---------------- helpers ---------------- */
 
 const firstNonEmpty = (...vals: (string | undefined | null)[]) =>
   vals.find((v) => v !== undefined && v !== null && String(v).trim() !== "") ?? "";
@@ -24,29 +24,24 @@ const toMDY = (d: Date | string) => {
   return `${mm}/${dd}/${yyyy}`;
 };
 
-// map backend/raw status -> UI badge text (nullable while loading)
-type BackendMoa =
-  | "approved"
-  | "denied"
-  | "under_review"
-  | "pending"
-  | "blacklisted"
-  | "registered"
-  | string
-  | null
-  | undefined;
+// backend → status *key* we can style on (lowercase)
+type BackendMoa = string | null | undefined;
+const toStatusKey = (s?: BackendMoa) => (s ?? "").toString().trim().toLowerCase();
 
-const toMoaStatus = (s?: BackendMoa): MoaStatus | null => {
-  switch ((s ?? "").toString().toLowerCase()) {
+// status label for human display
+const toStatusLabel = (key: string): string => {
+  switch (key) {
     case "approved":
       return "Approved";
-    case "denied":
-    case "blacklisted":
-      return "Denied";
     case "registered":
+    case "pending":
       return "Registered";
+    case "blacklisted":
+    case "denied":
+    case "rejected":
+      return "Blacklisted";
     default:
-      return null; // unknown yet → let UI show a skeleton/placeholder
+      return "Under Review";
   }
 };
 
@@ -55,90 +50,64 @@ const fileToHistoryFile = (url: URLString, stamp: ISODate): MoaHistoryFile => {
   return { id: `${stamp}-${name}`, name, url };
 };
 
-/* ── history API (response shape) ────────────────────────────────────────── */
+/** Normalize server history into { timestamp, text, files? }[] */
+const normalizeHistoryItems = (
+  raw: any[]
+): Array<{ timestamp: ISODate; text: string; files?: URLString[] }> => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((it) => {
+      // preferred shape
+      if (it?.timestamp && it?.text)
+        return it as { timestamp: ISODate; text: string; files?: URLString[] };
 
-type HistoryApiFile = { id: string; name: string; url: string };
-type HistoryApiItem = { timestamp: ISODate; text: string; files?: HistoryApiFile[] };
-type HistoryApiResponse =
-  | { success: true; history: HistoryApiItem[] }
-  | { success: true; data: { history: HistoryApiItem[] } }
-  | any;
+      // legacy example
+      if (it?.effective_date || it?.expiry_date) {
+        const out: Array<{ timestamp: ISODate; text: string }> = [];
+        if (it.effective_date)
+          out.push({
+            timestamp: new Date(it.effective_date).toISOString(),
+            text: "MOA effective date set",
+          });
+        if (it.expiry_date)
+          out.push({
+            timestamp: new Date(it.expiry_date).toISOString(),
+            text: "MOA expiry date set",
+          });
+        return out;
+      }
 
-/* ── hook ────────────────────────────────────────────────────────────────── */
+      // last-resort stringify
+      return { timestamp: new Date().toISOString(), text: JSON.stringify(it) };
+    })
+    .flat();
+};
+
+/* ---------------- hook ---------------- */
 
 export function useCompanyDetail(company?: Entity) {
   const companyId = company?.id ?? "";
 
-  /* A) partner details (entity + status from school_entities) */
+  // A) basics (entity merged with school link status)
   const { partner, isLoading: partnerLoading } = useSchoolPartner(companyId);
 
-  /* B) history fetch */
-  const [history, setHistory] = useState<MoaHistoryItem[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-
-  useEffect(() => {
-    if (!companyId) {
-      setHistory([]);
-      return;
-    }
-    const ctrl = new AbortController();
-    (async () => {
-      try {
-        setHistoryLoading(true);
-        const base = process.env.NEXT_PUBLIC_CLIENT_URL || "";
-        const res = await fetch(`${base}/api/school/entities/${companyId}/history`, {
-          credentials: "include",
-          signal: ctrl.signal,
-        });
-        if (!res.ok) {
-          setHistory([]); // keep empty if 404/401/etc.
-          return;
-        }
-        const json: HistoryApiResponse = await res.json();
-        const list: HistoryApiItem[] = json?.data?.history ?? json?.history ?? [];
-
-        const items: MoaHistoryItem[] = list
-          .map((it) => ({
-            date: toMDY(it.timestamp),
-            text: it.text,
-            files: (it.files ?? []).map((f) => ({
-              id: f.id,
-              name: f.name,
-              url: f.url,
-            })) as MoaHistoryFile[],
-          }))
-          .sort((a, b) => +new Date(b.date) - +new Date(a.date));
-
-        setHistory(items);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") {
-          // console.error(e);
-        }
-      } finally {
-        setHistoryLoading(false);
-      }
-    })();
-    return () => ctrl.abort();
-  }, [companyId]);
+  // B) history (by entityId for the current school)
+  const { items: historyRaw, isLoading: historyLoading } = useSchoolMoaHistory(companyId);
 
   const loading = partnerLoading || historyLoading;
 
-  /* C) view model (top cards) */
-
-  const backendStatusRaw: BackendMoa = (partner as any)?.moaStatus ?? (company as any)?.moaStatus;
-
-  const moaStatus: MoaStatus | null = toMoaStatus(backendStatusRaw);
+  // ---- View model (top cards) ----
+  const backendStatusRaw: BackendMoa = (partner as any)?.moaStatus ?? (partner as any)?.status;
+  const statusKey = toStatusKey(backendStatusRaw); // "approved" | "registered" | "blacklisted" | ...
+  const statusLabel = toStatusLabel(statusKey); // "Approved" | "Registered" | "Blacklisted" | "Under Review"
 
   const name = firstNonEmpty(
     (company as any)?.display_name,
     (partner as any)?.display_name,
     company?.legal_identifier
   );
-
   const contactPerson = firstNonEmpty(company?.contact_name, (partner as any)?.contact_name);
-
   const email = firstNonEmpty(company?.contact_email, (partner as any)?.contact_email);
-
   const phone = firstNonEmpty((company as any)?.contact_phone, (partner as any)?.contact_phone);
 
   const view = useMemo(() => {
@@ -149,21 +118,37 @@ export function useCompanyDetail(company?: Entity) {
       contactPerson,
       email,
       phone,
-      moaStatus, // <- pass this to MoaDetailsCard.status
+      // For StatusBadge, pass the *key* (lowercase) so your color map matches.
+      moaStatus: statusKey,
       validUntil: undefined as string | undefined,
     };
-  }, [companyId, name, contactPerson, email, phone, moaStatus]);
+  }, [companyId, name, contactPerson, email, phone, statusKey]);
 
-  /* D) request/history view model for CompanyRequestHistory */
-
+  // ---- History / request VM for <CompanyHistory /> ----
   const reqData: UiMoaRequest | null = useMemo(() => {
     if (!companyId) return null;
 
-    // earliest date across history items; if none, use "today"
-    const allDates = history.map((h) => h.date);
-    const earliestIso =
-      allDates.length > 0
-        ? new Date(Math.min(...allDates.map((d) => +new Date(d)))).toISOString()
+    const normalized = normalizeHistoryItems(historyRaw);
+    const history: MoaHistoryItem[] = normalized
+      .map((h) => {
+        const files: MoaHistoryFile[] | undefined =
+          Array.isArray(h.files) && h.files.length
+            ? h.files.map((u, idx) => {
+                const nm = (u as string).split("/").pop() || `attachment-${idx + 1}`;
+                return { id: `${h.timestamp}-${nm}`, name: nm, url: u as string };
+              })
+            : undefined;
+
+        return { date: toMDY(h.timestamp), text: h.text, files };
+      })
+      .sort((a, b) => +new Date(b.date) - +new Date(a.date));
+
+    const requestedAtIso =
+      normalized.length > 0
+        ? normalized.reduce(
+            (min, x) => (x.timestamp < min ? x.timestamp : min),
+            normalized[0].timestamp
+          )
         : new Date().toISOString();
 
     return {
@@ -173,13 +158,13 @@ export function useCompanyDetail(company?: Entity) {
       email: email ?? "",
       tin: "",
       industry: "",
-      requestedAt: toMDY(earliestIso),
-      status: (moaStatus ?? "Under Review") as MoaStatus,
+      requestedAt: toMDY(requestedAtIso),
+      // CompanyHistory just displays text → give it the human label
+      status: statusLabel,
       notes: undefined,
       history,
     };
-  }, [companyId, name, contactPerson, email, moaStatus, history]);
+  }, [companyId, name, contactPerson, email, statusLabel, historyRaw]);
 
-  // You don't use `detail` in the component; keep it for API compatibility.
-  return { loading, detail: null, view, reqData };
+  return { loading, view, reqData };
 }

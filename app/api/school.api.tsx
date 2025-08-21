@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Entity, MoaRequest } from "@/types/db";
 import {
   useAuthControllerSchoolSignIn,
@@ -7,11 +8,13 @@ import {
   useSchoolEntitiesControllerApproveRequest,
   useSchoolEntitiesControllerDenyRequest,
   useSchoolEntitiesControllerGetMyPartners,
+  useSchoolEntitiesControllerGetAPartner,
 } from "./app/api/endpoints/school-entities/school-entities";
 import {
   useSchoolMoaControllerApprove,
   useSchoolMoaControllerDeny,
   useSchoolMoaControllerGetMine,
+  useSchoolMoaControllerGetOneHistory
 } from "./app/api/endpoints/school-moa/school-moa";
 
 /**
@@ -67,5 +70,66 @@ export const useMoaRequests = () => {
     requests: (data?.requests as unknown as MoaRequest) ?? [],
     approve: approveMoaRequest.mutateAsync,
     deny: denyMoaRequest.mutateAsync,
+  };
+};
+
+/**
+ * Returns a schools partner entities.
+ *
+ * @param opts
+ * @hook
+ */
+export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) => {
+  const { offset = 0, limit = 100 } = opts ?? {};
+  const { data, isLoading, isFetching, error, refetch } = useSchoolEntitiesControllerGetMyPartners({
+    offset,
+    limit,
+  });
+
+  return {
+    partners: (data?.entities as unknown as Entity[]) ?? [],
+    isLoading: isLoading || isFetching,
+    error: error,
+    refetch: refetch,
+  };
+};
+
+/**
+ * Returns the information about a single partner.
+ *
+ * @param id
+ * @hook
+ */
+export const useSchoolPartner = (id?: string) => {
+  const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetAPartner(
+    id,
+    { query: { enabled: !!id } }
+  );
+
+  return {
+    partner: (data?.entity as unknown as Entity) ?? null,
+    isLoading: isFetching || isLoading,
+    error: error,
+    refetch: refetch,
+  };
+};
+
+/**
+ * Returns the history about a single partner.
+ *
+ * @param entityId
+ * @hook
+ */
+export const useSchoolMoaHistory = (entityId?: string) => {
+  const q = useSchoolMoaControllerGetOneHistory(entityId, {
+    query: { enabled: !!entityId },
+  });
+
+  return {
+    // Orval base response is often { success, data: { history } }
+    items: (q.data?.history?.history ?? []) as any[],
+    isLoading: q.isLoading || q.isFetching,
+    isError: !!q.error,
+    refetch: q.refetch,
   };
 };

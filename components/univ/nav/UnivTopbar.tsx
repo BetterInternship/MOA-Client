@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -113,6 +114,7 @@ export default function UnivTopbar() {
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
               <span className="hidden sm:inline">User</span>
+              <ChevronDown className="mt-0.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">

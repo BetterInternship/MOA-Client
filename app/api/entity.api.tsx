@@ -6,10 +6,6 @@ import {
   useEntityMoaControllerRequestNewCustom,
   useEntityMoaControllerRequestNewStandard,
 } from "./app/api/endpoints/entity-moa/entity-moa";
-import {
-  useSchoolEntitiesControllerGetMyPartners,
-  useSchoolEntitiesControllerGetAPartner,
-} from "./app/api/endpoints/school-entities/school-entities";
 
 /**
  * Auth hook for entities.
@@ -53,48 +49,5 @@ export const useMoaRequests = () => {
     requests: (data?.requests as unknown as MoaRequest[]) ?? [],
     createStandard: createStandard.mutateAsync,
     createCustom: createCustom.mutateAsync,
-  };
-};
-
-/**
- * Returns a schools partner entities.
- * // ! move to school api
- *
- * @param opts
- * @hook
- */
-export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) => {
-  const { offset = 0, limit = 100 } = opts ?? {};
-  const { data, isLoading, isFetching, error, refetch } = useSchoolEntitiesControllerGetMyPartners({
-    offset,
-    limit,
-  });
-
-  return {
-    partners: (data?.entities as unknown as Entity[]) ?? [],
-    isLoading: isLoading || isFetching,
-    error: error,
-    refetch: refetch,
-  };
-};
-
-/**
- * Returns the information about a single partner.
- * // ! move to school api
- *
- * @param id
- * @hook
- */
-export const useSchoolPartner = (id?: string) => {
-  const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetAPartner(
-    id,
-    { query: { enabled: !!id } }
-  );
-
-  return {
-    partner: (data?.entity as unknown as Entity) ?? null,
-    isLoading: isFetching || isLoading,
-    error: error,
-    refetch: refetch,
   };
 };
