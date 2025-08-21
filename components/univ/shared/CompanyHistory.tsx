@@ -54,7 +54,7 @@ export default function CompanyHistory({
             return (
               <li key={key} className="relative py-2 pl-1">
                 <div className="grid grid-cols-[96px_1fr_auto] items-center gap-3">
-                  <div className="text-muted-foreground text-[11px] leading-none">{h.date}</div>
+                  <div className="text-muted-foreground text-sm leading-none">{h.date}</div>
                   <p className="min-w-0 truncate text-sm leading-tight">{h.text}</p>
                   {h.files?.length ? (
                     <FilesDialog
