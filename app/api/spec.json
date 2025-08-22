@@ -1,1 +1,848 @@
-{"openapi":"3.0.0","paths":{"/api":{"get":{"operationId":"AppController_getApi","parameters":[],"responses":{"200":{"description":""}},"tags":["App"]}},"/api/auth/register":{"post":{"operationId":"AuthController_register","parameters":[],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RegisterEntityDto"}}}},"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RegisterEntityResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Auth"]}},"/api/auth/login":{"post":{"operationId":"AuthController_signIn","parameters":[],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginEntityDto"}}}},"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BaseResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Auth"]}},"/api/auth/logout":{"post":{"operationId":"AuthController_signOut","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BaseResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Auth"]}},"/api/auth/school/login":{"post":{"operationId":"AuthController_schoolSignIn","parameters":[],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginSchoolDto"}}}},"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BaseResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Auth"]}},"/api/auth/school/logout":{"post":{"operationId":"AuthController_schoolSignOut","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BaseResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Auth"]}},"/api/school/moa/mine":{"get":{"operationId":"SchoolMoaController_getMine","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MoaRequestsResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolMoa"]}},"/api/school/moa/history/{id}":{"get":{"operationId":"SchoolMoaController_getOneHistory","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MoaHistoryResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolMoa"]}},"/api/school/moa/{id}":{"get":{"operationId":"SchoolMoaController_getOne","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MoaRequestResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolMoa"]}},"/api/school/moa/{id}/approve":{"post":{"operationId":"SchoolMoaController_approve","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BaseResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolMoa"]}},"/api/school/moa/{id}/deny":{"post":{"operationId":"SchoolMoaController_deny","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BaseResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolMoa"]}},"/api/entity/moa/mine":{"get":{"operationId":"EntityMoaController_getMine","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MoaRequestsResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["EntityMoa"]}},"/api/entity/moa/me/latest":{"get":{"operationId":"EntityMoaController_getLatestMoaRequest","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MoaRequestResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["EntityMoa"]}},"/api/entity/moa/request":{"post":{"operationId":"EntityMoaController_requestNewStandard","parameters":[],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/NewMoaRequestDto"}}}},"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/NewStandardMoaRequestResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["EntityMoa"]}},"/api/entity/moa/request-custom":{"post":{"operationId":"EntityMoaController_requestNewCustom","parameters":[],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/NewMoaRequestDto"}}}},"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/NewCustomMoaRequestResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["EntityMoa"]}},"/api/entities/list":{"get":{"operationId":"EntitiesController_getList","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/EntitiesResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Entities"]}},"/api/entities/me":{"get":{"operationId":"EntitiesController_getSelf","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/EntityResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Entities"]}},"/api/school/entities/my-partners":{"get":{"operationId":"SchoolEntitiesController_getMyPartners","parameters":[],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/SchoolEntitiesDto"}}}},"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/SchoolEntitiesResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolEntities"]}},"/api/school/entities/requests":{"get":{"operationId":"SchoolEntitiesController_getMyRequests","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RequestsResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolEntities"]}},"/api/school/entities/requests/{id}":{"get":{"operationId":"SchoolEntitiesController_getRequest","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RequestsResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolEntities"]}},"/api/school/entities/requests/{id}/approve":{"post":{"operationId":"SchoolEntitiesController_approveRequest","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BaseResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolEntities"]}},"/api/school/entities/requests/{id}/deny":{"post":{"operationId":"SchoolEntitiesController_denyRequest","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BaseResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolEntities"]}},"/api/school/entities/{id}":{"get":{"operationId":"SchoolEntitiesController_getAPartner","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/SchoolEntityResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["SchoolEntities"]}},"/api/docs/query/{code}":{"get":{"operationId":"DocsController_getByVerificationCode","parameters":[{"name":"code","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/QueryDocResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Docs"]}},"/api/docs/moa/{id}":{"get":{"operationId":"DocsController_getMoaSignedDocument","parameters":[{"name":"id","required":true,"in":"path","schema":{"type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/QueryMoaResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Docs"]}},"/api/schools/me":{"get":{"operationId":"SchoolsController_getSelfAccount","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/SchoolAccountResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Schools"]}},"/api/schools/own":{"get":{"operationId":"SchoolsController_getSelfSchool","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/SchoolResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["Schools"]}},"/api/entity/schools/my-partners":{"get":{"operationId":"EntitySchoolsController_getMyPartners","parameters":[],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/SchoolsResponse"}}}},"400":{"description":"Error Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}},"tags":["EntitySchools"]}}},"info":{"title":"BetterInternship MOA API","description":"The official API of the BetterInternship MOA platform.","version":"1.0","contact":{}},"tags":[],"servers":[],"components":{"schemas":{"RegisterEntityDto":{"type":"object","properties":{}},"RegisterEntityResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"entity":{"type":"object"}},"required":["success","message","entity"]},"ErrorResponse":{"type":"object","properties":{"success":{"type":"boolean"},"status":{"type":"number"},"message":{"type":"string"}},"required":["success","status","message"]},"LoginEntityDto":{"type":"object","properties":{"legal_entity_name":{"type":"string"},"password":{"type":"string"}},"required":["legal_entity_name","password"]},"BaseResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"}},"required":["success","message"]},"LoginSchoolDto":{"type":"object","properties":{"email":{"type":"string"},"password":{"type":"string"}},"required":["email","password"]},"MoaRequestsResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"requests":{"type":"array","items":{"type":"string"}}},"required":["success","message","requests"]},"MoaHistoryResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"history":{"type":"object"}},"required":["success","message","history"]},"MoaRequestResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"request":{"type":"object"}},"required":["success","message","request"]},"NewMoaRequestDto":{"type":"object","properties":{"school_id":{"type":"string"}},"required":["school_id"]},"NewStandardMoaRequestResponse":{"type":"object","properties":{"moaRequestId":{"type":"string"},"signedDocumentId":{"type":"string"},"verificationCode":{"type":"string"}},"required":["moaRequestId","signedDocumentId","verificationCode"]},"NewCustomMoaRequestResponse":{"type":"object","properties":{"moaRequestId":{"type":"string"}},"required":["moaRequestId"]},"EntitiesResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"entities":{"type":"object"}},"required":["success","message","entities"]},"EntityResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"entity":{"type":"object"}},"required":["success","message","entity"]},"SchoolEntitiesDto":{"type":"object","properties":{"offset":{"type":"number"},"limit":{"type":"number"}},"required":["offset","limit"]},"SchoolEntitiesResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"entities":{"type":"array","items":{"type":"string"}}},"required":["success","message","entities"]},"RequestsResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"requests":{"type":"array","items":{"type":"string"}}},"required":["success","message","requests"]},"SchoolEntityResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"entity":{"type":"object"}},"required":["success","message","entity"]},"QueryDocResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"signedDocument":{"type":"object"}},"required":["success","message","signedDocument"]},"QueryMoaResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"signedDocument":{"type":"object"}},"required":["success","message","signedDocument"]},"SchoolAccountResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"school_account":{"type":"object"}},"required":["success","message","school_account"]},"SchoolResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"school":{"type":"object"}},"required":["success","message","school"]},"SchoolsResponse":{"type":"object","properties":{"success":{"type":"boolean"},"message":{"type":"string"},"schools":{"type":"array","items":{"type":"string"}}},"required":["success","message","schools"]}}}}
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api": {
+      "get": {
+        "operationId": "AppController_getApi",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "tags": ["App"]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RegisterEntityDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RegisterEntityResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_signIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/LoginEntityDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_signOut",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/school/login": {
+      "post": {
+        "operationId": "AuthController_schoolSignIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/LoginSchoolDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/school/logout": {
+      "post": {
+        "operationId": "AuthController_schoolSignOut",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/school/moa/mine": {
+      "get": {
+        "operationId": "SchoolMoaController_getMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MoaRequestsResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolMoa"]
+      }
+    },
+    "/api/school/moa/history/{id}": {
+      "get": {
+        "operationId": "SchoolMoaController_getOneHistory",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MoaHistoryResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolMoa"]
+      }
+    },
+    "/api/school/moa/{id}": {
+      "get": {
+        "operationId": "SchoolMoaController_getOne",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MoaRequestResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolMoa"]
+      }
+    },
+    "/api/school/moa/{id}/approve": {
+      "post": {
+        "operationId": "SchoolMoaController_approve",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolMoa"]
+      }
+    },
+    "/api/school/moa/{id}/deny": {
+      "post": {
+        "operationId": "SchoolMoaController_deny",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolMoa"]
+      }
+    },
+    "/api/entity/moa/mine": {
+      "get": {
+        "operationId": "EntityMoaController_getMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MoaRequestsResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["EntityMoa"]
+      }
+    },
+    "/api/entity/moa/me/latest": {
+      "get": {
+        "operationId": "EntityMoaController_getLatestMoaRequest",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MoaRequestResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["EntityMoa"]
+      }
+    },
+    "/api/entity/moa/request": {
+      "post": {
+        "operationId": "EntityMoaController_requestNewStandard",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/NewMoaRequestDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NewStandardMoaRequestResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["EntityMoa"]
+      }
+    },
+    "/api/entity/moa/request-custom": {
+      "post": {
+        "operationId": "EntityMoaController_requestNewCustom",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/NewMoaRequestDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NewCustomMoaRequestResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["EntityMoa"]
+      }
+    },
+    "/api/entities/list": {
+      "get": {
+        "operationId": "EntitiesController_getList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/EntitiesResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Entities"]
+      }
+    },
+    "/api/entities/me": {
+      "get": {
+        "operationId": "EntitiesController_getSelf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/EntityResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Entities"]
+      }
+    },
+    "/api/school/entities/my-partners": {
+      "get": {
+        "operationId": "SchoolEntitiesController_getMyPartners",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SchoolEntitiesDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SchoolEntitiesResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolEntities"]
+      }
+    },
+    "/api/school/entities/requests": {
+      "get": {
+        "operationId": "SchoolEntitiesController_getMyRequests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/RequestsResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolEntities"]
+      }
+    },
+    "/api/school/entities/requests/{id}": {
+      "get": {
+        "operationId": "SchoolEntitiesController_getRequest",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/RequestsResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolEntities"]
+      }
+    },
+    "/api/school/entities/requests/{id}/approve": {
+      "post": {
+        "operationId": "SchoolEntitiesController_approveRequest",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolEntities"]
+      }
+    },
+    "/api/school/entities/requests/{id}/deny": {
+      "post": {
+        "operationId": "SchoolEntitiesController_denyRequest",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolEntities"]
+      }
+    },
+    "/api/school/entities/{id}": {
+      "get": {
+        "operationId": "SchoolEntitiesController_getAPartner",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SchoolEntityResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolEntities"]
+      }
+    },
+    "/api/docs/query/{code}": {
+      "get": {
+        "operationId": "DocsController_getByVerificationCode",
+        "parameters": [
+          { "name": "code", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/QueryDocResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Docs"]
+      }
+    },
+    "/api/docs/moa/{id}": {
+      "get": {
+        "operationId": "DocsController_getMoaSignedDocument",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/QueryMoaResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Docs"]
+      }
+    },
+    "/api/schools/me": {
+      "get": {
+        "operationId": "SchoolsController_getSelfAccount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SchoolAccountResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Schools"]
+      }
+    },
+    "/api/schools/own": {
+      "get": {
+        "operationId": "SchoolsController_getSelfSchool",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SchoolResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Schools"]
+      }
+    },
+    "/api/entity/schools/my-partners": {
+      "get": {
+        "operationId": "EntitySchoolsController_getMyPartners",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SchoolsResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["EntitySchools"]
+      }
+    }
+  },
+  "info": {
+    "title": "BetterInternship MOA API",
+    "description": "The official API of the BetterInternship MOA platform.",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "RegisterEntityDto": { "type": "object", "properties": {} },
+      "RegisterEntityResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "entity": { "type": "object" }
+        },
+        "required": ["success", "message", "entity"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "status": { "type": "number" },
+          "message": { "type": "string" }
+        },
+        "required": ["success", "status", "message"]
+      },
+      "LoginEntityDto": {
+        "type": "object",
+        "properties": {
+          "legal_entity_name": { "type": "string" },
+          "password": { "type": "string" }
+        },
+        "required": ["legal_entity_name", "password"]
+      },
+      "BaseResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } },
+        "required": ["success", "message"]
+      },
+      "LoginSchoolDto": {
+        "type": "object",
+        "properties": { "email": { "type": "string" }, "password": { "type": "string" } },
+        "required": ["email", "password"]
+      },
+      "MoaRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "requests": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["success", "message", "requests"]
+      },
+      "MoaHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "history": { "type": "object" }
+        },
+        "required": ["success", "message", "history"]
+      },
+      "MoaRequestResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "request": { "type": "object" }
+        },
+        "required": ["success", "message", "request"]
+      },
+      "NewMoaRequestDto": {
+        "type": "object",
+        "properties": { "school_id": { "type": "string" } },
+        "required": ["school_id"]
+      },
+      "NewStandardMoaRequestResponse": {
+        "type": "object",
+        "properties": {
+          "moaRequestId": { "type": "string" },
+          "signedDocumentId": { "type": "string" },
+          "verificationCode": { "type": "string" }
+        },
+        "required": ["moaRequestId", "signedDocumentId", "verificationCode"]
+      },
+      "NewCustomMoaRequestResponse": {
+        "type": "object",
+        "properties": { "moaRequestId": { "type": "string" } },
+        "required": ["moaRequestId"]
+      },
+      "EntitiesResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "entities": { "type": "object" }
+        },
+        "required": ["success", "message", "entities"]
+      },
+      "EntityResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "entity": { "type": "object" }
+        },
+        "required": ["success", "message", "entity"]
+      },
+      "SchoolEntitiesDto": {
+        "type": "object",
+        "properties": { "offset": { "type": "number" }, "limit": { "type": "number" } },
+        "required": ["offset", "limit"]
+      },
+      "SchoolEntitiesResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "entities": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["success", "message", "entities"]
+      },
+      "RequestsResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "requests": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["success", "message", "requests"]
+      },
+      "SchoolEntityResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "entity": { "type": "object" }
+        },
+        "required": ["success", "message", "entity"]
+      },
+      "QueryDocResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "signedDocument": { "type": "object" }
+        },
+        "required": ["success", "message", "signedDocument"]
+      },
+      "QueryMoaResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "signedDocument": { "type": "object" }
+        },
+        "required": ["success", "message", "signedDocument"]
+      },
+      "SchoolAccountResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "school_account": { "type": "object" }
+        },
+        "required": ["success", "message", "school_account"]
+      },
+      "SchoolResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "school": { "type": "object" }
+        },
+        "required": ["success", "message", "school"]
+      },
+      "SchoolsResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "schools": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["success", "message", "schools"]
+      }
+    }
+  }
+}

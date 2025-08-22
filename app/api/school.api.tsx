@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Entity, MoaRequest } from "@/types/db";
+import { preconfiguredAxios } from "@/app/api/preconfig.axios";
 import {
   useAuthControllerSchoolSignIn,
   useAuthControllerSchoolSignOut,
@@ -14,7 +15,7 @@ import {
   useSchoolMoaControllerApprove,
   useSchoolMoaControllerDeny,
   useSchoolMoaControllerGetMine,
-  useSchoolMoaControllerGetOneHistory
+  useSchoolMoaControllerGetOneHistory,
 } from "./app/api/endpoints/school-moa/school-moa";
 
 /**
@@ -132,4 +133,43 @@ export const useSchoolMoaHistory = (entityId?: string) => {
     isError: !!q.error,
     refetch: q.refetch,
   };
+};
+
+export type CreateCompanyPayload = {
+  display_name: string;
+  legal_name: string;
+  office_location: string;
+  website: string;
+  industry: string;
+  description: string;
+  contact: { name: string; phone: string; email: string };
+  profile: {
+    acceptsNonUniversityInterns: boolean;
+    ongoingMoaWithDlsu: boolean;
+  };
+  type?: string;
+};
+
+type CreateCompanyResponse =
+  | { success?: boolean; data?: { entity?: Entity; id?: string } }
+  | { success?: boolean; entity?: Entity; id?: string };
+
+export const useCreateCompany = () => {
+  const client = preconfiguredAxios; // MUST be an instance: axios.create({...})
+
+  return useMutation<string, Error, CreateCompanyPayload>({
+    mutationKey: ["create-company"],
+    mutationFn: async (payload) => {
+      const res = await client.post<CreateCompanyResponse>("/api/school/entities", payload);
+      const body = res?.data ?? ({} as any);
+
+      const id =
+        body?.data?.entity?.id ?? body?.data?.id ?? (body as any)?.entity?.id ?? (body as any)?.id;
+
+      if (!id) {
+        throw new Error("Create company: missing id in response");
+      }
+      return id;
+    },
+  });
 };
