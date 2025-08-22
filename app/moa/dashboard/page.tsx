@@ -8,6 +8,7 @@ import MoaStatus from "@/components/moa/dashboard/MoaStatus";
 import CompanyRequestHistory from "@/components/univ/shared/CompanyHistory";
 import { useMoaRequests } from "@/app/api/entity.api";
 import { MoaRequest } from "@/types/db";
+import { Divider } from "@/components/ui/divider";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -23,25 +24,16 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-foreground text-3xl font-semibold">Home</h1>
-        <p className="text-muted-foreground text-sm">
-          Start a new MOA or track the status of your requests.
-        </p>
+        <h1 className="text-foreground text-3xl font-bold tracking-tight">Dashboard</h1>
       </div>
 
       {/* One-card MOA status */}
       <MoaStatus title="MOA Status" requests={requests} loading={loading} />
 
       {/* Actions (only Standard / Negotiated) */}
-      <div className="space-y-1">
-        <h2 className="text-foreground text-2xl font-semibold tracking-tight">
-          Request MOA Renewal
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Choose the type of MOA that best fits your partnership needs.
-        </p>
+      <div className="space-y-2">
+        <MoaActions />
       </div>
-      <MoaActions />
 
       {/* MOA Log */}
       <div className="space-y-4">

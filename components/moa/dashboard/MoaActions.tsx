@@ -17,11 +17,11 @@ export default function MoaActions() {
     <section aria-label="Primary actions" className="flex flex-col gap-5">
       <div className="grid gap-6 md:grid-cols-2">
         {/* Standard MOA */}
-        <div className="hover:border-primary/40 h-full rounded-lg border bg-white p-6 transition hover:shadow-sm">
+        <CustomCard className="hover:border-primary/40 hover:shadow-xs">
           <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between">
               <h3 className="text-foreground flex items-center gap-2 text-xl font-semibold">
-                <FileText className="h-5 w-5" /> Standard MOA
+                <FileText className="h-5 w-5" /> Request a Standard MOA
               </h3>
               <Badge type="supportive" className="font-semibold">
                 Recommended
@@ -42,13 +42,13 @@ export default function MoaActions() {
               </Button>
             </div>
           </div>
-        </div>
+        </CustomCard>
 
         {/* Negotiated MOA */}
-        <CustomCard>
+        <CustomCard className="hover:border-primary/40 hover:shadow-xs">
           <div className="flex flex-col gap-4">
             <h3 className="text-foreground flex items-center gap-2 text-xl font-semibold">
-              <ClipboardList className="h-5 w-5" /> Negotiated MOA
+              <ClipboardList className="h-5 w-5" /> Negotiate a Custom MOA
             </h3>
             <p className="text-muted-foreground text-sm">
               Submit custom terms for specialized partnerships requiring unique conditions.

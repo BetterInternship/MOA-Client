@@ -10,6 +10,7 @@ import { formatWhen } from "@/lib/format";
 import { useDocsControllerGetMoaSignedDocument } from "@/app/api";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import CustomCard from "@/components/shared/CustomCard";
 
 type Props = {
   requests: MoaRequest[];
@@ -33,6 +34,8 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
   )[0];
   const signedDocument = useDocsControllerGetMoaSignedDocument(moa?.id ?? "");
 
+  if (!loading && !moa) return <></>;
+
   return (
     <section aria-label={title} className="space-y-4">
       <h2 className="text-foreground text-2xl font-semibold">{title}</h2>
@@ -41,13 +44,9 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
         <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
           Loading…
         </div>
-      ) : !moa ? (
-        <div className="text-muted-foreground rounded-md border border-blue-200 bg-blue-50 p-6 text-sm">
-          No MOA on file yet.
-        </div>
       ) : (
-        <Card className={cn(statusColors[moa.outcome as MoaStatus] || "bg-white")}>
-          <CardContent className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <CustomCard className={cn(statusColors[moa.outcome as MoaStatus] || "bg-white")}>
+          <div className="flex flex-row items-start justify-between">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               <div className="text-muted-foreground flex flex-col gap-1">
                 <span className="">
@@ -58,7 +57,7 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                   <pre className="inline-block rounded-[0.25em] bg-gray-200 px-2 py-1 hover:cursor-pointer">
                     {signedDocument.data?.signedDocument?.verification_code ?? "loading..."}
                   </pre>
-                  <div className="gap-2">
+                  <div className="mt-2 gap-2">
                     <Button asChild>
                       <a
                         href={signedDocument.data?.signedDocument?.url ?? "/not-found"}
@@ -72,9 +71,11 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                 </span>
               </div>
             </div>
-            <StatusBadge status={moa.outcome ?? ""} className="text-base font-semibold uppercase" />
-          </CardContent>
-        </Card>
+            <div className="flex flex-col items-start">
+              <StatusBadge status={moa.outcome ?? ""} />
+            </div>
+          </div>
+        </CustomCard>
       )}
     </section>
   );
