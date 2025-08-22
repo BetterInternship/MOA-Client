@@ -30,7 +30,7 @@ export default function VerifyDocsPage() {
   const signedDocument = useDocsControllerGetByVerificationCode(serial);
 
   useEffect(() => {
-    const doc = signedDocument.data?.data?.signedDocument;
+    const doc = signedDocument.data?.signedDocument;
     if (doc) setResult(doc ?? ({} as SignedDocument));
     setLoading(signedDocument.isFetching);
   }, [signedDocument]);

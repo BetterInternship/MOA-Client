@@ -41,12 +41,13 @@ export const usePublicEntityList = () => {
  * @hook
  */
 export const useMoaRequests = () => {
-  const { data } = useEntityMoaControllerGetMine();
+  const { data, isFetching, isLoading } = useEntityMoaControllerGetMine();
   const createStandard = useEntityMoaControllerRequestNewStandard();
   const createCustom = useEntityMoaControllerRequestNewCustom();
 
   return {
     requests: (data?.requests as unknown as MoaRequest[]) ?? [],
+    isLoading: isFetching || isLoading,
     createStandard: createStandard.mutateAsync,
     createCustom: createCustom.mutateAsync,
   };

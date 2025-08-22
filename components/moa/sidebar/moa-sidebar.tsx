@@ -33,7 +33,7 @@ export function MoaSidebar() {
       items: [
         {
           title: "Request MOA",
-          url: "/dashboard/request",
+          url: "/dashboard",
         },
         {
           title: "MOA Status",

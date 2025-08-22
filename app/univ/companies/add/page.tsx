@@ -1,12 +1,10 @@
 "use client";
-
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,9 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import CustomCard from "@/components/shared/CustomCard";
-
-// If you use shadcn Form primitives, uncomment these imports and swap to <FormField/> usage.
-// import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useCreateCompany } from "@/app/api/school.api";
 
 const COMPANY_SCHEMA = z.object({
   doingBusinessAs: z.string().min(2, "Required"),
@@ -29,22 +25,16 @@ const COMPANY_SCHEMA = z.object({
     .refine((v) => !!v.trim(), "Required"),
   industry: z.string().min(2, "Required"),
   description: z.string().min(10, "Add a short description (≥10 chars)"),
-
   contactName: z.string().min(2, "Required"),
   contactPhone: z.string().min(5, "Enter a valid phone"),
   contactEmail: z.string().email("Enter a valid email"),
-
   acceptsNonUnivInterns: z.boolean().default(false),
   ongoingMoaWithDlsu: z.boolean().default(false),
   acceptedTerms: z.literal(true, {
     errorMap: () => ({ message: "You must accept the Terms & Privacy Policy" }),
   }),
 });
-
 type FormValues = z.infer<typeof COMPANY_SCHEMA>;
-
-// Change this to your API
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
 
 function normalizeUrl(u: string) {
   if (!u) return u;
@@ -53,6 +43,7 @@ function normalizeUrl(u: string) {
 
 export default function NewCompanyPage() {
   const router = useRouter();
+  const createCompany = useCreateCompany();
 
   const {
     register,
@@ -101,29 +92,8 @@ export default function NewCompanyPage() {
     };
 
     try {
-      const res = await fetch(`${API_BASE}/api/univ/companies`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Add auth header if needed:
-        // headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || "Failed to create company");
-      }
-
-      const data = await res.json().catch(() => ({}));
-      // Expect { id } or { _id }; fallback to list on success:
-      const id = data?.id ?? data?._id;
-      if (id) {
-        router.push(`/univ/companies/${id}`);
-      } else {
-        router.push(`/univ/companies`);
-      }
+      router.push(`/univ/companies`);
     } catch (err: any) {
-      // Replace with your toast system if available
       alert(err?.message || "Something went wrong.");
     }
   };
