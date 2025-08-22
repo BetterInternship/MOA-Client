@@ -1,10 +1,17 @@
 "use client";
 
-export default function Detail({ label, value }: { label: string; value?: string }) {
+type DetailProps = {
+  label: string;
+  value?: string;
+  className?: string;
+};
+
+export default function Detail({ label, value, className }: DetailProps) {
+  const text = value?.trim() ? value : "—";
   return (
-    <div>
+    <div className={className}>
       <div className="text-muted-foreground text-sm">{label}</div>
-      <div className="text-sm">{value?.trim() ? value : "—"}</div>
+      <div className="text-sm">{text}</div>
     </div>
   );
 }

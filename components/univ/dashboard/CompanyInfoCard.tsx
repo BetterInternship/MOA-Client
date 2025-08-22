@@ -31,7 +31,7 @@ export default function CompanyInfoCard({
           <Detail label="Company Name" value={name} />
           <Detail label="Legal Identifier" value={legalIdentifier} />
           <Detail label="Address" value={address} />
-          <Detail label="Nature of Business" value={type} />
+          <Detail label="Nature of Business" value={type} className="capitalize"/>
         </div>
         <Separator />
         <div className="grid gap-4 sm:grid-cols-2">
