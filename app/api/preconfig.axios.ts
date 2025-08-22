@@ -1,14 +1,37 @@
-import axios from "axios";
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-const preconfiguredAxios = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_CLIENT_URL as string,
+const API_BASE = process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:5000";
+
+/** Shared axios instance (important for interceptors, caching, dedupe) */
+export const preconfiguredAxios = axios.create({
+  baseURL: API_BASE,
   withCredentials: true,
 });
 
-export const preconfiguredAxiosFunction = async <T>(config: any): Promise<T> => {
-  const response = await preconfiguredAxios.request<T>(config);
+/** Unwrap { success, data, message } and surface nice errors */
+preconfiguredAxios.interceptors.response.use(
+  (resp: AxiosResponse) => {
+    const body = resp.data;
+    if (body && typeof body === "object" && "success" in body) {
+      if (body.success === false) {
+        throw new Error(body.message || "Request failed");
+      }
+      // If server wraps payload under `data`, return that; else return the body as-is
+      if ("data" in body) {
+        // keep original for debugging if needed
+        (resp as any)._raw = body;
+        resp.data = body.data;
+      }
+    }
+    return resp;
+  },
+  (err: AxiosError<any>) => {
+    const msg = err.response?.data?.message || err.message || "Network error";
+    return Promise.reject(new Error(msg));
+  }
+);
 
-  // ! todo: add some handlers here that check for the .success
-  // ! correspondingly, if success is false it should handle it properly and log the message
-  return response.data;
-};
+export async function preconfiguredAxiosFunction<T = any>(config: AxiosRequestConfig): Promise<T> {
+  const res = await preconfiguredAxios.request<T>(config);
+  return res.data as T;
+}
