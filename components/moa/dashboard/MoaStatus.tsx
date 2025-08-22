@@ -61,7 +61,7 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                   <div className="gap-2">
                     <Button asChild>
                       <a
-                        href={signedDocument.data?.data?.signedDocument?.url}
+                        href={signedDocument.data?.signedDocument?.url ?? "/not-found"}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

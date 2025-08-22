@@ -64,14 +64,7 @@ export function VerificationDetailsCard({ signedDocument }: { signedDocument: Si
           <MetaRow
             icon={<User className="h-4 w-4" />}
             label="Signatories"
-            value={
-              <PeopleList
-                list={[
-                  { name: "Bowei Gai", title: "CEO" },
-                  { name: "Dr. Robert C. Roleda", title: "Provost" },
-                ]}
-              />
-            }
+            value={<PeopleList list={signedDocument.signatories} />}
           />
           <MetaRow
             icon={<Stamp className="h-4 w-4" />}
