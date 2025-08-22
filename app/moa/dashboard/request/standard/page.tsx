@@ -22,11 +22,14 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
-import { useMoaRequests } from "@/app/api/entity.api";
+import { useMoaRequests, usePartneredSchools } from "@/app/api/entity.api";
+import { Autocomplete } from "@/components/ui/autocomplete";
 
 const FormSchema = z.object({
   signatoryName: z.string().trim().min(2, "Please enter the full name."),
   signatoryTitle: z.string().trim().min(2, "Please enter the title/position."),
+  // ! make sure verif checks if school is in list
+  partnerSchool: z.string().trim().min(2, "Please enter the name of the school."),
   accepted: z
     .boolean()
     .refine((v) => v === true, { message: "You must accept the declaration to proceed." }),
@@ -38,12 +41,14 @@ export default function StandardMoaRequestPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const moaRequests = useMoaRequests();
+  const schools = usePartneredSchools();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       signatoryName: "",
       signatoryTitle: "",
+      partnerSchool: "",
       accepted: false,
     },
     mode: "onTouched",
@@ -51,10 +56,11 @@ export default function StandardMoaRequestPage() {
 
   async function onSubmit(values: FormValues) {
     try {
+      console.log(form.getValues());
       setSubmitting(true);
       const r = await moaRequests.createStandard({
         data: {
-          school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
+          school_id: form.getValues().partnerSchool,
           entity_signatory_name: form.getValues().signatoryName,
           entity_signatory_title: form.getValues().signatoryTitle,
         },
@@ -67,6 +73,8 @@ export default function StandardMoaRequestPage() {
       setSubmitting(false);
     }
   }
+
+  console.log(schools);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -128,6 +136,26 @@ export default function StandardMoaRequestPage() {
                     </FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., Chief Executive Officer" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="partnerSchool"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Partner School</FormLabel>
+                    <FormControl>
+                      <Autocomplete
+                        options={schools.schools?.map((school) => ({
+                          id: school.id,
+                          name: school.short_name,
+                        }))}
+                        setter={(v) => field.onChange(v)}
+                      ></Autocomplete>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
