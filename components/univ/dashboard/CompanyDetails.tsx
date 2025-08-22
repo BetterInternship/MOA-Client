@@ -30,6 +30,9 @@ export default function CompanyDetails({ company }: { company: Entity }) {
         contactPerson={view.contactPerson}
         email={view.email}
         phone={view.phone}
+        address={view.address}
+        type={view.type}
+        legalIdentifier={view.legalIdentifier}
       />
 
       {/* <DocumentsCard documents={view.documents} /> */}

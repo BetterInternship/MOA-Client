@@ -109,6 +109,12 @@ export function useCompanyDetail(company?: Entity) {
   const contactPerson = firstNonEmpty(company?.contact_name, (partner as any)?.contact_name);
   const email = firstNonEmpty(company?.contact_email, (partner as any)?.contact_email);
   const phone = firstNonEmpty((company as any)?.contact_phone, (partner as any)?.contact_phone);
+  const address = (partner as any)?.address ?? (company as any)?.address ?? "";
+  const type = (partner as any)?.type ?? (company as any)?.type ?? "";
+  const legalIdentifier = firstNonEmpty(
+    company?.legal_identifier,
+    (partner as any)?.legal_identifier
+  );
 
   const view = useMemo(() => {
     if (!companyId) return null;
@@ -118,8 +124,10 @@ export function useCompanyDetail(company?: Entity) {
       contactPerson,
       email,
       phone,
-      // For StatusBadge, pass the *key* (lowercase) so your color map matches.
+      address,
+      type,
       moaStatus: statusKey,
+      legalIdentifier,
       validUntil: undefined as string | undefined,
     };
   }, [companyId, name, contactPerson, email, phone, statusKey]);

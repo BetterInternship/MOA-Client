@@ -92,6 +92,7 @@ export default function NewCompanyPage() {
     };
 
     try {
+      await createCompany.mutateAsync(payload);
       router.push(`/univ/companies`);
     } catch (err: any) {
       alert(err?.message || "Something went wrong.");
@@ -152,7 +153,7 @@ export default function NewCompanyPage() {
 
             <div className="space-y-1 md:col-span-2">
               <Label htmlFor="generalOfficeLocation">
-                General Office Location <span className="text-destructive">*</span>
+                Address <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="generalOfficeLocation"
