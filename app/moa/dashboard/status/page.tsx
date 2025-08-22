@@ -19,11 +19,11 @@ type UiItem = {
 function getStatusBadge(status: string) {
   switch (status) {
     case "Approved":
-      return <Badge variant="success">Approved</Badge>;
+      return <Badge type="supportive">Approved</Badge>;
     case "Pending":
-      return <Badge variant="secondary">Pending</Badge>;
+      return <Badge type="warning">Pending</Badge>;
     case "Rejected":
-      return <Badge variant="destructive">Rejected</Badge>;
+      return <Badge type="destructive">Rejected</Badge>;
     default:
       return <Badge>{status}</Badge>;
   }

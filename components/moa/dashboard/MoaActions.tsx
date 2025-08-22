@@ -15,15 +15,6 @@ export default function MoaActions() {
 
   return (
     <section aria-label="Primary actions" className="flex flex-col gap-5">
-      <div className="space-y-1">
-        <h2 className="text-foreground text-2xl font-semibold tracking-tight">
-          Request MOA Renewal
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Choose the type of MOA that best fits your partnership needs.
-        </p>
-      </div>
-
       <div className="grid gap-6 md:grid-cols-2">
         {/* Standard MOA */}
         <div className="hover:border-primary/40 h-full rounded-lg border bg-white p-6 transition hover:shadow-sm">

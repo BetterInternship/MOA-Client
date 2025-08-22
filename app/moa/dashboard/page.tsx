@@ -33,6 +33,14 @@ export default function DashboardPage() {
       <MoaStatus title="MOA Status" requests={requests} loading={loading} />
 
       {/* Actions (only Standard / Negotiated) */}
+      <div className="space-y-1">
+        <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+          Request MOA Renewal
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          Choose the type of MOA that best fits your partnership needs.
+        </p>
+      </div>
       <MoaActions />
 
       {/* MOA Log */}

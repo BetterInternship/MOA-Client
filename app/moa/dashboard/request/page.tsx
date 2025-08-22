@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import MoaActions from "@/components/moa/dashboard/MoaActions";
 
 export default function RequestMOA() {
   const router = useRouter();
@@ -19,65 +20,7 @@ export default function RequestMOA() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Standard MOA */}
-        <Card className="p-6 transition-shadow hover:shadow-lg">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start justify-between">
-              <h2 className="text-foreground text-xl font-semibold">Standard MOA</h2>
-              <Badge variant="success">Recommended</Badge>
-            </div>
-
-            <p className="text-muted-foreground text-sm">
-              Use our pre-approved template for common partnerships.
-            </p>
-
-            <div className="text-muted-foreground flex items-center gap-1 text-sm">
-              <div>Processing time: </div>
-              <Badge variant="secondary" className="text-sm! font-medium">
-                1 minute
-              </Badge>
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                onClick={() => router.push("/dashboard/request/standard")}
-                variant="outline"
-                className="mt-auto w-fit"
-              >
-                Get Started
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Negotiated MOA */}
-        <Card className="p-6 transition-shadow hover:shadow-lg">
-          <div className="flex flex-col gap-4">
-            <h2 className="text-foreground text-xl font-semibold">Negotiated MOA</h2>
-            <p className="text-muted-foreground text-sm">
-              Submit custom terms for specialized partnerships requiring unique conditions.
-            </p>
-
-            <div className="text-muted-foreground flex items-center gap-1 text-sm">
-              <div>Processing time: </div>
-              <Badge variant="secondary" className="text-sm! font-medium">
-                2–4 weeks
-              </Badge>
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                onClick={() => router.push("/dashboard/request/negotiated")}
-                variant="outline"
-                className="mt-auto w-fit"
-              >
-                Get Started
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
+      <MoaActions />
     </div>
   );
 }
