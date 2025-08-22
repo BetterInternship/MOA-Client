@@ -43,3 +43,8 @@ export * from "./schoolEntityResponseEntity";
 export * from "./schoolResponse";
 export * from "./schoolResponseSchool";
 export * from "./schoolsResponse";
+export * from "./contactDto";
+export * from "./createCompanyDto";
+export * from "./newStandardMoaRequestDto";
+export * from "./profileDto";
+export * from "./schoolEntitiesControllerGetMyPartnersParams";
