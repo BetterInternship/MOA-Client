@@ -7,6 +7,8 @@
  */
 
 export * from "./baseResponse";
+export * from "./contactDto";
+export * from "./createCompanyDto";
 export * from "./entitiesDto";
 export * from "./entitiesResponse";
 export * from "./entitiesResponseEntities";
@@ -22,8 +24,10 @@ export * from "./moaRequestResponseRequest";
 export * from "./moaRequestsResponse";
 export * from "./newCustomMoaRequestResponse";
 export * from "./newMoaRequestDto";
+export * from "./newStandardMoaRequestDto";
 export * from "./newStandardMoaRequestResponse";
 export * from "./newTemplatedMoaRequestResponse";
+export * from "./profileDto";
 export * from "./queryDocResponse";
 export * from "./queryDocResponseSignedDocument";
 export * from "./queryMoaResponse";
@@ -36,6 +40,7 @@ export * from "./requestNewMoaDto";
 export * from "./requestsResponse";
 export * from "./schoolAccountResponse";
 export * from "./schoolAccountResponseSchoolAccount";
+export * from "./schoolEntitiesControllerGetMyPartnersParams";
 export * from "./schoolEntitiesDto";
 export * from "./schoolEntitiesResponse";
 export * from "./schoolEntityResponse";
@@ -43,8 +48,3 @@ export * from "./schoolEntityResponseEntity";
 export * from "./schoolResponse";
 export * from "./schoolResponseSchool";
 export * from "./schoolsResponse";
-export * from "./contactDto";
-export * from "./createCompanyDto";
-export * from "./newStandardMoaRequestDto";
-export * from "./profileDto";
-export * from "./schoolEntitiesControllerGetMyPartnersParams";

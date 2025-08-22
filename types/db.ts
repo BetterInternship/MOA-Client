@@ -26,12 +26,7 @@ export type Message = EntityTables<"messages">;
 
 // ---------- UNIV SIDE ----------
 export type MoaHistory = SchoolTables<"moa_histories">;
-export type School = {
-  uid: UUID;
-  fullName: string;
-  shortName: string;
-  domain: string;
-};
+export type School = SchoolTables<"schools">;
 
 export type SchoolAccount = {
   id: UUID;

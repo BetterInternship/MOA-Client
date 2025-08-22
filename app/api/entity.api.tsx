@@ -1,4 +1,4 @@
-import { Entity, MoaRequest } from "@/types/db";
+import { Entity, MoaRequest, School } from "@/types/db";
 import { useAuthControllerSignIn, useAuthControllerSignOut } from "./app/api/endpoints/auth/auth";
 import { useEntitiesControllerGetList } from "./app/api/endpoints/entities/entities";
 import {
@@ -6,6 +6,7 @@ import {
   useEntityMoaControllerRequestNewCustom,
   useEntityMoaControllerRequestNewStandard,
 } from "./app/api/endpoints/entity-moa/entity-moa";
+import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
 
 /**
  * Auth hook for entities.
@@ -50,5 +51,13 @@ export const useMoaRequests = () => {
     isLoading: isFetching || isLoading,
     createStandard: createStandard.mutateAsync,
     createCustom: createCustom.mutateAsync,
+  };
+};
+
+export const usePartneredSchools = () => {
+  const { data, isFetching, isLoading } = useEntitySchoolsControllerGetMyPartners();
+  return {
+    schools: (data?.schools as unknown as School[]) ?? [],
+    isLoading: isFetching || isLoading,
   };
 };
