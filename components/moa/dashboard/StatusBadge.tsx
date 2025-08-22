@@ -12,26 +12,26 @@ type Props = {
 
 export default function StatusBadge({ status, className }: Props) {
   const base = (variant: string, label: string) => (
-    <Badge variant={variant as any} className={cn(className)}>
+    <Badge type={variant as any} className={cn(className)}>
       {label}
     </Badge>
   );
 
   switch (status.toLowerCase()) {
     case "active":
-      return base("success", "Active");
+      return base("supportive", "Active");
     case "inactive":
-      return base("outline", "Inactive");
+      return base("warning", "Inactive");
     case "approved":
-      return base("success", "Approved");
+      return base("supportive", "Approved");
     case "rejected":
       return base("destructive", "Rejected");
     case "needs info":
-      return base("outline", "Needs Info");
+      return base("warning", "Needs Info");
     case "under review":
-      return base("secondary", "Under Review");
+      return base("primary", "Under Review");
     case "pending":
     default:
-      return base("default", "Pending");
+      return base("primary", "Pending");
   }
 }
