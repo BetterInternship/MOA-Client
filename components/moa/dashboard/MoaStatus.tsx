@@ -11,7 +11,6 @@ import { useDocsControllerGetMoaSignedDocument } from "@/app/api";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-
 type Props = {
   requests: MoaRequest[];
   loading?: boolean;
@@ -57,7 +56,7 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                 <span className="">
                   Document Verification Code:{" "}
                   <pre className="inline-block rounded-[0.25em] bg-gray-200 px-2 py-1 hover:cursor-pointer">
-                    {signedDocument.data?.data?.signedDocument?.verification_code ?? "loading..."}
+                    {signedDocument.data?.signedDocument?.verification_code ?? "loading..."}
                   </pre>
                   <div className="gap-2">
                     <Button asChild>
