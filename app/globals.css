@@ -93,10 +93,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-supportive: var(--supportive);
-  --color-supportive-foreground: var(--supportive-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
 }
 
 /* ! add in missing dark mode styles from above OR no dark mode at all (who tf over 30 needs it) */
