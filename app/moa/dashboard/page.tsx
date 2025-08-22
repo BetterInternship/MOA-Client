@@ -13,11 +13,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<MoaRequest[]>([]);
   const [loading, setLoading] = useState(false);
-  const moaRequests = useMoaRequests();
+  const { requests: moaRequests, isLoading } = useMoaRequests();
 
   useEffect(() => {
-    setRequests(moaRequests.requests ?? []);
-  }, [moaRequests]);
+    setRequests(moaRequests ?? []);
+  }, [isLoading]);
 
   return (
     <div className="space-y-8">
@@ -33,10 +33,7 @@ export default function DashboardPage() {
       <MoaStatus title="MOA Status" requests={requests} loading={loading} />
 
       {/* Actions (only Standard / Negotiated) */}
-      <MoaActions
-        onStandard={() => router.push("/dashboard/request/standard")}
-        onNegotiated={() => router.push("/dashboard/request/negotiated")}
-      />
+      <MoaActions />
 
       {/* MOA Log */}
       <div className="space-y-4">

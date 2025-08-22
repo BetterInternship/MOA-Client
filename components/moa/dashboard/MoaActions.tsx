@@ -5,17 +5,13 @@ import { useRouter } from "next/navigation";
 import { ClipboardList, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import CustomCard from "@/components/shared/CustomCard";
 
-type Props = {
-  onStandard?: () => void;
-  onNegotiated?: () => void;
-};
-
-export default function MoaActions({ onStandard, onNegotiated }: Props) {
+export default function MoaActions() {
   const router = useRouter();
 
-  const handleStandard = onStandard ?? (() => router.push("/dashboard/request/standard"));
-  const handleNegotiated = onNegotiated ?? (() => router.push("/dashboard/request/negotiated"));
+  const handleStandard = () => router.push("/dashboard/request/standard");
+  const handleNegotiated = () => router.push("/dashboard/request/negotiated");
 
   return (
     <section aria-label="Primary actions" className="flex flex-col gap-5">
@@ -36,7 +32,9 @@ export default function MoaActions({ onStandard, onNegotiated }: Props) {
               <h3 className="text-foreground flex items-center gap-2 text-xl font-semibold">
                 <FileText className="h-5 w-5" /> Standard MOA
               </h3>
-              <Badge variant="success" className="font-semibold">Recommended</Badge>
+              <Badge type="supportive" className="font-semibold">
+                Recommended
+              </Badge>
             </div>
 
             <p className="text-muted-foreground text-sm">
@@ -44,10 +42,7 @@ export default function MoaActions({ onStandard, onNegotiated }: Props) {
             </p>
 
             <div className="text-muted-foreground flex items-center gap-1 text-sm">
-              <div>Processing time:</div>
-              <Badge variant="secondary" className="text-sm! font-medium">
-                1 minute
-              </Badge>
+              <Badge>Processing time: 1 minute</Badge>
             </div>
 
             <div className="flex justify-end">
@@ -59,7 +54,7 @@ export default function MoaActions({ onStandard, onNegotiated }: Props) {
         </div>
 
         {/* Negotiated MOA */}
-        <div className="hover:border-primary/40 h-full rounded-lg border bg-white p-6 transition hover:shadow-sm">
+        <CustomCard>
           <div className="flex flex-col gap-4">
             <h3 className="text-foreground flex items-center gap-2 text-xl font-semibold">
               <ClipboardList className="h-5 w-5" /> Negotiated MOA
@@ -69,10 +64,7 @@ export default function MoaActions({ onStandard, onNegotiated }: Props) {
             </p>
 
             <div className="text-muted-foreground flex items-center gap-1 text-sm">
-              <div>Processing time:</div>
-              <Badge variant="secondary" className="text-sm! font-medium">
-                4 weeks
-              </Badge>
+              <Badge>Processing time: 4 weeks</Badge>
             </div>
 
             <div className="flex justify-end">
@@ -81,7 +73,7 @@ export default function MoaActions({ onStandard, onNegotiated }: Props) {
               </Button>
             </div>
           </div>
-        </div>
+        </CustomCard>
       </div>
     </section>
   );

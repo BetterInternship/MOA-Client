@@ -79,9 +79,7 @@ export default function StandardMoaRequestPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <span>Processing time:</span>
-          <Badge variant="secondary" className="text-sm font-medium">
-            1 minute
-          </Badge>
+          <Badge className="text-sm font-medium">1 minute</Badge>
         </div>
 
         <Button asChild variant="outline">
