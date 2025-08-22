@@ -53,7 +53,11 @@ export default function StandardMoaRequestPage() {
     try {
       setSubmitting(true);
       const r = await moaRequests.createStandard({
-        data: { school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5" },
+        data: {
+          school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
+          entity_signatory_name: form.getValues().signatoryName,
+          entity_signatory_title: form.getValues().signatoryTitle,
+        },
       });
 
       if (r.moaRequestId) router.push("/dashboard");
