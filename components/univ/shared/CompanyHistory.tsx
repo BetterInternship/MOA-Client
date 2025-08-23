@@ -21,7 +21,7 @@ export default function CompanyHistory({
       <div className="rounded-[0.33em] border bg-white p-4">
         {showTitle && (
           <div className="pb-2">
-            <h2 className="text-lg font-semibold">Company History</h2>
+            <h2 className="text-lg font-semibold">Entity History</h2>
           </div>
         )}
         <div className="space-y-2">
@@ -41,7 +41,7 @@ export default function CompanyHistory({
     <div className="rounded-[0.33em] border bg-white p-4">
       {showTitle && (
         <div className="pb-2">
-          <h2 className="text-lg font-semibold">Company History</h2>
+          <h2 className="text-lg font-semibold">Entity History</h2>
         </div>
       )}
 

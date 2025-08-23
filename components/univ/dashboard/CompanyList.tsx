@@ -40,7 +40,7 @@ export default function CompanyList({
         <div className="relative">
           <Input
             className="pr-8 pl-9"
-            placeholder="Search company..."
+            placeholder="Search entity..."
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             disabled={isLoading}

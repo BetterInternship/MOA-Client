@@ -4,15 +4,17 @@
 import CompanyHistory from "@/components/univ/shared/CompanyHistory";
 import MoaDetailsCard from "./MoaDetailsCard";
 import CompanyInfoCard from "./CompanyInfoCard";
-import DocumentsCard from "./DocumentsCard";
 import ActionsBar from "./ActionsBar";
 import { useCompanyDetail } from "@/hooks/useCompanyDetail";
 import { Entity } from "@/types/db";
 
 export default function CompanyDetails({ company }: { company: Entity }) {
   const { loading, view, reqData } = useCompanyDetail(company);
-
   if (!view || !reqData) return null;
+
+  // Grab the latest MOA file URL from history (history already sorted desc by timestamp)
+  const latestMoaUrl =
+    reqData.history.find((h) => h.files && h.files.length)?.files?.[0]?.url ?? undefined;
 
   return (
     <section className="h-full space-y-3 overflow-y-auto p-4">
@@ -22,6 +24,7 @@ export default function CompanyDetails({ company }: { company: Entity }) {
         status={view.moaStatus}
         validUntil={view.validUntil}
         loading={loading}
+        latestMoaUrl={latestMoaUrl}
       />
 
       <CompanyInfoCard
