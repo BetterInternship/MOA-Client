@@ -25,13 +25,13 @@ export default function CompanyInfoCard({
 }: Props) {
   return (
     <div className="rounded-[0.33em] border bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold">Company Details</h2>
+      <h2 className="mb-3 text-lg font-semibold">Entity Details</h2>
       <div className="space-y-3">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Detail label="Company Name" value={name} />
+          <Detail label="Entity Name" value={name} />
           <Detail label="Legal Identifier" value={legalIdentifier} />
           <Detail label="Address" value={address} />
-          <Detail label="Nature of Business" value={type} className="capitalize"/>
+          <Detail label="Nature of Business" value={type} className="capitalize" />
         </div>
         <Separator />
         <div className="grid gap-4 sm:grid-cols-2">

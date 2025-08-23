@@ -48,17 +48,17 @@ export default function CompaniesPage() {
         <div className="flex items-center gap-3 space-y-1">
           <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
             <Building2 />
-            Browse Companies
+            Browse Partner Entities
           </div>
           <p className="text-muted-foreground text-sm">
-            Browse partner companies and view MOA details.
+            Browse partner entities and view MOA details.
           </p>
         </div>
 
         <Link href="/companies/add">
           <Button>
             <Plus />
-            Add new company
+            Add new entity
           </Button>
         </Link>
       </div>
