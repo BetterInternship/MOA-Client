@@ -1,3 +1,4 @@
+// components/univ/shared/FilesDialog.tsx
 "use client";
 
 import * as React from "react";
@@ -13,34 +14,24 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Download, FolderOpen } from "lucide-react";
+import { ExternalLink, FolderOpen } from "lucide-react";
 import type { MoaHistoryFile } from "@/types/moa-request";
 
 type FilesDialogProps = {
   files?: MoaHistoryFile[];
   title?: string;
-  /** Optional custom trigger; if omitted, a default "View files" button is used */
+  /** Optional custom trigger; if omitted, a default "Open files" button is used */
   trigger?: React.ReactNode;
   triggerClassName?: string;
 };
 
-async function downloadFiles(files: MoaHistoryFile[]) {
+function openFilesInNewTabs(files: MoaHistoryFile[]) {
+  // Opening multiple tabs may be blocked by pop-up blockers; keep counts modest.
   for (const f of files) {
     try {
-      const res = await fetch(f.url);
-      if (!res.ok) throw new Error(`Failed to fetch ${f.name}`);
-      const blob = await res.blob();
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = href;
-      a.download = f.name || "download";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(href);
-      await new Promise((r) => setTimeout(r, 120));
+      window.open(f.url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      console.error("Download error:", e);
+      console.error("Open error:", e);
     }
   }
 }
@@ -76,15 +67,15 @@ export default function FilesDialog({
     setSelected((prev) => ({ ...prev, [id]: !!val }));
   }
 
-  async function handleDownloadSelected() {
-    const toDownload = files.filter((f) => selected[f.id]);
-    if (toDownload.length === 0) return;
-    await downloadFiles(toDownload);
+  function handleOpenSelected() {
+    const toOpen = files.filter((f) => selected[f.id]);
+    if (toOpen.length === 0) return;
+    openFilesInNewTabs(toOpen);
   }
 
-  async function handleDownloadAll() {
+  function handleOpenAll() {
     if (!files.length) return;
-    await downloadFiles(files);
+    openFilesInNewTabs(files);
   }
 
   const defaultTrigger = (
@@ -95,7 +86,7 @@ export default function FilesDialog({
       disabled={!files || files.length === 0}
     >
       <FolderOpen className="mr-2 h-4 w-4" />
-      View files
+      Open files
     </Button>
   );
 
@@ -103,7 +94,6 @@ export default function FilesDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
 
-      {/* Content-hugging width with viewport cap */}
       <DialogContent
         className="max-w-none overflow-hidden p-0"
         style={{ width: "fit-content", maxWidth: "min(95vw, 1200px)", maxHeight: "85vh" }}
@@ -145,17 +135,26 @@ export default function FilesDialog({
                             onCheckedChange={(v) => toggleOne(f.id, v)}
                             aria-label={`Select file ${f.name}`}
                           />
-                          <div className="block truncate break-words">{f.name}</div>
+                          {/* Make file name a link */}
+                          <a
+                            href={f.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block truncate break-words underline-offset-2 hover:underline"
+                            title={f.name}
+                          >
+                            {f.name}
+                          </a>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 shrink-0"
-                          onClick={() => downloadFiles([f])}
-                          title={`Download ${f.name}`}
-                          aria-label={`Download ${f.name}`}
+                          onClick={() => openFilesInNewTabs([f])}
+                          title={`Open ${f.name}`}
+                          aria-label={`Open ${f.name}`}
                         >
-                          <Download className="h-4 w-4" />
+                          <ExternalLink className="h-4 w-4" />
                         </Button>
                       </li>
                     ))}
@@ -181,22 +180,22 @@ export default function FilesDialog({
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={handleDownloadSelected}
+                onClick={handleOpenSelected}
                 disabled={countSelected === 0}
                 className="gap-2"
               >
-                <Download className="h-4 w-4" />
-                Download selected ({countSelected})
+                <ExternalLink className="h-4 w-4" />
+                Open selected ({countSelected})
               </Button>
               <Button
                 variant="default"
                 size="sm"
-                onClick={handleDownloadAll}
+                onClick={handleOpenAll}
                 disabled={files.length === 0}
                 className="gap-2"
               >
-                <Download className="h-4 w-4" />
-                Download all
+                <ExternalLink className="h-4 w-4" />
+                Open all
               </Button>
               <DialogClose asChild>
                 <Button variant="outline" size="sm">

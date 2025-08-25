@@ -8,8 +8,7 @@ import type {
   MoaHistoryItem,
   MoaHistoryFile,
 } from "@/types/moa-request";
-import { useSchoolPartner } from "@/app/api/school.api";
-import { useSchoolMoaHistory } from "@/app/api/school.api";
+import { useSchoolPartner, useSchoolMoaHistory } from "@/app/api/school.api";
 
 /* ---------------- helpers ---------------- */
 
@@ -50,35 +49,103 @@ const fileToHistoryFile = (url: URLString, stamp: ISODate): MoaHistoryFile => {
   return { id: `${stamp}-${name}`, name, url };
 };
 
+// Parses history that may arrive as:
+// - an array of objects
+// - a JSON string with single quotes: "[{'effective_date':'..','documents':'url1,url2'}]"
+// - a JSON string with normal double quotes
+const parseHistoryArray = (raw: unknown): any[] => {
+  if (Array.isArray(raw)) return raw;
+  if (raw == null) return [];
+
+  if (typeof raw === "string") {
+    let s = raw.trim();
+
+    // strip one wrapping layer of quotes, if present
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      s = s.slice(1, -1);
+    }
+
+    // convert single-quoted JSON into valid JSON
+    const looksSingleQuoted = s.includes("':") || s.startsWith("[{'");
+    const jsonish = looksSingleQuoted ? s.replace(/'/g, '"') : s;
+
+    try {
+      const parsed = JSON.parse(jsonish);
+      return Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  // object → single-element array
+  if (typeof raw === "object") return [raw as any];
+  return [];
+};
+
+// Turn documents into an array of URLs. Supports:
+// - comma/semicolon/whitespace-separated string
+// - already an array
+const explodeDocuments = (docs: unknown): URLString[] => {
+  if (!docs) return [];
+  if (Array.isArray(docs)) {
+    return (docs as unknown[])
+      .map(String)
+      .map((s) => s.trim())
+      .filter(Boolean) as URLString[];
+  }
+  return String(docs)
+    .split(/[,\s;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean) as URLString[];
+};
+
 /** Normalize server history into { timestamp, text, files? }[] */
 const normalizeHistoryItems = (
-  raw: any[]
+  raw: any
 ): Array<{ timestamp: ISODate; text: string; files?: URLString[] }> => {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((it) => {
-      // preferred shape
-      if (it?.timestamp && it?.text)
-        return it as { timestamp: ISODate; text: string; files?: URLString[] };
+  const arr = parseHistoryArray(raw);
 
-      // legacy example
+  return arr
+    .map((it: any) => {
+      // Preferred shape
+      if (it?.timestamp && it?.text) {
+        const docs = explodeDocuments(it?.documents);
+        const files = Array.isArray(it?.files) && it.files.length ? it.files : docs;
+        return {
+          timestamp: new Date(it.timestamp).toISOString(),
+          text: String(it.text),
+          files: files && files.length ? (files as URLString[]) : undefined,
+        };
+      }
+
+      // Legacy master-sheet shape with effective/expiry + documents
       if (it?.effective_date || it?.expiry_date) {
-        const out: Array<{ timestamp: ISODate; text: string }> = [];
-        if (it.effective_date)
+        const docs = explodeDocuments(it?.documents);
+        const files = docs.length ? (docs as URLString[]) : undefined;
+        const out: Array<{ timestamp: ISODate; text: string; files?: URLString[] }> = [];
+
+        if (it.effective_date) {
           out.push({
             timestamp: new Date(it.effective_date).toISOString(),
             text: "MOA effective date set",
+            files,
           });
-        if (it.expiry_date)
+        }
+        if (it.expiry_date) {
           out.push({
             timestamp: new Date(it.expiry_date).toISOString(),
             text: "MOA expiry date set",
+            files,
           });
+        }
         return out;
       }
 
-      // last-resort stringify
-      return { timestamp: new Date().toISOString(), text: JSON.stringify(it) };
+      // Fallback
+      return {
+        timestamp: new Date().toISOString(),
+        text: JSON.stringify(it),
+      };
     })
     .flat();
 };
@@ -98,8 +165,8 @@ export function useCompanyDetail(company?: Entity) {
 
   // ---- View model (top cards) ----
   const backendStatusRaw: BackendMoa = (partner as any)?.moaStatus ?? (partner as any)?.status;
-  const statusKey = toStatusKey(backendStatusRaw); // "approved" | "registered" | "blacklisted" | ...
-  const statusLabel = toStatusLabel(statusKey); // "Approved" | "Registered" | "Blacklisted" | "Under Review"
+  const statusKey = toStatusKey(backendStatusRaw);
+  const statusLabel = toStatusLabel(statusKey);
 
   const name = firstNonEmpty(
     (company as any)?.display_name,
@@ -130,33 +197,29 @@ export function useCompanyDetail(company?: Entity) {
       legalIdentifier,
       validUntil: undefined as string | undefined,
     };
-  }, [companyId, name, contactPerson, email, phone, statusKey]);
+  }, [companyId, name, contactPerson, email, phone, statusKey, address, type, legalIdentifier]);
 
   // ---- History / request VM for <CompanyHistory /> ----
   const reqData: UiMoaRequest | null = useMemo(() => {
     if (!companyId) return null;
 
     const normalized = normalizeHistoryItems(historyRaw);
-    const history: MoaHistoryItem[] = normalized
-      .map((h) => {
-        const files: MoaHistoryFile[] | undefined =
-          Array.isArray(h.files) && h.files.length
-            ? h.files.map((u, idx) => {
-                const nm = (u as string).split("/").pop() || `attachment-${idx + 1}`;
-                return { id: `${h.timestamp}-${nm}`, name: nm, url: u as string };
-              })
-            : undefined;
 
-        return { date: toMDY(h.timestamp), text: h.text, files };
-      })
-      .sort((a, b) => +new Date(b.date) - +new Date(a.date));
+    // Sort by actual timestamp desc before we format to MDY
+    const sorted = [...normalized].sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp));
+
+    const history: MoaHistoryItem[] = sorted.map((h, idx) => {
+      const files: MoaHistoryFile[] | undefined =
+        Array.isArray(h.files) && h.files.length
+          ? h.files.map((u) => fileToHistoryFile(u, h.timestamp))
+          : undefined;
+
+      return { date: toMDY(h.timestamp), text: h.text, files };
+    });
 
     const requestedAtIso =
-      normalized.length > 0
-        ? normalized.reduce(
-            (min, x) => (x.timestamp < min ? x.timestamp : min),
-            normalized[0].timestamp
-          )
+      sorted.length > 0
+        ? sorted[sorted.length - 1].timestamp // earliest as the "requested" date
         : new Date().toISOString();
 
     return {
@@ -167,7 +230,6 @@ export function useCompanyDetail(company?: Entity) {
       tin: "",
       industry: "",
       requestedAt: toMDY(requestedAtIso),
-      // CompanyHistory just displays text → give it the human label
       status: statusLabel,
       notes: undefined,
       history,

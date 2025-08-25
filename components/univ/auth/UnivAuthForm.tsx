@@ -5,36 +5,28 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/api/school.api";
+import { useSchoolAuth } from "@/app/providers/school-auth-provider";
 
 export function UnivAuthForm() {
   const router = useRouter();
-  const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const auth = useAuth();
+  const auth = useSchoolAuth();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     const form = e.currentTarget;
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
 
     await auth
-      .signIn({
-        data: {
-          email,
-          password,
-        },
-      })
+      .signIn(email, password)
+      // ! move this to inside of auth hook later on
       .then(
         (r) => (
           console.log(r),
-          r.success
-            ? (setLoading(false), router.push("/dashboard"))
-            : (setLoading(false), alert("Invalid credentials."))
+          r.success ? router.push("/dashboard") : alert("Invalid credentials.")
         )
       )
       .catch((e) => console.log(e));
@@ -52,8 +44,8 @@ export function UnivAuthForm() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <Button type="submit" disabled={loading}>
-        {loading ? "Signing in..." : "Continue"}
+      <Button type="submit" disabled={auth.isSigningIn}>
+        {auth.isSigningIn ? "Signing in..." : "Continue"}
       </Button>
     </form>
   );

@@ -1,10 +1,6 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Entity, MoaRequest } from "@/types/db";
 import { preconfiguredAxios } from "@/app/api/preconfig.axios";
-import {
-  useAuthControllerSchoolSignIn,
-  useAuthControllerSchoolSignOut,
-} from "./app/api/endpoints/auth/auth";
 import {
   useSchoolEntitiesControllerApproveRequest,
   useSchoolEntitiesControllerDenyRequest,
@@ -17,21 +13,6 @@ import {
   useSchoolMoaControllerGetMine,
   useSchoolMoaControllerGetOneHistory,
 } from "./app/api/endpoints/school-moa/school-moa";
-
-/**
- * Auth hook for schools.
- *
- * @hook
- */
-export const useAuth = () => {
-  const signIn = useAuthControllerSchoolSignIn();
-  const signOut = useAuthControllerSchoolSignOut();
-
-  return {
-    signIn: signIn.mutateAsync,
-    signOut: signOut.mutateAsync,
-  };
-};
 
 /**
  * Gives information about school partners.

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Fragment, useMemo } from "react";
-import { useAuthControllerSignOut } from "@/app/api";
+import { useSchoolAuth } from "@/app/providers/school-auth-provider";
 
 type NavLink = {
   href: string;
@@ -25,8 +25,8 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/companies", label: "Browse Companies", match: ["/companies"] },
-  { href: "/company-registration", label: "Company Approval", match: ["/company-registration"] },
+  { href: "/companies", label: "Browse Entities", match: ["/companies"] },
+  { href: "/company-registration", label: "Entity Approval", match: ["/company-registration"] },
   { href: "/moa-request", label: "MOA Approval", match: ["/moa", "/moa-request"] },
 ];
 
@@ -65,17 +65,12 @@ function NavItem({ item, pathname }: { item: NavLink; pathname: string }) {
 export default function UnivTopbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const signOut = useAuthControllerSignOut();
+  const auth = useSchoolAuth();
 
-  async function handleLogout() {
-    try {
-      signOut.mutate();
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    } finally {
-      router.push("/login");
-      router.refresh();
-    }
-  }
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push("/login");
+  };
 
   return (
     <header className="bg-background/80 sticky top-0 z-50 w-full border-b backdrop-blur">
@@ -91,7 +86,9 @@ export default function UnivTopbar() {
 
           {/* Scrollable nav on mobile */}
           <nav className="ml-2 hidden gap-2 sm:flex">
-            {NAV_LINKS.map((item) => (
+            {NAV_LINKS.filter(
+              (n) => auth.schoolAccount?.role === "superuser" || n.href !== "/company-registration"
+            ).map((item) => (
               <Fragment key={item.href}>
                 <NavItem item={item} pathname={pathname} />
               </Fragment>
@@ -99,9 +96,11 @@ export default function UnivTopbar() {
           </nav>
 
           <nav className="-mx-2 flex min-w-0 gap-1 overflow-x-auto px-2 sm:hidden">
-            {NAV_LINKS.map((item) => (
-              <NavItem key={item.href} item={item} pathname={pathname} />
-            ))}
+            {NAV_LINKS.filter((n) => !auth.school || n.href !== "/company-registration").map(
+              (item) => (
+                <NavItem key={item.href} item={item} pathname={pathname} />
+              )
+            )}
           </nav>
         </div>
 
@@ -109,11 +108,11 @@ export default function UnivTopbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2">
-              <Avatar className="h-7 w-7">
+              {/* <Avatar className="h-7 w-7">
                 <AvatarImage src="" alt="User" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-              <span className="hidden sm:inline">User</span>
+                <AvatarFallback>@</AvatarFallback>
+              </Avatar> */}
+              <span className="hidden sm:inline">{auth.schoolAccount?.name ?? "Loading..."}</span>
               <ChevronDown className="mt-0.5" />
             </Button>
           </DropdownMenuTrigger>
