@@ -20,7 +20,16 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import type { ErrorResponse, SchoolAccountResponse, SchoolResponse } from "../../models";
+import type {
+  CountResponse,
+  ErrorResponse,
+  RequestsResponse,
+  SchoolAccountResponse,
+  SchoolEntitiesResponse,
+  SchoolResponse,
+  SchoolsControllerListActiveMoasParams,
+  SchoolsControllerListCompanyRequestsParams,
+} from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
@@ -447,6 +456,1453 @@ export function useSchoolsControllerGetSelfSchoolSuspense<
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getSchoolsControllerGetSelfSchoolSuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const schoolsControllerListCompanyRequests = (
+  params?: SchoolsControllerListCompanyRequestsParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<RequestsResponse>({
+    url: `/api/schools/company-requests`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getSchoolsControllerListCompanyRequestsQueryKey = (
+  params?: SchoolsControllerListCompanyRequestsParams
+) => {
+  return [`/api/schools/company-requests`, ...(params ? [params] : [])] as const;
+};
+
+export const getSchoolsControllerListCompanyRequestsQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListCompanyRequestsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSchoolsControllerListCompanyRequestsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>
+  > = ({ signal }) => schoolsControllerListCompanyRequests(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerListCompanyRequestsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>
+>;
+export type SchoolsControllerListCompanyRequestsQueryError = ErrorResponse;
+
+export function useSchoolsControllerListCompanyRequests<
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | SchoolsControllerListCompanyRequestsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerListCompanyRequests<
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListCompanyRequestsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerListCompanyRequests<
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListCompanyRequestsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerListCompanyRequests<
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListCompanyRequestsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerListCompanyRequestsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolsControllerListCompanyRequestsSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListCompanyRequestsParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSchoolsControllerListCompanyRequestsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>
+  > = ({ signal }) => schoolsControllerListCompanyRequests(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerListCompanyRequestsSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>
+>;
+export type SchoolsControllerListCompanyRequestsSuspenseQueryError = ErrorResponse;
+
+export function useSchoolsControllerListCompanyRequestsSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | SchoolsControllerListCompanyRequestsParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerListCompanyRequestsSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListCompanyRequestsParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerListCompanyRequestsSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListCompanyRequestsParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerListCompanyRequestsSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListCompanyRequestsParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListCompanyRequests>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerListCompanyRequestsSuspenseQueryOptions(params, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const schoolsControllerGetCompanyRequestForEntity = (
+  entityId: string | undefined | null,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<RequestsResponse>({
+    url: `/api/schools/company-requests/${entityId}`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getSchoolsControllerGetCompanyRequestForEntityQueryKey = (
+  entityId?: string | undefined | null
+) => {
+  return [`/api/schools/company-requests/${entityId}`] as const;
+};
+
+export const getSchoolsControllerGetCompanyRequestForEntityQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSchoolsControllerGetCompanyRequestForEntityQueryKey(entityId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>
+  > = ({ signal }) => schoolsControllerGetCompanyRequestForEntity(entityId, signal);
+
+  return { queryKey, queryFn, enabled: !!entityId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerGetCompanyRequestForEntityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>
+>;
+export type SchoolsControllerGetCompanyRequestForEntityQueryError = ErrorResponse;
+
+export function useSchoolsControllerGetCompanyRequestForEntity<
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerGetCompanyRequestForEntity<
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerGetCompanyRequestForEntity<
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerGetCompanyRequestForEntity<
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerGetCompanyRequestForEntityQueryOptions(
+    entityId,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolsControllerGetCompanyRequestForEntitySuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSchoolsControllerGetCompanyRequestForEntityQueryKey(entityId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>
+  > = ({ signal }) => schoolsControllerGetCompanyRequestForEntity(entityId, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerGetCompanyRequestForEntitySuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>
+>;
+export type SchoolsControllerGetCompanyRequestForEntitySuspenseQueryError = ErrorResponse;
+
+export function useSchoolsControllerGetCompanyRequestForEntitySuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerGetCompanyRequestForEntitySuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerGetCompanyRequestForEntitySuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerGetCompanyRequestForEntitySuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+  TError = ErrorResponse,
+>(
+  entityId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerGetCompanyRequestForEntity>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerGetCompanyRequestForEntitySuspenseQueryOptions(
+    entityId,
+    options
+  );
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const schoolsControllerListActiveMoas = (
+  params?: SchoolsControllerListActiveMoasParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<SchoolEntitiesResponse>({
+    url: `/api/schools/active-moas`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getSchoolsControllerListActiveMoasQueryKey = (
+  params?: SchoolsControllerListActiveMoasParams
+) => {
+  return [`/api/schools/active-moas`, ...(params ? [params] : [])] as const;
+};
+
+export const getSchoolsControllerListActiveMoasQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListActiveMoasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolsControllerListActiveMoasQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>> = ({
+    signal,
+  }) => schoolsControllerListActiveMoas(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerListActiveMoasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>
+>;
+export type SchoolsControllerListActiveMoasQueryError = ErrorResponse;
+
+export function useSchoolsControllerListActiveMoas<
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | SchoolsControllerListActiveMoasParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerListActiveMoas<
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListActiveMoasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerListActiveMoas<
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListActiveMoasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerListActiveMoas<
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListActiveMoasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerListActiveMoasQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolsControllerListActiveMoasSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListActiveMoasParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolsControllerListActiveMoasQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>> = ({
+    signal,
+  }) => schoolsControllerListActiveMoas(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerListActiveMoasSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>
+>;
+export type SchoolsControllerListActiveMoasSuspenseQueryError = ErrorResponse;
+
+export function useSchoolsControllerListActiveMoasSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | SchoolsControllerListActiveMoasParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerListActiveMoasSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListActiveMoasParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerListActiveMoasSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListActiveMoasParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerListActiveMoasSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolsControllerListActiveMoasParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerListActiveMoas>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerListActiveMoasSuspenseQueryOptions(params, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const schoolsControllerCountPendingMoas = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<CountResponse>({
+    url: `/api/schools/stats/pending-moas`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getSchoolsControllerCountPendingMoasQueryKey = () => {
+  return [`/api/schools/stats/pending-moas`] as const;
+};
+
+export const getSchoolsControllerCountPendingMoasQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>, TError, TData>
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolsControllerCountPendingMoasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>> = ({
+    signal,
+  }) => schoolsControllerCountPendingMoas(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerCountPendingMoasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>
+>;
+export type SchoolsControllerCountPendingMoasQueryError = ErrorResponse;
+
+export function useSchoolsControllerCountPendingMoas<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountPendingMoas<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountPendingMoas<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerCountPendingMoas<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerCountPendingMoasQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolsControllerCountPendingMoasSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseSuspenseQueryOptions<
+      Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+      TError,
+      TData
+    >
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolsControllerCountPendingMoasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>> = ({
+    signal,
+  }) => schoolsControllerCountPendingMoas(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerCountPendingMoasSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>
+>;
+export type SchoolsControllerCountPendingMoasSuspenseQueryError = ErrorResponse;
+
+export function useSchoolsControllerCountPendingMoasSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountPendingMoasSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountPendingMoasSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerCountPendingMoasSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountPendingMoas>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerCountPendingMoasSuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const schoolsControllerCountActiveEntities = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<CountResponse>({
+    url: `/api/schools/stats/active-entities`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getSchoolsControllerCountActiveEntitiesQueryKey = () => {
+  return [`/api/schools/stats/active-entities`] as const;
+};
+
+export const getSchoolsControllerCountActiveEntitiesQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>, TError, TData>
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolsControllerCountActiveEntitiesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>
+  > = ({ signal }) => schoolsControllerCountActiveEntities(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerCountActiveEntitiesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>
+>;
+export type SchoolsControllerCountActiveEntitiesQueryError = ErrorResponse;
+
+export function useSchoolsControllerCountActiveEntities<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountActiveEntities<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountActiveEntities<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerCountActiveEntities<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerCountActiveEntitiesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolsControllerCountActiveEntitiesSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseSuspenseQueryOptions<
+      Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+      TError,
+      TData
+    >
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolsControllerCountActiveEntitiesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>
+  > = ({ signal }) => schoolsControllerCountActiveEntities(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerCountActiveEntitiesSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>
+>;
+export type SchoolsControllerCountActiveEntitiesSuspenseQueryError = ErrorResponse;
+
+export function useSchoolsControllerCountActiveEntitiesSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountActiveEntitiesSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountActiveEntitiesSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerCountActiveEntitiesSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountActiveEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerCountActiveEntitiesSuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const schoolsControllerCountRegisteredEntities = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<CountResponse>({
+    url: `/api/schools/stats/registered-entities`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getSchoolsControllerCountRegisteredEntitiesQueryKey = () => {
+  return [`/api/schools/stats/registered-entities`] as const;
+};
+
+export const getSchoolsControllerCountRegisteredEntitiesQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+      TError,
+      TData
+    >
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolsControllerCountRegisteredEntitiesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>
+  > = ({ signal }) => schoolsControllerCountRegisteredEntities(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerCountRegisteredEntitiesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>
+>;
+export type SchoolsControllerCountRegisteredEntitiesQueryError = ErrorResponse;
+
+export function useSchoolsControllerCountRegisteredEntities<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountRegisteredEntities<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+          TError,
+          Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountRegisteredEntities<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerCountRegisteredEntities<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerCountRegisteredEntitiesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolsControllerCountRegisteredEntitiesSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseSuspenseQueryOptions<
+      Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+      TError,
+      TData
+    >
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolsControllerCountRegisteredEntitiesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>
+  > = ({ signal }) => schoolsControllerCountRegisteredEntities(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolsControllerCountRegisteredEntitiesSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>
+>;
+export type SchoolsControllerCountRegisteredEntitiesSuspenseQueryError = ErrorResponse;
+
+export function useSchoolsControllerCountRegisteredEntitiesSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountRegisteredEntitiesSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolsControllerCountRegisteredEntitiesSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolsControllerCountRegisteredEntitiesSuspense<
+  TData = Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolsControllerCountRegisteredEntities>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolsControllerCountRegisteredEntitiesSuspenseQueryOptions(options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

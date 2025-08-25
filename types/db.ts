@@ -27,15 +27,7 @@ export type Message = EntityTables<"messages">;
 // ---------- UNIV SIDE ----------
 export type MoaHistory = SchoolTables<"moa_histories">;
 export type School = SchoolTables<"schools">;
-
-export type SchoolAccount = {
-  id: UUID;
-  schoolId: UUID;
-  role: "superadmin" | "legal" | "company_approver" | "viewer";
-  name: string;
-  receiveNewOrgRequests: boolean;
-  receiveMoaRequests: boolean;
-};
+export type SchoolAccount = SchoolTables<"school_accounts">;
 
 export type SchoolLog = {
   actionBy: UUID; // accountId

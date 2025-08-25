@@ -20,6 +20,7 @@ import type {
   LoginSchoolDto,
   RegisterEntityDto,
   RegisterEntityResponse,
+  SelfSchoolResponse,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -302,6 +303,73 @@ export const useAuthControllerSchoolSignIn = <TError = ErrorResponse, TContext =
   TContext
 > => {
   const mutationOptions = getAuthControllerSchoolSignInMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const authControllerSchoolSelf = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<SelfSchoolResponse>({
+    url: `/api/auth/school/self`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getAuthControllerSchoolSelfMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authControllerSchoolSelf>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof authControllerSchoolSelf>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["authControllerSchoolSelf"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof authControllerSchoolSelf>>,
+    void
+  > = () => {
+    return authControllerSchoolSelf();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AuthControllerSchoolSelfMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authControllerSchoolSelf>>
+>;
+
+export type AuthControllerSchoolSelfMutationError = ErrorResponse;
+
+export const useAuthControllerSchoolSelf = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof authControllerSchoolSelf>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof authControllerSchoolSelf>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getAuthControllerSchoolSelfMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
