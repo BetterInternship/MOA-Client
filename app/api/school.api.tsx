@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, UseInfiniteQuery } from "@tanstack/react-query";
 import { Entity, MoaRequest } from "@/types/db";
 import { preconfiguredAxios } from "@/app/api/preconfig.axios";
 import {
@@ -63,10 +63,20 @@ export const useMoaRequests = () => {
  */
 export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) => {
   const { offset = 0, limit = 100 } = opts ?? {};
-  const { data, isLoading, isFetching, error, refetch } = useSchoolEntitiesControllerGetMyPartners({
-    offset,
-    limit,
-  });
+  const { data, isLoading, isFetching, error, refetch } = useSchoolEntitiesControllerGetMyPartners(
+    {
+      offset,
+      limit,
+    },
+    {
+      query: {
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        retry: 1,
+      },
+    }
+  );
 
   return {
     partners: (data?.entities as unknown as Entity[]) ?? [],
@@ -85,7 +95,17 @@ export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) =>
 export const useSchoolPartner = (id?: string) => {
   const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetAPartner(
     id,
-    { query: { enabled: !!id } }
+    {
+      query: {
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        retry: 1,
+        keepPreviousData: true,
+        select: (res) => (res?.entity as Entity) ?? null,
+      },
+    }
   );
 
   return {
@@ -104,12 +124,20 @@ export const useSchoolPartner = (id?: string) => {
  */
 export const useSchoolMoaHistory = (entityId?: string) => {
   const q = useSchoolMoaControllerGetOneHistory(entityId, {
-    query: { enabled: !!entityId },
+    query: {
+      enabled: !!entityId,
+      staleTime: 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+      keepPreviousData: true,
+      select: (res) => ((res?.history?.history ?? []) as any[]),
+    },
   });
 
   return {
-    // Orval base response is often { success, data: { history } }
-    items: (q.data?.history?.history ?? []) as any[],
+    items: q.data ?? [],
     isLoading: q.isLoading || q.isFetching,
     isError: !!q.error,
     refetch: q.refetch,
@@ -154,3 +182,112 @@ export const useCreateCompany = () => {
     },
   });
 };
+
+export type CompanyRequest = {
+  id: string;
+  entity_id: string;
+  timestamp?: string;
+  school_id: string;
+  outcome?: "approved" | "denied" | "pending" | "conversing" | null;
+  processed_by_account_id?: string | null;
+  processed_date?: string | null;
+  // add thread_id, etc. if you need them
+};
+
+export type CountResponse = { count: number };
+
+type RequestsListResponse = { requests: CompanyRequest[] };
+type ActiveMoasListResponse = {
+  // whatever your API returns; here we assume a list of linked entities
+  entities?: Entity[]; // if controller returns { entities }
+  links?: Array<{ entity_id: string }>; // if controller returns links instead
+};
+
+/* ---------------- Schools: Requests ---------------- */
+
+/** List all company requests for the current school (from cookie) */
+export function useSchoolCompanyRequests(opts?: { offset?: number; limit?: number }) {
+  const { offset = 0, limit = 50 } = opts ?? {};
+  return useQuery({
+    queryKey: ["schools", "company-requests", { offset, limit }],
+    queryFn: async () => {
+      const res = await preconfiguredAxios.get<RequestsListResponse>(
+        "/api/schools/company-requests",
+        { params: { offset, limit } }
+      );
+      return res.data?.requests ?? [];
+    },
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** Get a specific company request for the current school by entityId */
+export function useSchoolCompanyRequest(entityId?: string) {
+  return useQuery({
+    enabled: !!entityId,
+    queryKey: ["schools", "company-request", entityId],
+    queryFn: async () => {
+      const res = await preconfiguredAxios.get<{ request: CompanyRequest }>(
+        `/api/schools/company-requests/${entityId}`
+      );
+      return res.data?.request ?? null;
+    },
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/* ---------------- Schools: Active MOAs (approved links) ---------------- */
+
+/** Retrieve list of active MOAs (approved) for current school */
+export function useSchoolActiveMoas(opts?: { offset?: number; limit?: number }) {
+  const { offset = 0, limit = 200 } = opts ?? {};
+  return useQuery({
+    queryKey: ["schools", "active-moas", { offset, limit }],
+    queryFn: async () => {
+      const res = await preconfiguredAxios.get<ActiveMoasListResponse>("/api/schools/active-moas", {
+        params: { offset, limit },
+      });
+      // normalize to an array of Entity if available; else fall back to links
+      const entities = res.data?.entities ?? [];
+      return entities;
+    },
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** Convenience count derived from list (pull a big page and count) */
+export function useSchoolActiveMoasCount() {
+  const q = useSchoolActiveMoas({ offset: 0, limit: 500 }); // adjust if needed
+  const count = q.data?.length ?? 0;
+  return { ...q, count };
+}
+
+/* ---------------- Schools: Stats (counts) ---------------- */
+
+type RequestsListResponse = { requests: CompanyRequest[] };
+type CountResponse = { count: number };
+type ActiveMoasListResponse = { entities?: any[] }; // if your API returns entities
+
+/** Counts: pending MOA requests, active entities, registered entities */
+export function useSchoolStats() {
+  return useQuery({
+    queryKey: ["schools", "stats"],
+    queryFn: async () => {
+      const [pendingMoas, activeEntities, registeredEntities] = await Promise.all([
+        preconfiguredAxios.get<CountResponse>("/api/schools/stats/pending-moas"),
+        preconfiguredAxios.get<CountResponse>("/api/schools/stats/active-entities"),
+        preconfiguredAxios.get<CountResponse>("/api/schools/stats/registered-entities"),
+      ]);
+      return {
+        pendingMoas: pendingMoas.data?.count ?? 0,
+        activeEntities: activeEntities.data?.count ?? 0,
+        registeredEntities: registeredEntities.data?.count ?? 0,
+      };
+    },
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+  });
+}

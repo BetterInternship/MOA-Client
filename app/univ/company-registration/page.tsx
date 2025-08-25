@@ -111,10 +111,10 @@ export default function CompanyVerificationPage() {
       <div className="mb-6 flex items-center gap-3 space-y-1">
         <div className="inline-flex items-center gap-3 rounded-md bg-purple-100 px-3 py-1 text-2xl font-semibold text-purple-800">
           <ClipboardCheck />
-          Company Approvals
+          Entity Approvals
         </div>
         <p className="text-muted-foreground text-sm">
-          Review new company registrations, request clarifications, and approve or deny submissions.
+          Review new entity registrations, request clarifications, and approve or deny submissions.
         </p>
       </div>
 

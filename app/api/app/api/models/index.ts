@@ -8,6 +8,7 @@
 
 export * from "./baseResponse";
 export * from "./contactDto";
+export * from "./countResponse";
 export * from "./createCompanyDto";
 export * from "./entitiesDto";
 export * from "./entitiesResponse";
@@ -47,10 +48,9 @@ export * from "./schoolEntityResponse";
 export * from "./schoolEntityResponseEntity";
 export * from "./schoolResponse";
 export * from "./schoolResponseSchool";
-export * from "./schoolsResponse";
-export * from "./countResponse";
 export * from "./schoolsControllerListActiveMoasParams";
 export * from "./schoolsControllerListCompanyRequestsParams";
+export * from "./schoolsResponse";
 export * from "./selfSchoolResponse";
 export * from "./selfSchoolResponseSchool";
 export * from "./selfSchoolResponseSchoolAccount";
