@@ -9,7 +9,6 @@ import { MoaRequest } from "@/types/db";
 import { formatWhen } from "@/lib/format";
 import { useDocsControllerGetMoaSignedDocument } from "@/app/api";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import CustomCard from "@/components/shared/CustomCard";
 
 type Props = {
