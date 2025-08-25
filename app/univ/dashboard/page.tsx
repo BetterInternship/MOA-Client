@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   useSchoolStats,
   useSchoolCompanyRequests,
-  useSchoolActiveMoasCount,
+  useSchoolActiveMoas,
   CompanyRequest,
 } from "@/app/api/school.api";
 
@@ -30,16 +30,10 @@ const columns: ColumnDef<Activity>[] = [
 
 
 export default function UnivDashboardPage() {
-  // counts
   const statsQ = useSchoolStats();
-  // list of requests (to get pending entity requests + build "Recent Activity")
-  const requestsQ = useSchoolCompanyRequests({ offset: 0, limit: 50 });
-  // “Active MOAs” count (derived from list length)
-  const activeMoasQ = useSchoolActiveMoasCount();
-
+  const requestsQ = useSchoolCompanyRequests({ offset: 0, limit: 100 });
   const pendingEntityRequests = useMemo(() => {
     const reqs = requestsQ.data ?? [];
-    // if outcome exists, count only 'pending'; else fall back to list length
     const hasOutcome = reqs.some((r) => r.outcome !== undefined);
     return hasOutcome
       ? reqs.filter((r) => (r.outcome ?? "pending") === "pending").length
@@ -48,7 +42,7 @@ export default function UnivDashboardPage() {
 
   const stats: Stat[] = useMemo(
     () => [
-      { label: "Active MOAs", value: activeMoasQ.count, color: "supportive" },
+      { label: "Active MOAs", value: statsQ.data?.activeMoas ?? 0, color: "supportive" },
       { label: "Pending MOA Requests", value: statsQ.data?.pendingMoas ?? 0, color: "warning" },
       {
         label: "Entities Registered",
@@ -57,27 +51,10 @@ export default function UnivDashboardPage() {
       },
       { label: "Pending Entity Requests", value: pendingEntityRequests ?? 0, color: "destructive" },
     ],
-    [activeMoasQ.count, statsQ.data, pendingEntityRequests]
+    [statsQ.data, pendingEntityRequests]
   );
 
-  const activities: Activity[] = useMemo(() => {
-    const reqs = (requestsQ.data ?? []) as CompanyRequest[];
-    return reqs.slice(0, 10).map((r) => ({
-      date: toMDY(r.timestamp || r.processed_date || ""),
-      company: r.entity_id?.slice(0, 8) || "(unknown entity)",
-      action:
-        r.outcome === "approved"
-          ? "Company Request Approved"
-          : r.outcome === "denied"
-            ? "Company Request Denied"
-            : "Company Request Submitted",
-      performedBy: r.processed_by_account_id
-        ? `Acct ${r.processed_by_account_id.slice(0, 6)}`
-        : "—",
-    }));
-  }, [requestsQ.data]);
-
-  const loading = statsQ.isLoading || requestsQ.isLoading || activeMoasQ.isLoading;
+  const loading = statsQ.isLoading || requestsQ.isLoading
 
   return (
     <div className="space-y-8">
@@ -108,7 +85,7 @@ export default function UnivDashboardPage() {
       <CustomCard className="space-y-2">
         <h2 className="text-lg font-semibold">Recent Activity</h2>
         <div>
-          <DataTable columns={columns} data={activities} searchKey="company" />
+          <DataTable columns={columns} data={[]} searchKey="company" />
         </div>
       </CustomCard>
     </div>

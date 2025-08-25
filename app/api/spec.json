@@ -757,6 +757,27 @@
         "tags": ["Schools"]
       }
     },
+    "/api/schools/stats/active-moas": {
+      "get": {
+        "operationId": "SchoolsController_countActiveMoas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/CountResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Schools"]
+      }
+    },
     "/api/schools/stats/pending-moas": {
       "get": {
         "operationId": "SchoolsController_countPendingMoas",

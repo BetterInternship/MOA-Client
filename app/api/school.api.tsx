@@ -197,7 +197,6 @@ export type CountResponse = { count: number };
 
 type RequestsListResponse = { requests: CompanyRequest[] };
 type ActiveMoasListResponse = {
-  // whatever your API returns; here we assume a list of linked entities
   entities?: Entity[]; // if controller returns { entities }
   links?: Array<{ entity_id: string }>; // if controller returns links instead
 };
@@ -257,30 +256,20 @@ export function useSchoolActiveMoas(opts?: { offset?: number; limit?: number }) 
   });
 }
 
-/** Convenience count derived from list (pull a big page and count) */
-export function useSchoolActiveMoasCount() {
-  const q = useSchoolActiveMoas({ offset: 0, limit: 500 }); // adjust if needed
-  const count = q.data?.length ?? 0;
-  return { ...q, count };
-}
-
 /* ---------------- Schools: Stats (counts) ---------------- */
-
-type RequestsListResponse = { requests: CompanyRequest[] };
-type CountResponse = { count: number };
-type ActiveMoasListResponse = { entities?: any[] }; // if your API returns entities
-
-/** Counts: pending MOA requests, active entities, registered entities */
+/** Counts: active MOAs, ending MOA requests, active entities, registered entities */
 export function useSchoolStats() {
   return useQuery({
     queryKey: ["schools", "stats"],
     queryFn: async () => {
-      const [pendingMoas, activeEntities, registeredEntities] = await Promise.all([
+      const [ activeMoas, pendingMoas, activeEntities, registeredEntities] = await Promise.all([
+        preconfiguredAxios.get<CountResponse>("/api/schools/stats/active-moas"),
         preconfiguredAxios.get<CountResponse>("/api/schools/stats/pending-moas"),
         preconfiguredAxios.get<CountResponse>("/api/schools/stats/active-entities"),
         preconfiguredAxios.get<CountResponse>("/api/schools/stats/registered-entities"),
       ]);
       return {
+        activeMoas: activeMoas.data?.count ?? 0,
         pendingMoas: pendingMoas.data?.count ?? 0,
         activeEntities: activeEntities.data?.count ?? 0,
         registeredEntities: registeredEntities.data?.count ?? 0,
