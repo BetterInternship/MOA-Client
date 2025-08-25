@@ -103,7 +103,6 @@ export const useSchoolPartner = (id?: string) => {
         refetchOnReconnect: false,
         retry: 1,
         keepPreviousData: true,
-        select: (res) => (res?.entity as Entity) ?? null,
       },
     }
   );
