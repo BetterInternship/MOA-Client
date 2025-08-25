@@ -78,7 +78,7 @@ export default function UnivTopbar() {
         {/* Left: Brand + Nav */}
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/dashboard" className="flex items-center gap-2">
               <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
               <span className="font-semibold">MOA Management Tool</span>
             </Link>
