@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +17,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Divider } from "@/components/ui/divider";
 
 // TEMP: validation off — simple RHF types
 type FormValues = {
@@ -64,33 +63,22 @@ export default function NegotiatedMoaRequestPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-semibold">Negotiated MOA Request</h1>
-        <p className="text-muted-foreground text-sm">
-          Submit your custom MOA proposal with detailed justification for non-standard terms.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Negotiate a Custom MOA</h1>
       </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          <span>Processing time:</span>
-          <Badge variant="secondary" className="text-sm font-medium">
-            4 weeks
-          </Badge>
-        </div>
-      </div>
-
-      <Alert variant="destructive">
-        <Info className="h-4 w-4" />
-        <AlertTitle className="font-semibold">Heads up</AlertTitle>
-        <AlertDescription>
-          Custom MOA requests require detailed review by our legal team.
-        </AlertDescription>
-      </Alert>
 
       <Card className="bg-white">
         <CardHeader>
-          <CardTitle className="text-lg">Proposal Details</CardTitle>
+          <div className="flex flex-row flex-wrap items-start gap-1">
+            <Badge type="warning" className="font-medium">
+              Important Note
+            </Badge>
+            <div className="mt-2 leading-5 text-gray-500">
+              Custom MOA requests require detailed review by our legal team. It may take up to{" "}
+              <span className="font-bold">4 weeks</span> to approve your request.
+            </div>
+          </div>
         </CardHeader>
+        <Divider height={3} />
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -100,9 +88,6 @@ export default function NegotiatedMoaRequestPage() {
                 name="proposedDoc"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Attach Proposed MOA Document<span className="text-red-500"> *</span>
-                    </FormLabel>
                     <FormControl>
                       <FileUpload
                         label="Proposed MOA Document"

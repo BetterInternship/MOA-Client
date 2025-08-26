@@ -54,7 +54,7 @@ export function FileUpload({
         disabled={disabled}
         className={cn(
           "flex items-center gap-2 rounded-md border px-4 py-4 text-left text-sm transition-colors",
-          "hover:bg-muted text-muted-foreground",
+          "hover:bg-muted text-muted-foreground hover:cursor-pointer",
           disabled && "cursor-not-allowed opacity-60"
         )}
         aria-label={label}
