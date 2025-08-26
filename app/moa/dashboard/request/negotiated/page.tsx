@@ -19,20 +19,28 @@ import {
 } from "@/components/ui/form";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Divider } from "@/components/ui/divider";
+import { useEntityMoaControllerRequestNewCustom } from "../../../../api/app/api/endpoints/entity-moa/entity-moa";
 
 // TEMP: validation off — simple RHF types
 type FormValues = {
-  proposedDoc: File | null; // can be null while validation is disabled
+  school_id: string;
+  proposed_moa: File | null; // can be null while validation is disabled
   reason: string;
 };
 
 export default function NegotiatedMoaRequestPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  // ! move this to entity.api.ts later on
+  const customRequest = useEntityMoaControllerRequestNewCustom();
 
   // TEMP: no resolver, no schema
   const form = useForm<FormValues>({
-    defaultValues: { reason: "", proposedDoc: null },
+    defaultValues: {
+      school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
+      reason: "",
+      proposed_moa: null,
+    },
     mode: "onTouched",
     reValidateMode: "onChange",
   });
@@ -41,16 +49,26 @@ export default function NegotiatedMoaRequestPage() {
     setSubmitting(true);
     try {
       const formData = new FormData();
-      if (values.proposedDoc) formData.append("proposedDoc", values.proposedDoc);
+      if (values.proposed_moa) formData.append("proposed_moa", values.proposed_moa);
+      formData.append("school_id", values.school_id);
       formData.append("reason", values.reason || "");
 
-      // TODO: call your API
-      // const res = await fetch("/api/moa/negotiated", {
-      //   method: "POST",
-      //   body: formData,
-      //   credentials: "include",
-      // });
-      // if (!res.ok) throw new Error("Submit failed");
+      console.log(formData.getAll("reason"));
+      console.log(formData.getAll("proposed_moa"));
+      console.log(formData.getAll("school_id"));
+      await customRequest.mutateAsync({
+        data: {
+          school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
+          reason: "",
+          proposed_moa: new Blob(
+            [(await values.proposed_moa?.arrayBuffer()) ?? new Uint8Array([])],
+            {
+              type: "application/pdf",
+            }
+          ),
+        },
+        // data: formData as any,
+      });
 
       router.push("/dashboard/status");
     } catch (e) {
@@ -85,18 +103,18 @@ export default function NegotiatedMoaRequestPage() {
               {/* File upload using your component */}
               <FormField
                 control={form.control}
-                name="proposedDoc"
+                name="proposed_moa"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
                       <FileUpload
                         label="Proposed MOA Document"
-                        name="proposedDoc"
-                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        name="proposed_moa"
+                        accept="application/pdf"
                         required
                         onFileSelect={(file) => {
                           // store file in RHF state; no validation
-                          form.setValue("proposedDoc", (file as File) ?? null, {
+                          form.setValue("proposed_moa", (file as File) ?? null, {
                             shouldDirty: true,
                           });
                         }}

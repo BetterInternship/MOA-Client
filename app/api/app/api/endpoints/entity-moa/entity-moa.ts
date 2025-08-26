@@ -27,6 +27,7 @@ import type {
   ErrorResponse,
   MoaRequestResponse,
   MoaRequestsResponse,
+  NewCustomMoaRequestDto,
   NewCustomMoaRequestResponse,
   NewStandardMoaRequestDto,
   NewStandardMoaRequestResponse,
@@ -546,14 +547,19 @@ export const useEntityMoaControllerRequestNewStandard = <
   return useMutation(mutationOptions, queryClient);
 };
 export const entityMoaControllerRequestNewCustom = (
-  newStandardMoaRequestDto: NewStandardMoaRequestDto,
+  newCustomMoaRequestDto: NewCustomMoaRequestDto,
   signal?: AbortSignal
 ) => {
+  const formData = new FormData();
+  formData.append(`school_id`, newCustomMoaRequestDto.school_id);
+  formData.append(`reason`, newCustomMoaRequestDto.reason);
+  formData.append(`proposed_moa`, newCustomMoaRequestDto.proposed_moa);
+
   return preconfiguredAxiosFunction<NewCustomMoaRequestResponse>({
     url: `/api/entity/moa/request-custom`,
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: newStandardMoaRequestDto,
+    headers: { "Content-Type": "multipart/form-data" },
+    data: formData,
     signal,
   });
 };
@@ -565,13 +571,13 @@ export const getEntityMoaControllerRequestNewCustomMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
     TError,
-    { data: NewStandardMoaRequestDto },
+    { data: NewCustomMoaRequestDto },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
   TError,
-  { data: NewStandardMoaRequestDto },
+  { data: NewCustomMoaRequestDto },
   TContext
 > => {
   const mutationKey = ["entityMoaControllerRequestNewCustom"];
@@ -583,7 +589,7 @@ export const getEntityMoaControllerRequestNewCustomMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
-    { data: NewStandardMoaRequestDto }
+    { data: NewCustomMoaRequestDto }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -596,7 +602,7 @@ export const getEntityMoaControllerRequestNewCustomMutationOptions = <
 export type EntityMoaControllerRequestNewCustomMutationResult = NonNullable<
   Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>
 >;
-export type EntityMoaControllerRequestNewCustomMutationBody = NewStandardMoaRequestDto;
+export type EntityMoaControllerRequestNewCustomMutationBody = NewCustomMoaRequestDto;
 export type EntityMoaControllerRequestNewCustomMutationError = ErrorResponse;
 
 export const useEntityMoaControllerRequestNewCustom = <TError = ErrorResponse, TContext = unknown>(
@@ -604,7 +610,7 @@ export const useEntityMoaControllerRequestNewCustom = <TError = ErrorResponse, T
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
       TError,
-      { data: NewStandardMoaRequestDto },
+      { data: NewCustomMoaRequestDto },
       TContext
     >;
   },
@@ -612,7 +618,7 @@ export const useEntityMoaControllerRequestNewCustom = <TError = ErrorResponse, T
 ): UseMutationResult<
   Awaited<ReturnType<typeof entityMoaControllerRequestNewCustom>>,
   TError,
-  { data: NewStandardMoaRequestDto },
+  { data: NewCustomMoaRequestDto },
   TContext
 > => {
   const mutationOptions = getEntityMoaControllerRequestNewCustomMutationOptions(options);
