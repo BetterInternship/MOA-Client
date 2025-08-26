@@ -7,5 +7,5 @@
  */
 
 export interface NewCustomMoaRequestResponse {
-  moaRequestId: string;
+  requestId: string;
 }
