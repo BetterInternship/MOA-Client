@@ -3,21 +3,23 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
+  useAuthControllerEntitySelf,
   useAuthControllerSchoolSelf,
   useAuthControllerSchoolSignIn,
   useAuthControllerSchoolSignOut,
+  useAuthControllerSignIn,
+  useAuthControllerSignOut,
 } from "../api";
-import { School, SchoolAccount } from "@/types/db";
+import { Entity } from "@/types/db";
 
-interface ISchoolAuthContext {
+interface IEntityAuthContext {
   isAuthenticated: boolean;
   isSigningIn: boolean;
   isLoading: boolean;
-  school: School;
-  schoolAccount: SchoolAccount;
+  entity: Entity;
 
   // ! fix typing
-  signIn: (email: string, password: string) => Promise<any>;
+  signIn: (legal_entity_name: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
   refreshAuthentication: () => void;
 
@@ -26,46 +28,44 @@ interface ISchoolAuthContext {
   // redirectIfLoggedIn: () => void;
 }
 
-const SchoolAuthContext = createContext<ISchoolAuthContext>({} as ISchoolAuthContext);
+const EntityAuthContext = createContext<IEntityAuthContext>({} as IEntityAuthContext);
 
-export const useSchoolAuth = () => useContext(SchoolAuthContext);
+export const useEntityAuth = () => useContext(EntityAuthContext);
 
 /**
  * Gives access to auth functions to the components inside it.
  *
  * @component
  */
-export const SchoolAuthContextProvider = ({ children }: { children: React.ReactNode }) => {
+export const EntityAuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
-  const [school, setSchool] = useState<School>({} as School);
-  const [schoolAccount, setSchoolAccount] = useState<SchoolAccount>({} as SchoolAccount);
+  const [entity, setEntity] = useState<Entity>({} as Entity);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   // ! change this in the future, no need to rely on session storage?
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window === "undefined") return false;
-    const isAuthed = sessionStorage.getItem("schoolIsAuthenticated");
+    const isAuthed = sessionStorage.getItem("entityIsAuthenticated");
     return isAuthed ? JSON.parse(isAuthed) : false;
   });
 
   // Auth hooks
-  const schoolSelf = useAuthControllerSchoolSelf();
-  const schoolSignIn = useAuthControllerSchoolSignIn();
-  const schoolSignOut = useAuthControllerSchoolSignOut();
+  const entitySelf = useAuthControllerEntitySelf();
+  const entitySignIn = useAuthControllerSignIn();
+  const entitySignOut = useAuthControllerSignOut();
 
   // Save self details on hook
   const loadSelf = async () => {
-    const self = await schoolSelf.mutateAsync();
-    setSchool((self.school as School) ?? null);
-    setSchoolAccount((self.schoolAccount as SchoolAccount) ?? null);
+    const self = await entitySelf.mutateAsync();
+    setEntity((self.entity as Entity) ?? null);
   };
 
   // Refresh 'self'; will only be work if cookie still exists and is valid (not exactly a 'refresh')
   const refreshAuthentication = async () => {
     setIsLoading(true);
-    const self = await schoolSelf.mutateAsync();
+    const self = await entitySelf.mutateAsync();
 
-    if (self.school && self.schoolAccount) {
+    if (self.entity) {
       setIsAuthenticated(true);
       await loadSelf();
     }
@@ -74,14 +74,14 @@ export const SchoolAuthContextProvider = ({ children }: { children: React.ReactN
   };
 
   useEffect(() => {
-    schoolSelf.mutateAsync().then(async () => (await loadSelf(), setIsLoading(false)));
+    entitySelf.mutateAsync().then(async () => (await loadSelf(), setIsLoading(false)));
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (legal_entity_name: string, password: string) => {
     setIsSigningIn(true);
-    const signInResponse = await schoolSignIn.mutateAsync({
+    const signInResponse = await entitySignIn.mutateAsync({
       data: {
-        email,
+        legal_entity_name,
         password,
       },
     });
@@ -99,10 +99,9 @@ export const SchoolAuthContextProvider = ({ children }: { children: React.ReactN
   };
 
   const signOut = async () => {
-    const signOutResult = await schoolSignOut.mutateAsync();
+    const signOutResult = await entitySignOut.mutateAsync();
     setIsAuthenticated(false);
-    setSchool({} as School);
-    setSchoolAccount({} as SchoolAccount);
+    setEntity({} as Entity);
   };
 
   // ! to implement
@@ -117,12 +116,11 @@ export const SchoolAuthContextProvider = ({ children }: { children: React.ReactN
   //   }, [isAuthenticated, isLoading]);
 
   return (
-    <SchoolAuthContext.Provider
+    <EntityAuthContext.Provider
       value={{
         isLoading,
         isSigningIn,
-        school,
-        schoolAccount,
+        entity: entity,
 
         signIn,
         signOut,
@@ -134,6 +132,6 @@ export const SchoolAuthContextProvider = ({ children }: { children: React.ReactN
       }}
     >
       {children}
-    </SchoolAuthContext.Provider>
+    </EntityAuthContext.Provider>
   );
 };

@@ -9,21 +9,6 @@ import {
 import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
 
 /**
- * Auth hook for entities.
- *
- * @hook
- */
-export const useAuth = () => {
-  const signIn = useAuthControllerSignIn();
-  const signOut = useAuthControllerSignOut();
-
-  return {
-    signIn: signIn.mutateAsync,
-    signOut: signOut.mutateAsync,
-  };
-};
-
-/**
  * Combines the results of different requests into one.
  * Entity request (for entity name, addres, etc.) and its corresponding moa requests.
  *

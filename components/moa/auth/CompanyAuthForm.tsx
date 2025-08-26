@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { useEffect, useState } from "react";
-import { useAuth, usePublicEntityList } from "@/app/api/entity.api";
+import { usePublicEntityList } from "@/app/api/entity.api";
 import { Entity } from "@/types/db";
 import { Input } from "@/components/ui/input";
+import { useEntityAuth } from "@/app/providers/entity-auth-provider";
 
 export function CompanyAuthForm() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function CompanyAuthForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const entities = usePublicEntityList();
-  const auth = useAuth();
+  const auth = useEntityAuth();
 
   useEffect(() => {
     setOptions(
@@ -35,13 +36,7 @@ export function CompanyAuthForm() {
     setLoading(true);
 
     await auth
-      .signIn({
-        data: {
-          legal_entity_name:
-            entities.entities.find((e) => e.id === company)?.legal_identifier ?? "",
-          password: password,
-        },
-      })
+      .signIn(entities.entities.find((e) => e.id === company)?.legal_identifier ?? "", password)
       .then((r) =>
         r.success
           ? (setLoading(false), router.push("/dashboard"))

@@ -58,3 +58,5 @@ export * from "./schoolsResponse";
 export * from "./selfSchoolResponse";
 export * from "./selfSchoolResponseSchool";
 export * from "./selfSchoolResponseSchoolAccount";
+export * from "./selfEntityResponse";
+export * from "./selfEntityResponseEntity";
