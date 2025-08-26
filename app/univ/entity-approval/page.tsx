@@ -123,7 +123,7 @@ export default function CompanyVerificationPage() {
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId="moa:requests:layout"
-        className="max-h-[80vh] min-h-[80vh] rounded-md border lg:overflow-hidden"
+        className="max-h-[77vh] min-h-[77vh] rounded-md border lg:overflow-hidden"
       >
         {/* Left list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
