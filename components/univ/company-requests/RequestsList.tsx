@@ -5,24 +5,29 @@ import { cn } from "@/lib/utils";
 import type { CompanyRequest } from "@/types/company-request";
 
 type Props = {
-  items: CompanyRequest[]; // this list should already be "requires completion"
+  items: CompanyRequest[];
   selectedId: string;
   onSelect: (id: string) => void;
+  /** which tab are we rendering inside? */
+  variant?: "pending" | "denied";
 };
 
-export default function RequestsList({ items, selectedId, onSelect }: Props) {
+export default function RequestsList({ items, selectedId, onSelect, variant = "pending" }: Props) {
   const count = items.length;
+  const showSummary = variant === "pending";
 
   return (
     <aside className="h-full overflow-y-auto">
       <div className="space-y-3 p-3">
-        {/* Single impact stat */}
-        <div className="flex items-end gap-2 rounded-lg border border-rose-300 bg-rose-50 p-3">
-          <div className="-mt-1 text-4xl leading-none font-bold text-rose-900">{count}</div>
-          <div className="text-xs font-semibold tracking-wider text-rose-700/90 uppercase">
-            outstanding company requests
+        {/* Summary only on Pending tab */}
+        {showSummary && (
+          <div className="flex items-end gap-2 rounded-lg border border-rose-300 bg-rose-50 p-3">
+            <div className="-mt-1 text-4xl leading-none font-bold text-rose-900">{count}</div>
+            <div className="text-xs font-semibold tracking-wider text-rose-700/90 uppercase">
+              outstanding company requests
+            </div>
           </div>
-        </div>
+        )}
 
         {/* List */}
         <div className="max-h-[75vh] overflow-y-auto rounded-md border">
@@ -44,7 +49,6 @@ export default function RequestsList({ items, selectedId, onSelect }: Props) {
                         Submitted: {r.submittedAt}
                       </div>
                     </div>
-                    {/* Optional: add a status chip back if you want */}
                   </button>
                 </li>
               );
