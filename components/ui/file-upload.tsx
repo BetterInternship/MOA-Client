@@ -53,7 +53,7 @@ export function FileUpload({
         onClick={handleClick}
         disabled={disabled}
         className={cn(
-          "flex items-center gap-2 rounded-md border px-4 py-4 text-left text-sm transition-colors",
+          "flex items-center gap-2 rounded-[0.33em] border border-gray-300 px-4 py-4 text-left text-sm transition-colors",
           "hover:bg-muted text-muted-foreground hover:cursor-pointer",
           disabled && "cursor-not-allowed opacity-60"
         )}
