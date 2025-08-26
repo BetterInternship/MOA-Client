@@ -1,9 +1,8 @@
-// app/(whatever)/company-requests/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RequestsList from "@/components/univ/company-requests/RequestsList";
 import CompanyDetails from "@/components/univ/company-requests/CompanyDetails";
 import DocumentsCard from "@/components/univ/dashboard/DocumentsCard";
@@ -24,15 +23,15 @@ export default function CompanyVerificationPage() {
   const [tab, setTab] = useState<"pending" | "denied">("pending");
   const [selectedId, setSelectedId] = useState<string>("");
 
-  // fetch all requests for current school (cookie-based)
+  // fetch all requests
   const reqsQ = useCompanyRequests({ offset: 0, limit: 100 });
   const all = (reqsQ.data ?? []) as CompanyRequest[];
 
-  // split lists
+  // split lists (frontend filter)
   const pendingItems = useMemo(
     () =>
       all.filter((r) => {
-        const s = norm((r as any).status ?? (r as any).outcome); // supports either shape
+        const s = norm((r as any).status ?? (r as any).outcome);
         return (
           s === "" ||
           s === "pending" ||
@@ -50,7 +49,7 @@ export default function CompanyVerificationPage() {
 
   const list = tab === "pending" ? pendingItems : deniedItems;
 
-  // keep selection valid for the active tab
+  // maintain selection scoped to current tab
   useEffect(() => {
     if (!list.length) {
       setSelectedId("");
@@ -68,22 +67,19 @@ export default function CompanyVerificationPage() {
 
   async function onApprove(_note: string) {
     if (!selectedId) return;
-    await approve({ id: selectedId }); // POST /api/school/entities/requests/:id/approve
+    await approve({ id: selectedId });
     await reqsQ.refetch();
   }
-
   async function onDeny(_note: string) {
     if (!selectedId) return;
-    await deny({ id: selectedId }); // POST /api/school/entities/requests/:id/deny
+    await deny({ id: selectedId });
     await reqsQ.refetch();
   }
-
-  // placeholder until you wire the endpoint
   async function sendRequestForResponse(_msg: string) {
     return;
   }
 
-  // docs (unchanged)
+  // documents
   type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
   const documents = useMemo(() => {
     const raw: AnyDoc[] =
@@ -95,6 +91,8 @@ export default function CompanyVerificationPage() {
       .map((d) => ({ label: d.label ?? d.documentType ?? "Document", href: d.href ?? d.url ?? "" }))
       .filter((d) => d.href);
   }, [selected]);
+
+  const isLoading = reqsQ.isLoading;
 
   return (
     <div className="min-h-[88vh]">
@@ -111,10 +109,10 @@ export default function CompanyVerificationPage() {
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as "pending" | "denied")} className="mb-3">
-        <TabsList>
-          <TabsTrigger value="pending">
+        <TabsList className="border bg-white">
+          <TabsTrigger value="pending" className="gap-2">
             Pending / Needs Action
-            <span className="text-rose-700 px-1.5 rounded bg-rose-100 text-[11px] font-semibold">
+            <span className="rounded bg-rose-100 px-1.5 text-[11px] font-semibold text-rose-700">
               {pendingItems.length}
             </span>
           </TabsTrigger>
@@ -129,34 +127,45 @@ export default function CompanyVerificationPage() {
       >
         {/* Left list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
-          <RequestsList items={list} selectedId={selectedId} onSelect={setSelectedId} variant={tab} />
+          <RequestsList
+            items={list}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            variant={tab}
+            loading={isLoading}
+          />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
 
         {/* Right details */}
         <ResizablePanel defaultSize={74} minSize={40}>
-          <div className="h-full space-y-6 overflow-y-auto p-4">
-            {selected ? (
-              <>
-                <RequestMeta req={selected} />
-                <CompanyDetails req={selected} />
-                <DocumentsCard documents={documents} />
-
-                {/* Only allow actions on the "pending" tab */}
-                {tab === "pending" && (
-                  <>
-                    <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
-                    <FinalDecision onApprove={onApprove} onDeny={onDeny} loading={busy} />
-                  </>
-                )}
-              </>
-            ) : reqsQ.isLoading ? (
-              <div className="text-muted-foreground">Loading…</div>
-            ) : (
-              <div className="text-muted-foreground">No items.</div>
-            )}
-          </div>
+          {isLoading ? (
+            // 👇 same skeleton vibe as Companies page
+            <div className="space-y-4 p-6">
+              <div className="flex items-center justify-between">
+                <div className="bg-muted h-6 w-1/3 animate-pulse rounded" />
+                <div className="bg-muted h-5 w-24 animate-pulse rounded" />
+              </div>
+              <div className="bg-muted h-24 w-full animate-pulse rounded" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="bg-muted h-16 w-full animate-pulse rounded" />
+                <div className="bg-muted h-16 w-full animate-pulse rounded" />
+              </div>
+            </div>
+          ) : selected ? (
+            <div className="h-full space-y-6 overflow-y-auto p-4">
+              <RequestMeta req={selected} />
+              <CompanyDetails req={selected} />
+              <DocumentsCard documents={documents} />
+              {tab === "pending" && (
+                <>
+                  <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
+                  <FinalDecision onApprove={onApprove} onDeny={onDeny} loading={busy} />
+                </>
+              )}
+            </div>
+          ) : null}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
