@@ -21,11 +21,18 @@ import { useMemo } from "react";
  * @param opts
  * @hook
  */
-export const useEntities = async (opts?: { offset?: number; limit?: number }) => {
-  const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetMyPartners({
-    offset: opts?.offset ?? 0,
-    limit: opts?.limit ?? 100,
-  });
+export const useEntities = (opts?: { offset?: number; limit?: number }) => {
+  const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetMyPartners(
+    {
+      offset: opts?.offset ?? 0,
+      limit: opts?.limit ?? 100,
+    },
+    {
+      query: {
+        staleTime: 60000,
+      },
+    }
+  );
   const approveNewEntityRequest = useSchoolEntitiesControllerApproveRequest();
   const denyNewEntityRequest = useSchoolEntitiesControllerDenyRequest();
 
@@ -45,12 +52,13 @@ export const useEntities = async (opts?: { offset?: number; limit?: number }) =>
  * @hook
  */
 export const useMoaRequests = () => {
-  const { data } = useSchoolMoaControllerGetMine();
+  const { data, isLoading, isFetching } = useSchoolMoaControllerGetMine();
   const approveMoaRequest = useSchoolMoaControllerApprove();
   const denyMoaRequest = useSchoolMoaControllerDeny();
 
   return {
-    requests: (data?.requests as unknown as MoaRequest) ?? [],
+    requests: (data?.requests as unknown as MoaRequest[]) ?? [],
+    isLoading: isLoading || isFetching,
     approve: approveMoaRequest.mutateAsync,
     deny: denyMoaRequest.mutateAsync,
   };

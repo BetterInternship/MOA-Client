@@ -4,12 +4,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-import CompanyList from "@/components/univ/moa-requests/CompanyList";
+import MoaRequestList from "@/components/univ/moa-requests/CompanyList";
 import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import { FileSignature } from "lucide-react";
 import { MoaRequest } from "@/types/db";
+import { useMoaRequests } from "@/app/api/school.api";
 
 /* -------------------- tiny date helpers -------------------- */
 function toMDY(d: Date) {
@@ -21,94 +22,13 @@ function toMDY(d: Date) {
 const today = () => toMDY(new Date());
 
 export default function MoaRequestsPage() {
-  const [items, setItems] = useState<MoaRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
-  const [busy, setBusy] = useState(false);
+  const moaRequests = useMoaRequests();
 
-  // Auto-select first item on mount or when list changes
-  useEffect(() => {
-    if (!items.length) {
-      setSelectedId("");
-    } else if (!selectedId || !items.some((x) => x.id === selectedId)) {
-      setSelectedId(items[0].id);
-    }
-  }, [items, selectedId]);
-
-  const selected = useMemo(() => items.find((x) => x.id === selectedId), [items, selectedId]);
-
-  /* -------------------- Actions (pure local/optimistic) -------------------- */
-  async function sendRequestForResponse(message: string) {
-    if (!selectedId) return;
-    setBusy(true);
-    try {
-      setItems((prev) =>
-        prev.map((x) =>
-          x.id === selectedId
-            ? {
-                ...x,
-                status: "Needs Info",
-                history: [
-                  ...x.history,
-                  {
-                    date: today(),
-                    text: "University requested clarification" + (message ? ` — ${message}` : ""),
-                    sourceType: "univ",
-                  },
-                ],
-              }
-            : x
-        )
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function approve(_note: string) {
-    if (!selectedId) return;
-    setBusy(true);
-    try {
-      setItems((prev) =>
-        prev.map((x) =>
-          x.id === selectedId
-            ? {
-                ...x,
-                status: "Approved",
-                history: [
-                  ...x.history,
-                  { date: today(), text: "MOA approved", sourceType: "univ" },
-                ],
-              }
-            : x
-        )
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function deny(_note: string) {
-    if (!selectedId) return;
-    setBusy(true);
-    try {
-      setItems((prev) =>
-        prev.map((x) =>
-          x.id === selectedId
-            ? {
-                ...x,
-                status: "Rejected",
-                history: [
-                  ...x.history,
-                  { date: today(), text: "MOA rejected", sourceType: "univ" },
-                ],
-              }
-            : x
-        )
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
+  const selected = useMemo(
+    () => moaRequests.requests.find((request) => request.id === selectedId),
+    [moaRequests.requests, selectedId]
+  );
 
   return (
     <div className="min-h-[88vh]">
@@ -132,7 +52,11 @@ export default function MoaRequestsPage() {
       >
         {/* LEFT: Company list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
-          <CompanyList items={items} selectedId={selectedId} onSelect={setSelectedId} />
+          <MoaRequestList
+            requests={moaRequests.requests}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
@@ -143,8 +67,16 @@ export default function MoaRequestsPage() {
             {selected ? (
               <>
                 <CompanyHistoryTree req={selected} />
-                <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
-                <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />
+                <RequestForResponse onSend={() => {}} loading={moaRequests.isLoading} />
+                <FinalDecision
+                  onApprove={() => {
+                    moaRequests.approve({ id: "" });
+                  }}
+                  onDeny={() => {
+                    moaRequests.deny({ id: "" });
+                  }}
+                  loading={moaRequests.isLoading}
+                />
               </>
             ) : (
               <div className="text-muted-foreground">No request selected.</div>
