@@ -62,8 +62,7 @@ export default function CompanyList({
             <ul className="divide-y">
               {Array.from({ length: 6 }).map((_, i) => (
                 <li key={i} className="px-3 py-2">
-                  <Skeleton className="mb-1 h-4 w-2/3" />
-                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-6 w-2/3" />
                 </li>
               ))}
             </ul>
