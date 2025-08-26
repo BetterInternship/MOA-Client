@@ -1,4 +1,4 @@
-import { useQuery, useMutation, UseInfiniteQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Entity, MoaRequest } from "@/types/db";
 import { preconfiguredAxios } from "@/app/api/preconfig.axios";
 import {

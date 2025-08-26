@@ -9,8 +9,7 @@ import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTre
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
 import { FileSignature } from "lucide-react";
-
-import type { MoaRequest } from "@/types/moa-request";
+import { MoaRequest } from "@/types/db";
 
 /* -------------------- tiny date helpers -------------------- */
 function toMDY(d: Date) {
@@ -21,74 +20,8 @@ function toMDY(d: Date) {
 }
 const today = () => toMDY(new Date());
 
-/* -------------------- HARD-CODED DEMO REQUESTS -------------------- */
-const DUMMY_REQUESTS: MoaRequest[] = [
-  {
-    id: "req-demo-001",
-    companyName: "Datalogic Systems Corporation",
-    contactPerson: "Carlo Ramos",
-    email: "carlo.ramos@example.com",
-    tin: "TIN-564790255",
-    industry: "Technology",
-    requestedAt: today(),
-    status: "Under Review",
-    notes: "",
-    history: [
-      {
-        date: today(),
-        text: "Submitted Standard MOA request",
-        sourceType: "company",
-        files: [
-          { id: "f-001", name: "standard-moa.pdf", url: "/docs/demo/standard-moa.pdf" },
-          { id: "f-002", name: "sec-registration.pdf", url: "/docs/demo/sec-registration.pdf" },
-        ],
-      },
-      { date: today(), text: "Received by University — queued for review", sourceType: "univ" },
-    ],
-  },
-  {
-    id: "req-demo-002",
-    companyName: "Asia Peopleworks Inc.",
-    contactPerson: "Isabel Reyes",
-    email: "isabel@aurora.com",
-    tin: "TIN-901245677",
-    industry: "Analytics",
-    requestedAt: today(),
-    status: "Under Review",
-    notes: "",
-    history: [
-      {
-        date: today(),
-        text: "Submitted Standard MOA request",
-        sourceType: "company",
-        files: [{ id: "f-101", name: "standard-moa.pdf", url: "/docs/demo/standard-moa.pdf" }],
-      },
-      { date: today(), text: "Received by University — queued for review", sourceType: "univ" },
-    ],
-  },
-  {
-    id: "req-demo-003",
-    companyName: "Educ8 Corp.",
-    contactPerson: "Miguel Lopez",
-    email: "miguel.lopez@example.com",
-    tin: "TIN-334500771",
-    industry: "Consulting",
-    requestedAt: today(),
-    status: "Needs Info",
-    notes: "Missing notarized signature page",
-    history: [
-      { date: today(), text: "Submitted Standard MOA request", sourceType: "company" },
-      {
-        date: today(),
-        text: "Requested clarification — please include notarized signature page",
-        sourceType: "univ",
-      },
-    ],
-  },
-];
-
 export default function MoaRequestsPage() {
-  const [items, setItems] = useState<MoaRequest[]>(DUMMY_REQUESTS);
+  const [items, setItems] = useState<MoaRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
@@ -118,9 +51,7 @@ export default function MoaRequestsPage() {
                   ...x.history,
                   {
                     date: today(),
-                    text:
-                      "University requested clarification" +
-                      (message ? ` — ${message}` : ""),
+                    text: "University requested clarification" + (message ? ` — ${message}` : ""),
                     sourceType: "univ",
                   },
                 ],
@@ -143,7 +74,10 @@ export default function MoaRequestsPage() {
             ? {
                 ...x,
                 status: "Approved",
-                history: [...x.history, { date: today(), text: "MOA approved", sourceType: "univ" }],
+                history: [
+                  ...x.history,
+                  { date: today(), text: "MOA approved", sourceType: "univ" },
+                ],
               }
             : x
         )
@@ -163,7 +97,10 @@ export default function MoaRequestsPage() {
             ? {
                 ...x,
                 status: "Rejected",
-                history: [...x.history, { date: today(), text: "MOA rejected", sourceType: "univ" }],
+                history: [
+                  ...x.history,
+                  { date: today(), text: "MOA rejected", sourceType: "univ" },
+                ],
               }
             : x
         )

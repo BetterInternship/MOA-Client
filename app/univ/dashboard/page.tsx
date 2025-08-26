@@ -28,7 +28,6 @@ const columns: ColumnDef<Activity>[] = [
   { accessorKey: "performedBy", header: "Performed by" },
 ];
 
-
 export default function UnivDashboardPage() {
   const statsQ = useSchoolStats();
   const requestsQ = useSchoolCompanyRequests({ offset: 0, limit: 100 });
@@ -54,17 +53,12 @@ export default function UnivDashboardPage() {
     [statsQ.data, pendingEntityRequests]
   );
 
-  const loading = statsQ.isLoading || requestsQ.isLoading
+  const loading = statsQ.isLoading || requestsQ.isLoading;
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-3xl font-semibold">DLSU MOA Management Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Overview of MOA requests, entity registrations, and activity logs.
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold tracking-tight">DLSU MOA Management Dashboard</h1>
 
       {/* Stats Summary */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
