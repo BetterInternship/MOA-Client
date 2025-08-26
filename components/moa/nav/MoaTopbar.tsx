@@ -12,18 +12,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEntityAuth } from "@/app/providers/entity-auth-provider";
 
 export default function MoaTopbar() {
   const router = useRouter();
+  const auth = useEntityAuth();
 
   async function handleLogout() {
-    try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-      router.push("/login");
-      router.refresh();
-    } catch {
-      router.push("/login");
-    }
+    await auth.signOut();
+    router.push("/login");
   }
 
   return (
@@ -43,9 +40,9 @@ export default function MoaTopbar() {
             <Button variant="ghost" className="gap-2">
               <Avatar className="h-7 w-7">
                 <AvatarImage src="" alt="User" />
-                <AvatarFallback>U</AvatarFallback>
+                <AvatarFallback>{auth.entity.legal_identifier.charAt(0)}</AvatarFallback>
               </Avatar>
-              <span className="hidden sm:inline">User</span>
+              <span className="hidden sm:inline">{auth.entity.legal_identifier}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
