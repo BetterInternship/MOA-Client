@@ -109,8 +109,8 @@ export default function CompanyVerificationPage() {
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as "pending" | "denied")} className="mb-3">
-        <TabsList className="border bg-white">
-          <TabsTrigger value="pending" className="gap-2">
+        <TabsList>
+          <TabsTrigger value="pending">
             Pending / Needs Action
             <span className="rounded bg-rose-100 px-1.5 text-[11px] font-semibold text-rose-700">
               {pendingItems.length}
