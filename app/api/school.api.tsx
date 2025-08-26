@@ -131,7 +131,7 @@ export const useSchoolMoaHistory = (entityId?: string) => {
       refetchOnReconnect: false,
       retry: 1,
       keepPreviousData: true,
-      select: (res) => ((res?.history?.history ?? []) as any[]),
+      select: (res) => (res?.history?.history ?? []) as any[],
     },
   });
 
@@ -185,25 +185,16 @@ export const useCreateCompany = () => {
 export type CompanyRequest = {
   id: string;
   entity_id: string;
-  timestamp?: string;
   school_id: string;
+  timestamp?: string;
   outcome?: "approved" | "denied" | "pending" | "conversing" | null;
   processed_by_account_id?: string | null;
   processed_date?: string | null;
-  // add thread_id, etc. if you need them
 };
-
-export type CountResponse = { count: number };
 
 type RequestsListResponse = { requests: CompanyRequest[] };
-type ActiveMoasListResponse = {
-  entities?: Entity[]; // if controller returns { entities }
-  links?: Array<{ entity_id: string }>; // if controller returns links instead
-};
 
-/* ---------------- Schools: Requests ---------------- */
-
-/** List all company requests for the current school (from cookie) */
+// --- list all company requests for current school ---
 export function useSchoolCompanyRequests(opts?: { offset?: number; limit?: number }) {
   const { offset = 0, limit = 50 } = opts ?? {};
   return useQuery({
@@ -215,26 +206,33 @@ export function useSchoolCompanyRequests(opts?: { offset?: number; limit?: numbe
       );
       return res.data?.requests ?? [];
     },
-    staleTime: 10_000,
-    refetchOnWindowFocus: false,
+    staleTime: 60_000, // cache 1 minute
+    refetchOnWindowFocus: false, // don’t refetch on tab focus
   });
 }
 
-/** Get a specific company request for the current school by entityId */
+// --- single request by entityId (backend returns {requests:[...]}) ---
 export function useSchoolCompanyRequest(entityId?: string) {
   return useQuery({
     enabled: !!entityId,
     queryKey: ["schools", "company-request", entityId],
     queryFn: async () => {
-      const res = await preconfiguredAxios.get<{ request: CompanyRequest }>(
+      const res = await preconfiguredAxios.get<{ requests: CompanyRequest[] }>(
         `/api/schools/company-requests/${entityId}`
       );
-      return res.data?.request ?? null;
+      return res.data?.requests?.[0] ?? null;
     },
-    staleTime: 10_000,
+    staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 }
+
+export const useEntityRequestActions = () => {
+  const approve = useSchoolEntitiesControllerApproveRequest();
+  const deny = useSchoolEntitiesControllerDenyRequest();
+
+  return { approve, deny, isPending: approve.isPending || deny.isPending };
+};
 
 /* ---------------- Schools: Active MOAs (approved links) ---------------- */
 
@@ -262,7 +260,7 @@ export function useSchoolStats() {
   return useQuery({
     queryKey: ["schools", "stats"],
     queryFn: async () => {
-      const [ activeMoas, pendingMoas, activeEntities, registeredEntities] = await Promise.all([
+      const [activeMoas, pendingMoas, activeEntities, registeredEntities] = await Promise.all([
         preconfiguredAxios.get<CountResponse>("/api/schools/stats/active-moas"),
         preconfiguredAxios.get<CountResponse>("/api/schools/stats/pending-moas"),
         preconfiguredAxios.get<CountResponse>("/api/schools/stats/active-entities"),

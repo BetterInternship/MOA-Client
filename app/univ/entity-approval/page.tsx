@@ -1,3 +1,4 @@
+// app/(whatever)/company-requests/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -8,106 +9,58 @@ import DocumentsCard from "@/components/univ/dashboard/DocumentsCard";
 import RequestMeta from "@/components/univ/company-requests/RequestMeta";
 import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
 import FinalDecision from "@/components/univ/company-requests/FinalDecision";
-import type { CompanyRequest } from "@/types/company-request";
 import { ClipboardCheck } from "lucide-react";
 
-export default function CompanyVerificationPage() {
-  const [items, setItems] = useState<CompanyRequest[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [busy, setBusy] = useState(false);
+import { useCompanyRequests, useEntityRequestActions } from "@/hooks/useCompanyRequests";
 
-  // Load list on mount
+export default function CompanyVerificationPage() {
+  const [selectedId, setSelectedId] = useState<string>("");
+
+  // list from backend (uses cookie)
+  const reqsQ = useCompanyRequests({ offset: 0, limit: 100 });
+  const items = reqsQ.data ?? [];
+
+  // auto-select first item once loaded
   useEffect(() => {
-    const ctrl = new AbortController();
-    (async () => {
-      const res = await fetch(`/api/univ/requests?limit=100`, { signal: ctrl.signal });
-      const data = await res.json();
-      const list: CompanyRequest[] = data.items ?? [];
-      setItems(list);
-      setSelectedId((prev) => prev || list[0]?.id || "");
-    })().catch(console.error);
-    return () => ctrl.abort();
-  }, []);
+    if (!selectedId && items.length) setSelectedId(items[0].id);
+  }, [items, selectedId]);
 
   const selected = useMemo(() => items.find((x) => x.id === selectedId), [items, selectedId]);
 
-  type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
+  const { approve, deny, isPending: busy } = useEntityRequestActions();
 
+  async function onApprove(_note: string) {
+    if (!selectedId) return;
+    await approve({ id: selectedId }); // POST /api/school/entities/requests/:id/approve
+    await reqsQ.refetch();
+  }
+
+  async function onDeny(_note: string) {
+    if (!selectedId) return;
+    await deny({ id: selectedId }); // POST /api/school/entities/requests/:id/deny
+    await reqsQ.refetch();
+  }
+
+  // placeholder until you wire the endpoint
+  async function sendRequestForResponse(_msg: string) {
+    return;
+  }
+
+  type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
   const documents = useMemo(() => {
     const raw: AnyDoc[] =
-      // prefer an explicit documents array if present
       ((selected as any)?.documents as AnyDoc[]) ??
-      // else: entity nested docs
       ((selected as any)?.entity?.entityDocuments as AnyDoc[]) ??
-      // else: flat entityDocuments on the request
       ((selected as any)?.entityDocuments as AnyDoc[]) ??
       [];
-
     return raw
-      .map((d) => ({
-        label: d.label ?? d.documentType ?? "Document",
-        href: d.href ?? d.url ?? "",
-      }))
+      .map((d) => ({ label: d.label ?? d.documentType ?? "Document", href: d.href ?? d.url ?? "" }))
       .filter((d) => d.href);
   }, [selected]);
 
-  async function sendRequestForResponse(msg: string) {
-    if (!selectedId) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/univ/requests/${selectedId}/request-info`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg }),
-      });
-      const data = await res.json();
-      if (res.ok && data.item) {
-        setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function approve(note: string) {
-    if (!selectedId) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/univ/requests/${selectedId}/approve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note }),
-      });
-      const data = await res.json();
-      if (res.ok && data.item) {
-        setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function deny(note: string) {
-    if (!selectedId) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/univ/requests/${selectedId}/deny`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note }),
-      });
-      const data = await res.json();
-      if (res.ok && data.item) {
-        setItems((prev) => prev.map((x) => (x.id === selectedId ? data.item : x)));
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div className="min-h-[88vh]">
-      {/* Page header */}
+      {/* Header */}
       <div className="mb-6 flex items-center gap-3 space-y-1">
         <div className="inline-flex items-center gap-3 rounded-md bg-purple-100 px-3 py-1 text-2xl font-semibold text-purple-800">
           <ClipboardCheck />
@@ -118,20 +71,19 @@ export default function CompanyVerificationPage() {
         </p>
       </div>
 
-      {/* Resizable layout */}
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId={`moa:asideWidth:anon`}
         className="max-h-[80vh] min-h-[80vh] rounded-md border lg:overflow-hidden"
       >
-        {/* Left */}
+        {/* Left list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
           <RequestsList items={items} selectedId={selectedId} onSelect={setSelectedId} />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
 
-        {/* Right */}
+        {/* Right details */}
         <ResizablePanel defaultSize={74} minSize={40}>
           <div className="h-full space-y-6 overflow-y-auto p-4">
             {selected ? (
@@ -140,8 +92,10 @@ export default function CompanyVerificationPage() {
                 <CompanyDetails req={selected} />
                 <DocumentsCard documents={documents} />
                 <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
-                <FinalDecision onApprove={approve} onDeny={deny} loading={busy} />
+                <FinalDecision onApprove={onApprove} onDeny={onDeny} loading={busy} />
               </>
+            ) : reqsQ.isLoading ? (
+              <div className="text-muted-foreground">Loading…</div>
             ) : (
               <div className="text-muted-foreground">No request selected.</div>
             )}
