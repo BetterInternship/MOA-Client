@@ -1,12 +1,12 @@
 // components/univ/moa-requests/CompanyHistoryTree.tsx
 "use client";
 
-import { MoaRequest } from "@/types/moa-request";
 import FilesDialog from "@/components/univ/dashboard/FilesDialog";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Paperclip, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MoaRequest } from "@/types/db";
 
 type Side = "univ" | "company";
 
@@ -34,75 +34,6 @@ function dateAgo(days: number) {
   return toMDY(d);
 }
 
-const EXPIRY = toMDY(addYears(new Date(), 1));
-
-/** Hard-coded, meaningful back-and-forth timeline (short headers + long comments) */
-const DUMMY_HISTORY: MoaRequest["history"] = [
-  {
-    date: dateAgo(4),
-    // SHORT HEADER (new)
-    text: "Company requests NDA & data-sharing changes",
-    sourceType: "company",
-    // LONG BODY moved here (kept verbatim, plus note that was previously in `comment`)
-    comment:
-      "We need to update the NDA part because we work with an international company. They require: (A) a longer confidentiality period, (B) permission to share with our overseas teams when needed, and (C) clear rules to return or delete files after the project. Please see attached draft contract.\n\nGoal: protect sensitive client info and allow limited sharing within our group only for this project.",
-    files: [
-      { id: "f-001", name: "MOA_draft_company.pdf", url: "/docs/demo/MOA_draft_company.pdf" },
-      { id: "f-001a", name: "change-summary.pdf", url: "/docs/demo/change-summary.pdf" },
-    ],
-  },
-  {
-    date: dateAgo(4),
-    text: "University proposes +5-year confidentiality, limited sharing",
-    sourceType: "univ",
-    comment:
-      "Yes, we can accommodate that. Let’s make the confidentiality last for the contract term + 5 years, and allow sharing only with named teams for this project. Please review our updated draft.\n\nWe added a time limit, narrowed who can see the info, and kept the same purpose of use.",
-    files: [
-      { id: "f-002", name: "MOA_updated_school.pdf", url: "/docs/demo/MOA_updated_school.pdf" },
-      {
-        id: "f-002a",
-        name: "signature-page-template.docx",
-        url: "/docs/demo/signature-page-template.docx",
-      },
-    ],
-  },
-  {
-    date: dateAgo(3),
-    text: "Company submits updated contract + signatory details",
-    sourceType: "company",
-    comment:
-      "That works for us. Here’s the updated contract with our signatory details.\n\nNo more wording changes from our side. We fixed formatting and added the signatory block.",
-    files: [
-      { id: "f-003", name: "MOA_updated_company.pdf", url: "/docs/demo/MOA_updated_company.pdf" },
-      { id: "f-003a", name: "signatory-id-proof.pdf", url: "/docs/demo/signatory-proof.pdf" },
-    ],
-  },
-  {
-    date: dateAgo(3),
-    text: "Approved — final MOA for signing",
-    sourceType: "univ",
-    comment:
-      "Approved. Here is the final contract for signing.\n\nPlease sign and upload. We will countersign right after we receive your signed copy.",
-    files: [
-      {
-        id: "f-004",
-        name: "MOA_final_for_signing.pdf",
-        url: "/docs/demo/MOA_final_for_signing.pdf",
-      },
-    ],
-  },
-  {
-    date: dateAgo(2),
-    text: "Company uploads signed copy",
-    sourceType: "company",
-    comment:
-      "Signed copy uploaded.\n\nOur authorized signatory has signed the document. Attaching the signed PDF.",
-    files: [
-      { id: "f-005", name: "MOA_signed_by_company.pdf", url: "/docs/demo/MOA_signed_company.pdf" },
-    ],
-  },
-];
-
 /* ============================== Component ============================== */
 
 export default function CompanyHistoryTree({
@@ -114,7 +45,7 @@ export default function CompanyHistoryTree({
   title?: string;
   showTitle?: boolean;
 }) {
-  const items = DUMMY_HISTORY; // always show the curated demo timeline
+  const items: any[] = [];
 
   return (
     <section className="rounded-lg border bg-white p-4">

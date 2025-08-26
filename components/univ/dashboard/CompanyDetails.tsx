@@ -9,7 +9,10 @@ import { useCompanyDetail } from "@/hooks/useCompanyDetail";
 import { Entity } from "@/types/db";
 
 export default function CompanyDetails({ company }: { company: Entity }) {
-  const { loading, view, reqData } = useCompanyDetail(company);
+  // const { loading, view, reqData } = useCompanyDetail(company);
+  const loading = false;
+  const view = {};
+  const reqData: any = { history: [] };
   if (!view || !reqData) return null;
 
   // Grab the latest MOA file URL from history (history already sorted desc by timestamp)

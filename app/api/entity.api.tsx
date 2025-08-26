@@ -24,6 +24,16 @@ export const useAuth = () => {
 };
 
 /**
+ * Combines the results of different requests into one.
+ * Entity request (for entity name, addres, etc.) and its corresponding moa requests.
+ *
+ * @hook
+ */
+export const useEntityDetails = (id: string) => {
+  // const entity =
+};
+
+/**
  * Grabs a public list of lean entity DTOs.
  * Only names and ids are included.
  *

@@ -1,5 +1,5 @@
 import StatusChip from "@/components/univ/dashboard/StatusChip";
-import { MoaRequest } from "@/types/moa-request";
+import { MoaRequest } from "@/types/db";
 
 export default function RequestMeta({ req }: { req: MoaRequest }) {
   return (
@@ -11,12 +11,12 @@ export default function RequestMeta({ req }: { req: MoaRequest }) {
         <div>
           <div className="text-muted-foreground text-sm">Current Status</div>
           <div className="mt-1">
-            <StatusChip status={req.status as any} />
+            <StatusChip status={req.outcome as any} />
           </div>
         </div>
         <div>
           <div className="text-muted-foreground text-sm">Requested On</div>
-          <div className="mt-1 font-medium">{req.requestedAt}</div>
+          <div className="mt-1 font-medium">{req.timestamp}</div>
         </div>
       </div>
     </section>

@@ -1,4 +1,4 @@
-import { MoaRequest } from "@/types/moa-request";
+import { MoaRequest } from "@/types/db";
 
 function Row({ label, value }: { label: string; value?: string }) {
   return (
@@ -21,8 +21,7 @@ export default function CompanyDetails({ req }: { req: MoaRequest }) {
         <Row label="Contact Person" value={req.contactPerson} />
         <Row label="Email Address" value={req.email} />
         {/* <Row label="Industry" value={req.industry} /> */}
-        <Row label="Notes" value={req.notes}>
-        </Row>
+        <Row label="Notes" value={req.notes}></Row>
       </div>
     </section>
   );

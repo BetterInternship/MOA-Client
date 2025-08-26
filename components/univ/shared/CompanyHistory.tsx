@@ -1,9 +1,9 @@
 // components/univ/shared/CompanyHistory.tsx
 "use client";
 
-import type { MoaRequest } from "@/types/moa-request";
 import { Button } from "@/components/ui/button";
 import FilesDialog from "@/components/univ/dashboard/FilesDialog";
+import { MoaRequest } from "@/types/db";
 
 export default function CompanyHistory({
   req,
@@ -14,7 +14,7 @@ export default function CompanyHistory({
   showTitle?: boolean;
   loading?: boolean;
 }) {
-  const items = req?.history ?? [];
+  const items: any[] = [];
 
   if (loading) {
     return (

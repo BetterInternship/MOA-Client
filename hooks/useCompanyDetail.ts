@@ -1,14 +1,8 @@
 // hooks/useCompanyDetail.ts
 "use client";
 
-import { useMemo } from "react";
 import type { Entity, URLString, ISODate } from "@/types/db";
-import type {
-  MoaRequest as UiMoaRequest,
-  MoaHistoryItem,
-  MoaHistoryFile,
-} from "@/types/moa-request";
-import { useSchoolPartner, useSchoolMoaHistory } from "@/app/api/school.api";
+import type { MoaHistoryFile } from "@/types/moa-request";
 
 /* ---------------- helpers ---------------- */
 
@@ -153,88 +147,5 @@ const normalizeHistoryItems = (
 /* ---------------- hook ---------------- */
 
 export function useCompanyDetail(company?: Entity) {
-  const companyId = company?.id ?? "";
-
-  // A) basics (entity merged with school link status)
-  const { partner, isLoading: partnerLoading } = useSchoolPartner(companyId);
-
-  // B) history (by entityId for the current school)
-  const { items: historyRaw, isLoading: historyLoading } = useSchoolMoaHistory(companyId);
-
-  const loading = partnerLoading || historyLoading;
-
-  // ---- View model (top cards) ----
-  const backendStatusRaw: BackendMoa = (partner as any)?.moaStatus ?? (partner as any)?.status;
-  const statusKey = toStatusKey(backendStatusRaw);
-  const statusLabel = toStatusLabel(statusKey);
-
-  const name = firstNonEmpty(
-    (company as any)?.display_name,
-    (partner as any)?.display_name,
-    company?.legal_identifier
-  );
-  const contactPerson = firstNonEmpty(company?.contact_name, (partner as any)?.contact_name);
-  const email = firstNonEmpty(company?.contact_email, (partner as any)?.contact_email);
-  const phone = firstNonEmpty((company as any)?.contact_phone, (partner as any)?.contact_phone);
-  const address = (partner as any)?.address ?? (company as any)?.address ?? "";
-  const type = (partner as any)?.type ?? (company as any)?.type ?? "";
-  const legalIdentifier = firstNonEmpty(
-    company?.legal_identifier,
-    (partner as any)?.legal_identifier
-  );
-
-  const view = useMemo(() => {
-    if (!companyId) return null;
-    return {
-      id: companyId,
-      name,
-      contactPerson,
-      email,
-      phone,
-      address,
-      type,
-      moaStatus: statusKey,
-      legalIdentifier,
-      validUntil: undefined as string | undefined,
-    };
-  }, [companyId, name, contactPerson, email, phone, statusKey, address, type, legalIdentifier]);
-
-  // ---- History / request VM for <CompanyHistory /> ----
-  const reqData: UiMoaRequest | null = useMemo(() => {
-    if (!companyId) return null;
-
-    const normalized = normalizeHistoryItems(historyRaw);
-
-    // Sort by actual timestamp desc before we format to MDY
-    const sorted = [...normalized].sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp));
-
-    const history: MoaHistoryItem[] = sorted.map((h, idx) => {
-      const files: MoaHistoryFile[] | undefined =
-        Array.isArray(h.files) && h.files.length
-          ? h.files.map((u) => fileToHistoryFile(u, h.timestamp))
-          : undefined;
-
-      return { date: toMDY(h.timestamp), text: h.text, files };
-    });
-
-    const requestedAtIso =
-      sorted.length > 0
-        ? sorted[sorted.length - 1].timestamp // earliest as the "requested" date
-        : new Date().toISOString();
-
-    return {
-      id: companyId,
-      companyName: name ?? "",
-      contactPerson: contactPerson ?? "",
-      email: email ?? "",
-      tin: "",
-      industry: "",
-      requestedAt: toMDY(requestedAtIso),
-      status: statusLabel,
-      notes: undefined,
-      history,
-    };
-  }, [companyId, name, contactPerson, email, statusLabel, historyRaw]);
-
-  return { loading, view, reqData };
+  // ! to implement
 }
