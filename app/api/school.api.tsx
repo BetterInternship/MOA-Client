@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Entity, MoaRequest } from "@/types/db";
+import { Entity, MoaHistory, MoaRequest } from "@/types/db";
 import { preconfiguredAxios } from "@/app/api/preconfig.axios";
 import {
   useSchoolEntitiesControllerApproveRequest,
@@ -13,6 +13,7 @@ import {
   useSchoolMoaControllerGetMine,
   useSchoolMoaControllerGetOneHistory,
 } from "./app/api/endpoints/school-moa/school-moa";
+import { useMemo } from "react";
 
 /**
  * Gives information about school partners.
@@ -56,7 +57,7 @@ export const useMoaRequests = () => {
 };
 
 /**
- * Returns a schools partner entities.
+ * Returns a school's partner entities.
  *
  * @param opts
  * @hook
@@ -93,25 +94,62 @@ export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) =>
  * @hook
  */
 export const useSchoolPartner = (id?: string) => {
-  const { data, isFetching, isLoading, error, refetch } = useSchoolEntitiesControllerGetAPartner(
-    id,
-    {
-      query: {
-        enabled: !!id,
-        staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-        retry: 1,
-        keepPreviousData: true,
-      },
-    }
-  );
+  // Grab partner details
+  const {
+    data: entity,
+    isFetching: isFetchingEntity,
+    isLoading: isLoadingEntity,
+    error: entityError,
+    refetch: refetchEntity,
+  } = useSchoolEntitiesControllerGetAPartner(id, {
+    query: {
+      enabled: !!id,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+    },
+  });
+
+  // Grab partner history
+  const {
+    data: rawHistory,
+    isFetching: isFetchingHistory,
+    isLoading: isLoadingHistory,
+    error: historyError,
+    refetch: refetchHistory,
+  } = useSchoolMoaControllerGetOneHistory(id, {
+    query: {
+      enabled: !!id,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+    },
+  });
+
+  // Ensure that the JSON is parsed
+  const history = useMemo(() => {
+    const hMoa = rawHistory?.history as MoaHistory;
+    const hJson = hMoa?.history ?? "[{}]";
+    console.log(hJson);
+    return {
+      ...rawHistory,
+      history:
+        typeof hJson === "string"
+          ? JSON.parse(hJson.replaceAll('"', '\\"').replaceAll("'", '"'))
+          : hJson,
+    } as unknown as MoaHistory;
+  }, [rawHistory]);
 
   return {
-    partner: (data?.entity as unknown as Entity) ?? null,
-    isLoading: isFetching || isLoading,
-    error: error,
-    refetch: refetch,
+    entity: (entity as unknown as Entity) ?? null,
+    history: history as MoaHistory,
+    isLoadingEntity: isFetchingEntity || isLoadingEntity,
+    isLoadingHistory: isFetchingHistory || isLoadingHistory,
+    error: entityError || historyError,
+    refetchEntity: refetchEntity,
+    refetchHistory: refetchHistory,
   };
 };
 
@@ -130,7 +168,6 @@ export const useSchoolMoaHistory = (entityId?: string) => {
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       retry: 1,
-      keepPreviousData: true,
       select: (res) => (res?.history?.history ?? []) as any[],
     },
   });

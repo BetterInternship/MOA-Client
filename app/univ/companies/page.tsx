@@ -33,32 +33,21 @@ export default function CompaniesPage() {
   }, [filtered, selectedId]);
 
   // fetch fresh details for the selected row
-  const { partner: selectedFromApi } = useSchoolPartner(selectedId);
-
-  // fallback to list item while detail query is loading
-  const selected = useMemo(
-    () => selectedFromApi ?? entities.find((c) => c.id === selectedId) ?? null,
-    [selectedFromApi, entities, selectedId]
-  );
+  const { entity: selectedEntity, history: selectedHistory } = useSchoolPartner(selectedId);
 
   return (
     <div className="min-h-[88vh]">
       {/* header */}
-      <div className="mb-6 flex items-center justify-between gap-3 space-y-1">
+      <div className="mb-6 flex items-start justify-between gap-3 space-y-1">
         <div className="flex items-center gap-3 space-y-1">
-          <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
-            <Building2 />
+          <div className="inline-flex items-center gap-3 rounded bg-blue-100 px-4 py-2 text-2xl font-semibold text-blue-800">
             Browse Partner Entities
           </div>
-          <p className="text-muted-foreground text-sm">
-            Browse partner entities and view MOA details.
-          </p>
         </div>
-
         <Link href="/companies/add">
           <Button>
             <Plus />
-            Add new entity
+            Register new entity
           </Button>
         </Link>
       </div>
@@ -94,8 +83,8 @@ export default function CompaniesPage() {
                 <div className="bg-muted h-16 w-full animate-pulse rounded" />
               </div>
             </div>
-          ) : selected ? (
-            <CompanyDetails company={selected as Entity} />
+          ) : selectedEntity ? (
+            <CompanyDetails entity={selectedEntity} moaHistory={selectedHistory} />
           ) : null}
         </ResizablePanel>
       </ResizablePanelGroup>

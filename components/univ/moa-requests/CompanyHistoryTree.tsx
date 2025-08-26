@@ -93,7 +93,7 @@ function ChatBubble({
   side: Side;
   date: string;
   text: string;
-  files?: { id: string; name: string; url: string }[];
+  files?: string[];
   comment?: string;
   dateAlign?: "left" | "right" | "center";
 }) {
@@ -178,7 +178,7 @@ function ChatBubble({
                       variant="outline"
                       size="sm"
                       className="h-7 px-2 text-xs"
-                      title={`View files (${files.length})`}
+                      title={`View files (1)`}
                     >
                       View files
                     </Button>

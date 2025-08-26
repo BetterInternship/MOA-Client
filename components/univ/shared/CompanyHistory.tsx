@@ -3,19 +3,25 @@
 
 import { Button } from "@/components/ui/button";
 import FilesDialog from "@/components/univ/dashboard/FilesDialog";
-import { MoaRequest } from "@/types/db";
+
+interface HistoryEntry {
+  message: string;
+  effective_date: string;
+  expiry_date: string;
+  comments: string;
+  documents: string;
+  timestamp: string;
+}
 
 export default function CompanyHistory({
-  req,
+  history,
   showTitle = true,
   loading = false,
 }: {
-  req?: MoaRequest;
+  history: HistoryEntry[];
   showTitle?: boolean;
   loading?: boolean;
 }) {
-  const items: any[] = [];
-
   if (loading) {
     return (
       <div className="rounded-[0.33em] border bg-white p-4">
@@ -45,28 +51,30 @@ export default function CompanyHistory({
         </div>
       )}
 
-      {items.length === 0 ? (
+      {!history?.length ? (
         <div className="text-muted-foreground py-2 text-sm">No history yet.</div>
       ) : (
         <ul className="divide-y">
-          {items.map((h, i) => {
-            const key = `${h.date}-${h.text}-${i}`;
+          {history?.map((h, i) => {
+            const key = `${h.effective_date}-${h.message}-${i}`;
             return (
               <li key={key} className="relative py-2 pl-1">
                 <div className="grid grid-cols-[96px_1fr_auto] items-center gap-3">
-                  <div className="text-muted-foreground text-sm leading-none">{h.date}</div>
-                  <p className="min-w-0 truncate text-sm leading-tight">{h.text}</p>
-                  {h.files?.length ? (
+                  <div className="text-muted-foreground text-sm leading-none">
+                    {h.effective_date}
+                  </div>
+                  <p className="min-w-0 truncate text-sm leading-tight">{h?.message}</p>
+                  {h.documents ? (
                     <FilesDialog
-                      files={h.files}
+                      files={[h.documents ?? ""]}
                       trigger={
                         <Button
                           variant="outline"
                           size="sm"
                           className="h-7 px-2 text-xs whitespace-nowrap"
-                          title={`View files (${h.files.length})`}
+                          title={`View files (${h.documents?.length})`}
                         >
-                          View files ({h.files.length})
+                          View files (1)
                         </Button>
                       }
                     />

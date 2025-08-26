@@ -7,12 +7,6 @@ export type MoaStatus =
   | "Registered"
   | "Blacklisted";
 
-export type MoaHistoryFile = {
-  id: string; // stable id for selection
-  name: string; // suggested filename
-  url: string; // direct file URL (same-origin or CORS-enabled)
-};
-
 export type MoaHistoryItem = {
   date: string; // MM/DD/YYYY
   text: string; // event/notes
