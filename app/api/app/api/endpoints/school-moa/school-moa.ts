@@ -29,6 +29,7 @@ import type {
   MoaHistoryResponse,
   MoaRequestResponse,
   MoaRequestsResponse,
+  MoaThreadResponse,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -219,6 +220,240 @@ export function useSchoolMoaControllerGetMineSuspense<
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getSchoolMoaControllerGetMineSuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const schoolMoaControllerGetOneThread = (
+  id: string | undefined | null,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<MoaThreadResponse>({
+    url: `/api/school/moa/thread/${id}`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getSchoolMoaControllerGetOneThreadQueryKey = (id?: string | undefined | null) => {
+  return [`/api/school/moa/thread/${id}`] as const;
+};
+
+export const getSchoolMoaControllerGetOneThreadQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolMoaControllerGetOneThreadQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>> = ({
+    signal,
+  }) => schoolMoaControllerGetOneThread(id, signal);
+
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolMoaControllerGetOneThreadQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>
+>;
+export type SchoolMoaControllerGetOneThreadQueryError = ErrorResponse;
+
+export function useSchoolMoaControllerGetOneThread<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+          TError,
+          Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolMoaControllerGetOneThread<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+          TError,
+          Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolMoaControllerGetOneThread<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolMoaControllerGetOneThread<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolMoaControllerGetOneThreadQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolMoaControllerGetOneThreadSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSchoolMoaControllerGetOneThreadQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>> = ({
+    signal,
+  }) => schoolMoaControllerGetOneThread(id, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolMoaControllerGetOneThreadSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>
+>;
+export type SchoolMoaControllerGetOneThreadSuspenseQueryError = ErrorResponse;
+
+export function useSchoolMoaControllerGetOneThreadSuspense<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolMoaControllerGetOneThreadSuspense<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolMoaControllerGetOneThreadSuspense<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolMoaControllerGetOneThreadSuspense<
+  TData = Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolMoaControllerGetOneThread>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolMoaControllerGetOneThreadSuspenseQueryOptions(id, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,
@@ -810,6 +1045,75 @@ export const useSchoolMoaControllerDeny = <TError = ErrorResponse, TContext = un
   TContext
 > => {
   const mutationOptions = getSchoolMoaControllerDenyMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const schoolMoaControllerRespond = (id: string | undefined | null, signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/school/moa/${id}/respond`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getSchoolMoaControllerRespondMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof schoolMoaControllerRespond>>,
+    TError,
+    { id: string | undefined | null },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof schoolMoaControllerRespond>>,
+  TError,
+  { id: string | undefined | null },
+  TContext
+> => {
+  const mutationKey = ["schoolMoaControllerRespond"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof schoolMoaControllerRespond>>,
+    { id: string | undefined | null }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return schoolMoaControllerRespond(id);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SchoolMoaControllerRespondMutationResult = NonNullable<
+  Awaited<ReturnType<typeof schoolMoaControllerRespond>>
+>;
+
+export type SchoolMoaControllerRespondMutationError = ErrorResponse;
+
+export const useSchoolMoaControllerRespond = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof schoolMoaControllerRespond>>,
+      TError,
+      { id: string | undefined | null },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof schoolMoaControllerRespond>>,
+  TError,
+  { id: string | undefined | null },
+  TContext
+> => {
+  const mutationOptions = getSchoolMoaControllerRespondMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

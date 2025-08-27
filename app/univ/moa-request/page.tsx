@@ -6,27 +6,20 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 import MoaRequestList from "@/components/univ/moa-requests/CompanyList";
 import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
-import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
-import FinalDecision from "@/components/univ/company-requests/FinalDecision";
+import RequestResponse from "@/components/univ/company-requests/MOARequestForResponse";
 import { FileSignature } from "lucide-react";
-import { MoaRequest } from "@/types/db";
 import { useMoaRequests } from "@/app/api/school.api";
-
-/* -------------------- tiny date helpers -------------------- */
-function toMDY(d: Date) {
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
-}
-const today = () => toMDY(new Date());
 
 export default function MoaRequestsPage() {
   const [selectedId, setSelectedId] = useState<string>("");
   const moaRequests = useMoaRequests();
 
   const selected = useMemo(
-    () => moaRequests.requests.find((request) => request.id === selectedId),
+    () =>
+      moaRequests.requests
+        .filter((request) => !!request.thread_id?.trim())
+        .filter((request) => request.outcome === "pending")
+        .find((request) => request.id === selectedId),
     [moaRequests.requests, selectedId]
   );
 
@@ -65,19 +58,22 @@ export default function MoaRequestsPage() {
         <ResizablePanel defaultSize={74} minSize={40}>
           <div className="h-full space-y-6 overflow-y-auto p-4">
             {selected ? (
-              <>
+              <div className="flex h-full flex-col justify-between">
                 <CompanyHistoryTree req={selected} />
-                <RequestForResponse onSend={() => {}} loading={moaRequests.isLoading} />
-                <FinalDecision
+                <RequestResponse
                   onApprove={() => {
-                    moaRequests.approve({ id: "" });
+                    moaRequests.approve({ id: selectedId });
+                  }}
+                  onRespond={() => {
+                    alert("lol");
+                    moaRequests.respond({ id: selectedId });
                   }}
                   onDeny={() => {
-                    moaRequests.deny({ id: "" });
+                    moaRequests.deny({ id: selectedId });
                   }}
                   loading={moaRequests.isLoading}
                 />
-              </>
+              </div>
             ) : (
               <div className="text-muted-foreground">No request selected.</div>
             )}

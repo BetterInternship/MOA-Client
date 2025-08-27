@@ -14,10 +14,7 @@ export default function RequestForResponse({ onSend, loading }: Props) {
   const [message, setMessage] = useState("");
 
   return (
-    <section className="rounded-lg border bg-white p-4">
-      <div className="pb-2">
-        <h2 className="text-lg font-semibold">Request for Response</h2>
-      </div>
+    <section className="rounded-[0.33em] border bg-white p-4">
       <div className="space-y-3">
         <Textarea
           rows={4}
@@ -27,7 +24,6 @@ export default function RequestForResponse({ onSend, loading }: Props) {
         />
         <div className="flex items-center justify-end gap-2">
           <Button
-            variant="secondary"
             size="sm"
             className="gap-2"
             disabled={!message.trim() || loading}

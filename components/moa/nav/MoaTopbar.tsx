@@ -40,7 +40,7 @@ export default function MoaTopbar() {
             <Button variant="ghost" className="gap-2">
               <Avatar className="h-7 w-7">
                 <AvatarImage src="" alt="User" />
-                <AvatarFallback>{auth.entity.legal_identifier.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{auth.entity?.legal_identifier?.charAt(0) ?? ""}</AvatarFallback>
               </Avatar>
               <span className="hidden sm:inline">{auth.entity.legal_identifier}</span>
             </Button>

@@ -13,7 +13,7 @@ interface MoaHistoryEntry {
   text: string;
   effective_date: string;
   expiry_date: string;
-  comments: string;
+  text: string;
   documents: string;
 }
 

@@ -4,18 +4,12 @@
 import FilesDialog from "@/components/univ/dashboard/FilesDialog";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Paperclip, ChevronDown } from "lucide-react";
+import { Paperclip, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MoaRequest } from "@/types/db";
-
-type Side = "univ" | "company";
-
-function guessSide(h: any, i: number): Side {
-  const src = (h?.sourceType ?? h?.source ?? h?.from)?.toString().toLowerCase();
-  if (src === "school" || src === "univ" || src === "university") return "univ";
-  if (src === "entity" || src === "company") return "company";
-  return i % 2 === 0 ? "company" : "univ";
-}
+import { Message, MoaRequest } from "@/types/db";
+import { useRequestThread } from "@/app/api/school.api";
+import { Badge } from "@/components/ui/badge";
+import { formatWhen } from "@/lib/format";
 
 function toMDY(d: Date) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -23,125 +17,101 @@ function toMDY(d: Date) {
   const yyyy = d.getFullYear();
   return `${mm}/${dd}/${yyyy}`;
 }
-function addYears(d: Date, years: number) {
-  const copy = new Date(d);
-  copy.setFullYear(copy.getFullYear() + years);
-  return copy;
-}
-function dateAgo(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return toMDY(d);
-}
 
-/* ============================== Component ============================== */
-
-export default function CompanyHistoryTree({
-  req,
-  title = "Company Request Timeline",
-  showTitle = true,
-}: {
-  req?: MoaRequest;
-  title?: string;
-  showTitle?: boolean;
-}) {
-  const items: any[] = [];
+/**
+ * Displays a history of the messages between the company and the uni for a given negotiated MOA.
+ * Repeat: for a given negotiated MOA.
+ *
+ * @component
+ */
+export default function CompanyHistoryTree({ req }: { req?: MoaRequest }) {
+  const thread = useRequestThread(req?.thread_id);
+  const messages: Message[] = thread.messages ?? [];
 
   return (
-    <section className="rounded-lg border bg-white p-4">
-      {showTitle && <h2 className="mb-3 text-lg font-semibold">{title}</h2>}
-
+    <>
       <ol className="space-y-4">
-        {items.map((h, i) => {
-          const side = guessSide(h as any, i);
-          const isUniv = side === "univ"; // univ = right bubble
-          const date = h.date?.trim()?.length ? h.date : dateAgo(items.length - i);
+        {messages.map((message, i) => {
+          const isSchool = message.source_type === "school";
+          const timestampFormatted = formatWhen(message.timestamp);
 
           return (
             <li
-              key={`${date}-${i}`}
-              className={cn("flex", isUniv ? "justify-end" : "justify-start")}
+              key={`${timestampFormatted}-${i}`}
+              className={cn("flex", isSchool ? "justify-end" : "justify-start")}
             >
               <ChatBubble
-                side={side}
-                date={date}
-                text={h.text}
-                files={h.files}
-                comment={(h as any).comment ?? (h as any).note}
-                dateAlign={isUniv ? "right" : "left"}
+                sender={message.source_type}
+                timestamp={timestampFormatted}
+                text={message.text ?? ""}
+                attachments={(message.attachments as unknown as string[]) ?? []}
               />
             </li>
           );
         })}
 
-        {items.length === 0 && <li className="text-muted-foreground text-sm">No history yet.</li>}
+        {messages.length === 0 && (
+          <li className="text-muted-foreground text-sm">No history yet.</li>
+        )}
       </ol>
-    </section>
+    </>
   );
 }
 
-/* ============================== Chat Bubble ============================== */
-
+/**
+ * Component for a single message.
+ *
+ * @component
+ */
 function ChatBubble({
-  side,
-  date,
+  sender,
+  timestamp,
   text,
-  files,
-  comment,
-  dateAlign = "left",
+  attachments,
 }: {
-  side: Side;
-  date: string;
+  sender: string;
+  timestamp: string;
   text: string;
-  files?: string[];
-  comment?: string;
-  dateAlign?: "left" | "right" | "center";
+  attachments?: string[];
 }) {
-  const isUniv = side === "univ";
-  const hasDetails = !!comment || !!files?.length;
-
-  const dateAlignClass =
-    dateAlign === "center" ? "text-center" : dateAlign === "right" ? "text-right" : "text-left";
+  const isSchool = sender === "school";
+  const hasAttachments = !!attachments?.length;
 
   return (
     <Collapsible
       className={cn(
         "max-w-[min(42rem,85%)]",
-        isUniv ? "items-end" : "items-start",
+        isSchool ? "items-end" : "items-start",
         "flex flex-col gap-1"
       )}
     >
+      <div className="flex flex-row items-center gap-2">
+        <Badge type={!isSchool ? "primary" : "supportive"}>{isSchool ? "You" : "Entity"}</Badge>
+        <time className="text-left text-xs text-gray-400">{timestamp}</time>
+      </div>
       <div
         className={cn(
-          "rounded-2xl border bg-white/80 shadow-sm transition",
-          "focus-within:shadow-md hover:shadow-md",
-          isUniv ? "border-emerald-200" : "border-slate-200",
-          "px-3 py-2"
+          !isSchool
+            ? "border-l-primary border border-l-2"
+            : "border-r-supportive border border-r-2",
+          "bg-white/80 transition",
+          "focus-within:shadow-md hover:cursor-pointer hover:shadow-xs",
+          "px-3 py-1"
         )}
       >
         <div className="mb-1 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex justify-between gap-2">
               <div className="text-muted-foreground mb-1 flex items-center gap-2 text-xs">
-                <span
-                  className={cn(
-                    "rounded px-1.5 py-0.5 font-medium",
-                    isUniv ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-800"
-                  )}
-                >
-                  {isUniv ? "University" : "Company"}
-                </span>
-
-                <time className={dateAlignClass}>{date}</time>
-                {files?.length ? (
+                {attachments?.length ? (
                   <span className="inline-flex items-center gap-1">
                     <Paperclip className="h-3.5 w-3.5" />
-                    {files.length}
+                    {attachments.length}
                   </span>
                 ) : null}
               </div>
 
-              {hasDetails ? (
+              {hasAttachments ? (
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"
@@ -156,23 +126,42 @@ function ChatBubble({
             </div>
 
             {/* short header */}
-            <p className="text-foreground min-w-0 text-sm font-medium break-words">{text}</p>
+            <div className="flex flex-col gap-2">
+              <p className="text-foreground min-w-0 text-sm break-words">{text}</p>
+              <div className="flex flex-row gap-1">
+                <Button className="" scheme="secondary">
+                  <a href="" target="_blank">
+                    <div className="flex flex-row items-center gap-1">
+                      <Download />
+                      MOA Document
+                    </div>
+                  </a>
+                </Button>
+                <Button variant="outline" disabled={!hasAttachments}>
+                  <a href="#" target="_blank">
+                    <div className="flex flex-row items-center gap-1">
+                      <Download />
+                      {hasAttachments ? "Attachments" : "No Additional Attachments"}
+                    </div>
+                  </a>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* long body (collapsible) */}
-        {hasDetails && (
+        {hasAttachments && (
           <CollapsibleContent className="border-t pt-2 text-sm">
-            {comment ? <p className="text-foreground mb-2 whitespace-pre-line">{comment}</p> : null}
-
-            {files?.length ? (
+            {text ? <p className="text-foreground mb-2 whitespace-pre-line">{text}</p> : null}
+            {attachments?.length ? (
               <div className="flex items-center gap-2">
                 <Paperclip className="text-muted-foreground h-4 w-4" />
                 <span className="text-muted-foreground">
-                  {files.length} file{files.length > 1 ? "s" : ""}
+                  {attachments.length} file{attachments.length > 1 ? "s" : ""}
                 </span>
                 <FilesDialog
-                  files={files}
+                  files={attachments}
                   trigger={
                     <Button
                       variant="outline"
