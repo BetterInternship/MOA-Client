@@ -24,6 +24,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  BaseResponse,
   ErrorResponse,
   MoaRequestResponse,
   MoaRequestsResponse,
@@ -870,7 +871,7 @@ export const entityMoaControllerRespond = (
   formData.append(`message`, moaRespondDto.message);
   formData.append(`proposed_moa`, moaRespondDto.proposed_moa);
 
-  return preconfiguredAxiosFunction<NewCustomMoaRequestResponse>({
+  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/entity/moa/${id}/respond`,
     method: "POST",
     headers: { "Content-Type": "multipart/form-data" },

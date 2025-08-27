@@ -13,7 +13,7 @@ export default function ReviewMoaRequestPage() {
   )[0];
 
   return (
-    <div className="flex flex-1 flex-col gap-8 border border-gray-300">
+    <div className="flex max-h-[100%] flex-1 flex-col gap-8 border border-gray-300">
       <EntitySchoolConversation req={moa} />
     </div>
   );

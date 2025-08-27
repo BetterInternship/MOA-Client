@@ -69,7 +69,13 @@ export const EntitySchool = ({ req }: EntityConversationProps) => {
       <MoaRequestResponseActions
         onRespond={async (message) => {
           setLoading(true);
-          await moaRequests.respond({ id: req?.id, data: { message } });
+          await moaRequests.respond({
+            id: req?.id,
+            data: {
+              message,
+              proposed_moa: undefined,
+            },
+          });
           await thread.refetch();
           setLoading(false);
         }}

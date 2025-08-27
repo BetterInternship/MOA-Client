@@ -8,5 +8,5 @@
 
 export interface MoaRespondDto {
   message: string;
-  proposed_moa: Blob;
+  proposed_moa?: Blob;
 }

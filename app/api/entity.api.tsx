@@ -5,6 +5,7 @@ import {
   useEntityMoaControllerGetOneThread,
   useEntityMoaControllerRequestNewCustom,
   useEntityMoaControllerRequestNewStandard,
+  useEntityMoaControllerRespond,
 } from "./app/api/endpoints/entity-moa/entity-moa";
 import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
 import { keepPreviousData } from "@tanstack/react-query";
@@ -38,14 +39,14 @@ export const useMoaRequests = () => {
   });
   const createStandard = useEntityMoaControllerRequestNewStandard();
   const createCustom = useEntityMoaControllerRequestNewCustom();
-  const respond = async (p0: { id: string | undefined; data: { message: string } }) => {}; // ! fix
+  const respond = useEntityMoaControllerRespond();
 
   return {
     requests: (data?.requests as unknown as MoaRequest[]) ?? [],
     isLoading: isFetching || isLoading,
     createStandard: createStandard.mutateAsync,
     createCustom: createCustom.mutateAsync,
-    respond,
+    respond: respond.mutateAsync,
   };
 };
 
