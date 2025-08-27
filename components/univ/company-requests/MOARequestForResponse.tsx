@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, CircleX, SendHorizonal } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, FileUploadRef } from "@/components/ui/file-upload";
 
 type Props = {
   onApprove?: (note: string) => Promise<void>;
@@ -23,6 +23,7 @@ export default function MoaRequestResponseActions({
 }: Props) {
   const [note, setNote] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const ref = useRef<FileUploadRef>(null);
 
   return (
     <section className="space-y-2 border-t-2 bg-white p-4 px-8">
@@ -45,7 +46,9 @@ export default function MoaRequestResponseActions({
             className=""
             disabled={loading}
             onClick={() =>
-              onRespond(note, file ?? undefined).then(() => (setNote(""), setFile(null)))
+              onRespond(note, file ?? undefined).then(
+                () => (setNote(""), setFile(null), ref.current?.clear())
+              )
             }
           >
             <SendHorizonal />
@@ -75,6 +78,7 @@ export default function MoaRequestResponseActions({
         {allowUpload && (
           <div className="pb-4">
             <FileUpload
+              ref={ref}
               label="Revised MOA Document"
               name="revised_moa"
               accept="application/pdf"
