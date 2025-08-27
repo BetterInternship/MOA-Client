@@ -96,7 +96,7 @@ export function CompanyRegisterForm() {
           <FileUpload label="Business Permit" name="permitFile" accept=".pdf,.jpg,.png" required />
 
           <div className="flex justify-between">
-            <Button type="button" variant="secondary" onClick={() => setStep(1)}>
+            <Button type="button" variant="outline" onClick={() => setStep(1)}>
               Back
             </Button>
             <Button type="submit" disabled={loading}>
