@@ -9,21 +9,6 @@ import {
 import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
 
 /**
- * Auth hook for entities.
- *
- * @hook
- */
-export const useAuth = () => {
-  const signIn = useAuthControllerSignIn();
-  const signOut = useAuthControllerSignOut();
-
-  return {
-    signIn: signIn.mutateAsync,
-    signOut: signOut.mutateAsync,
-  };
-};
-
-/**
  * Grabs a public list of lean entity DTOs.
  * Only names and ids are included.
  *

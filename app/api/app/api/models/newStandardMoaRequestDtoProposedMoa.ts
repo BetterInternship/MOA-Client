@@ -6,6 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface NewCustomMoaRequestResponse {
-  requestId: string;
-}
+export type NewStandardMoaRequestDtoProposedMoa = { [key: string]: unknown };

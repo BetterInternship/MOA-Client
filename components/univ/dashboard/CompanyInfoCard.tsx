@@ -6,12 +6,12 @@ import { Separator } from "@/components/ui/separator";
 
 type Props = {
   id: string;
-  name?: string;
-  legalIdentifier?: string;
-  contactPerson?: string;
+  name: string;
+  legalIdentifier: string;
+  contactPerson?: string | null;
   type?: string;
-  address?: string;
-  phone?: string;
+  address?: string | null;
+  phone?: string | null;
 };
 
 export default function CompanyInfoCard({
@@ -30,13 +30,13 @@ export default function CompanyInfoCard({
         <div className="grid gap-4 sm:grid-cols-2">
           <Detail label="Entity Name" value={name} />
           <Detail label="Legal Identifier" value={legalIdentifier} />
-          <Detail label="Address" value={address} />
+          <Detail label="Address" value={address ?? ""} />
           <Detail label="Nature of Business" value={type} className="capitalize" />
         </div>
         <Separator />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Detail label="Contact Person" value={contactPerson} />
-          <Detail label="Phone" value={phone} />
+          <Detail label="Contact Person" value={contactPerson ?? ""} />
+          <Detail label="Phone" value={phone ?? ""} />
         </div>
       </div>
     </div>

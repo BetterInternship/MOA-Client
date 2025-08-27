@@ -20,11 +20,79 @@ import type {
   LoginSchoolDto,
   RegisterEntityDto,
   RegisterEntityResponse,
+  SelfEntityResponse,
   SelfSchoolResponse,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
+export const authControllerEntitySelf = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<SelfEntityResponse>({
+    url: `/api/auth/self`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getAuthControllerEntitySelfMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authControllerEntitySelf>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof authControllerEntitySelf>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["authControllerEntitySelf"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof authControllerEntitySelf>>,
+    void
+  > = () => {
+    return authControllerEntitySelf();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AuthControllerEntitySelfMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authControllerEntitySelf>>
+>;
+
+export type AuthControllerEntitySelfMutationError = ErrorResponse;
+
+export const useAuthControllerEntitySelf = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof authControllerEntitySelf>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof authControllerEntitySelf>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getAuthControllerEntitySelfMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const authControllerRegister = (
   registerEntityDto: RegisterEntityDto,
   signal?: AbortSignal

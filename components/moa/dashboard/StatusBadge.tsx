@@ -21,17 +21,17 @@ export default function StatusBadge({ status, className }: Props) {
     case "active":
       return base("supportive", "Active");
     case "inactive":
-      return base("warning", "Inactive");
+      return base("accent", "Inactive");
     case "approved":
       return base("supportive", "Approved");
     case "rejected":
       return base("destructive", "Rejected");
     case "needs info":
-      return base("warning", "Needs Info");
+      return base("primary", "Needs Info");
     case "under review":
-      return base("primary", "Under Review");
+      return base("warning", "Under Review");
     case "pending":
     default:
-      return base("primary", "Pending");
+      return base("warning", "Pending");
   }
 }

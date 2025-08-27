@@ -47,9 +47,14 @@ export default function MoaActions() {
         {/* Negotiated MOA */}
         <CustomCard className="hover:border-primary/40 hover:shadow-xs">
           <div className="flex flex-col gap-4">
-            <h3 className="text-foreground flex items-center gap-2 text-xl font-semibold">
-              <ClipboardList className="h-5 w-5" /> Negotiate a Custom MOA
-            </h3>
+            <div className="flex items-start justify-between">
+              <h3 className="text-foreground flex items-center gap-2 text-xl font-semibold">
+                <ClipboardList className="h-5 w-5" /> Negotiate a Custom MOA
+              </h3>
+              <Badge type="warning" className="font-semibold">
+                Up to 4 weeks
+              </Badge>
+            </div>
             <p className="text-muted-foreground text-sm">
               Submit custom terms for specialized partnerships requiring unique conditions.
             </p>

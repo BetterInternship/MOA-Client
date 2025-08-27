@@ -9,7 +9,6 @@ import { MoaRequest } from "@/types/db";
 import { formatWhen } from "@/lib/format";
 import { useDocsControllerGetMoaSignedDocument } from "@/app/api";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import CustomCard from "@/components/shared/CustomCard";
 
 type Props = {
@@ -52,23 +51,28 @@ export default function MoaStatus({ requests, loading, title = "MOA Status" }: P
                 <span className="">
                   Requested at <span className="font-semibold">{formatWhen(moa.timestamp)}</span>
                 </span>
-                <span className="">
-                  Document Verification Code:{" "}
-                  <pre className="inline-block rounded-[0.25em] bg-gray-200 px-2 py-1 hover:cursor-pointer">
-                    {signedDocument.data?.signedDocument?.verification_code ?? "loading..."}
-                  </pre>
-                  <div className="mt-2 gap-2">
-                    <Button asChild>
-                      <a
-                        href={signedDocument.data?.signedDocument?.url ?? "/not-found"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Download MOA
-                      </a>
-                    </Button>
-                  </div>
-                </span>
+
+                {moa.outcome === "approved" ? (
+                  <span className="">
+                    Document Verification Code:{" "}
+                    <pre className="inline-block rounded-[0.25em] bg-gray-200 px-2 py-1 hover:cursor-pointer">
+                      {signedDocument.data?.signedDocument?.verification_code ?? "loading..."}
+                    </pre>
+                    <div className="mt-2 gap-2">
+                      <Button asChild>
+                        <a
+                          href={signedDocument.data?.signedDocument?.url ?? "/not-found"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Download MOA
+                        </a>
+                      </Button>
+                    </div>
+                  </span>
+                ) : (
+                  <div className="font-bold">Your MOA is currently under review.</div>
+                )}
               </div>
             </div>
             <div className="flex flex-col items-start">

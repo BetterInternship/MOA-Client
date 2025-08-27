@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface NewCustomMoaRequestResponse {
-  requestId: string;
+export interface NewCustomMoaRequestDto {
+  school_id: string;
+  reason: string;
+  proposed_moa: Blob;
 }

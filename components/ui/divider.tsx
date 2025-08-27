@@ -1,6 +1,6 @@
-export const Divider = () => {
+export const Divider = ({ height }: { height?: number }) => {
   return (
-    <div className="my-5 w-full">
+    <div className={`my-${height} w-full`}>
       <hr />
     </div>
   );

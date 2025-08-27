@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import MoaTopbar from "@/components/moa/nav/MoaTopbar";
+import { EntityAuthContextProvider } from "../providers/entity-auth-provider";
 // import {
 //   SidebarProvider,
 //   SidebarInset,
@@ -21,7 +22,7 @@ export default function MoaLayout({ children }: { children: React.ReactNode }) {
   //   if (hideSidebar) return <>{children}</>;
 
   return (
-    <>
+    <EntityAuthContextProvider>
       {!hideNav && <MoaTopbar />}
 
       {hideNav ? (
@@ -31,21 +32,6 @@ export default function MoaLayout({ children }: { children: React.ReactNode }) {
         // Default styled container for everything else
         <main className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">{children}</main>
       )}
-    </>
-    // <SidebarProvider>
-    //   <MoaSidebar />
-    //   <SidebarInset>
-    //     <header className="flex h-16 items-center gap-2 px-4 border-b">
-    //       <SidebarTrigger className="-ml-1" />
-    //       <Separator
-    //         orientation="vertical"
-    //         className="mr-2 data-[orientation=vertical]:h-4"
-    //       />
-    //       <h1 className="text-lg font-semibold text-gray-700">BetterInternship</h1>
-    //     </header>
-
-    //     <main className="flex flex-col gap-6 p-6">{children}</main>
-    //   </SidebarInset>
-    // </SidebarProvider>
+    </EntityAuthContextProvider>
   );
 }

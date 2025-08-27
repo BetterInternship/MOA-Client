@@ -31,8 +31,6 @@ export default function MoaDetailsCard({
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">{companyName}</h2>
 
-        {/* Use anchor with download; if storage sets attachment headers it will download.
-            If not, most browsers still save due to the download attribute. */}
         <a
           href={canDownload ? (latestMoaUrl as string) : "#"}
           target="_blank"

@@ -1,19 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import CustomCard from "@/components/shared/CustomCard";
 import { Badge } from "@/components/ui/badge";
-
-// import { useEntities } from "@/app/api/school.api"; // keep if you'll use later
+import {
+  useSchoolStats,
+  useSchoolCompanyRequests,
+  useSchoolActiveMoas,
+  CompanyRequest,
+} from "@/app/api/school.api";
 
 type Stat = {
   label: string;
   value: number;
   color: "supportive" | "primary" | "warning" | "destructive";
 };
+
 type Activity = { date: string; company: string; action: string; performedBy: string };
 
 const columns: ColumnDef<Activity>[] = [
@@ -23,85 +28,37 @@ const columns: ColumnDef<Activity>[] = [
   { accessorKey: "performedBy", header: "Performed by" },
 ];
 
-// ---- Inline dummy data (rendered immediately, replaced after fetch) ----
-const DUMMY_STATS: Stat[] = [
-  { label: "Active MOAs", value: 18, color: "supportive" },
-  { label: "Pending MOA Requests", value: 7, color: "warning" },
-  { label: "Companies Registered", value: 124, color: "primary" },
-  { label: "Under Review", value: 2, color: "destructive" },
-];
-
-const DUMMY_ACTIVITIES: Activity[] = [
-  {
-    date: "08/14/2025",
-    company: "BetterInternship",
-    action: "MOA Approved",
-    performedBy: "Legal - DLSU",
-  },
-  {
-    date: "08/09/2025",
-    company: "Globe Telecom",
-    action: "Requested Clarification",
-    performedBy: "Approver - DLSU",
-  },
-  {
-    date: "08/08/2025",
-    company: "Jollibee Foods Corp.",
-    action: "Company Registered",
-    performedBy: "Admin - DLSU",
-  },
-  { date: "08/07/2025", company: "Accenture", action: "MOA Uploaded", performedBy: "Company Rep" },
-];
-
 export default function UnivDashboardPage() {
-  const [stats, setStats] = useState<Stat[]>(DUMMY_STATS);
-  const [activities, setActivities] = useState<Activity[]>(DUMMY_ACTIVITIES);
+  const statsQ = useSchoolStats();
+  const requestsQ = useSchoolCompanyRequests({ offset: 0, limit: 100 });
+  const pendingEntityRequests = useMemo(() => {
+    const reqs = requestsQ.data ?? [];
+    const hasOutcome = reqs.some((r) => r.outcome !== undefined);
+    return hasOutcome
+      ? reqs.filter((r) => (r.outcome ?? "pending") === "pending").length
+      : reqs.length;
+  }, [requestsQ.data]);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const [sRes, aRes] = await Promise.all([
-          fetch("/api/univ/dashboard/stats"),
-          fetch("/api/univ/dashboard/activity?days=180&limit=100"),
-        ]);
+  const stats: Stat[] = useMemo(
+    () => [
+      { label: "Active MOAs", value: statsQ.data?.activeMoas ?? 0, color: "supportive" },
+      { label: "Pending MOA Requests", value: statsQ.data?.pendingMoas ?? 0, color: "warning" },
+      {
+        label: "Entities Registered",
+        value: statsQ.data?.registeredEntities ?? 0,
+        color: "primary",
+      },
+      { label: "Pending Entity Requests", value: pendingEntityRequests ?? 0, color: "destructive" },
+    ],
+    [statsQ.data, pendingEntityRequests]
+  );
 
-        if (sRes.ok) {
-          const sJson = await sRes.json();
-          // Expecting { stats: Stat[] }, fallback safely
-          const nextStats: Stat[] =
-            Array.isArray(sJson?.stats) && sJson.stats.length ? sJson.stats : DUMMY_STATS;
-          if (alive) setStats(nextStats);
-        }
-
-        if (aRes.ok) {
-          const aJson = await aRes.json();
-          // Expecting { activities: Activity[] }, fallback safely
-          const nextActivities: Activity[] =
-            Array.isArray(aJson?.activities) && aJson.activities.length
-              ? aJson.activities
-              : DUMMY_ACTIVITIES;
-          if (alive) setActivities(nextActivities);
-        }
-      } catch (err) {
-        // Keep dummy data if network/API fails
-        console.error("Dashboard fetch error:", err);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const loading = statsQ.isLoading || requestsQ.isLoading;
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-3xl font-semibold">DLSU MOA Management Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Overview of MOA requests, company registrations, and activity logs.
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold tracking-tight">DLSU MOA Management Dashboard</h1>
 
       {/* Stats Summary */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -111,7 +68,7 @@ export default function UnivDashboardPage() {
             className="flex flex-col items-center justify-center border bg-white p-6"
           >
             <div className="mb-2 font-mono text-4xl font-bold tracking-tight text-slate-600">
-              {stat.value}
+              {loading ? "—" : stat.value}
             </div>
             <Badge type={stat.color}>{stat.label}</Badge>
           </CustomCard>
@@ -122,7 +79,7 @@ export default function UnivDashboardPage() {
       <CustomCard className="space-y-2">
         <h2 className="text-lg font-semibold">Recent Activity</h2>
         <div>
-          <DataTable columns={columns} data={activities} searchKey="company" />
+          <DataTable columns={columns} data={[]} searchKey="company" />
         </div>
       </CustomCard>
     </div>

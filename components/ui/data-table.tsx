@@ -101,7 +101,6 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize: pageSizes[0] ?? 10 } },
   });
 
-  
 
   const isFiltered = React.useMemo(() => {
     return (
@@ -120,7 +119,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className={cn("space-y-3", className)}>
       {/* Toolbar */}
-      <div className="flex flex-col gap-2 border sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
           {searchKey && (
             <Input
