@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const badge_variants = cva(
   [
     "border",
-    "border-transparent",
+    "border-opacity-70",
     "cursor-default",
     "font-semibold",
     "inline-flex",
@@ -17,16 +17,18 @@ const badge_variants = cva(
     "text-xs",
     "transition-colors",
     "whitespace-nowrap",
+    "bg-transparent",
+    "text-gray-700",
   ],
   {
     variants: {
       type: {
-        default: ["border-gray-300", "text-gray-700"],
-        primary: ["bg-primary", "text-primary-foreground"],
-        accent: ["bg-accent", "text-accent-foreground"],
-        supportive: ["bg-supportive", "text-supportive-foreground"],
-        warning: ["bg-warning", "text-warning-foreground"],
-        destructive: ["bg-destructive", "text-destructive-foreground"],
+        default: ["border-gray-400", "text-gray-600"],
+        primary: ["border-primary/80", "text-primary"],
+        accent: ["border-accent/80", "text-accent"],
+        supportive: ["border-supportive/80", "text-supportive"],
+        warning: ["border-warning/80", "text-warning"],
+        destructive: ["border-destructive/80", "text-destructive"],
       },
       strength: {
         default: ["opacity-100"],

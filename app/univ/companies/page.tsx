@@ -15,7 +15,7 @@ export default function CompaniesPage() {
   const [selectedId, setSelectedId] = useState("");
 
   // fetch list (stable)
-  const { partners, isLoading } = useSchoolPartners({ limit: 200 });
+  const { partners, isLoading } = useSchoolPartners({ limit: 400 });
   const entities = (partners as Entity[]) ?? [];
 
   // client-side filter (no setState)

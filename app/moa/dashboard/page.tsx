@@ -38,7 +38,7 @@ export default function DashboardPage() {
       {/* MOA Log */}
       <div className="space-y-4">
         <h2 className="text-foreground text-2xl font-semibold">Company Log</h2>
-        <CompanyRequestHistory showTitle={false} />
+        <CompanyRequestHistory showTitle={false} history={[]} />
       </div>
     </div>
   );

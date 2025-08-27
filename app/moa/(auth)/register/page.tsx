@@ -12,7 +12,7 @@ export default function CompanyRegisterPage() {
       <div
         className="relative hidden flex-col items-end border-l bg-cover bg-center p-10 text-right lg:flex"
         style={{
-          backgroundImage: "url('moa-login.jpg')",
+          backgroundImage: "url('backgrounds/moa-login.jpg')",
         }}
       >
         {/* Overlay */}

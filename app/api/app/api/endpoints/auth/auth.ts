@@ -15,11 +15,10 @@ import type {
 
 import type {
   BaseResponse,
+  CreateCompanyDto,
   ErrorResponse,
   LoginEntityDto,
   LoginSchoolDto,
-  RegisterEntityDto,
-  RegisterEntityResponse,
   SelfEntityResponse,
   SelfSchoolResponse,
 } from "../../models";
@@ -93,36 +92,36 @@ export const useAuthControllerEntitySelf = <TError = ErrorResponse, TContext = u
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authControllerRegister = (
-  registerEntityDto: RegisterEntityDto,
+export const authPublicRegisterCompany = (
+  createCompanyDto: CreateCompanyDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<RegisterEntityResponse>({
-    url: `/api/auth/register`,
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/auth/public/register-company`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    data: registerEntityDto,
+    data: createCompanyDto,
     signal,
   });
 };
 
-export const getAuthControllerRegisterMutationOptions = <
+export const getAuthPublicRegisterCompanyMutationOptions = <
   TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof authControllerRegister>>,
+    Awaited<ReturnType<typeof authPublicRegisterCompany>>,
     TError,
-    { data: RegisterEntityDto },
+    { data: CreateCompanyDto },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof authControllerRegister>>,
+  Awaited<ReturnType<typeof authPublicRegisterCompany>>,
   TError,
-  { data: RegisterEntityDto },
+  { data: CreateCompanyDto },
   TContext
 > => {
-  const mutationKey = ["authControllerRegister"];
+  const mutationKey = ["authPublicRegisterCompany"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -130,40 +129,40 @@ export const getAuthControllerRegisterMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof authControllerRegister>>,
-    { data: RegisterEntityDto }
+    Awaited<ReturnType<typeof authPublicRegisterCompany>>,
+    { data: CreateCompanyDto }
   > = (props) => {
     const { data } = props ?? {};
 
-    return authControllerRegister(data);
+    return authPublicRegisterCompany(data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type AuthControllerRegisterMutationResult = NonNullable<
-  Awaited<ReturnType<typeof authControllerRegister>>
+export type AuthPublicRegisterCompanyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authPublicRegisterCompany>>
 >;
-export type AuthControllerRegisterMutationBody = RegisterEntityDto;
-export type AuthControllerRegisterMutationError = ErrorResponse;
+export type AuthPublicRegisterCompanyMutationBody = CreateCompanyDto;
+export type AuthPublicRegisterCompanyMutationError = ErrorResponse;
 
-export const useAuthControllerRegister = <TError = ErrorResponse, TContext = unknown>(
+export const useAuthPublicRegisterCompany = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof authControllerRegister>>,
+      Awaited<ReturnType<typeof authPublicRegisterCompany>>,
       TError,
-      { data: RegisterEntityDto },
+      { data: CreateCompanyDto },
       TContext
     >;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof authControllerRegister>>,
+  Awaited<ReturnType<typeof authPublicRegisterCompany>>,
   TError,
-  { data: RegisterEntityDto },
+  { data: CreateCompanyDto },
   TContext
 > => {
-  const mutationOptions = getAuthControllerRegisterMutationOptions(options);
+  const mutationOptions = getAuthPublicRegisterCompanyMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

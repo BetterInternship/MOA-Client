@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { Entity, Message, MoaHistory, MoaRequest } from "@/types/db";
 import { preconfiguredAxios } from "@/app/api/preconfig.axios";
 import {
@@ -43,7 +43,8 @@ export const useEntities = (opts?: { offset?: number; limit?: number }) => {
 
   return {
     entities: (data?.entities as unknown as Entity[]) ?? [],
-    isLoading: isFetching || isLoading,
+    isLoading,
+    isFetching,
     error,
     refetch,
     approve: approveNewEntityRequest.mutateAsync,
@@ -57,7 +58,13 @@ export const useEntities = (opts?: { offset?: number; limit?: number }) => {
  * @hook
  */
 export const useMoaRequests = () => {
-  const { data, isLoading, isFetching } = useSchoolMoaControllerGetMine();
+  const { data, isLoading, isFetching, refetch } = useSchoolMoaControllerGetMine({
+    query: {
+      queryKey: ["moa-requests"],
+      staleTime: 5 * 60 * 1000,
+      placeholderData: keepPreviousData,
+    },
+  });
   const approveMoaRequest = useSchoolMoaControllerApprove();
   const denyMoaRequest = useSchoolMoaControllerDeny();
   const respondMoaRequest = useSchoolMoaControllerRespond();
@@ -68,6 +75,7 @@ export const useMoaRequests = () => {
     approve: approveMoaRequest.mutateAsync,
     deny: denyMoaRequest.mutateAsync,
     respond: respondMoaRequest.mutateAsync,
+    refetch,
   };
 };
 
@@ -79,13 +87,14 @@ export const useMoaRequests = () => {
 export const useRequestThread = (id?: string | null) => {
   const {
     data: rawMessages,
-    isFetching,
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useSchoolMoaControllerGetOneThread(id, {
     query: {
       enabled: !!id,
+      placeholderData: keepPreviousData,
     },
   });
   const messages = useMemo(() => rawMessages?.messages as unknown as Message[], [rawMessages]);
@@ -99,7 +108,8 @@ export const useRequestThread = (id?: string | null) => {
           attachments: (typeof rawAtts === "string" ? JSON.parse(rawAtts) : rawAtts) ?? [],
         };
       }) ?? [],
-    isLoading: isFetching || isLoading,
+    isLoading,
+    isFetching,
     refetch,
     error,
   };
@@ -191,7 +201,7 @@ export const useSchoolPartner = (id?: string) => {
     effective_date: string;
     expiry_date: string;
     comments: string;
-    documents: string;   // single URL
+    documents: string; // single URL
     timestamp: string;
   };
 
@@ -247,13 +257,12 @@ export const useSchoolPartner = (id?: string) => {
   };
 };
 
-
 /**
  * Returns the history about a single partner.
  *
  * @param entityId
  * @hook
- * ! to remove 
+ * ! to remove
  */
 export const useSchoolMoaHistory = (entityId?: string) => {
   const q = useSchoolMoaControllerGetOneHistory(entityId, {
@@ -360,12 +369,16 @@ export function useSchoolCompanyRequest(entityId?: string) {
   });
 }
 
-export const useEntityRequestActions = () => {
+export function useEntityRequestActions() {
   const approve = useSchoolEntitiesControllerApproveRequest();
   const deny = useSchoolEntitiesControllerDenyRequest();
 
-  return { approve, deny, isPending: approve.isPending || deny.isPending };
-};
+  return {
+    approve: ({ id }: { id: string }) => approve.mutateAsync({ id }),
+    deny: ({ id }: { id: string }) => deny.mutateAsync({ id }),
+    isPending: approve.isPending || deny.isPending,
+  };
+}
 
 /* ---------------- Schools: Active MOAs (approved links) ---------------- */
 

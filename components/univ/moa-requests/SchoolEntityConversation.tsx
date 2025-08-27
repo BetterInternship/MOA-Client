@@ -7,15 +7,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Paperclip, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Message, MoaRequest } from "@/types/db";
-import { useRequestThread } from "@/app/api/school.api";
+import { useMoaRequests, useRequestThread } from "@/app/api/school.api";
 import { Badge } from "@/components/ui/badge";
 import { formatWhen } from "@/lib/format";
+import { Loader } from "@/components/ui/loader";
+import CustomCard from "@/components/shared/CustomCard";
+import { useState } from "react";
+import MoaRequestResponseActions from "../company-requests/MOARequestForResponse";
 
-function toMDY(d: Date) {
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
+interface EntityConversationProps {
+  req?: MoaRequest;
 }
 
 /**
@@ -24,39 +25,75 @@ function toMDY(d: Date) {
  *
  * @component
  */
-export default function CompanyHistoryTree({ req }: { req?: MoaRequest }) {
+export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
+  const moaRequests = useMoaRequests();
+  const [loading, setLoading] = useState(false);
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
 
+  if (thread.isLoading) return <Loader />;
+  if (!messages.length) {
+    return (
+      <CustomCard>
+        <li className="text-muted-foreground text-sm">No history yet.</li>
+      </CustomCard>
+    );
+  }
+
   return (
     <>
-      <ol className="space-y-4">
-        {messages.map((message, i) => {
-          const isSchool = message.source_type === "school";
-          const timestampFormatted = formatWhen(message.timestamp);
+      <div className="p flex max-h-full flex-1 flex-col-reverse justify-between overflow-auto px-4">
+        <ol className="mt-4 space-y-4">
+          {messages
+            .toSorted((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
+            .map((message, i) => {
+              const isSchool = message.source_type === "school";
+              const timestampFormatted = formatWhen(message.timestamp);
 
-          return (
-            <li
-              key={`${timestampFormatted}-${i}`}
-              className={cn("flex", isSchool ? "justify-end" : "justify-start")}
-            >
-              <ChatBubble
-                sender={message.source_type}
-                timestamp={timestampFormatted}
-                text={message.text ?? ""}
-                attachments={(message.attachments as unknown as string[]) ?? []}
-              />
-            </li>
-          );
-        })}
-
-        {messages.length === 0 && (
-          <li className="text-muted-foreground text-sm">No history yet.</li>
-        )}
-      </ol>
+              return (
+                <li
+                  key={`${timestampFormatted}-${i}`}
+                  className={cn("flex", isSchool ? "justify-end" : "justify-start")}
+                >
+                  <ChatBubble
+                    sender={message.source_type}
+                    timestamp={timestampFormatted}
+                    text={message.text ?? ""}
+                    document={message.moa_document}
+                    attachments={(message.attachments as unknown as string[]) ?? []}
+                  />
+                </li>
+              );
+            })}
+        </ol>
+      </div>
+      <MoaRequestResponseActions
+        onApprove={async (message) => {
+          setLoading(true);
+          await moaRequests.approve({
+            id: req?.id,
+            data: { message },
+          });
+          moaRequests.refetch();
+          setLoading(false);
+        }}
+        onRespond={async (message) => {
+          setLoading(true);
+          await moaRequests.respond({ id: req?.id, data: { message } });
+          await thread.refetch();
+          setLoading(false);
+        }}
+        onDeny={async (message) => {
+          setLoading(true);
+          await moaRequests.deny({ id: req?.id, data: { message } });
+          await moaRequests.refetch();
+          setLoading(false);
+        }}
+        loading={loading}
+      />
     </>
   );
-}
+};
 
 /**
  * Component for a single message.
@@ -67,11 +104,13 @@ function ChatBubble({
   sender,
   timestamp,
   text,
+  document,
   attachments,
 }: {
   sender: string;
   timestamp: string;
   text: string;
+  document?: string | null;
   attachments?: string[];
 }) {
   const isSchool = sender === "school";
@@ -92,8 +131,8 @@ function ChatBubble({
       <div
         className={cn(
           !isSchool
-            ? "border-l-primary border border-l-2"
-            : "border-r-supportive border border-r-2",
+            ? "border-l-primary justify-start border border-l-2 text-left"
+            : "border-r-supportive justify-end border border-r-2 text-right",
           "bg-white/80 transition",
           "focus-within:shadow-md hover:cursor-pointer hover:shadow-xs",
           "px-3 py-1"
@@ -128,24 +167,30 @@ function ChatBubble({
             {/* short header */}
             <div className="flex flex-col gap-2">
               <p className="text-foreground min-w-0 text-sm break-words">{text}</p>
-              <div className="flex flex-row gap-1">
-                <Button className="" scheme="secondary">
-                  <a href="" target="_blank">
-                    <div className="flex flex-row items-center gap-1">
-                      <Download />
-                      MOA Document
-                    </div>
-                  </a>
-                </Button>
-                <Button variant="outline" disabled={!hasAttachments}>
-                  <a href="#" target="_blank">
-                    <div className="flex flex-row items-center gap-1">
-                      <Download />
-                      {hasAttachments ? "Attachments" : "No Additional Attachments"}
-                    </div>
-                  </a>
-                </Button>
-              </div>
+              {(document || hasAttachments) && (
+                <div className="flex flex-row gap-1">
+                  {document && (
+                    <Button variant="outline" className="" scheme="secondary">
+                      <a href={document} target="_blank">
+                        <div className="flex flex-row items-center gap-1">
+                          <Download />
+                          MOA Version
+                        </div>
+                      </a>
+                    </Button>
+                  )}
+                  {hasAttachments && (
+                    <Button variant="outline">
+                      <a href="#" target="_blank">
+                        <div className="flex flex-row items-center gap-1">
+                          <Download />
+                          "Additional Attachments"
+                        </div>
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -183,3 +228,5 @@ function ChatBubble({
     </Collapsible>
   );
 }
+
+export default SchoolEntityConversation;

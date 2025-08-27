@@ -19,15 +19,9 @@ const COMPANY_SCHEMA = z.object({
   doingBusinessAs: z.string().min(2, "Required"),
   legalEntityName: z.string().min(2, "Required"),
   generalOfficeLocation: z.string().min(2, "Required"),
-  website: z
-    .string()
-    .min(1, "Required")
-    .refine((v) => !!v.trim(), "Required"),
   industry: z.string().min(2, "Required"),
-  description: z.string().min(10, "Add a short description (≥10 chars)"),
   contactName: z.string().min(2, "Required"),
   contactPhone: z.string().min(5, "Enter a valid phone"),
-  contactEmail: z.string().email("Enter a valid email"),
   acceptsNonUnivInterns: z.boolean().default(false),
   ongoingMoaWithDlsu: z.boolean().default(false),
   acceptedTerms: z.literal(true, {
@@ -57,7 +51,6 @@ export default function NewCompanyPage() {
       doingBusinessAs: "",
       legalEntityName: "",
       generalOfficeLocation: "",
-      website: "",
       industry: "",
       description: "",
       contactName: "",
@@ -77,13 +70,13 @@ export default function NewCompanyPage() {
       display_name: values.doingBusinessAs.trim(),
       legal_name: values.legalEntityName.trim(),
       office_location: values.generalOfficeLocation.trim(),
-      website: normalizeUrl(values.website.trim()),
+      website: "",
       industry: values.industry.trim(),
-      description: values.description.trim(),
+      description: "",
       contact: {
         name: values.contactName.trim(),
         phone: values.contactPhone.trim(),
-        email: values.contactEmail.trim(),
+        email: "",
       },
       profile: {
         acceptsNonUniversityInterns: values.acceptsNonUnivInterns,
@@ -166,16 +159,6 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="website">
-                Website <span className="text-destructive">*</span>
-              </Label>
-              <Input id="website" placeholder="https://acme.com" {...register("website")} />
-              {errors.website && (
-                <p className="text-destructive text-xs">{errors.website.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-1">
               <Label htmlFor="industry">
                 Industry <span className="text-destructive">*</span>
               </Label>
@@ -189,24 +172,6 @@ export default function NewCompanyPage() {
               )}
             </div>
 
-            <div className="space-y-1 md:col-span-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="description">
-                  Description <span className="text-destructive">*</span>
-                </Label>
-                <span className="text-muted-foreground text-xs">{descCount}/500</span>
-              </div>
-              <Textarea
-                id="description"
-                placeholder="What does this company do? (mission, products, workforce size, etc.)"
-                maxLength={500}
-                rows={5}
-                {...register("description")}
-              />
-              {errors.description && (
-                <p className="text-destructive text-xs">{errors.description.message}</p>
-              )}
-            </div>
           </div>
         </CustomCard>
 
@@ -259,7 +224,7 @@ export default function NewCompanyPage() {
         <CustomCard className="space-y-4">
           <h1 className="text-lg font-semibold">Profile Agreements</h1>
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-md border p-3">
+            {/* <div className="flex items-center justify-between rounded-md border p-3">
               <div>
                 <p className="font-medium">Accept Non-University Interns?</p>
                 <p className="text-muted-foreground text-xs">
@@ -287,7 +252,7 @@ export default function NewCompanyPage() {
               />
             </div>
 
-            <Separator />
+            <Separator /> */}
 
             <div className="flex items-start gap-2">
               <Checkbox

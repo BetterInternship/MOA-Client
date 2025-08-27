@@ -10,7 +10,7 @@ type Props = {
   loading?: boolean;
 };
 
-export default function RequestForResponse({ onSend, loading }: Props) {
+export default function EntityRequestForResponse({ onSend, loading }: Props) {
   const [message, setMessage] = useState("");
 
   return (

@@ -23,15 +23,19 @@ export default function MoaLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <EntityAuthContextProvider>
-      {!hideNav && <MoaTopbar />}
+      <div className="flex h-full flex-col">
+        {!hideNav && <MoaTopbar />}
 
-      {hideNav ? (
-        // No classes for login/register
-        <>{children}</>
-      ) : (
-        // Default styled container for everything else
-        <main className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">{children}</main>
-      )}
+        {hideNav ? (
+          // No classes for login/register
+          <>{children}</>
+        ) : (
+          // Default styled container for everything else
+          <main className="mx-auto flex w-4xl flex-1 flex-col gap-6 overflow-hidden p-6">
+            {children}
+          </main>
+        )}
+      </div>
     </EntityAuthContextProvider>
   );
 }

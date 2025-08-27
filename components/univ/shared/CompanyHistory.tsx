@@ -56,7 +56,7 @@ export default function CompanyHistory({
       ) : (
         <ul className="divide-y">
           {history?.map((h, i) => {
-            const key = `${h.effective_date}-${h.message}-${i}`;
+            const key = `${h.effective_date}-${h.text}-${i}`;
             return (
               <li key={key} className="relative py-2 pl-1">
                 <div className="grid grid-cols-[96px_1fr_auto] items-center gap-3">
