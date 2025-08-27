@@ -159,7 +159,7 @@ export const useSchoolPartner = (id?: string) => {
   }, [rawHistory]);
 
   return {
-    entity: (entity as unknown as Entity) ?? null,
+    entity: (entity?.entity as unknown as Entity) ?? null,
     history: history as MoaHistory,
     isLoadingEntity: isFetchingEntity || isLoadingEntity,
     isLoadingHistory: isFetchingHistory || isLoadingHistory,
