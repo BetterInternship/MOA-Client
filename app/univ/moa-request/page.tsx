@@ -9,23 +9,26 @@ import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTre
 import RequestResponse from "@/components/univ/company-requests/MOARequestForResponse";
 import { FileSignature } from "lucide-react";
 import { useMoaRequests } from "@/app/api/school.api";
+import CustomCard from "@/components/shared/CustomCard";
 
 export default function MoaRequestsPage() {
   const [selectedId, setSelectedId] = useState<string>("");
   const moaRequests = useMoaRequests();
 
-  const selected = useMemo(
+  const pendingRequests = useMemo(
     () =>
       moaRequests.requests
         .filter((request) => !!request.thread_id?.trim())
-        .filter((request) => request.outcome === "pending")
-        .find((request) => request.id === selectedId),
-    [moaRequests.requests, selectedId]
+        .filter((request) => request.outcome !== "approved" && request.outcome !== "denied"),
+    [moaRequests.requests]
+  );
+  const selected = useMemo(
+    () => pendingRequests.find((request) => request.id === selectedId),
+    [pendingRequests, selectedId]
   );
 
   return (
     <div className="min-h-[88vh]">
-      {/* Page header */}
       <div className="mb-6 flex items-center gap-3 space-y-1">
         <div className="inline-flex items-center gap-3 rounded-md bg-green-100 px-3 py-1 text-2xl font-semibold text-green-800">
           <FileSignature />
@@ -46,7 +49,7 @@ export default function MoaRequestsPage() {
         {/* LEFT: Company list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
           <MoaRequestList
-            requests={moaRequests.requests}
+            pendingRequests={pendingRequests}
             selectedId={selectedId}
             onSelect={setSelectedId}
           />
@@ -59,7 +62,7 @@ export default function MoaRequestsPage() {
           <div className="flex max-h-[100%] flex-col space-y-6 overflow-y-auto">
             {selected ? (
               <>
-                <div className="flex max-h-full flex-1 flex-col-reverse justify-between overflow-auto px-4 pt-8">
+                <div className="p flex max-h-full flex-1 flex-col-reverse justify-between overflow-auto px-4">
                   <CompanyHistoryTree req={selected} />
                 </div>
                 <RequestResponse
@@ -79,7 +82,9 @@ export default function MoaRequestsPage() {
                 />
               </>
             ) : (
-              <div className="text-muted-foreground">No request selected.</div>
+              <CustomCard className="m-3 p-3 px-4">
+                <div className="text-muted-foreground">No request selected.</div>
+              </CustomCard>
             )}
           </div>
         </ResizablePanel>

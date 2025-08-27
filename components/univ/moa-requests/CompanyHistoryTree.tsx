@@ -10,6 +10,8 @@ import { Message, MoaRequest } from "@/types/db";
 import { useRequestThread } from "@/app/api/school.api";
 import { Badge } from "@/components/ui/badge";
 import { formatWhen } from "@/lib/format";
+import { Loader } from "@/components/ui/loader";
+import CustomCard from "@/components/shared/CustomCard";
 
 /**
  * Displays a history of the messages between the company and the uni for a given negotiated MOA.
@@ -21,33 +23,36 @@ export default function CompanyHistoryTree({ req }: { req?: MoaRequest }) {
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
 
+  if (thread.isLoading) return <Loader />;
+  if (!messages.length) {
+    return (
+      <CustomCard>
+        <li className="text-muted-foreground text-sm">No history yet.</li>;
+      </CustomCard>
+    );
+  }
+
   return (
-    <>
-      <ol className="space-y-4">
-        {messages.map((message, i) => {
-          const isSchool = message.source_type === "school";
-          const timestampFormatted = formatWhen(message.timestamp);
+    <ol className="mt-4 space-y-4">
+      {messages.map((message, i) => {
+        const isSchool = message.source_type === "school";
+        const timestampFormatted = formatWhen(message.timestamp);
 
-          return (
-            <li
-              key={`${timestampFormatted}-${i}`}
-              className={cn("flex", isSchool ? "justify-end" : "justify-start")}
-            >
-              <ChatBubble
-                sender={message.source_type}
-                timestamp={timestampFormatted}
-                text={message.text ?? ""}
-                attachments={(message.attachments as unknown as string[]) ?? []}
-              />
-            </li>
-          );
-        })}
-
-        {messages.length === 0 && (
-          <li className="text-muted-foreground text-sm">No history yet.</li>
-        )}
-      </ol>
-    </>
+        return (
+          <li
+            key={`${timestampFormatted}-${i}`}
+            className={cn("flex", isSchool ? "justify-end" : "justify-start")}
+          >
+            <ChatBubble
+              sender={message.source_type}
+              timestamp={timestampFormatted}
+              text={message.text ?? ""}
+              attachments={(message.attachments as unknown as string[]) ?? []}
+            />
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
