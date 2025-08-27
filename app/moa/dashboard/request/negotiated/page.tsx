@@ -48,18 +48,10 @@ export default function NegotiatedMoaRequestPage() {
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
     try {
-      const formData = new FormData();
-      if (values.proposed_moa) formData.append("proposed_moa", values.proposed_moa);
-      formData.append("school_id", values.school_id);
-      formData.append("reason", values.reason || "");
-
-      console.log(formData.getAll("reason"));
-      console.log(formData.getAll("proposed_moa"));
-      console.log(formData.getAll("school_id"));
       await customRequest.mutateAsync({
         data: {
           school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
-          reason: "",
+          reason: values.reason,
           proposed_moa: new Blob(
             [(await values.proposed_moa?.arrayBuffer()) ?? new Uint8Array([])],
             {
