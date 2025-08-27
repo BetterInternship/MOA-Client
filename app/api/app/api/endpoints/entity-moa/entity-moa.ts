@@ -869,7 +869,9 @@ export const entityMoaControllerRespond = (
 ) => {
   const formData = new FormData();
   formData.append(`message`, moaRespondDto.message);
-  formData.append(`proposed_moa`, moaRespondDto.proposed_moa);
+  if (moaRespondDto.revised_moa !== undefined) {
+    formData.append(`revised_moa`, moaRespondDto.revised_moa);
+  }
 
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/entity/moa/${id}/respond`,

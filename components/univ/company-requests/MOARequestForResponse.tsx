@@ -4,12 +4,14 @@ import { useState } from "react";
 import { CheckCircle2, CircleX, SendHorizonal } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { FileUpload } from "@/components/ui/file-upload";
 
 type Props = {
   onApprove?: (note: string) => Promise<void>;
   onDeny?: (note: string) => Promise<void>;
-  onRespond: (note: string) => Promise<void>;
+  onRespond: (note: string, file?: File) => Promise<void>;
   loading?: boolean;
+  allowUpload?: boolean;
 };
 
 export default function MoaRequestResponseActions({
@@ -17,11 +19,13 @@ export default function MoaRequestResponseActions({
   onDeny,
   onRespond,
   loading,
+  allowUpload = false,
 }: Props) {
   const [note, setNote] = useState("");
+  const [file, setFile] = useState<File | null>(null);
 
   return (
-    <section className="space-y-3 border-t-2 bg-white p-4 px-8">
+    <section className="space-y-2 border-t-2 bg-white p-4 px-8">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">Respond</h2>
 
@@ -40,7 +44,7 @@ export default function MoaRequestResponseActions({
           <Button
             className=""
             disabled={loading}
-            onClick={() => onRespond(note).then(() => setNote(""))}
+            onClick={() => onRespond(note, file ?? undefined).then(() => setNote(""))}
           >
             <SendHorizonal />
             Send as Clarification
@@ -65,6 +69,20 @@ export default function MoaRequestResponseActions({
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
+
+        {allowUpload && (
+          <div className="pb-4">
+            <FileUpload
+              label="Revised MOA Document"
+              name="revised_moa"
+              accept="application/pdf"
+              placeholder="Click to upload a revised version of the MOA"
+              onFileSelect={(file) => {
+                setFile(file);
+              }}
+            />
+          </div>
+        )}
       </div>
     </section>
   );
