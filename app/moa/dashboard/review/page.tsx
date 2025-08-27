@@ -1,12 +1,9 @@
-// app/univ/moa-requests/page.tsx
 "use client";
 
-import { useState } from "react";
 import { useMoaRequests } from "@/app/api/entity.api";
 import EntitySchoolConversation from "@/components/moa/review/EntitySchoolConversation";
 
 export default function ReviewMoaRequestPage() {
-  const [selectedId, setSelectedId] = useState<string>("");
   const moaRequests = useMoaRequests();
   const moa = (moaRequests.requests ?? []).sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()

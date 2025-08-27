@@ -10,9 +10,8 @@ interface FileUploadProps {
   name: string;
   accept?: string;
   required?: boolean;
-  /** Called with the selected file (or null if none) */
+  placeholder?: string;
   onFileSelect?: (file: File | null) => void;
-  /** Disable the control */
   disabled?: boolean;
 }
 
@@ -22,6 +21,7 @@ export function FileUpload({
   accept,
   required,
   onFileSelect,
+  placeholder,
   disabled = false,
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -63,7 +63,7 @@ export function FileUpload({
         {fileName ? (
           <span className="text-foreground truncate">{fileName}</span>
         ) : (
-          <span>Click to upload file</span>
+          <span>{placeholder ?? "Click to upload file"}</span>
         )}
       </button>
 

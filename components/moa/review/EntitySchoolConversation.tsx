@@ -14,6 +14,10 @@ import { Loader } from "@/components/ui/loader";
 import CustomCard from "@/components/shared/CustomCard";
 import { useState } from "react";
 import MoaRequestResponseActions from "@/components/univ/company-requests/MOARequestForResponse";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { FileUpload } from "@/components/ui/file-upload";
+import { fi } from "zod/v4/locales";
 
 interface EntityConversationProps {
   req?: MoaRequest;
@@ -28,6 +32,7 @@ interface EntityConversationProps {
 export const EntitySchool = ({ req }: EntityConversationProps) => {
   const moaRequests = useMoaRequests();
   const [loading, setLoading] = useState(false);
+  const [revisedMoa, setRevisedMoa] = useState<File | null>(null);
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
 
@@ -67,19 +72,21 @@ export const EntitySchool = ({ req }: EntityConversationProps) => {
         </ol>
       </div>
       <MoaRequestResponseActions
-        onRespond={async (message) => {
+        onRespond={async (message, file) => {
+          console.log(message, file);
           setLoading(true);
           await moaRequests.respond({
             id: req?.id,
             data: {
               message,
-              proposed_moa: undefined,
+              revised_moa: file,
             },
           });
           await thread.refetch();
           setLoading(false);
         }}
         loading={loading}
+        allowUpload={true}
       />
     </>
   );
