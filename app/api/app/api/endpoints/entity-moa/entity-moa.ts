@@ -26,6 +26,7 @@ import type {
 import type {
   BaseResponse,
   ErrorResponse,
+  MoaDocumentThreadResponse,
   MoaRequestResponse,
   MoaRequestsResponse,
   MoaRespondDto,
@@ -34,6 +35,7 @@ import type {
   NewCustomMoaRequestResponse,
   NewStandardMoaRequestDto,
   NewStandardMoaRequestResponse,
+  SignCustomMoaRequestDto,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -783,6 +785,344 @@ export function useEntityMoaControllerGetOneThreadSuspense<
   return query;
 }
 
+export const entityMoaControllerGetOneThreadLatestDocument = (
+  id: string | undefined | null,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<MoaDocumentThreadResponse>({
+    url: `/api/entity/moa/thread/${id}/document`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getEntityMoaControllerGetOneThreadLatestDocumentQueryKey = (
+  id?: string | undefined | null
+) => {
+  return [`/api/entity/moa/thread/${id}/document`] as const;
+};
+
+export const getEntityMoaControllerGetOneThreadLatestDocumentQueryOptions = <
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getEntityMoaControllerGetOneThreadLatestDocumentQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>
+  > = ({ signal }) => entityMoaControllerGetOneThreadLatestDocument(id, signal);
+
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type EntityMoaControllerGetOneThreadLatestDocumentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>
+>;
+export type EntityMoaControllerGetOneThreadLatestDocumentQueryError = ErrorResponse;
+
+export function useEntityMoaControllerGetOneThreadLatestDocument<
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+          TError,
+          Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEntityMoaControllerGetOneThreadLatestDocument<
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+          TError,
+          Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEntityMoaControllerGetOneThreadLatestDocument<
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useEntityMoaControllerGetOneThreadLatestDocument<
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEntityMoaControllerGetOneThreadLatestDocumentQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getEntityMoaControllerGetOneThreadLatestDocumentSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getEntityMoaControllerGetOneThreadLatestDocumentQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>
+  > = ({ signal }) => entityMoaControllerGetOneThreadLatestDocument(id, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type EntityMoaControllerGetOneThreadLatestDocumentSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>
+>;
+export type EntityMoaControllerGetOneThreadLatestDocumentSuspenseQueryError = ErrorResponse;
+
+export function useEntityMoaControllerGetOneThreadLatestDocumentSuspense<
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEntityMoaControllerGetOneThreadLatestDocumentSuspense<
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEntityMoaControllerGetOneThreadLatestDocumentSuspense<
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useEntityMoaControllerGetOneThreadLatestDocumentSuspense<
+  TData = Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof entityMoaControllerGetOneThreadLatestDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEntityMoaControllerGetOneThreadLatestDocumentSuspenseQueryOptions(
+    id,
+    options
+  );
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const entityMoaControllerSignApprovedCustom = (
+  signCustomMoaRequestDto: SignCustomMoaRequestDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<NewCustomMoaRequestResponse>({
+    url: `/api/entity/moa/sign-custom`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: signCustomMoaRequestDto,
+    signal,
+  });
+};
+
+export const getEntityMoaControllerSignApprovedCustomMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
+    TError,
+    { data: SignCustomMoaRequestDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
+  TError,
+  { data: SignCustomMoaRequestDto },
+  TContext
+> => {
+  const mutationKey = ["entityMoaControllerSignApprovedCustom"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
+    { data: SignCustomMoaRequestDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return entityMoaControllerSignApprovedCustom(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EntityMoaControllerSignApprovedCustomMutationResult = NonNullable<
+  Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>
+>;
+export type EntityMoaControllerSignApprovedCustomMutationBody = SignCustomMoaRequestDto;
+export type EntityMoaControllerSignApprovedCustomMutationError = ErrorResponse;
+
+export const useEntityMoaControllerSignApprovedCustom = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
+      TError,
+      { data: SignCustomMoaRequestDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
+  TError,
+  { data: SignCustomMoaRequestDto },
+  TContext
+> => {
+  const mutationOptions = getEntityMoaControllerSignApprovedCustomMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const entityMoaControllerRequestNewCustom = (
   newCustomMoaRequestDto: NewCustomMoaRequestDto,
   signal?: AbortSignal

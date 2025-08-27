@@ -5,7 +5,10 @@ import StatusBadge from "./StatusBadge";
 import type { MoaStatus } from "@/types/moa";
 import { MoaRequest } from "@/types/db";
 import { formatWhen } from "@/lib/format";
-import { useDocsControllerGetMoaSignedDocument } from "@/app/api";
+import {
+  useDocsControllerGetMoaSignedDocument,
+  useEntityMoaControllerGetOneThreadLatestDocument,
+} from "@/app/api";
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/shared/CustomCard";
 import { useRouter } from "next/navigation";
@@ -21,6 +24,7 @@ const statusUpdates: Record<string, string> = {
   pending: "Your MOA is currently under review.",
   approved: "Your MOA is currently active.",
   denied: "Your MOA request has been denied. Click to review their feedback.",
+  "waiting-for-school": "Waiting for university feedback.",
   "waiting-for-entity": "The university has provided feedback on your request. Review it now.",
   "sign-approved": "Your MOA request has been approved and is in need of signing.",
 };
@@ -29,7 +33,12 @@ export default function MoaStatus({ requests, loading }: Props) {
   const moa = (requests ?? []).sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   )[0];
-  const signedDocument = useDocsControllerGetMoaSignedDocument(moa?.id ?? "");
+  const signedDocument = useDocsControllerGetMoaSignedDocument(moa?.id ?? "", {
+    query: { staleTime: 1000 },
+  });
+  const latestDocument = useEntityMoaControllerGetOneThreadLatestDocument(moa?.thread_id, {
+    query: { enabled: !!moa?.thread_id },
+  });
   const router = useRouter();
 
   if (!loading && !moa) return <></>;
@@ -75,15 +84,21 @@ export default function MoaStatus({ requests, loading }: Props) {
             </div>
             <div className="flex flex-col items-end gap-2">
               <StatusBadge status={moa.outcome ?? ""} />
-              {moa.outcome === "waiting-for-entity" || moa.outcome === "sign-approved" ? (
+              {moa.outcome === "waiting-for-entity" && (
                 <Button scheme="secondary" onClick={() => router.push("/dashboard/review")}>
                   Review Request
                   <SidebarOpen />
                 </Button>
-              ) : (
-                <></>
               )}
-              {moa.outcome === "sign-approved"}
+              {moa.outcome === "sign-approved" && (
+                <Button
+                  scheme="secondary"
+                  onClick={() => router.push("/dashboard/request/sign-approved")}
+                >
+                  Sign MOA
+                  <SidebarOpen />
+                </Button>
+              )}
             </div>
           </div>
         </CustomCard>

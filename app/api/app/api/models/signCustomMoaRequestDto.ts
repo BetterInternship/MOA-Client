@@ -6,8 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface NewStandardMoaRequestResponse {
-  moaRequestId: string;
-  signedDocumentId: string;
-  verificationCode: string;
+export interface SignCustomMoaRequestDto {
+  school_id: string;
+  request_id: string;
+  entity_signatory_name: string;
+  entity_signatory_title: string;
 }

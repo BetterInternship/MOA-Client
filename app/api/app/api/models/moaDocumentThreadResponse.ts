@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface NewStandardMoaRequestResponse {
-  moaRequestId: string;
-  signedDocumentId: string;
-  verificationCode: string;
+export interface MoaDocumentThreadResponse {
+  success: boolean;
+  message: string;
+  document_url: string;
 }

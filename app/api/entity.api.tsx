@@ -6,6 +6,7 @@ import {
   useEntityMoaControllerRequestNewCustom,
   useEntityMoaControllerRequestNewStandard,
   useEntityMoaControllerRespond,
+  useEntityMoaControllerSignApprovedCustom,
 } from "./app/api/endpoints/entity-moa/entity-moa";
 import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
 import { useAuthPublicRegisterCompany } from "./app/api/endpoints/auth/auth";
@@ -35,12 +36,13 @@ export const useMoaRequests = () => {
   const { data, isFetching, isLoading } = useEntityMoaControllerGetMine({
     query: {
       queryKey: ["moa-requests"],
-      staleTime: 5 * 60 * 1000,
+      staleTime: 1000,
       // placeholderData: keepPreviousData,
     },
   });
   const createStandard = useEntityMoaControllerRequestNewStandard();
   const createCustom = useEntityMoaControllerRequestNewCustom();
+  const signCustom = useEntityMoaControllerSignApprovedCustom();
   const respond = useEntityMoaControllerRespond();
 
   return {
@@ -48,6 +50,7 @@ export const useMoaRequests = () => {
     isLoading: isFetching || isLoading,
     createStandard: createStandard.mutateAsync,
     createCustom: createCustom.mutateAsync,
+    signCustom: signCustom.mutateAsync,
     respond: respond.mutateAsync,
   };
 };

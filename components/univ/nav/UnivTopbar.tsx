@@ -69,7 +69,7 @@ export default function UnivTopbar() {
 
   const handleLogout = async () => {
     await auth.signOut();
-    router.push("/login");
+    router.push("/dashboard");
   };
 
   return (
