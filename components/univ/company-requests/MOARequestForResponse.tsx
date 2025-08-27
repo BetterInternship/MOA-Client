@@ -44,7 +44,9 @@ export default function MoaRequestResponseActions({
           <Button
             className=""
             disabled={loading}
-            onClick={() => onRespond(note, file ?? undefined).then(() => setNote(""))}
+            onClick={() =>
+              onRespond(note, file ?? undefined).then(() => (setNote(""), setFile(null)))
+            }
           >
             <SendHorizonal />
             Send as Clarification

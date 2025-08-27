@@ -29,10 +29,9 @@ interface EntityConversationProps {
  *
  * @component
  */
-export const EntitySchool = ({ req }: EntityConversationProps) => {
+export const EntitySchoolConversation = ({ req }: EntityConversationProps) => {
   const moaRequests = useMoaRequests();
   const [loading, setLoading] = useState(false);
-  const [revisedMoa, setRevisedMoa] = useState<File | null>(null);
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
 
@@ -64,6 +63,7 @@ export const EntitySchool = ({ req }: EntityConversationProps) => {
                     sender={message.source_type}
                     timestamp={timestampFormatted}
                     text={message.text ?? ""}
+                    document={message.moa_document}
                     attachments={(message.attachments as unknown as string[]) ?? []}
                   />
                 </li>
@@ -102,11 +102,13 @@ function ChatBubble({
   timestamp,
   text,
   attachments,
+  document,
 }: {
   sender: string;
   timestamp: string;
   text: string;
   attachments?: string[];
+  document?: string | null;
 }) {
   const isSchool = sender === "school";
   const hasAttachments = !!attachments?.length;
@@ -125,13 +127,16 @@ function ChatBubble({
       </div>
       <div
         className={cn(
-          isSchool ? "border-l-primary border border-l-2" : "border-r-supportive border border-r-2",
+          "flex",
+          isSchool
+            ? "border-l-primary justify-start border border-l-2 text-left"
+            : "border-r-supportive justify-end border border-r-2 text-right",
           "bg-white/80 transition",
           "focus-within:shadow-md hover:cursor-pointer hover:shadow-xs",
           "px-3 py-1"
         )}
       >
-        <div className="mb-1 flex items-start justify-between gap-3">
+        <div className="mb-1 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex justify-between gap-2">
               <div className="text-muted-foreground mb-1 flex items-center gap-2 text-xs">
@@ -160,24 +165,30 @@ function ChatBubble({
             {/* short header */}
             <div className="flex flex-col gap-2">
               <p className="text-foreground min-w-0 text-sm break-words">{text}</p>
-              <div className="flex flex-row gap-1">
-                <Button className="" scheme="secondary">
-                  <a href="" target="_blank">
-                    <div className="flex flex-row items-center gap-1">
-                      <Download />
-                      MOA Document
-                    </div>
-                  </a>
-                </Button>
-                <Button variant="outline" disabled={!hasAttachments}>
-                  <a href="#" target="_blank">
-                    <div className="flex flex-row items-center gap-1">
-                      <Download />
-                      {hasAttachments ? "Attachments" : "No Additional Attachments"}
-                    </div>
-                  </a>
-                </Button>
-              </div>
+              {(document || hasAttachments) && (
+                <div className="flex flex-row gap-1">
+                  {document && (
+                    <Button variant="outline" className="" scheme="secondary">
+                      <a href={document} target="_blank">
+                        <div className="flex flex-row items-center gap-1">
+                          <Download />
+                          MOA Version
+                        </div>
+                      </a>
+                    </Button>
+                  )}
+                  {hasAttachments && (
+                    <Button variant="outline">
+                      <a href="#" target="_blank">
+                        <div className="flex flex-row items-center gap-1">
+                          <Download />
+                          "Additional Attachments"
+                        </div>
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -216,4 +227,4 @@ function ChatBubble({
   );
 }
 
-export default EntitySchool;
+export default EntitySchoolConversation;

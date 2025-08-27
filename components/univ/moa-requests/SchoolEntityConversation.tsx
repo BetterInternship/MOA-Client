@@ -59,6 +59,7 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
                     sender={message.source_type}
                     timestamp={timestampFormatted}
                     text={message.text ?? ""}
+                    document={message.moa_document}
                     attachments={(message.attachments as unknown as string[]) ?? []}
                   />
                 </li>
@@ -103,11 +104,13 @@ function ChatBubble({
   sender,
   timestamp,
   text,
+  document,
   attachments,
 }: {
   sender: string;
   timestamp: string;
   text: string;
+  document?: string | null;
   attachments?: string[];
 }) {
   const isSchool = sender === "school";
@@ -128,8 +131,8 @@ function ChatBubble({
       <div
         className={cn(
           !isSchool
-            ? "border-l-primary border border-l-2"
-            : "border-r-supportive border border-r-2",
+            ? "border-l-primary justify-start border border-l-2 text-left"
+            : "border-r-supportive justify-end border border-r-2 text-right",
           "bg-white/80 transition",
           "focus-within:shadow-md hover:cursor-pointer hover:shadow-xs",
           "px-3 py-1"
@@ -164,24 +167,30 @@ function ChatBubble({
             {/* short header */}
             <div className="flex flex-col gap-2">
               <p className="text-foreground min-w-0 text-sm break-words">{text}</p>
-              <div className="flex flex-row gap-1">
-                <Button className="" scheme="secondary">
-                  <a href="" target="_blank">
-                    <div className="flex flex-row items-center gap-1">
-                      <Download />
-                      MOA Document
-                    </div>
-                  </a>
-                </Button>
-                <Button variant="outline" disabled={!hasAttachments}>
-                  <a href="#" target="_blank">
-                    <div className="flex flex-row items-center gap-1">
-                      <Download />
-                      {hasAttachments ? "Attachments" : "No Additional Attachments"}
-                    </div>
-                  </a>
-                </Button>
-              </div>
+              {(document || hasAttachments) && (
+                <div className="flex flex-row gap-1">
+                  {document && (
+                    <Button variant="outline" className="" scheme="secondary">
+                      <a href={document} target="_blank">
+                        <div className="flex flex-row items-center gap-1">
+                          <Download />
+                          MOA Version
+                        </div>
+                      </a>
+                    </Button>
+                  )}
+                  {hasAttachments && (
+                    <Button variant="outline">
+                      <a href="#" target="_blank">
+                        <div className="flex flex-row items-center gap-1">
+                          <Download />
+                          "Additional Attachments"
+                        </div>
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
