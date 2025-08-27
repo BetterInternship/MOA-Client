@@ -9,8 +9,9 @@ import {
 } from "./app/api/endpoints/entity-moa/entity-moa";
 import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
 import { useAuthPublicRegisterCompany } from "./app/api/endpoints/auth/auth";
-import { useMutation } from "@tanstack/react-query";
+import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import { preconfiguredAxiosFunction } from "@/app/api/preconfig.axios";
+import { useMemo } from "react";
 
 /**
  * Grabs a public list of lean entity DTOs.
