@@ -7,13 +7,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Paperclip, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Message, MoaRequest } from "@/types/db";
-import { useMoaRequests, useRequestThread } from "@/app/api/school.api";
+import { useMoaRequests, useRequestThread } from "@/app/api/entity.api";
 import { Badge } from "@/components/ui/badge";
 import { formatWhen } from "@/lib/format";
 import { Loader } from "@/components/ui/loader";
 import CustomCard from "@/components/shared/CustomCard";
 import { useState } from "react";
-import RequestResponse from "../company-requests/MOARequestForResponse";
+import MoaRequestResponseActions from "@/components/univ/company-requests/MOARequestForResponse";
 
 interface EntityConversationProps {
   req?: MoaRequest;
@@ -25,7 +25,7 @@ interface EntityConversationProps {
  *
  * @component
  */
-export const EntityConversation = ({ req }: EntityConversationProps) => {
+export const EntitySchool = ({ req }: EntityConversationProps) => {
   const moaRequests = useMoaRequests();
   const [loading, setLoading] = useState(false);
   const thread = useRequestThread(req?.thread_id);
@@ -35,7 +35,7 @@ export const EntityConversation = ({ req }: EntityConversationProps) => {
   if (!messages.length) {
     return (
       <CustomCard>
-        <li className="text-muted-foreground text-sm">No history yet.</li>;
+        <li className="text-muted-foreground text-sm">No history yet.</li>
       </CustomCard>
     );
   }
@@ -53,7 +53,7 @@ export const EntityConversation = ({ req }: EntityConversationProps) => {
               return (
                 <li
                   key={`${timestampFormatted}-${i}`}
-                  className={cn("flex", isSchool ? "justify-end" : "justify-start")}
+                  className={cn("flex", !isSchool ? "justify-end" : "justify-start")}
                 >
                   <ChatBubble
                     sender={message.source_type}
@@ -66,26 +66,17 @@ export const EntityConversation = ({ req }: EntityConversationProps) => {
             })}
         </ol>
       </div>
-      <RequestResponse
-        onApprove={async (message) => {
-          setLoading(true);
-          await moaRequests.approve({
-            id: req?.id,
-            data: { message },
-          });
-          moaRequests.refetch();
-          setLoading(false);
-        }}
+      <MoaRequestResponseActions
         onRespond={async (message) => {
           setLoading(true);
-          await moaRequests.respond({ id: req?.id, data: { message } });
+          await moaRequests.respond({
+            id: req?.id,
+            data: {
+              message,
+              proposed_moa: undefined,
+            },
+          });
           await thread.refetch();
-          setLoading(false);
-        }}
-        onDeny={async (message) => {
-          setLoading(true);
-          await moaRequests.deny({ id: req?.id, data: { message } });
-          await moaRequests.refetch();
           setLoading(false);
         }}
         loading={loading}
@@ -117,19 +108,17 @@ function ChatBubble({
     <Collapsible
       className={cn(
         "max-w-[min(42rem,85%)]",
-        isSchool ? "items-end" : "items-start",
+        !isSchool ? "items-end" : "items-start",
         "flex flex-col gap-1"
       )}
     >
       <div className="flex flex-row items-center gap-2">
-        <Badge type={!isSchool ? "primary" : "supportive"}>{isSchool ? "You" : "Entity"}</Badge>
+        <Badge type={isSchool ? "primary" : "supportive"}>{isSchool ? "School" : "You"}</Badge>
         <time className="text-left text-xs text-gray-400">{timestamp}</time>
       </div>
       <div
         className={cn(
-          !isSchool
-            ? "border-l-primary border border-l-2"
-            : "border-r-supportive border border-r-2",
+          isSchool ? "border-l-primary border border-l-2" : "border-r-supportive border border-r-2",
           "bg-white/80 transition",
           "focus-within:shadow-md hover:cursor-pointer hover:shadow-xs",
           "px-3 py-1"
@@ -220,4 +209,4 @@ function ChatBubble({
   );
 }
 
-export default EntityConversation;
+export default EntitySchool;

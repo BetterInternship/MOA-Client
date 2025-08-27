@@ -12,10 +12,9 @@ export interface CreateCompanyDto {
   display_name: string;
   legal_name: string;
   office_location: string;
-  website: string;
   industry: string;
-  description: string;
   contact: ContactDto;
   profile: ProfileDto;
+  password: string;
   type?: string;
 }

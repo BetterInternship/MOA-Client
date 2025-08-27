@@ -6,13 +6,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 type Props = {
-  onApprove: (note: string) => Promise<void>;
-  onDeny: (note: string) => Promise<void>;
+  onApprove?: (note: string) => Promise<void>;
+  onDeny?: (note: string) => Promise<void>;
   onRespond: (note: string) => Promise<void>;
   loading?: boolean;
 };
 
-export default function RequestResponse({ onApprove, onDeny, onRespond, loading }: Props) {
+export default function MoaRequestResponseActions({
+  onApprove,
+  onDeny,
+  onRespond,
+  loading,
+}: Props) {
   const [note, setNote] = useState("");
 
   return (
@@ -21,15 +26,17 @@ export default function RequestResponse({ onApprove, onDeny, onRespond, loading 
         <h2 className="text-lg font-bold">Respond</h2>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            scheme="destructive"
-            disabled={loading}
-            onClick={() => onDeny(note).then(() => setNote(""))}
-          >
-            <CircleX />
-            Send as Denial
-          </Button>
+          {!!onDeny && (
+            <Button
+              variant="outline"
+              scheme="destructive"
+              disabled={loading}
+              onClick={() => onDeny(note).then(() => setNote(""))}
+            >
+              <CircleX />
+              Send as Denial
+            </Button>
+          )}
           <Button
             className=""
             disabled={loading}
@@ -38,14 +45,16 @@ export default function RequestResponse({ onApprove, onDeny, onRespond, loading 
             <SendHorizonal />
             Send as Clarification
           </Button>
-          <Button
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-            disabled={loading}
-            onClick={() => onApprove(note).then(() => setNote(""))}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Send as Approval
-          </Button>
+          {!!onApprove && (
+            <Button
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              disabled={loading}
+              onClick={() => onApprove(note).then(() => setNote(""))}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Send as Approval
+            </Button>
+          )}
         </div>
       </div>
       <div className="space-y-3">
