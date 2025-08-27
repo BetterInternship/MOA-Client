@@ -9,6 +9,8 @@ import { Entity, MoaHistory } from "@/types/db";
 import { useState } from "react";
 
 interface MoaHistoryEntry {
+  timestamp: string;
+  text: string;
   effective_date: string;
   expiry_date: string;
   comments: string;
@@ -18,25 +20,29 @@ interface MoaHistoryEntry {
 export default function CompanyDetails({
   entity,
   moaHistory,
+  loadingHistory = false,
 }: {
   entity: Entity;
   moaHistory: MoaHistory;
+  loadingHistory?: boolean;
 }) {
   const [loading, setLoading] = useState<boolean>(false);
   if (!entity || !moaHistory) return <></>;
 
   // Grab the latest MOA file URL from history (history already sorted desc by timestamp)
   const history = (moaHistory.history as unknown as MoaHistoryEntry[]) ?? [];
+  const latest = history[0];
 
   return (
     <section className="h-full space-y-3 overflow-y-auto p-4">
       <MoaDetailsCard
         companyId={entity.id}
         companyName={entity.display_name ?? entity.legal_identifier}
-        status={"Approved"} // ! put proper moa status
-        validUntil={history[0].expiry_date} // ! put proper moa expiration
+        status={entity.moaStatus}
+        validUntil={latest?.expiry_date ?? ""} // was history[0].expiry_date
         loading={loading}
-        latestMoaUrl={history[0].documents}
+        latestMoaUrl={latest?.documents ?? ""} // was history[0].documents
+        validUntil={latest?.expiry_date ?? ""}
       />
 
       <CompanyInfoCard
@@ -51,7 +57,7 @@ export default function CompanyDetails({
 
       {/* <DocumentsCard documents={view.documents} /> */}
 
-      <CompanyHistory history={moaHistory.history as any} loading={loading} />
+      <CompanyHistory history={history as any} loading={loadingHistory} />
 
       <ActionsBar
         onBlacklist={() => {

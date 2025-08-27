@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import FilesDialog from "@/components/univ/dashboard/FilesDialog";
 
 interface HistoryEntry {
-  message: string;
+  text: string;
   effective_date: string;
   expiry_date: string;
   comments: string;
@@ -22,12 +22,13 @@ export default function CompanyHistory({
   showTitle?: boolean;
   loading?: boolean;
 }) {
+  console.log(history);
   if (loading) {
     return (
       <div className="rounded-[0.33em] border bg-white p-4">
         {showTitle && (
           <div className="pb-2">
-            <h2 className="text-lg font-semibold">Entity History</h2>
+            <h2 className="text-lg font-semibold">MOA History</h2>
           </div>
         )}
         <div className="space-y-2">
@@ -63,7 +64,7 @@ export default function CompanyHistory({
                   <div className="text-muted-foreground text-sm leading-none">
                     {h.effective_date}
                   </div>
-                  <p className="min-w-0 truncate text-sm leading-tight">{h?.message}</p>
+                  <p className="min-w-0 truncate text-sm leading-tight">{h?.text}</p>
                   {h.documents ? (
                     <FilesDialog
                       files={[h.documents ?? ""]}
@@ -72,9 +73,9 @@ export default function CompanyHistory({
                           variant="outline"
                           size="sm"
                           className="h-7 px-2 text-xs whitespace-nowrap"
-                          title={`View files (${h.documents?.length})`}
+                          title={`View files`}
                         >
-                          View files (1)
+                          View files
                         </Button>
                       }
                     />

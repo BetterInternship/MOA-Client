@@ -33,21 +33,30 @@ export default function CompaniesPage() {
   }, [filtered, selectedId]);
 
   // fetch fresh details for the selected row
-  const { entity: selectedEntity, history: selectedHistory } = useSchoolPartner(selectedId);
+  const {
+    entity: selectedEntity,
+    history: selectedHistory,
+    isLoadingHistory: isLoadingHistory,
+  } = useSchoolPartner(selectedId);
 
   return (
     <div className="min-h-[88vh]">
       {/* header */}
-      <div className="mb-6 flex items-start justify-between gap-3 space-y-1">
+      <div className="mb-6 flex items-center justify-between gap-3 space-y-1">
         <div className="flex items-center gap-3 space-y-1">
-          <div className="inline-flex items-center gap-3 rounded bg-blue-100 px-4 py-2 text-2xl font-semibold text-blue-800">
+          <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
+            <Building2 />
             Browse Partner Entities
           </div>
+          <p className="text-muted-foreground text-sm">
+            Browse partner entities and view MOA details.
+          </p>
         </div>
+
         <Link href="/companies/add">
           <Button>
             <Plus />
-            Register new entity
+            Add new entity
           </Button>
         </Link>
       </div>
