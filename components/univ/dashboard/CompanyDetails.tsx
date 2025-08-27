@@ -36,7 +36,7 @@ export default function CompanyDetails({
         status={"Approved"} // ! put proper moa status
         validUntil={history[0].expiry_date} // ! put proper moa expiration
         loading={loading}
-        latestMoaUrl={""} // ! put actual latest moa url
+        latestMoaUrl={history[0].documents}
       />
 
       <CompanyInfoCard

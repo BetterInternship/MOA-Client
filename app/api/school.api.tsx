@@ -29,7 +29,10 @@ export const useEntities = (opts?: { offset?: number; limit?: number }) => {
     },
     {
       query: {
-        staleTime: 60000,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        retry: 1,
       },
     }
   );
@@ -63,6 +66,11 @@ export const useMoaRequests = () => {
     deny: denyMoaRequest.mutateAsync,
   };
 };
+
+/**
+ *
+ */
+export const useThreads = () => {};
 
 /**
  * Returns a school's partner entities.
