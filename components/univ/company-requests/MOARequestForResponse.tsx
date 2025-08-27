@@ -16,7 +16,7 @@ export default function RequestResponse({ onApprove, onDeny, onRespond, loading 
   const [note, setNote] = useState("");
 
   return (
-    <section className="space-y-3 border-t-2 bg-white p-4">
+    <section className="space-y-3 border-t-2 bg-white p-4 px-8">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">Respond</h2>
 

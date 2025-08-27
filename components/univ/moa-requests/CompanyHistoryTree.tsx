@@ -11,13 +11,6 @@ import { useRequestThread } from "@/app/api/school.api";
 import { Badge } from "@/components/ui/badge";
 import { formatWhen } from "@/lib/format";
 
-function toMDY(d: Date) {
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
-}
-
 /**
  * Displays a history of the messages between the company and the uni for a given negotiated MOA.
  * Repeat: for a given negotiated MOA.

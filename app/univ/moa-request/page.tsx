@@ -56,24 +56,28 @@ export default function MoaRequestsPage() {
 
         {/* RIGHT: Details */}
         <ResizablePanel defaultSize={74} minSize={40}>
-          <div className="h-full space-y-6 overflow-y-auto p-4">
+          <div className="flex max-h-[100%] flex-col space-y-6 overflow-y-auto">
             {selected ? (
-              <div className="flex h-full flex-col justify-between">
-                <CompanyHistoryTree req={selected} />
+              <>
+                <div className="flex max-h-full flex-1 flex-col-reverse justify-between overflow-auto px-4 pt-8">
+                  <CompanyHistoryTree req={selected} />
+                </div>
                 <RequestResponse
-                  onApprove={() => {
-                    moaRequests.approve({ id: selectedId });
+                  onApprove={(message) => {
+                    moaRequests.approve({
+                      id: selectedId,
+                      data: { message },
+                    });
                   }}
-                  onRespond={() => {
-                    alert("lol");
-                    moaRequests.respond({ id: selectedId });
+                  onRespond={(message) => {
+                    moaRequests.respond({ id: selectedId, data: { message } });
                   }}
-                  onDeny={() => {
-                    moaRequests.deny({ id: selectedId });
+                  onDeny={(message) => {
+                    moaRequests.deny({ id: selectedId, data: { message } });
                   }}
                   loading={moaRequests.isLoading}
                 />
-              </div>
+              </>
             ) : (
               <div className="text-muted-foreground">No request selected.</div>
             )}
