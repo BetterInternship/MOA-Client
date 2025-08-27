@@ -104,15 +104,14 @@ export const useSchoolPartners = (opts?: { offset?: number; limit?: number }) =>
 };
 
 /**
- * Returns the information about a single partner.
- *
- * @param id
- * @hook
+ * Returns a partner + its MOA history (entire array).
+ * - history is mapped to the UI shape that CompanyHistory expects.
+ * - rawHistory gives you the original parsed objects if you need them elsewhere.
  */
 export const useSchoolPartner = (id?: string) => {
-  // Grab partner details
+  // Partner details
   const {
-    data: entity,
+    data: entityResp,
     isFetching: isFetchingEntity,
     isLoading: isLoadingEntity,
     error: entityError,
@@ -127,9 +126,9 @@ export const useSchoolPartner = (id?: string) => {
     },
   });
 
-  // Grab partner history
+  // Partner history
   const {
-    data: rawHistory,
+    data: histEnvelopeResp,
     isFetching: isFetchingHistory,
     isLoading: isLoadingHistory,
     error: historyError,
@@ -144,36 +143,84 @@ export const useSchoolPartner = (id?: string) => {
     },
   });
 
-  // Ensure that the JSON is parsed
-  const history = useMemo(() => {
-    const hMoa = rawHistory?.history as MoaHistory;
-    const hJson = hMoa?.history ?? "[{}]";
-    console.log(hJson);
-    return {
-      ...rawHistory,
-      history:
-        typeof hJson === "string"
-          ? JSON.parse(hJson.replaceAll('"', '\\"').replaceAll("'", '"'))
-          : hJson,
-    } as unknown as MoaHistory;
-  }, [rawHistory]);
+  type RawEntry = {
+    timestamp?: string;
+    text?: string | null;
+    outcome?: string | null;
+    document?: string | null;
+    document_effective_date?: string | null;
+    document_expiry_date?: string | null;
+    attachments?: string[] | null;
+  };
+
+  type UiEntry = {
+    message: string;
+    effective_date: string;
+    expiry_date: string;
+    comments: string;
+    documents: string;   // single URL
+    timestamp: string;
+  };
+
+  const { uiHistory, rawParsed } = useMemo(() => {
+    // histEnvelopeResp?.history is typically { id, school_id, entity_id, history: "[{'...'}]" }
+    const histEnvelope = histEnvelopeResp?.history as MoaHistory | undefined;
+    const histValue = (histEnvelope?.history as any) ?? "[]";
+
+    let raw: RawEntry[] = [];
+    try {
+      if (Array.isArray(histValue)) {
+        raw = histValue as RawEntry[];
+      } else if (typeof histValue === "string") {
+        // normalize single-quoted JSON stored in Sheets/DB to valid JSON
+        const strippedOuter = histValue.trim().replace(/^"+|"+$/g, "");
+        const normalized = strippedOuter.replace(/'/g, '"');
+        raw = JSON.parse(normalized) as RawEntry[];
+      }
+    } catch (e) {
+      console.warn("Failed to parse MOA history:", e, histValue);
+      raw = [];
+    }
+
+    // Sort newest first using timestamp or effective_date as fallback
+    raw.sort((a, b) => {
+      const ad = Date.parse(a.timestamp ?? a.document_effective_date ?? "") || 0;
+      const bd = Date.parse(b.timestamp ?? b.document_effective_date ?? "") || 0;
+      return bd - ad;
+    });
+
+    const ui: UiEntry[] = raw.map((e) => ({
+      text: (e?.text ?? "").trim() || (e?.outcome ? `Decision: ${String(e.outcome)}` : ""),
+      effective_date: e?.document_effective_date ?? "",
+      expiry_date: e?.document_expiry_date ?? "",
+      comments: "",
+      documents: e?.document ?? "",
+      timestamp: e?.timestamp ?? e?.document_effective_date ?? e?.document_expiry_date ?? "",
+    }));
+
+    return { uiHistory: ui, rawParsed: raw };
+  }, [histEnvelopeResp]);
 
   return {
-    entity: (entity?.entity as unknown as Entity) ?? null,
-    history: history as MoaHistory,
+    entity: (entityResp?.entity as unknown as Entity) ?? null,
+    history: { ...(histEnvelopeResp as any), history: uiHistory } as MoaHistory,
+    rawHistory: rawParsed as RawEntry[],
+
     isLoadingEntity: isFetchingEntity || isLoadingEntity,
     isLoadingHistory: isFetchingHistory || isLoadingHistory,
     error: entityError || historyError,
-    refetchEntity: refetchEntity,
-    refetchHistory: refetchHistory,
+    refetchEntity,
+    refetchHistory,
   };
 };
+
 
 /**
  * Returns the history about a single partner.
  *
  * @param entityId
  * @hook
+ * ! to remove 
  */
 export const useSchoolMoaHistory = (entityId?: string) => {
   const q = useSchoolMoaControllerGetOneHistory(entityId, {
