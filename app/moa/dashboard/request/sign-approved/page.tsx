@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { useMoaRequests } from "@/app/api/entity.api";
+import { useEntityMoaControllerGetOneThreadLatestDocument } from "@/app/api";
 
 const FormSchema = z.object({
   signatoryName: z.string().trim().min(2, "Please enter the full name."),
@@ -38,6 +39,12 @@ export default function StandardMoaRequestPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const moaRequests = useMoaRequests();
+  const moa = (moaRequests.requests ?? []).sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  )[0];
+  const latestDocument = useEntityMoaControllerGetOneThreadLatestDocument(moa?.thread_id, {
+    query: { enabled: !!moa?.thread_id },
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -50,17 +57,21 @@ export default function StandardMoaRequestPage() {
   });
 
   async function onSubmit(values: FormValues) {
+    // No request or no document
+    if (!moa.id || !latestDocument) return;
+
     try {
       setSubmitting(true);
-      const r = await moaRequests.createStandard({
+      const r = await moaRequests.signCustom({
         data: {
           school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
           entity_signatory_name: form.getValues().signatoryName,
           entity_signatory_title: form.getValues().signatoryTitle,
+          request_id: moa.id,
         },
       });
 
-      if (r.moaRequestId) router.push("/dashboard");
+      if (r.requestId) router.push("/dashboard");
     } catch (err) {
       console.error(err);
     } finally {
@@ -71,24 +82,13 @@ export default function StandardMoaRequestPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Standard MOA Request</h1>
-        <p className="text-muted-foreground text-sm">
-          Please provide the signatory information and digital signature authorization.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Sign Approved MOA</h1>
       </div>
 
       {/* Top utility row */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          <span>Processing time:</span>
-          <Badge className="text-sm font-medium">1 minute</Badge>
-        </div>
-
         <Button asChild variant="outline">
-          <Link
-            href="https://storage.googleapis.com/better-internship-public-bucket/dlsu-standard-moa-template.pdf"
-            target="_blank"
-          >
+          <Link href={latestDocument.data?.document_url ?? ""} target="_blank">
             <Download className="mr-2 h-4 w-4" />
             Download Unsigned Approved MOA
           </Link>
@@ -149,11 +149,11 @@ export default function StandardMoaRequestPage() {
                       <div className="space-y-2 leading-relaxed">
                         <FormLabel className="italic">
                           I hereby declare that I am authorized to sign on behalf of the company and
-                          accept the terms of the Standard MOA template. I understand that this
+                          accept the terms of the approved MOA template. I understand that this
                           agreement will be legally binding once executed by both parties.
                         </FormLabel>
                         <FormDescription className="text-sm text-red-500">
-                          Required to proceed with the Standard MOA request.
+                          Required to proceed with the MOA request.
                         </FormDescription>
                       </div>
                     </div>
@@ -167,7 +167,7 @@ export default function StandardMoaRequestPage() {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={submitting}>
-                  {submitting ? "Submitting..." : "Submit Standard MOA Request"}
+                  {submitting ? "Submitting..." : "Sign Approved MOA"}
                 </Button>
               </div>
             </form>
