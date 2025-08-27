@@ -7,7 +7,7 @@
  */
 
 export interface NewStandardMoaRequestResponse {
-  requestId: string;
+  moaRequestId: string;
   signedDocumentId: string;
   verificationCode: string;
 }
