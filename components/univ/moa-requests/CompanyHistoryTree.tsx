@@ -7,15 +7,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Paperclip, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Message, MoaRequest } from "@/types/db";
-import { useRequestThread } from "@/app/api/school.api";
+import { useMoaRequests, useRequestThread } from "@/app/api/school.api";
 import { Badge } from "@/components/ui/badge";
 import { formatWhen } from "@/lib/format";
+import { Loader } from "@/components/ui/loader";
+import CustomCard from "@/components/shared/CustomCard";
+import { useState } from "react";
+import RequestResponse from "../company-requests/MOARequestForResponse";
 
-function toMDY(d: Date) {
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
+interface EntityConversationProps {
+  req?: MoaRequest;
 }
 
 /**
@@ -24,39 +25,74 @@ function toMDY(d: Date) {
  *
  * @component
  */
-export default function CompanyHistoryTree({ req }: { req?: MoaRequest }) {
+export const EntityConversation = ({ req }: EntityConversationProps) => {
+  const moaRequests = useMoaRequests();
+  const [loading, setLoading] = useState(false);
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
 
+  if (thread.isLoading) return <Loader />;
+  if (!messages.length) {
+    return (
+      <CustomCard>
+        <li className="text-muted-foreground text-sm">No history yet.</li>;
+      </CustomCard>
+    );
+  }
+
   return (
     <>
-      <ol className="space-y-4">
-        {messages.map((message, i) => {
-          const isSchool = message.source_type === "school";
-          const timestampFormatted = formatWhen(message.timestamp);
+      <div className="p flex max-h-full flex-1 flex-col-reverse justify-between overflow-auto px-4">
+        <ol className="mt-4 space-y-4">
+          {messages
+            .toSorted((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
+            .map((message, i) => {
+              const isSchool = message.source_type === "school";
+              const timestampFormatted = formatWhen(message.timestamp);
 
-          return (
-            <li
-              key={`${timestampFormatted}-${i}`}
-              className={cn("flex", isSchool ? "justify-end" : "justify-start")}
-            >
-              <ChatBubble
-                sender={message.source_type}
-                timestamp={timestampFormatted}
-                text={message.text ?? ""}
-                attachments={(message.attachments as unknown as string[]) ?? []}
-              />
-            </li>
-          );
-        })}
-
-        {messages.length === 0 && (
-          <li className="text-muted-foreground text-sm">No history yet.</li>
-        )}
-      </ol>
+              return (
+                <li
+                  key={`${timestampFormatted}-${i}`}
+                  className={cn("flex", isSchool ? "justify-end" : "justify-start")}
+                >
+                  <ChatBubble
+                    sender={message.source_type}
+                    timestamp={timestampFormatted}
+                    text={message.text ?? ""}
+                    attachments={(message.attachments as unknown as string[]) ?? []}
+                  />
+                </li>
+              );
+            })}
+        </ol>
+      </div>
+      <RequestResponse
+        onApprove={async (message) => {
+          setLoading(true);
+          await moaRequests.approve({
+            id: req?.id,
+            data: { message },
+          });
+          moaRequests.refetch();
+          setLoading(false);
+        }}
+        onRespond={async (message) => {
+          setLoading(true);
+          await moaRequests.respond({ id: req?.id, data: { message } });
+          await thread.refetch();
+          setLoading(false);
+        }}
+        onDeny={async (message) => {
+          setLoading(true);
+          await moaRequests.deny({ id: req?.id, data: { message } });
+          await moaRequests.refetch();
+          setLoading(false);
+        }}
+        loading={loading}
+      />
     </>
   );
-}
+};
 
 /**
  * Component for a single message.
@@ -183,3 +219,5 @@ function ChatBubble({
     </Collapsible>
   );
 }
+
+export default EntityConversation;

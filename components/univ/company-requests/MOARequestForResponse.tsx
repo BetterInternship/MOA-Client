@@ -6,9 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 type Props = {
-  onApprove: (note: string) => Promise<void> | void;
-  onDeny: (note: string) => Promise<void> | void;
-  onRespond: (note: string) => Promise<void> | void;
+  onApprove: (note: string) => Promise<void>;
+  onDeny: (note: string) => Promise<void>;
+  onRespond: (note: string) => Promise<void>;
   loading?: boolean;
 };
 
@@ -16,7 +16,7 @@ export default function RequestResponse({ onApprove, onDeny, onRespond, loading 
   const [note, setNote] = useState("");
 
   return (
-    <section className="space-y-3 border-t-2 bg-white p-4">
+    <section className="space-y-3 border-t-2 bg-white p-4 px-8">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">Respond</h2>
 
@@ -25,19 +25,23 @@ export default function RequestResponse({ onApprove, onDeny, onRespond, loading 
             variant="outline"
             scheme="destructive"
             disabled={loading}
-            onClick={() => onDeny(note)}
+            onClick={() => onDeny(note).then(() => setNote(""))}
           >
             <CircleX />
             Send as Denial
           </Button>
-          <Button className="" disabled={loading} onClick={() => onRespond(note)}>
+          <Button
+            className=""
+            disabled={loading}
+            onClick={() => onRespond(note).then(() => setNote(""))}
+          >
             <SendHorizonal />
             Send as Clarification
           </Button>
           <Button
             className="gap-2 bg-emerald-600 hover:bg-emerald-700"
             disabled={loading}
-            onClick={() => onApprove(note)}
+            onClick={() => onApprove(note).then(() => setNote(""))}
           >
             <CheckCircle2 className="h-4 w-4" />
             Send as Approval
@@ -47,6 +51,7 @@ export default function RequestResponse({ onApprove, onDeny, onRespond, loading 
       <div className="space-y-3">
         <Textarea
           rows={3}
+          disabled={loading}
           placeholder="Optional note for the decision (will be included in the notification)."
           value={note}
           onChange={(e) => setNote(e.target.value)}
