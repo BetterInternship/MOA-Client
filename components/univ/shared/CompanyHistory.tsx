@@ -8,7 +8,6 @@ interface HistoryEntry {
   text: string;
   effective_date: string;
   expiry_date: string;
-  comments: string;
   documents: string;
   timestamp: string;
 }

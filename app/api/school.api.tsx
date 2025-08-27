@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Entity, MoaHistory, MoaRequest } from "@/types/db";
+import { Entity, Message, MoaHistory, MoaRequest } from "@/types/db";
 import { preconfiguredAxios } from "@/app/api/preconfig.axios";
 import {
   useSchoolEntitiesControllerApproveRequest,
@@ -12,6 +12,8 @@ import {
   useSchoolMoaControllerDeny,
   useSchoolMoaControllerGetMine,
   useSchoolMoaControllerGetOneHistory,
+  useSchoolMoaControllerGetOneThread,
+  useSchoolMoaControllerRespond,
 } from "./app/api/endpoints/school-moa/school-moa";
 import { useMemo } from "react";
 
@@ -58,19 +60,50 @@ export const useMoaRequests = () => {
   const { data, isLoading, isFetching } = useSchoolMoaControllerGetMine();
   const approveMoaRequest = useSchoolMoaControllerApprove();
   const denyMoaRequest = useSchoolMoaControllerDeny();
+  const respondMoaRequest = useSchoolMoaControllerRespond();
 
   return {
     requests: (data?.requests as unknown as MoaRequest[]) ?? [],
     isLoading: isLoading || isFetching,
     approve: approveMoaRequest.mutateAsync,
     deny: denyMoaRequest.mutateAsync,
+    respond: respondMoaRequest.mutateAsync,
   };
 };
 
 /**
+ * Gets all the messages associated with a thread for a moa request.
  *
+ * @hook
  */
-export const useThreads = () => {};
+export const useRequestThread = (id?: string | null) => {
+  const {
+    data: rawMessages,
+    isFetching,
+    isLoading,
+    error,
+    refetch,
+  } = useSchoolMoaControllerGetOneThread(id, {
+    query: {
+      enabled: !!id,
+    },
+  });
+  const messages = useMemo(() => rawMessages?.messages as unknown as Message[], [rawMessages]);
+
+  return {
+    messages:
+      messages?.map((rawMessage) => {
+        const rawAtts = rawMessage.attachments;
+        return {
+          ...rawMessage,
+          attachments: (typeof rawAtts === "string" ? JSON.parse(rawAtts) : rawAtts) ?? [],
+        };
+      }) ?? [],
+    isLoading: isFetching || isLoading,
+    refetch,
+    error,
+  };
+};
 
 /**
  * Returns a school's partner entities.

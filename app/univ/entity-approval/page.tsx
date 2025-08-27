@@ -7,12 +7,13 @@ import RequestsList from "@/components/univ/company-requests/RequestsList";
 import CompanyDetails from "@/components/univ/company-requests/CompanyDetails";
 import DocumentsCard from "@/components/univ/dashboard/DocumentsCard";
 import RequestMeta from "@/components/univ/company-requests/RequestMeta";
-import RequestForResponse from "@/components/univ/company-requests/RequestForResponse";
-import FinalDecision from "@/components/univ/company-requests/FinalDecision";
+import RequestForResponse from "@/components/univ/company-requests/EntityRequestForResponse";
+import RequestResponse from "@/components/univ/company-requests/MOARequestForResponse";
 import { ClipboardCheck } from "lucide-react";
 
 import { useCompanyRequests, useEntityRequestActions } from "@/hooks/useCompanyRequests";
 import type { CompanyRequest } from "@/types/company-request";
+import { Divider } from "@/components/ui/divider";
 
 const norm = (s?: string | null) =>
   String(s ?? "")
@@ -68,6 +69,10 @@ export default function CompanyVerificationPage() {
   async function onApprove(_note: string) {
     if (!selectedId) return;
     await approve({ id: selectedId });
+    await reqsQ.refetch();
+  }
+  async function onRespond(_note: string) {
+    if (!selectedId) return;
     await reqsQ.refetch();
   }
   async function onDeny(_note: string) {
@@ -154,14 +159,19 @@ export default function CompanyVerificationPage() {
               </div>
             </div>
           ) : selected ? (
-            <div className="h-full space-y-6 overflow-y-auto p-4">
+            <div className="h-full space-y-6 overflow-y-auto">
               <RequestMeta req={selected} />
               <CompanyDetails req={selected} />
               <DocumentsCard documents={documents} />
               {tab === "pending" && (
                 <>
                   <RequestForResponse onSend={sendRequestForResponse} loading={busy} />
-                  <FinalDecision onApprove={onApprove} onDeny={onDeny} loading={busy} />
+                  <RequestResponse
+                    onApprove={onApprove}
+                    onRespond={onRespond}
+                    onDeny={onDeny}
+                    loading={busy}
+                  />
                 </>
               )}
             </div>

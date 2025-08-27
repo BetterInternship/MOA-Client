@@ -1,33 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, CircleX, SendHorizonal } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 type Props = {
   onApprove: (note: string) => Promise<void> | void;
   onDeny: (note: string) => Promise<void> | void;
+  onRespond: (note: string) => Promise<void> | void;
   loading?: boolean;
 };
 
-export default function FinalDecision({ onApprove, onDeny, loading }: Props) {
+export default function RequestResponse({ onApprove, onDeny, onRespond, loading }: Props) {
   const [note, setNote] = useState("");
 
   return (
-    <section className="rounded-lg border bg-white p-4 space-y-3">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Final Decision</h2>
+    <section className="space-y-3 border-t-2 bg-white p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">Respond</h2>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button
             variant="outline"
-            className="gap-2 border-rose-300 text-rose-700 hover:bg-rose-50"
+            scheme="destructive"
             disabled={loading}
             onClick={() => onDeny(note)}
           >
-            <XCircle className="h-4 w-4" />
-            Deny
+            <CircleX />
+            Send as Denial
+          </Button>
+          <Button className="" disabled={loading} onClick={() => onRespond(note)}>
+            <SendHorizonal />
+            Send as Clarification
           </Button>
           <Button
             className="gap-2 bg-emerald-600 hover:bg-emerald-700"
@@ -35,7 +40,7 @@ export default function FinalDecision({ onApprove, onDeny, loading }: Props) {
             onClick={() => onApprove(note)}
           >
             <CheckCircle2 className="h-4 w-4" />
-            Approve
+            Send as Approval
           </Button>
         </div>
       </div>
