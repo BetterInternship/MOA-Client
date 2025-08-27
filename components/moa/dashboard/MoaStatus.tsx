@@ -76,8 +76,8 @@ export default function MoaStatus({ requests, loading }: Props) {
             <div className="flex flex-col items-end gap-2">
               <StatusBadge status={moa.outcome ?? ""} />
               {moa.outcome === "waiting-for-entity" || moa.outcome === "sign-approved" ? (
-                <Button size="xs" onClick={() => router.push("/dashboard/status")}>
-                  View Request
+                <Button scheme="secondary" onClick={() => router.push("/dashboard/review")}>
+                  Review Request
                   <SidebarOpen />
                 </Button>
               ) : (

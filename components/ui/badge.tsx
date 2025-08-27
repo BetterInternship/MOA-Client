@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const badge_variants = cva(
   [
-    "border-2",
+    "border",
     "border-opacity-70",
     "cursor-default",
     "font-semibold",

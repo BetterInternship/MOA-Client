@@ -8,7 +8,7 @@ import MoaRequestList from "@/components/univ/moa-requests/CompanyList";
 import { FileSignature } from "lucide-react";
 import { useMoaRequests } from "@/app/api/school.api";
 import CustomCard from "@/components/shared/CustomCard";
-import EntityConversation from "@/components/univ/moa-requests/CompanyHistoryTree";
+import SchoolEntityConversation from "@/components/univ/moa-requests/SchoolEntityConversation";
 
 export default function MoaRequestsPage() {
   const [selectedId, setSelectedId] = useState<string>("");
@@ -33,10 +33,6 @@ export default function MoaRequestsPage() {
           <FileSignature />
           <h1 className="text-2xl font-semibold">MOA Approvals</h1>
         </div>
-
-        <p className="text-muted-foreground text-sm">
-          Review MOA requests, view history, request clarifications, and finalize decisions.
-        </p>
       </div>
 
       {/* Resizable layout */}
@@ -58,9 +54,9 @@ export default function MoaRequestsPage() {
 
         {/* RIGHT: Details */}
         <ResizablePanel defaultSize={74} minSize={40}>
-          <div className="flex max-h-[100%] flex-col space-y-6 overflow-y-auto">
+          <div className="flex h-[100%] flex-col space-y-6 overflow-y-auto">
             {selected ? (
-              <EntityConversation req={selected} />
+              <SchoolEntityConversation req={selected} />
             ) : (
               <CustomCard className="m-3 p-3 px-4">
                 <div className="text-muted-foreground">No request selected.</div>
