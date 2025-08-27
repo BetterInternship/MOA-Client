@@ -369,12 +369,16 @@ export function useSchoolCompanyRequest(entityId?: string) {
   });
 }
 
-export const useEntityRequestActions = () => {
+export function useEntityRequestActions() {
   const approve = useSchoolEntitiesControllerApproveRequest();
   const deny = useSchoolEntitiesControllerDenyRequest();
 
-  return { approve, deny, isPending: approve.isPending || deny.isPending };
-};
+  return {
+    approve: ({ id }: { id: string }) => approve.mutateAsync({ id }),
+    deny: ({ id }: { id: string }) => deny.mutateAsync({ id }),
+    isPending: approve.isPending || deny.isPending,
+  };
+}
 
 /* ---------------- Schools: Active MOAs (approved links) ---------------- */
 
