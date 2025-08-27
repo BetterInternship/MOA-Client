@@ -7,11 +7,17 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Paperclip, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Message, MoaRequest } from "@/types/db";
-import { useRequestThread } from "@/app/api/school.api";
+import { useMoaRequests, useRequestThread } from "@/app/api/school.api";
 import { Badge } from "@/components/ui/badge";
 import { formatWhen } from "@/lib/format";
 import { Loader } from "@/components/ui/loader";
 import CustomCard from "@/components/shared/CustomCard";
+import { useState } from "react";
+import RequestResponse from "../company-requests/MOARequestForResponse";
+
+interface EntityConversationProps {
+  req?: MoaRequest;
+}
 
 /**
  * Displays a history of the messages between the company and the uni for a given negotiated MOA.
@@ -19,7 +25,9 @@ import CustomCard from "@/components/shared/CustomCard";
  *
  * @component
  */
-export default function CompanyHistoryTree({ req }: { req?: MoaRequest }) {
+export const EntityConversation = ({ req }: EntityConversationProps) => {
+  const moaRequests = useMoaRequests();
+  const [loading, setLoading] = useState(false);
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
 
@@ -33,28 +41,58 @@ export default function CompanyHistoryTree({ req }: { req?: MoaRequest }) {
   }
 
   return (
-    <ol className="mt-4 space-y-4">
-      {messages.map((message, i) => {
-        const isSchool = message.source_type === "school";
-        const timestampFormatted = formatWhen(message.timestamp);
+    <>
+      <div className="p flex max-h-full flex-1 flex-col-reverse justify-between overflow-auto px-4">
+        <ol className="mt-4 space-y-4">
+          {messages
+            .toSorted((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
+            .map((message, i) => {
+              const isSchool = message.source_type === "school";
+              const timestampFormatted = formatWhen(message.timestamp);
 
-        return (
-          <li
-            key={`${timestampFormatted}-${i}`}
-            className={cn("flex", isSchool ? "justify-end" : "justify-start")}
-          >
-            <ChatBubble
-              sender={message.source_type}
-              timestamp={timestampFormatted}
-              text={message.text ?? ""}
-              attachments={(message.attachments as unknown as string[]) ?? []}
-            />
-          </li>
-        );
-      })}
-    </ol>
+              return (
+                <li
+                  key={`${timestampFormatted}-${i}`}
+                  className={cn("flex", isSchool ? "justify-end" : "justify-start")}
+                >
+                  <ChatBubble
+                    sender={message.source_type}
+                    timestamp={timestampFormatted}
+                    text={message.text ?? ""}
+                    attachments={(message.attachments as unknown as string[]) ?? []}
+                  />
+                </li>
+              );
+            })}
+        </ol>
+      </div>
+      <RequestResponse
+        onApprove={async (message) => {
+          setLoading(true);
+          await moaRequests.approve({
+            id: req?.id,
+            data: { message },
+          });
+          moaRequests.refetch();
+          setLoading(false);
+        }}
+        onRespond={async (message) => {
+          setLoading(true);
+          await moaRequests.respond({ id: req?.id, data: { message } });
+          await thread.refetch();
+          setLoading(false);
+        }}
+        onDeny={async (message) => {
+          setLoading(true);
+          await moaRequests.deny({ id: req?.id, data: { message } });
+          await moaRequests.refetch();
+          setLoading(false);
+        }}
+        loading={loading}
+      />
+    </>
   );
-}
+};
 
 /**
  * Component for a single message.
@@ -181,3 +219,5 @@ function ChatBubble({
     </Collapsible>
   );
 }
+
+export default EntityConversation;

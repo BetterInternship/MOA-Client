@@ -1,15 +1,14 @@
 // app/univ/moa-requests/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 import MoaRequestList from "@/components/univ/moa-requests/CompanyList";
-import CompanyHistoryTree from "@/components/univ/moa-requests/CompanyHistoryTree";
-import RequestResponse from "@/components/univ/company-requests/MOARequestForResponse";
 import { FileSignature } from "lucide-react";
 import { useMoaRequests } from "@/app/api/school.api";
 import CustomCard from "@/components/shared/CustomCard";
+import EntityConversation from "@/components/univ/moa-requests/CompanyHistoryTree";
 
 export default function MoaRequestsPage() {
   const [selectedId, setSelectedId] = useState<string>("");
@@ -61,26 +60,7 @@ export default function MoaRequestsPage() {
         <ResizablePanel defaultSize={74} minSize={40}>
           <div className="flex max-h-[100%] flex-col space-y-6 overflow-y-auto">
             {selected ? (
-              <>
-                <div className="p flex max-h-full flex-1 flex-col-reverse justify-between overflow-auto px-4">
-                  <CompanyHistoryTree req={selected} />
-                </div>
-                <RequestResponse
-                  onApprove={(message) => {
-                    moaRequests.approve({
-                      id: selectedId,
-                      data: { message },
-                    });
-                  }}
-                  onRespond={(message) => {
-                    moaRequests.respond({ id: selectedId, data: { message } });
-                  }}
-                  onDeny={(message) => {
-                    moaRequests.deny({ id: selectedId, data: { message } });
-                  }}
-                  loading={moaRequests.isLoading}
-                />
-              </>
+              <EntityConversation req={selected} />
             ) : (
               <CustomCard className="m-3 p-3 px-4">
                 <div className="text-muted-foreground">No request selected.</div>
