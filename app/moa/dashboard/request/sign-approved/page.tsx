@@ -51,7 +51,6 @@ export default function StandardMoaRequestPage() {
 
   async function onSubmit(values: FormValues) {
     try {
-      console.log(form.getValues());
       setSubmitting(true);
       const r = await moaRequests.createStandard({
         data: {
@@ -91,7 +90,7 @@ export default function StandardMoaRequestPage() {
             target="_blank"
           >
             <Download className="mr-2 h-4 w-4" />
-            Download Standard MOA Template
+            Download Unsigned Approved MOA
           </Link>
         </Button>
       </div>

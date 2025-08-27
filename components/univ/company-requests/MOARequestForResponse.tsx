@@ -56,7 +56,7 @@ export default function MoaRequestResponseActions({
           </Button>
           {!!onApprove && (
             <Button
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              scheme="supportive"
               disabled={loading}
               onClick={() => onApprove(note).then(() => setNote(""))}
             >

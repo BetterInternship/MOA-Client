@@ -59,6 +59,7 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
                     sender={message.source_type}
                     timestamp={timestampFormatted}
                     text={message.text ?? ""}
+                    action={message.action}
                     document={message.moa_document}
                     attachments={(message.attachments as unknown as string[]) ?? []}
                   />
@@ -74,7 +75,8 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
             id: req?.id,
             data: { message },
           });
-          moaRequests.refetch();
+          await moaRequests.refetch();
+          await thread.refetch();
           setLoading(false);
         }}
         onRespond={async (message) => {
@@ -87,6 +89,7 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
           setLoading(true);
           await moaRequests.deny({ id: req?.id, data: { message } });
           await moaRequests.refetch();
+          await thread.refetch();
           setLoading(false);
         }}
         loading={loading}
@@ -104,6 +107,7 @@ function ChatBubble({
   sender,
   timestamp,
   text,
+  action,
   document,
   attachments,
 }: {
@@ -111,6 +115,7 @@ function ChatBubble({
   timestamp: string;
   text: string;
   document?: string | null;
+  action?: string | null;
   attachments?: string[];
 }) {
   const isSchool = sender === "school";
@@ -170,11 +175,15 @@ function ChatBubble({
               {(document || hasAttachments) && (
                 <div className="flex flex-row gap-1">
                   {document && (
-                    <Button variant="outline" className="" scheme="secondary">
+                    <Button
+                      variant="outline"
+                      className=""
+                      scheme={action === "sign-approve" ? "supportive" : "secondary"}
+                    >
                       <a href={document} target="_blank">
                         <div className="flex flex-row items-center gap-1">
                           <Download />
-                          MOA Version
+                          {action === "sign-approve" ? <>Approved MOA</> : <>Revised MOA</>}
                         </div>
                       </a>
                     </Button>

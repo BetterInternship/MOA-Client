@@ -63,6 +63,7 @@ export const EntitySchoolConversation = ({ req }: EntityConversationProps) => {
                     sender={message.source_type}
                     timestamp={timestampFormatted}
                     text={message.text ?? ""}
+                    action={message.action}
                     document={message.moa_document}
                     attachments={(message.attachments as unknown as string[]) ?? []}
                   />
@@ -101,12 +102,14 @@ function ChatBubble({
   sender,
   timestamp,
   text,
+  action,
   attachments,
   document,
 }: {
   sender: string;
   timestamp: string;
   text: string;
+  action?: string | null;
   attachments?: string[];
   document?: string | null;
 }) {
@@ -168,11 +171,15 @@ function ChatBubble({
               {(document || hasAttachments) && (
                 <div className="flex flex-row gap-1">
                   {document && (
-                    <Button variant="outline" className="" scheme="secondary">
+                    <Button
+                      variant="outline"
+                      className=""
+                      scheme={action === "sign-approve" ? "supportive" : "secondary"}
+                    >
                       <a href={document} target="_blank">
                         <div className="flex flex-row items-center gap-1">
                           <Download />
-                          MOA Version
+                          {action === "sign-approve" ? <>Approved MOA</> : <>Revised MOA</>}
                         </div>
                       </a>
                     </Button>
