@@ -28,7 +28,8 @@ export function CompanyRegisterForm() {
     try {
       const payload = buildCompanyRegisterPayload(formData);
       await register(payload);
-      router.replace("/dashboard");
+      // ✅ Do NOT auto-login; send them to the login page
+      router.replace("/login?registered=1");
     } catch (err: any) {
       setErrorMsg(err?.message || "Registration failed. Please try again.");
       console.error(err);
@@ -61,7 +62,7 @@ export function CompanyRegisterForm() {
 
       <Progress value={(step / 2) * 100} className="h-2" />
 
-      {/* Step 1: keep mounted; toggle visibility */}
+      {/* Step 1 */}
       <div className={step === 1 ? "grid gap-4" : "hidden"}>
         <div className="grid gap-2">
           <Label htmlFor="companyName">Company Name</Label>
@@ -110,7 +111,7 @@ export function CompanyRegisterForm() {
         </div>
       </div>
 
-      {/* Step 2: keep mounted; toggle visibility */}
+      {/* Step 2 */}
       <div className={step === 2 ? "grid gap-4" : "hidden"}>
         <div className="text-muted-foreground grid gap-2 text-sm">
           <h2 className="text-foreground text-base font-medium">Required Documents</h2>
