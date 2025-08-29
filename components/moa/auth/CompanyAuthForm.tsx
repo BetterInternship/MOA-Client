@@ -50,7 +50,7 @@ export function CompanyAuthForm() {
       <div className="grid gap-1">
         <Label className="text-muted-foreground text-xs font-normal">Select Company</Label>
         <Autocomplete
-          placeholder="Legal Company Name"
+          placeholder="Enter your legal company name"
           options={options}
           setter={(value) => setCompany(value ?? null)}
         />
@@ -58,7 +58,7 @@ export function CompanyAuthForm() {
         <Label className="text-muted-foreground text-xs font-normal">Enter password</Label>
         <Input
           type="password"
-          placeholder="password"
+          placeholder="Enter your password"
           onChange={(e) => setPassword(e.currentTarget.value)}
         ></Input>
       </div>
