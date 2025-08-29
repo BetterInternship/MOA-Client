@@ -33,7 +33,7 @@ export function UnivAuthForm() {
   }
 
   return (
-    <form className="grid gap-5" onSubmit={onSubmit}>
+    <form className="mt-4 grid gap-5" onSubmit={onSubmit}>
       <div className="grid gap-1">
         <Label className="text-muted-foreground text-xs font-normal">University email</Label>
         <Input id="email" name="email" placeholder="student@dlsu.edu.ph" type="email" required />
@@ -44,7 +44,11 @@ export function UnivAuthForm() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <Button type="submit" disabled={auth.isSigningIn}>
+      <Button
+        type="submit"
+        disabled={auth.isSigningIn}
+        className="w-auto justify-self-end sm:w-full md:w-auto"
+      >
         {auth.isSigningIn ? "Signing in..." : "Continue"}
       </Button>
     </form>

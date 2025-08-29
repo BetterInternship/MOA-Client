@@ -11,7 +11,6 @@ export default function UnivLoginPage() {
           backgroundImage: "url('/backgrounds/university-login.jpg')",
         }}
       >
-        {/* Overlay for better text readability */}
         <div className="bg-primary/40 absolute inset-0" />
 
         <div className="relative z-20 flex items-center gap-2 text-lg font-semibold text-white">
@@ -29,7 +28,7 @@ export default function UnivLoginPage() {
 
       {/* Right panel - Login Form (keeps everything centered) */}
       <div className="flex h-full items-center justify-center p-6 lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-start gap-1 sm:w-[400px]">
+        <div className="mx-auto flex w-full flex-col justify-start gap-1 sm:w-[500px]">
           <div className="flex flex-col gap-4 text-left">
             <h1 className="text-3xl font-bold tracking-tight">University Login</h1>
             <p className="text-muted-foreground text-sm">
@@ -41,7 +40,7 @@ export default function UnivLoginPage() {
           <UnivAuthForm />
           <br />
 
-          <p className="text-muted-foreground mt-8 text-left text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-8 text-left text-sm leading-relaxed">
             By continuing, you agree to the{" "}
             <Link href="/terms" className="hover:text-primary underline underline-offset-4">
               Terms of Service
