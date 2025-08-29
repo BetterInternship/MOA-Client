@@ -58,7 +58,7 @@ export function CompanyAuthForm() {
         <Label className="text-muted-foreground text-xs font-normal">Password</Label>
         <Input
           type="password"
-          placeholder="Enter your password"
+          placeholder="••••••••"
           onChange={(e) => setPassword(e.currentTarget.value)}
         ></Input>
       </div>

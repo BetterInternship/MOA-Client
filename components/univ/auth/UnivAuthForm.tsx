@@ -39,7 +39,7 @@ export function UnivAuthForm() {
         <Input id="email" name="email" placeholder="student@dlsu.edu.ph" type="email" required />
         <div className="h-1"></div>
         <Label className="text-muted-foreground text-xs font-normal">Password</Label>
-        <Input id="password" name="password" type="password" placeholder="password" required />
+        <Input id="password" name="password" type="password" placeholder="••••••••" required />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
