@@ -1,4 +1,3 @@
-// components/moa/dashboard/MoaStatus.tsx
 "use client";
 import { useState } from "react";
 import StatusBadge from "./StatusBadge";
@@ -77,7 +76,6 @@ export default function MoaStatus({ requests, loading }: Props) {
       ) : (
         <CustomCard className={`border ${tone}`}>
           <div className="flex flex-row items-start justify-between">
-            
             {/* Left side */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               <div className="text-muted-foreground flex flex-col gap-1">
@@ -89,7 +87,7 @@ export default function MoaStatus({ requests, loading }: Props) {
                       type="button"
                       onClick={copyVerification}
                       title="Click to copy"
-                      className="text-foreground focus-visible:ring-primary/40 inline-flex items-center gap-2 rounded-md border bg-white/70 px-2 py-1 font-mono text-sm hover:bg-white focus-visible:ring-2 focus-visible:outline-none hover:cursor-pointer"
+                      className="text-foreground focus-visible:ring-primary/40 inline-flex items-center gap-2 rounded-md border bg-white/70 px-2 py-1 font-mono text-sm hover:cursor-pointer hover:bg-white focus-visible:ring-2 focus-visible:outline-none"
                     >
                       <span>{verificationCode || "loading..."}</span>
                       {copied ? (
@@ -111,7 +109,7 @@ export default function MoaStatus({ requests, loading }: Props) {
             </div>
 
             {/* Right side */}
-            <div className="flex flex-col items-end ">
+            <div className="flex flex-col items-end">
               {moa.outcome === "approved" && (
                 <Button asChild>
                   <a
@@ -119,6 +117,7 @@ export default function MoaStatus({ requests, loading }: Props) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
+                    <Download className="mr-1 h-4 w-4" />
                     Download MOA
                   </a>
                 </Button>

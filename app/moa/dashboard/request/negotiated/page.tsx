@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import CustomCard from "@/components/shared/CustomCard";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -74,22 +75,31 @@ export default function NegotiatedMoaRequestPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight">Negotiate a Custom MOA</h1>
+        <p className="text-muted-foreground text-sm">
+          Propose specific changes to the standard agreement and explain your rationale.
+        </p>
       </div>
 
-      <Card className="bg-white">
-        <CardHeader>
-          <div className="flex flex-row flex-wrap items-start gap-1">
-            <Badge type="warning" className="font-medium">
-              Important Note
-            </Badge>
-            <div className="mt-2 leading-5 text-gray-500">
-              Custom MOA requests require detailed review by our legal team. It may take up to{" "}
-              <span className="font-bold">4 weeks</span> to approve your request.
-            </div>
-          </div>
-        </CardHeader>
-        <Divider height={3} />
-        <CardContent>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+          <span>Processing time:</span>
+          <Badge className="text-sm font-medium">4 weeks</Badge>
+        </div>
+      </div>
+
+      <CustomCard
+        variant="warning"
+        heading="Important note"
+        className="flex flex-row flex-wrap items-start gap-1"
+      >
+        <div className="text-sm text-justify">
+          Custom MOA requests require detailed review by our legal team. It may take up to{" "}
+          <span className="font-bold">4 weeks</span> to approve your request.
+        </div>
+      </CustomCard>
+
+      <CustomCard className="bg-white">
+        <div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* File upload using your component */}
@@ -123,9 +133,9 @@ export default function NegotiatedMoaRequestPage() {
                 name="reason"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
+                    <Label className="text-muted-foreground text-xs font-normal">
                       Reason for Custom Terms<span className="text-red-500"> *</span>
-                    </FormLabel>
+                    </Label>
                     <FormControl>
                       <Textarea
                         placeholder="Explain why your proposal departs from the standard terms. Include business context and specific clauses to be changed."
@@ -148,8 +158,8 @@ export default function NegotiatedMoaRequestPage() {
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </CustomCard>
     </div>
   );
 }
