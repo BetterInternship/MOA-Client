@@ -28,7 +28,6 @@ export function CompanyRegisterForm() {
     try {
       const payload = buildCompanyRegisterPayload(formData);
       await register(payload);
-      // ✅ Do NOT auto-login; send them to the login page
       router.replace("/login?registered=1");
     } catch (err: any) {
       setErrorMsg(err?.message || "Registration failed. Please try again.");
@@ -46,11 +45,11 @@ export function CompanyRegisterForm() {
       className="mx-auto flex w-full flex-col justify-center gap-6 sm:w-[500px]"
       noValidate
     >
-      <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Company Registration</h1>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">Company Registration</h1>
         <p className="text-muted-foreground text-sm">
-          Start or manage your Memorandum of Agreement with <br />
-          <span className="text-foreground font-medium">De La Salle University</span>
+          Start or manage your Memorandum of Agreement with {""}
+          <span className="text-muted-foreground font-semibold">De La Salle University</span>
         </p>
       </div>
 
@@ -64,43 +63,67 @@ export function CompanyRegisterForm() {
 
       {/* Step 1 */}
       <div className={step === 1 ? "grid gap-4" : "hidden"}>
-        <div className="grid gap-2">
-          <Label htmlFor="companyName">Company Name</Label>
+        <div className="grid gap-1">
+          <Label className="text-muted-foreground text-xs font-normal" htmlFor="companyName">
+            Company Name 
+            <span className="text-destructive">*</span>
+          </Label>
           <Input id="companyName" name="companyName" required />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="legalIdentifier">Legal Identifier</Label>
+        <div className="grid gap-1">
+          <Label className="text-muted-foreground text-xs font-normal" htmlFor="legalIdentifier">
+            Legal Identifier 
+            <span className="text-destructive">*</span>
+          </Label>
           <Input id="legalIdentifier" name="legalIdentifier" required />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="address">Company Address</Label>
+        <div className="grid gap-1">
+          <Label className="text-muted-foreground text-xs font-normal" htmlFor="address">
+            Company Address 
+            <span className="text-destructive">*</span>
+          </Label>
           <Input id="address" name="address" required />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="industry">Industry</Label>
+        <div className="grid gap-1">
+          <Label className="text-muted-foreground text-xs font-normal" htmlFor="industry">
+            Industry 
+            <span className="text-destructive">*</span>
+          </Label>
           <Input id="industry" name="industry" required />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="contactName">Contact Person</Label>
+        <div className="grid gap-1">
+          <Label className="text-muted-foreground text-xs font-normal" htmlFor="contactName">
+            Contact Person 
+            <span className="text-destructive">*</span>
+          </Label>
           <Input id="contactName" name="contactName" required />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="contactEmail">Contact Person Email</Label>
+        <div className="grid gap-1">
+          <Label className="text-muted-foreground text-xs font-normal" htmlFor="contactEmail">
+            Contact Person Email 
+            <span className="text-destructive">*</span>
+          </Label>
           <Input id="contactEmail" name="contactEmail" type="email" required />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="contactPhone">Contact Person Phone</Label>
+        <div className="grid gap-1">
+          <Label className="text-muted-foreground text-xs font-normal" htmlFor="contactPhone">
+            Contact Person Phone 
+            <span className="text-destructive">*</span>
+          </Label>
           <Input id="contactPhone" name="contactPhone" type="tel" required />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="password">Account Password (optional)</Label>
+        <div className="grid gap-1">
+          <Label className="text-muted-foreground text-xs font-normal" htmlFor="password">
+            Account Password 
+            <span className="text-destructive">*</span>
+          </Label>
           <Input id="password" name="password" type="password" minLength={8} />
         </div>
 
@@ -113,8 +136,8 @@ export function CompanyRegisterForm() {
 
       {/* Step 2 */}
       <div className={step === 2 ? "grid gap-4" : "hidden"}>
-        <div className="text-muted-foreground grid gap-2 text-sm">
-          <h2 className="text-foreground text-base font-medium">Required Documents</h2>
+        <div className="text-muted-foreground grid gap-2 text-sm mb-3">
+          <h2 className="text-foreground text-base font-semibold">Required Documents</h2>
           <p>
             Please upload clear and legible copies of the following documents in PDF, JPG, or PNG
             format.

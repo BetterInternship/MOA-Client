@@ -49,8 +49,8 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
     }
 
     return (
-      <div className="grid gap-2">
-        <Label htmlFor={id}>
+      <div className="grid gap-1">
+        <Label htmlFor={id} className="text-muted-foreground text-xs font-normal">
           {label}
           {required && <span className="text-red-500"> *</span>}
         </Label>
