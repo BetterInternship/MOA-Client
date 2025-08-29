@@ -66,11 +66,11 @@ export function VerificationDetailsCard({ signedDocument }: { signedDocument: Si
             label="Signatories"
             value={<PeopleList list={signedDocument.signatories} />}
           />
-          <MetaRow
+          {/* <MetaRow
             icon={<Stamp className="h-4 w-4" />}
             label="Notarized By"
             value={<PeopleList list={[{ name: "Atty. Liza Mendoza", title: "Notary Public" }]} />}
-          />
+          /> */}
         </div>
 
         {signedDocument.inputs_hash && (
