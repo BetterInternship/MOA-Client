@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import StatusBadge from "./StatusBadge";
+import StatusBadge from "../../shared/StatusBadge";
 import type { MoaStatus } from "@/types/moa";
 import { MoaRequest } from "@/types/db";
 import { formatWhen } from "@/lib/format";

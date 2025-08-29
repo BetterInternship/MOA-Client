@@ -1,12 +1,10 @@
-// components/moa/dashboard/StatusBadge.tsx
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils"; // assuming you have cn utility
-import type { MoaStatus } from "@/types/moa";
+import { cn } from "@/lib/utils";
 
 type Props = {
-  status: MoaStatus | string;
+  status: string;
   className?: string;
 };
 
