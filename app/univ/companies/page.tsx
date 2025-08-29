@@ -16,7 +16,10 @@ export default function CompaniesPage() {
 
   // fetch list (stable)
   const { partners, isLoading } = useSchoolPartners({ limit: 400 });
-  const entities = (partners as Entity[]) ?? [];
+  const entities =
+    (partners.toSorted(
+      (a, b) => a.display_name?.localeCompare(b.display_name ?? "") ?? 0
+    ) as Entity[]) ?? [];
 
   // client-side filter (no setState)
   const filtered = useMemo(() => {
