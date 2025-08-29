@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import RequestsList from "@/components/univ/company-requests/RequestsList";
-import CompanyDetails from "@/components/univ/company-requests/CompanyDetails";
+import RequestsList from "@/components/univ/entity-requests/RequestsList";
+import EntityInfoCard from "@/components/shared/EntityInfoCard";
 import DocumentsCard from "@/components/univ/dashboard/DocumentsCard";
-import RequestMeta from "@/components/univ/company-requests/RequestMeta";
-import EntityRequestForResponse from "@/components/univ/company-requests/EntityRequestForResponse";
-import FinalDecision from "@/components/univ/company-requests/FinalDecision";
+import RequestMeta from "@/components/univ/entity-requests/RequestMeta";
+import EntityRequestForResponse from "@/components/univ/entity-requests/EntityRequestForResponse";
+import FinalDecision from "@/components/univ/entity-requests/FinalDecision";
 import { ClipboardCheck } from "lucide-react";
 
 import { useCompanyRequests, useEntityRequestActions } from "@/hooks/useCompanyRequests";
@@ -70,11 +70,13 @@ export default function CompanyVerificationPage() {
     await approve({ id: selectedId });
     await reqsQ.refetch();
   }
+
   async function onDeny(_note: string) {
     if (!selectedId) return;
     await deny({ id: selectedId });
     await reqsQ.refetch();
   }
+
   async function sendRequestForResponse(_msg: string) {
     return;
   }
@@ -141,7 +143,6 @@ export default function CompanyVerificationPage() {
         {/* Right details */}
         <ResizablePanel defaultSize={74} minSize={40}>
           {isLoading ? (
-            // 👇 same skeleton vibe as Companies page
             <div className="space-y-4 p-6">
               <div className="flex items-center justify-between">
                 <div className="bg-muted h-6 w-1/3 animate-pulse rounded" />
@@ -156,7 +157,7 @@ export default function CompanyVerificationPage() {
           ) : selected ? (
             <div className="h-full space-y-6 overflow-y-auto p-4">
               <RequestMeta req={selected} />
-              <CompanyDetails req={selected} />
+              {/* <EntityInfoCard req={selected} /> */}
               <DocumentsCard documents={documents} />
               {tab === "pending" && (
                 <>

@@ -13,7 +13,7 @@ import { formatWhen } from "@/lib/format";
 import { Loader } from "@/components/ui/loader";
 import CustomCard from "@/components/shared/CustomCard";
 import { useState } from "react";
-import MoaRequestResponseActions from "@/components/univ/company-requests/MOARequestForResponse";
+import MoaRequestResponseActions from "@/components/univ/entity-requests/MOARequestForResponse";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";

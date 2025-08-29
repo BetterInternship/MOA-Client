@@ -2,6 +2,7 @@
 "use client";
 
 import HistoryLog from "@/components/shared/HistoryLog";
+import EntityInfoCard from "@/components/shared/EntityInfoCard";
 import MoaDetailsCard from "./MoaDetailsCard";
 import CompanyInfoCard from "./CompanyInfoCard";
 import ActionsBar from "./ActionsBar";

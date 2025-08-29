@@ -128,7 +128,7 @@ export function buildCompanyRegisterPayload(form: FormData): PublicRegisterPaylo
 
   return {
     display_name: display,
-    legal_name: legal, // ✅ exact key the backend expects
+    legal_name: legal,
     office_location: office,
     industry,
     contact: { name: contactName, email: contactEmail, phone: contactPhone },

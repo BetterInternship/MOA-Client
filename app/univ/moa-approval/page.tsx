@@ -4,11 +4,11 @@
 import { useMemo, useState } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-import MoaRequestList from "@/components/univ/moa-requests/CompanyList";
+import MoaRequestList from "@/components/univ/moa-approval/CompanyList";
 import { FileSignature } from "lucide-react";
 import { useMoaRequests } from "@/app/api/school.api";
 import CustomCard from "@/components/shared/CustomCard";
-import SchoolEntityConversation from "@/components/univ/moa-requests/SchoolEntityConversation";
+import SchoolEntityConversation from "@/components/univ/moa-approval/SchoolEntityConversation";
 
 export default function MoaRequestsPage() {
   const [selectedId, setSelectedId] = useState<string>("");

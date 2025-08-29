@@ -13,7 +13,7 @@ import { formatWhen } from "@/lib/format";
 import { Loader } from "@/components/ui/loader";
 import CustomCard from "@/components/shared/CustomCard";
 import { useState } from "react";
-import MoaRequestResponseActions from "../company-requests/MOARequestForResponse";
+import MoaRequestResponseActions from "../entity-requests/MOARequestForResponse";
 
 interface EntityConversationProps {
   req?: MoaRequest;

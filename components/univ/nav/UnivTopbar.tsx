@@ -25,9 +25,9 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/companies", label: "Browse Entities", match: ["/companies"] },
+  { href: "/entities", label: "Browse Entities", match: ["/entities"] },
   { href: "/entity-approval", label: "Entity Approval", match: ["/entity-approval"] },
-  { href: "/moa-request", label: "MOA Approval", match: ["/moa", "/moa-request"] },
+  { href: "/moa-approval", label: "MOA Approval", match: ["/moa", "/moa-approval"] },
 ];
 
 function useIsActive(pathname: string, patterns: string[]) {
