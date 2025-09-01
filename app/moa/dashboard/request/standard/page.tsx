@@ -86,7 +86,7 @@ export default function StandardMoaRequestPage() {
           <Badge className="text-sm font-medium">1 minute</Badge>
         </div>
 
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" scheme="secondary">
           <Link
             href="https://storage.googleapis.com/better-internship-public-bucket/dlsu-standard-moa-template.pdf"
             target="_blank"
