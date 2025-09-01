@@ -66,7 +66,7 @@ export default function MoaRequestResponseActions({
           )}
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="max-w-[600px] min-w-[600px] space-y-3">
         <Textarea
           rows={3}
           disabled={loading}
