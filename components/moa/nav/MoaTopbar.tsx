@@ -38,22 +38,14 @@ export default function MoaTopbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2">
-              <Avatar className="h-7 w-7">
-                <AvatarImage src="" alt="User" />
-                <AvatarFallback>{auth.entity?.legal_identifier?.charAt(0) ?? ""}</AvatarFallback>
-              </Avatar>
-              <span className="hidden sm:inline">
-                {auth.entity?.legal_identifier?.charAt(0) ?? "User"}
-              </span>
+              <span className="hidden sm:inline">{auth.entity?.legal_identifier ?? "User"}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/profile")}>Profile</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/settings")}>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+            <span className="p-2 text-xs tracking-tight">
+              {auth.entity?.contact_email ?? "no email provided"}
+            </span>
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:cursor-pointer">
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
