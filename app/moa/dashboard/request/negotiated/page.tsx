@@ -105,6 +105,14 @@ export default function NegotiatedMoaRequestPage() {
         <div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div>
+                Ensure that the submitted MOA has <b>all fields filled out</b>,{" "}
+                <span className="italic">
+                  except for the signature of the university representative and the contract dates
+                </span>
+                . The university will likely ask for a resubmission if any of these are missing.
+              </div>
+
               {/* File upload using your component */}
               <FormField
                 control={form.control}
