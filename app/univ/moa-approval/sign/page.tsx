@@ -255,10 +255,10 @@ function Sidebar({
                   field: highlight.comment.text,
                   value: "test value for " + highlight.comment.text,
                   type: "text", // ! change
-                  x: ~~x,
-                  y: ~~(y + h),
-                  w: ~~w,
-                  h: ~~h,
+                  x: ~~x + 2,
+                  y: ~~y + 2,
+                  w: ~~w + 4,
+                  h: ~~h + 4,
                   page: highlight.position.pageNumber,
                 });
               });
