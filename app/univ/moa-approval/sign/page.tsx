@@ -1,6 +1,6 @@
 "use client";
 
-import { useRequestThread } from "@/app/api/entity.api";
+import { useMoaRequests, useRequestThread } from "@/app/api/entity.api";
 import { useCallback, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { validate } from "uuid";
@@ -22,18 +22,19 @@ import { Button } from "@/components/ui/button";
 import { Autocomplete } from "@/components/ui/autocomplete";
 
 const signatoryOptions = [
-  { id: "signatory_name", name: "Signatory name" },
-  { id: "signatory_signature", name: "Signatory signature" },
-  { id: "signatory_title", name: "Signatory title" },
+  { id: "school_signatory_name", name: "Signatory name" },
+  { id: "school_signatory_signature", name: "Signatory signature" },
+  { id: "school_signatory_title", name: "Signatory title" },
 ];
 
 const parseIdFromHash = () => document.location.hash.slice("#highlight-".length);
 
 export function MoaSigningPage() {
   const params = useSearchParams();
-  const requestId = params.get("id");
+  const requestId = params.get("request-id");
+  const threadId = params.get("thread-id");
   const router = useRouter();
-  const requestThread = useRequestThread(requestId);
+  const requestThread = useRequestThread(threadId);
   const [highlights, setHighlights] = useState<IHighlight[]>([]);
 
   const resetHighlights = () => {
@@ -79,12 +80,13 @@ export function MoaSigningPage() {
   }, []);
 
   if (requestThread.isLoadingLatestDocument) return <Loader />;
-  if (!requestId || !validate(requestId)) return router.push("/dashboard");
+  if (!threadId || !validate(threadId) || !requestId || !validate(requestId))
+    return router.push("/dashboard");
 
   return (
     <div className="relative h-[720px] w-1/2 p-5">
       <div className="absolute flex h-full w-full flex-row gap-2">
-        <Sidebar highlights={highlights} reset={resetHighlights} />
+        <Sidebar requestId={requestId} highlights={highlights} reset={resetHighlights} />
         <PdfLoader url={requestThread.latestDocument?.document_url ?? ""} beforeLoad={<Loader />}>
           {(pdfDocument) => (
             <PdfHighlighter
@@ -188,7 +190,19 @@ function AreaDropdown({
   );
 }
 
-function Sidebar({ highlights, reset }: { highlights: Array<IHighlight>; reset: () => void }) {
+function Sidebar({
+  requestId,
+  highlights,
+  reset,
+}: {
+  requestId: string;
+  highlights: Array<IHighlight>;
+  reset: () => void;
+}) {
+  const moaRequests = useMoaRequests();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
   return (
     <div className="sidebar" style={{ width: "25vw" }}>
       <div className="description" style={{ padding: "1rem" }}>
@@ -221,9 +235,52 @@ function Sidebar({ highlights, reset }: { highlights: Array<IHighlight>; reset: 
         ))}
       </ul>
       {highlights.length > 0 ? (
-        <div style={{ padding: "1rem" }}>
-          <Button type="button" onClick={reset}>
-            Clear selections
+        <div className="flex flex-row gap-2 p-[1rem]">
+          <Button scheme="destructive" onClick={reset}>
+            Clear Selections
+          </Button>
+          <Button
+            scheme="primary"
+            disabled={loading}
+            onClick={() => {
+              const formSchema: any[] = [];
+              highlights.forEach((highlight) => {
+                setLoading(true);
+                const x = highlight.position.boundingRect.x1;
+                const y = highlight.position.boundingRect.y1;
+                const w = highlight.position.boundingRect.x2 - x;
+                const h = highlight.position.boundingRect.y2 - y;
+
+                formSchema.push({
+                  field: highlight.comment.text,
+                  value: "test value for " + highlight.comment.text,
+                  type: "text", // ! change
+                  x: ~~x,
+                  y: ~~(y + h),
+                  w: ~~w,
+                  h: ~~h,
+                  page: highlight.position.pageNumber,
+                });
+              });
+              moaRequests
+                .signCustom({
+                  data: {
+                    school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
+                    request_id: requestId,
+                    additional_form_schema: formSchema,
+                  },
+                })
+                .then(
+                  () => (
+                    alert("Successfully signed MOA."),
+                    router.push("/moa-approval"),
+                    setLoading(false)
+                  )
+                )
+                .catch(() => (alert("Something went wrong."), setLoading(false)));
+            }}
+          >
+            {loading ? "Submitting..." : "Sign and Submit"}
           </Button>
         </div>
       ) : null}

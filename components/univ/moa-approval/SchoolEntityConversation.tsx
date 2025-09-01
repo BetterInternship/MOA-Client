@@ -71,7 +71,7 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
       <MoaRequestResponseActions
         onApprove={async () => {
           window.open(
-            `/moa-approval/sign?id=${encodeURIComponent(req?.thread_id ?? "")}`,
+            `/moa-approval/sign?request-id=${encodeURIComponent(req?.id ?? "")}&thread-id=${encodeURIComponent(req?.thread_id ?? "")}`,
             "_blank",
             "noopener,noreferrer"
           );
