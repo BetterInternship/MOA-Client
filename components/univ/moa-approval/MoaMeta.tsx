@@ -1,4 +1,4 @@
-import StatusChip from "@/components/univ/dashboard/StatusChip";
+import StatusChip from "@/components/univ/browse-entities/StatusChip";
 import { MoaRequest } from "@/types/db";
 
 export default function RequestMeta({ req }: { req: MoaRequest }) {

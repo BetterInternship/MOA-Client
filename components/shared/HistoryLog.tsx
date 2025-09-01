@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import FilesDialog from "@/components/univ/dashboard/FilesDialog";
+import FilesDialog from "@/components/univ/browse-entities/FilesDialog";
 
 interface HistoryEntry {
   text: string;

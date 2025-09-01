@@ -5,7 +5,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RequestsList from "@/components/univ/entity-requests/RequestsList";
 import EntityInfoCard from "@/components/shared/EntityInfoCard";
-import DocumentsCard from "@/components/univ/dashboard/DocumentsCard";
+import DocumentsCard from "@/components/univ/browse-entities/DocumentsCard";
 import RequestMeta from "@/components/univ/entity-requests/RequestMeta";
 import EntityRequestForResponse from "@/components/univ/entity-requests/EntityRequestForResponse";
 import FinalDecision from "@/components/univ/entity-requests/FinalDecision";

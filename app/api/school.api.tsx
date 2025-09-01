@@ -6,6 +6,7 @@ import {
   useSchoolEntitiesControllerDenyRequest,
   useSchoolEntitiesControllerGetMyPartners,
   useSchoolEntitiesControllerGetAPartner,
+  useSchoolEntitiesControllerBlacklistEntity,
 } from "./app/api/endpoints/school-entities/school-entities";
 import {
   useSchoolMoaControllerApprove,
@@ -377,6 +378,15 @@ export function useEntityRequestActions() {
     approve: ({ id }: { id: string }) => approve.mutateAsync({ id }),
     deny: ({ id }: { id: string }) => deny.mutateAsync({ id }),
     isPending: approve.isPending || deny.isPending,
+  };
+}
+
+export function useBlacklistEntity() {
+  const blacklist = useSchoolEntitiesControllerBlacklistEntity();
+
+  return {
+    blacklist: (entityId: string) => blacklist.mutateAsync({ entityId }),
+    isPending: blacklist.isPending,
   };
 }
 
