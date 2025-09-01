@@ -1,39 +1,43 @@
-// components/shared/EntityInfoCard.tsx
 "use client";
 
-import Detail from "@/components/shared/Row";
-import type { Entity } from "@/types/db";
+import Detail from "./Row";
+import { Separator } from "@/components/ui/separator";
 
 type Props = {
-  entity: Entity;
-  title?: string;
-  children?: React.ReactNode; // drop extra <Detail> rows here later
+  id: string;
+  name: string;
+  legalIdentifier: string;
+  contactPerson?: string | null;
+  type?: string;
+  address?: string | null;
+  phone?: string | null;
 };
 
-export default function EntityInfoCard({ entity, title = "Company Details", children }: Props) {
-  const v = (x?: string | null) => (x && String(x).trim() ? String(x) : "--");
-  const name = entity.display_name ?? entity.legal_identifier;
-  const status = entity.is_deactivated ? "Deactivated" : "Active";
-
+export default function EntityInfoCard({
+  id,
+  name,
+  contactPerson,
+  phone,
+  legalIdentifier,
+  type,
+  address,
+}: Props) {
   return (
-    <section className="rounded-lg border bg-white p-4">
-      <div className="pb-2">
-        <h2 className="text-lg font-semibold">{title}</h2>
+    <div className="rounded-[0.33em] border bg-white p-4">
+      <h2 className="mb-3 text-lg font-semibold">Entity Details</h2>
+      <div className="space-y-3">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Detail label="Entity Name" value={name} />
+          <Detail label="Legal Identifier" value={legalIdentifier} />
+          <Detail label="Address" value={address ?? ""} />
+          <Detail label="Nature of Business" value={type} className="capitalize" />
+        </div>
+        <Separator />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Detail label="Contact Person" value={contactPerson ?? ""} />
+          <Detail label="Phone" value={phone ?? ""} />
+        </div>
       </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Detail label="Company Name" value={v(name)} />
-        <Detail label="Legal Identifier" value={v(entity.legal_identifier)} />
-        <Detail label="Type" value={v(entity.type)} />
-        <Detail label="Address" value={v(entity.address)} />
-        <Detail label="Contact Person" value={v(entity.contact_name)} />
-        <Detail label="Contact Email" value={v(entity.contact_email)} />
-        <Detail label="Contact Phone" value={v(entity.contact_phone)} />
-        <Detail label="Industry" value={v(entity.industry)} />
-
-        {/* extra rows go here */}
-        {children}
-      </div>
-    </section>
+    </div>
   );
 }

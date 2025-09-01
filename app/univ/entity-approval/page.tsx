@@ -5,7 +5,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RequestsList from "@/components/univ/entity-requests/RequestsList";
 import EntityInfoCard from "@/components/shared/EntityInfoCard";
-import DocumentsCard from "@/components/univ/dashboard/DocumentsCard";
+import DocumentsCard from "@/components/univ/browse-entities/DocumentsCard";
 import RequestMeta from "@/components/univ/entity-requests/RequestMeta";
 import EntityRequestForResponse from "@/components/univ/entity-requests/EntityRequestForResponse";
 import FinalDecision from "@/components/univ/entity-requests/FinalDecision";
@@ -81,6 +81,7 @@ export default function CompanyVerificationPage() {
     return;
   }
 
+  console.log(selected);
   // documents
   type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
   const documents = useMemo(() => {
@@ -157,7 +158,17 @@ export default function CompanyVerificationPage() {
           ) : selected ? (
             <div className="h-full space-y-6 overflow-y-auto p-4">
               <RequestMeta req={selected} />
-              {/* <EntityInfoCard req={selected} /> */}
+
+              <EntityInfoCard
+                id={selected.entity.id}
+                name={selected.entity.display_name}
+                contactPerson={selected.entity.contact_name}
+                phone={selected.entity.contact_phone}
+                address={selected.entity.address}
+                type={selected.entity.type}
+                legalIdentifier={selected.entity.legal_identifier}
+              />
+
               <DocumentsCard documents={documents} />
               {tab === "pending" && (
                 <>

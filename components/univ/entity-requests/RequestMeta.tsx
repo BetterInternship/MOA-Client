@@ -1,4 +1,4 @@
-import StatusChip from "@/components/univ/dashboard/StatusChip";
+import StatusChip from "@/components/univ/browse-entities/StatusChip";
 import { CompanyRequest } from "@/types/company-request";
 
 export default function RequestMeta({ req }: { req: CompanyRequest }) {

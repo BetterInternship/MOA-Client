@@ -1,7 +1,7 @@
 // components/univ/moa-requests/CompanyHistoryTree.tsx
 "use client";
 
-import FilesDialog from "@/components/univ/dashboard/FilesDialog";
+import FilesDialog from "@/components/univ/browse-entities/FilesDialog";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Paperclip, ChevronDown, Download } from "lucide-react";

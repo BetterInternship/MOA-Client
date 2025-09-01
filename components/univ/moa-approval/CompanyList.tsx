@@ -23,7 +23,7 @@ function getCompanyName(r: MoaRequest, entities: Entity[]): string {
 }
 
 export default function MoaRequestList({ pendingRequests, selectedId, onSelect }: Props) {
-  const entities = useEntities({ limit: 1000 });
+  const entities = useEntities({ limit: 370 }); // ! (TEMP FIX for now) lets fix soon
 
   return (
     <aside className="h-full">
