@@ -47,22 +47,26 @@ export default function NegotiatedMoaRequestPage() {
 
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
+    const proposedMoa = values.proposed_moa;
+
+    if (!proposedMoa) {
+      setSubmitting(false);
+      return alert("Please select a file first.");
+    }
+
     try {
       await customRequest.mutateAsync({
         data: {
           school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
           reason: values.reason,
-          proposed_moa: new Blob(
-            [(await values.proposed_moa?.arrayBuffer()) ?? new Uint8Array([])],
-            {
-              type: "application/pdf",
-            }
-          ),
+          proposed_moa: new Blob([await proposedMoa.arrayBuffer()], {
+            type: "application/pdf",
+          }),
         },
         // data: formData as any,
       });
 
-      router.push("/dashboard/status");
+      router.push("/dashboard");
     } catch (e) {
       console.error(e);
     } finally {
@@ -91,7 +95,7 @@ export default function NegotiatedMoaRequestPage() {
         heading="Important note"
         className="flex flex-row flex-wrap items-start gap-1"
       >
-        <div className="text-sm text-justify">
+        <div className="text-justify text-sm">
           Custom MOA requests require detailed review by our legal team. It may take up to{" "}
           <span className="font-bold">4 weeks</span> to approve your request.
         </div>
@@ -112,16 +116,16 @@ export default function NegotiatedMoaRequestPage() {
                         label="Proposed MOA Document"
                         name="proposed_moa"
                         accept="application/pdf"
-                        required
                         onFileSelect={(file) => {
-                          // store file in RHF state; no validation
-                          form.setValue("proposed_moa", (file as File) ?? null, {
+                          const proposedMoa = (file as File) ?? null;
+                          if (!proposedMoa) return alert("Please select a file first.");
+                          form.setValue("proposed_moa", proposedMoa, {
                             shouldDirty: true,
                           });
                         }}
                       />
                     </FormControl>
-                    <FormMessage /> {/* harmless while validation is off */}
+                    <FormMessage />
                   </FormItem>
                 )}
               />

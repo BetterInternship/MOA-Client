@@ -26,9 +26,9 @@ export const CustomCard = ({
 }: CustomCardProps) => {
   const tone =
     variant === "warning"
-      ? "border-amber-300 bg-amber-50"
+      ? "border-warning bg-warning/5"
       : variant === "destructive"
-        ? "border-rose-300 bg-rose-50"
+        ? "border-destructive bg-destructive/5"
         : "border-gray-300 bg-white";
 
   const Icon =

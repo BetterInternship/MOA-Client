@@ -29,12 +29,12 @@ const statusUpdates: Record<string, string> = {
 };
 
 const toneByOutcome: Record<string, string> = {
-  approved: "bg-emerald-50 border-emerald-200",
-  denied: "bg-rose-50 border-rose-200",
-  pending: "bg-amber-50 border-amber-200",
-  "waiting-for-school": "bg-sky-50 border-sky-200",
-  "waiting-for-entity": "bg-indigo-50 border-indigo-200",
-  "sign-approved": "bg-teal-50 border-teal-200",
+  approved: "bg-supportive/5 border-supportive",
+  denied: "bg-destructive/5 border-destructive",
+  pending: "bg-warning/5 border-warning",
+  "waiting-for-school": "bg-primary/5 border-primary",
+  "waiting-for-entity": "bg-primary/5 border-primary",
+  "sign-approved": "bg-supportive/5 border-supportive",
 };
 
 export default function MoaStatus({ requests, loading }: Props) {
@@ -56,7 +56,7 @@ export default function MoaStatus({ requests, loading }: Props) {
   if (!loading && !moa) return <></>;
 
   const tone = toneByOutcome[moa?.outcome ?? ""] ?? "bg-white";
-  const verificationCode = signedDocument.data?.signedDocument?.verification_code ?? "";
+  const verificationCode = (signedDocument.data?.signedDocument?.verification_code as string) ?? "";
 
   async function copyVerification() {
     if (!verificationCode) return;
@@ -87,7 +87,7 @@ export default function MoaStatus({ requests, loading }: Props) {
                       type="button"
                       onClick={copyVerification}
                       title="Click to copy"
-                      className="text-foreground focus-visible:ring-primary/40 inline-flex items-center gap-2 rounded-md border bg-white/70 px-2 py-1 font-mono text-sm hover:cursor-pointer hover:bg-white focus-visible:ring-2 focus-visible:outline-none"
+                      className="text-foreground focus-visible:ring-primary/40 inline-flex items-center gap-2 rounded-[0.33em] border bg-white/70 px-2 py-1 font-mono text-sm hover:cursor-pointer hover:bg-white focus-visible:ring-2 focus-visible:outline-none"
                     >
                       <span>{verificationCode || "loading..."}</span>
                       {copied ? (
@@ -113,7 +113,7 @@ export default function MoaStatus({ requests, loading }: Props) {
               {moa.outcome === "approved" && (
                 <Button asChild>
                   <a
-                    href={signedDocument.data?.signedDocument?.url ?? "/not-found"}
+                    href={(signedDocument.data?.signedDocument?.url as string) ?? "/not-found"}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
