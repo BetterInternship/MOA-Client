@@ -1,7 +1,6 @@
-// components/moa/dashboard/MoaStatus.tsx
 "use client";
-
-import StatusBadge from "./StatusBadge";
+import { useState } from "react";
+import StatusBadge from "../../shared/StatusBadge";
 import type { MoaStatus } from "@/types/moa";
 import { MoaRequest } from "@/types/db";
 import { formatWhen } from "@/lib/format";
@@ -12,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/shared/CustomCard";
 import { useRouter } from "next/navigation";
-import { SidebarOpen } from "lucide-react";
+import { SidebarOpen, Copy, Check, Download } from "lucide-react";
 
 type Props = {
   requests: MoaRequest[];
@@ -29,19 +28,44 @@ const statusUpdates: Record<string, string> = {
   "sign-approved": "Your MOA request has been approved and is in need of signing.",
 };
 
+const toneByOutcome: Record<string, string> = {
+  approved: "bg-supportive/5 border-supportive",
+  denied: "bg-destructive/5 border-destructive",
+  pending: "bg-warning/5 border-warning",
+  "waiting-for-school": "bg-primary/5 border-primary",
+  "waiting-for-entity": "bg-primary/5 border-primary",
+  "sign-approved": "bg-supportive/5 border-supportive",
+};
+
 export default function MoaStatus({ requests, loading }: Props) {
+  const router = useRouter();
+  const [copied, setCopied] = useState(false);
+
   const moa = (requests ?? []).sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   )[0];
+
   const signedDocument = useDocsControllerGetMoaSignedDocument(moa?.id ?? "", {
     query: { staleTime: 1000 },
   });
+
   const latestDocument = useEntityMoaControllerGetOneThreadLatestDocument(moa?.thread_id, {
     query: { enabled: !!moa?.thread_id },
   });
-  const router = useRouter();
 
   if (!loading && !moa) return <></>;
+
+  const tone = toneByOutcome[moa?.outcome ?? ""] ?? "bg-white";
+  const verificationCode = (signedDocument.data?.signedDocument?.verification_code as string) ?? "";
+
+  async function copyVerification() {
+    if (!verificationCode) return;
+    try {
+      await navigator.clipboard.writeText(verificationCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {}
+  }
 
   return (
     <section className="space-y-4">
@@ -50,27 +74,28 @@ export default function MoaStatus({ requests, loading }: Props) {
           Loading…
         </div>
       ) : (
-        <CustomCard className={"bg-white"}>
+        <CustomCard className={`border ${tone}`}>
           <div className="flex flex-row items-start justify-between">
+            {/* Left side */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               <div className="text-muted-foreground flex flex-col gap-1">
+                <StatusBadge status={moa.outcome ?? ""} className="text-md w-fit" />
                 {moa.outcome === "approved" ? (
                   <span className="">
                     Document Verification Code:{" "}
-                    <pre className="inline-block rounded-[0.25em] bg-gray-200 px-2 py-1 hover:cursor-pointer">
-                      {signedDocument.data?.signedDocument?.verification_code ?? "loading..."}
-                    </pre>
-                    <div className="mt-2 gap-2">
-                      <Button asChild>
-                        <a
-                          href={signedDocument.data?.signedDocument?.url ?? "/not-found"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Download MOA
-                        </a>
-                      </Button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={copyVerification}
+                      title="Click to copy"
+                      className="text-foreground focus-visible:ring-primary/40 inline-flex items-center gap-2 rounded-[0.33em] border bg-white/70 px-2 py-1 font-mono text-sm hover:cursor-pointer hover:bg-white focus-visible:ring-2 focus-visible:outline-none"
+                    >
+                      <span>{verificationCode || "loading..."}</span>
+                      {copied ? (
+                        <Check className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <Copy className="h-4 w-4" aria-hidden="true" />
+                      )}
+                    </button>
                   </span>
                 ) : (
                   <div className="text-lg font-bold tracking-tight">
@@ -82,8 +107,21 @@ export default function MoaStatus({ requests, loading }: Props) {
                 </span>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <StatusBadge status={moa.outcome ?? ""} />
+
+            {/* Right side */}
+            <div className="flex flex-col items-end">
+              {moa.outcome === "approved" && (
+                <Button asChild>
+                  <a
+                    href={(signedDocument.data?.signedDocument?.url as string) ?? "/not-found"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download className="mr-1 h-4 w-4" />
+                    Download MOA
+                  </a>
+                </Button>
+              )}
               {moa.outcome === "waiting-for-entity" && (
                 <Button scheme="secondary" onClick={() => router.push("/dashboard/review")}>
                   Review Request

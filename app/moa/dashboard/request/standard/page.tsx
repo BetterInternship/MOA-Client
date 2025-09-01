@@ -7,7 +7,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CustomCard from "@/components/shared/CustomCard";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -72,7 +73,7 @@ export default function StandardMoaRequestPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Standard MOA Request</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Request a Standard MOA</h1>
         <p className="text-muted-foreground text-sm">
           Please provide the signatory information and digital signature authorization.
         </p>
@@ -90,17 +91,15 @@ export default function StandardMoaRequestPage() {
             href="https://storage.googleapis.com/better-internship-public-bucket/dlsu-standard-moa-template.pdf"
             target="_blank"
           >
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="mr-1 h-4 w-4" />
             Download Standard MOA Template
           </Link>
         </Button>
       </div>
 
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="text-lg">Signatory Information</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <CustomCard className="space-y-3 bg-white">
+        <h1 className="text-lg font-semibold">Signatory Information</h1>
+        <div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -108,9 +107,9 @@ export default function StandardMoaRequestPage() {
                 name="signatoryName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
+                    <Label className="text-muted-foreground text-xs font-normal">
                       Authorized Signatory Name<span className="text-red-500"> *</span>
-                    </FormLabel>
+                    </Label>
                     <FormControl>
                       <Input placeholder="e.g., Juan Dela Cruz" {...field} />
                     </FormControl>
@@ -124,9 +123,9 @@ export default function StandardMoaRequestPage() {
                 name="signatoryTitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
+                    <Label className="text-muted-foreground text-xs font-normal">
                       Signatory Title/Position<span className="text-red-500"> *</span>
-                    </FormLabel>
+                    </Label>
                     <FormControl>
                       <Input placeholder="e.g., Chief Executive Officer" {...field} />
                     </FormControl>
@@ -140,7 +139,7 @@ export default function StandardMoaRequestPage() {
                 name="accepted"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <div className="flex items-start gap-3 rounded-md border p-3">
+                    <div className="flex items-start gap-3 rounded-xs border p-3">
                       <FormControl>
                         <Checkbox
                           checked={field.value}
@@ -148,7 +147,7 @@ export default function StandardMoaRequestPage() {
                         />
                       </FormControl>
                       <div className="space-y-2 leading-relaxed">
-                        <FormLabel className="italic">
+                        <FormLabel className="text-muted-foreground font-normal italic">
                           I hereby declare that I am authorized to sign on behalf of the company and
                           accept the terms of the Standard MOA template. I understand that this
                           agreement will be legally binding once executed by both parties.
@@ -173,8 +172,8 @@ export default function StandardMoaRequestPage() {
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </CustomCard>
     </div>
   );
 }

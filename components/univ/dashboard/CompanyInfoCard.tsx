@@ -1,7 +1,6 @@
-// components/univ/dashboard/cards/CompanyInfoCard.tsx
 "use client";
 
-import Detail from "./Detail";
+import Detail from "../../shared/Row";
 import { Separator } from "@/components/ui/separator";
 
 type Props = {

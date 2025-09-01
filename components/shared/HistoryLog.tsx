@@ -1,4 +1,3 @@
-// components/univ/shared/CompanyHistory.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ interface HistoryEntry {
   timestamp: string;
 }
 
-export default function CompanyHistory({
+export default function HistoryLog({
   history,
   showTitle = true,
   loading = false,

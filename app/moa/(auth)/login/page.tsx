@@ -6,12 +6,12 @@ export default function CompanyAuthPage() {
     <div className="relative grid min-h-[100svh] w-full items-stretch lg:grid-cols-2 lg:px-0">
       {/* Left panel (form) */}
       <div className="flex h-full items-center justify-center p-6 lg:p-8">
-        <div className="mx-auto flex w-full flex-col gap-1 sm:w-[400px]">
+        <div className="mx-auto flex w-full flex-col gap-1 sm:w-[500px]">
           <div className="flex flex-col gap-4 text-left">
             <h1 className="text-3xl font-bold tracking-tight">Company Login</h1>
             <p className="text-muted-foreground text-sm">
-              Start or manage your Memorandum of Agreement with <br />
-              <span className="text-muted-foreground font-medium">De La Salle University</span>
+              Start or manage your Memorandum of Agreement with {""}
+              <span className="text-muted-foreground font-semibold">De La Salle University</span>
             </p>
           </div>
           <br />
@@ -19,7 +19,7 @@ export default function CompanyAuthPage() {
           <CompanyAuthForm />
           <br />
 
-          <p className="text-muted-foreground mt-8 text-left text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-8 text-left text-sm leading-relaxed">
             By continuing, you agree to the{" "}
             <Link href="/terms" className="hover:text-primary underline underline-offset-4">
               Terms of Service
@@ -31,9 +31,9 @@ export default function CompanyAuthPage() {
             .
           </p>
 
-          <p className="text-left text-xs">
+          <p className="text-left text-sm leading-relaxed">
             Don't have an account?{" "}
-            <Link href="/register" className="hover:text-primary underline">
+            <Link href="/register" className="hover:text-primary underline underline-offset-4">
               Register your company
             </Link>
           </p>

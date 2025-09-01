@@ -48,25 +48,29 @@ export function CompanyAuthForm() {
   return (
     <form className="mt-4 grid gap-5" onSubmit={onSubmit}>
       <div className="grid gap-1">
-        <Label className="text-muted-foreground text-xs font-normal">Select Company</Label>
+        <Label className="text-muted-foreground text-xs font-normal">Company</Label>
         <Autocomplete
-          placeholder="Legal Company Name"
+          placeholder="Select your legal company name"
           options={options}
           setter={(value) => setCompany(value ?? null)}
         />
         <div className="h-1"></div>
-        <Label className="text-muted-foreground text-xs font-normal">Enter password</Label>
+        <Label className="text-muted-foreground text-xs font-normal">Password</Label>
         <Input
           type="password"
-          placeholder="password"
+          placeholder="••••••••"
           onChange={(e) => setPassword(e.currentTarget.value)}
         ></Input>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <Button disabled={loading} onClick={(e) => onSubmit}>
-        {loading ? "Verifying..." : "Login"}
+      <Button
+        type="submit"
+        className="w-auto justify-self-end sm:w-full md:w-auto"
+        aria-busy={loading}
+      >
+        {loading ? "Verifying…" : "Log in"}
       </Button>
     </form>
   );

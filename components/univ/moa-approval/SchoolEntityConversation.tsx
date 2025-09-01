@@ -13,7 +13,7 @@ import { formatWhen } from "@/lib/format";
 import { Loader } from "@/components/ui/loader";
 import CustomCard from "@/components/shared/CustomCard";
 import { useState } from "react";
-import MoaRequestResponseActions from "../company-requests/MOARequestForResponse";
+import MoaRequestResponseActions from "../entity-requests/MOARequestForResponse";
 
 interface EntityConversationProps {
   req?: MoaRequest;
@@ -69,15 +69,12 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
         </ol>
       </div>
       <MoaRequestResponseActions
-        onApprove={async (message) => {
-          setLoading(true);
-          await moaRequests.approve({
-            id: req?.id,
-            data: { message },
-          });
-          await moaRequests.refetch();
-          await thread.refetch();
-          setLoading(false);
+        onApprove={async () => {
+          window.open(
+            `/moa-approval/sign?request-id=${encodeURIComponent(req?.id ?? "")}&thread-id=${encodeURIComponent(req?.thread_id ?? "")}`,
+            "_blank",
+            "noopener,noreferrer"
+          );
         }}
         onRespond={async (message) => {
           setLoading(true);

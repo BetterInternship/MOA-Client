@@ -42,7 +42,9 @@ export default function MoaTopbar() {
                 <AvatarImage src="" alt="User" />
                 <AvatarFallback>{auth.entity?.legal_identifier?.charAt(0) ?? ""}</AvatarFallback>
               </Avatar>
-              <span className="hidden sm:inline">{auth.entity.legal_identifier}</span>
+              <span className="hidden sm:inline">
+                {auth.entity?.legal_identifier?.charAt(0) ?? "User"}
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">

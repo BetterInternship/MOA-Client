@@ -26,12 +26,11 @@ import type {
 import type {
   BaseResponse,
   CreateCompanyDto,
+  EntitiesResponse,
   EntityResponse,
   ErrorResponse,
   RequestsResponse,
   SchoolEntitiesControllerGetMyPartnersParams,
-  SchoolEntitiesResponse,
-  SchoolEntityResponse,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -40,7 +39,7 @@ export const schoolEntitiesControllerGetMyPartners = (
   params?: SchoolEntitiesControllerGetMyPartnersParams,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<SchoolEntitiesResponse>({
+  return preconfiguredAxiosFunction<EntitiesResponse>({
     url: `/api/school/entities/my-partners`,
     method: "GET",
     params,
@@ -916,11 +915,86 @@ export const useSchoolEntitiesControllerDenyRequest = <TError = ErrorResponse, T
 
   return useMutation(mutationOptions, queryClient);
 };
+export const schoolEntitiesControllerBlacklistEntity = (
+  entityId: string | undefined | null,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/school/entities/blacklist/${entityId}`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getSchoolEntitiesControllerBlacklistEntityMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof schoolEntitiesControllerBlacklistEntity>>,
+    TError,
+    { entityId: string | undefined | null },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof schoolEntitiesControllerBlacklistEntity>>,
+  TError,
+  { entityId: string | undefined | null },
+  TContext
+> => {
+  const mutationKey = ["schoolEntitiesControllerBlacklistEntity"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof schoolEntitiesControllerBlacklistEntity>>,
+    { entityId: string | undefined | null }
+  > = (props) => {
+    const { entityId } = props ?? {};
+
+    return schoolEntitiesControllerBlacklistEntity(entityId);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SchoolEntitiesControllerBlacklistEntityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof schoolEntitiesControllerBlacklistEntity>>
+>;
+
+export type SchoolEntitiesControllerBlacklistEntityMutationError = ErrorResponse;
+
+export const useSchoolEntitiesControllerBlacklistEntity = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof schoolEntitiesControllerBlacklistEntity>>,
+      TError,
+      { entityId: string | undefined | null },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof schoolEntitiesControllerBlacklistEntity>>,
+  TError,
+  { entityId: string | undefined | null },
+  TContext
+> => {
+  const mutationOptions = getSchoolEntitiesControllerBlacklistEntityMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const schoolEntitiesControllerGetAPartner = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<SchoolEntityResponse>({
+  return preconfiguredAxiosFunction<EntityResponse>({
     url: `/api/school/entities/${id}`,
     method: "GET",
     signal,

@@ -1,7 +1,8 @@
 // components/univ/dashboard/CompanyDetails.tsx
 "use client";
 
-import CompanyHistory from "@/components/univ/shared/CompanyHistory";
+import HistoryLog from "@/components/shared/HistoryLog";
+import EntityInfoCard from "@/components/shared/EntityInfoCard";
 import MoaDetailsCard from "./MoaDetailsCard";
 import CompanyInfoCard from "./CompanyInfoCard";
 import ActionsBar from "./ActionsBar";
@@ -57,7 +58,7 @@ export default function CompanyDetails({
 
       {/* <DocumentsCard documents={view.documents} /> */}
 
-      <CompanyHistory history={history as any} loading={loadingHistory} />
+      <HistoryLog history={history as any} loading={loadingHistory} />
 
       <ActionsBar
         onBlacklist={() => {

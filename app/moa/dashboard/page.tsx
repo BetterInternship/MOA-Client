@@ -5,10 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MoaActions from "@/components/moa/dashboard/MoaActions";
 import MoaStatus from "@/components/moa/dashboard/MoaStatus";
-import CompanyRequestHistory from "@/components/univ/shared/CompanyHistory";
+import HistoryLog from "@/components/shared/HistoryLog";
 import { useMoaRequests } from "@/app/api/entity.api";
 import { MoaRequest } from "@/types/db";
-import { Divider } from "@/components/ui/divider";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -38,7 +37,7 @@ export default function DashboardPage() {
       {/* MOA Log */}
       <div className="space-y-4">
         <h2 className="text-foreground text-2xl font-semibold">Company Log</h2>
-        <CompanyRequestHistory showTitle={false} history={[]} />
+        <HistoryLog showTitle={false} history={[]} />
       </div>
     </div>
   );

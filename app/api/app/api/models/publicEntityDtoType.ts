@@ -6,7 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface ProfileDto {
-  acceptsNonUniversityInterns?: boolean;
-  ongoingMoaWithDlsu?: boolean;
-}
+export type PublicEntityDtoType = { [key: string]: unknown };

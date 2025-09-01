@@ -3,13 +3,13 @@ import { useEntitiesControllerGetList } from "./app/api/endpoints/entities/entit
 import {
   useEntityMoaControllerGetMine,
   useEntityMoaControllerGetOneThread,
+  useEntityMoaControllerGetOneThreadLatestDocument,
   useEntityMoaControllerRequestNewCustom,
   useEntityMoaControllerRequestNewStandard,
   useEntityMoaControllerRespond,
   useEntityMoaControllerSignApprovedCustom,
 } from "./app/api/endpoints/entity-moa/entity-moa";
 import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
-import { useAuthPublicRegisterCompany } from "./app/api/endpoints/auth/auth";
 import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import { preconfiguredAxiosFunction } from "@/app/api/preconfig.axios";
 import { useMemo } from "react";
@@ -63,15 +63,23 @@ export const useMoaRequests = () => {
 export const useRequestThread = (id?: string | null) => {
   const {
     data: rawMessages,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
+    isLoading: isLoadingMessages,
+    isFetching: isFetchingMessages,
+    error: messagesError,
+    refetch: refetchMessages,
   } = useEntityMoaControllerGetOneThread(id, {
     query: {
       enabled: !!id,
       placeholderData: keepPreviousData,
     },
+  });
+  const {
+    data: latestDocument,
+    isFetching: isFetchingLatestDocument,
+    isLoading: isLoadingLatestDocument,
+    error: latestDocumentError,
+  } = useEntityMoaControllerGetOneThreadLatestDocument(id, {
+    query: { enabled: !!id },
   });
   const messages = useMemo(() => rawMessages?.messages as unknown as Message[], [rawMessages]);
 
@@ -84,10 +92,13 @@ export const useRequestThread = (id?: string | null) => {
           attachments: (typeof rawAtts === "string" ? JSON.parse(rawAtts) : rawAtts) ?? [],
         };
       }) ?? [],
-    isLoading,
-    isFetching,
-    refetch,
-    error,
+    latestDocument,
+    isFetchingLatestDocument,
+    isLoadingLatestDocument,
+    isLoadingMessages,
+    isFetchingMessages,
+    refetchMessages,
+    error: messagesError || latestDocumentError,
   };
 };
 
@@ -128,7 +139,7 @@ export function buildCompanyRegisterPayload(form: FormData): PublicRegisterPaylo
 
   return {
     display_name: display,
-    legal_name: legal, // ✅ exact key the backend expects
+    legal_name: legal,
     office_location: office,
     industry,
     contact: { name: contactName, email: contactEmail, phone: contactPhone },

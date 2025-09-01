@@ -22,10 +22,10 @@ import type {
 
 import type {
   CountResponse,
+  EntitiesResponse,
   ErrorResponse,
   RequestsResponse,
   SchoolAccountResponse,
-  SchoolEntitiesResponse,
   SchoolResponse,
   SchoolsControllerListActiveMoasParams,
   SchoolsControllerListCompanyRequestsParams,
@@ -994,7 +994,7 @@ export const schoolsControllerListActiveMoas = (
   params?: SchoolsControllerListActiveMoasParams,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<SchoolEntitiesResponse>({
+  return preconfiguredAxiosFunction<EntitiesResponse>({
     url: `/api/schools/active-moas`,
     method: "GET",
     params,

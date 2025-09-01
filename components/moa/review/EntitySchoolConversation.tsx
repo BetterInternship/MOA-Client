@@ -13,7 +13,7 @@ import { formatWhen } from "@/lib/format";
 import { Loader } from "@/components/ui/loader";
 import CustomCard from "@/components/shared/CustomCard";
 import { useState } from "react";
-import MoaRequestResponseActions from "@/components/univ/company-requests/MOARequestForResponse";
+import MoaRequestResponseActions from "@/components/univ/entity-requests/MOARequestForResponse";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
@@ -35,7 +35,7 @@ export const EntitySchoolConversation = ({ req }: EntityConversationProps) => {
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
 
-  if (thread.isLoading) return <Loader />;
+  if (thread.isLoadingMessages) return <Loader />;
   if (!messages.length) {
     return (
       <CustomCard>
@@ -83,7 +83,7 @@ export const EntitySchoolConversation = ({ req }: EntityConversationProps) => {
               revised_moa: file,
             },
           });
-          await thread.refetch();
+          await thread.refetchMessages();
           setLoading(false);
         }}
         loading={loading}
