@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import CompanyList from "@/components/univ/dashboard/CompanyList";
-import CompanyDetails from "@/components/univ/dashboard/CompanyDetails";
+import CompanyList from "@/components/univ/browse-entities/CompanyList";
+import CompanyDetails from "@/components/univ/browse-entities/CompanyDetails";
 import { Building2, Plus } from "lucide-react";
 import { Entity } from "@/types/db";
 import { Button } from "@/components/ui/button";

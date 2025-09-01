@@ -8,6 +8,7 @@ import CompanyInfoCard from "./CompanyInfoCard";
 import ActionsBar from "./ActionsBar";
 import { Entity, MoaHistory } from "@/types/db";
 import { useState } from "react";
+import { useBlacklistEntity } from "@/app/api/school.api";
 
 interface MoaHistoryEntry {
   timestamp: string;
@@ -33,6 +34,18 @@ export default function CompanyDetails({
   // Grab the latest MOA file URL from history (history already sorted desc by timestamp)
   const history = (moaHistory.history as unknown as MoaHistoryEntry[]) ?? [];
   const latest = history[0];
+  const { blacklist, isPending: blacklisting } = useBlacklistEntity();
+
+
+  async function handleBlacklist() {
+    try {
+      setLoading(true);
+      await blacklist(entity.id);
+      entity.moaStatus = 'blacklisted';
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <section className="h-full space-y-3 overflow-y-auto p-4">
@@ -40,9 +53,9 @@ export default function CompanyDetails({
         companyId={entity.id}
         companyName={entity.display_name ?? entity.legal_identifier}
         status={entity.moaStatus}
-        validUntil={latest?.expiry_date ?? ""} // was history[0].expiry_date
+        validUntil={latest?.expiry_date ?? ""}
         loading={loading}
-        latestMoaUrl={latest?.documents ?? ""} // was history[0].documents
+        latestMoaUrl={latest?.documents ?? ""}
         validUntil={latest?.expiry_date ?? ""}
       />
 
@@ -60,11 +73,7 @@ export default function CompanyDetails({
 
       <HistoryLog history={history as any} loading={loadingHistory} />
 
-      <ActionsBar
-        onBlacklist={() => {
-          /* TODO: hook up blacklist API */
-        }}
-      />
+      <ActionsBar onBlacklist={handleBlacklist} pending={loading || blacklisting} />
     </section>
   );
 }
