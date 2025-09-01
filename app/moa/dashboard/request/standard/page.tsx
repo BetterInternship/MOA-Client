@@ -111,7 +111,7 @@ export default function StandardMoaRequestPage() {
                       Authorized Signatory Name<span className="text-red-500"> *</span>
                     </Label>
                     <FormControl>
-                      <Input placeholder="e.g., Juan Dela Cruz" {...field} />
+                      <Input placeholder="e.g., Juan Dela Cruz" {...field} maxLength={48} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -127,7 +127,11 @@ export default function StandardMoaRequestPage() {
                       Signatory Title/Position<span className="text-red-500"> *</span>
                     </Label>
                     <FormControl>
-                      <Input placeholder="e.g., Chief Executive Officer" {...field} />
+                      <Input
+                        placeholder="e.g., Chief Executive Officer"
+                        {...field}
+                        maxLength={48}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
