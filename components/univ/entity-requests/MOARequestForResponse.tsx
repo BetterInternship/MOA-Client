@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CheckCircle2, CircleX, SendHorizonal } from "lucide-react";
+import { CircleX, SendHorizonal, SquareArrowOutUpRight } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { FileUpload, FileUploadRef } from "@/components/ui/file-upload";
@@ -60,8 +60,8 @@ export default function MoaRequestResponseActions({
               disabled={loading}
               onClick={() => onApprove(note).then(() => setNote(""))}
             >
-              <CheckCircle2 className="h-4 w-4" />
-              Send as Approval
+              <SquareArrowOutUpRight className="h-4 w-4" />
+              Sign and Approve
             </Button>
           )}
         </div>

@@ -69,15 +69,12 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
         </ol>
       </div>
       <MoaRequestResponseActions
-        onApprove={async (message) => {
-          setLoading(true);
-          await moaRequests.approve({
-            id: req?.id,
-            data: { message },
-          });
-          await moaRequests.refetch();
-          await thread.refetch();
-          setLoading(false);
+        onApprove={async () => {
+          window.open(
+            `/moa-approval/sign?id=${encodeURIComponent(req?.thread_id ?? "")}`,
+            "_blank",
+            "noopener,noreferrer"
+          );
         }}
         onRespond={async (message) => {
           setLoading(true);

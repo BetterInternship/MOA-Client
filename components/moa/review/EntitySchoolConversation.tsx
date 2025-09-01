@@ -35,7 +35,7 @@ export const EntitySchoolConversation = ({ req }: EntityConversationProps) => {
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
 
-  if (thread.isLoading) return <Loader />;
+  if (thread.isLoadingMessages) return <Loader />;
   if (!messages.length) {
     return (
       <CustomCard>
@@ -83,7 +83,7 @@ export const EntitySchoolConversation = ({ req }: EntityConversationProps) => {
               revised_moa: file,
             },
           });
-          await thread.refetch();
+          await thread.refetchMessages();
           setLoading(false);
         }}
         loading={loading}
