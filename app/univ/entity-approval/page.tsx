@@ -81,6 +81,7 @@ export default function CompanyVerificationPage() {
     return;
   }
 
+  console.log(selected);
   // documents
   type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
   const documents = useMemo(() => {
@@ -157,7 +158,17 @@ export default function CompanyVerificationPage() {
           ) : selected ? (
             <div className="h-full space-y-6 overflow-y-auto p-4">
               <RequestMeta req={selected} />
-              {/* <EntityInfoCard req={selected} /> */}
+
+              <EntityInfoCard
+                id={selected.entity.id}
+                name={selected.entity.display_name}
+                contactPerson={selected.entity.contact_name}
+                phone={selected.entity.contact_phone}
+                address={selected.entity.address}
+                type={selected.entity.type}
+                legalIdentifier={selected.entity.legal_identifier}
+              />
+
               <DocumentsCard documents={documents} />
               {tab === "pending" && (
                 <>

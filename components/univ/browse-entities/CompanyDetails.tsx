@@ -1,10 +1,8 @@
-// components/univ/dashboard/CompanyDetails.tsx
 "use client";
 
 import HistoryLog from "@/components/shared/HistoryLog";
-import EntityInfoCard from "@/components/shared/EntityInfoCard";
 import MoaDetailsCard from "./MoaDetailsCard";
-import CompanyInfoCard from "./CompanyInfoCard";
+import EntityInfoCard from "../../shared/EntityInfoCard";
 import ActionsBar from "./ActionsBar";
 import { Entity, MoaHistory } from "@/types/db";
 import { useState } from "react";
@@ -36,12 +34,11 @@ export default function CompanyDetails({
   const latest = history[0];
   const { blacklist, isPending: blacklisting } = useBlacklistEntity();
 
-
   async function handleBlacklist() {
     try {
       setLoading(true);
       await blacklist(entity.id);
-      entity.moaStatus = 'blacklisted';
+      entity.moaStatus = "blacklisted";
     } finally {
       setLoading(false);
     }
@@ -59,7 +56,7 @@ export default function CompanyDetails({
         validUntil={latest?.expiry_date ?? ""}
       />
 
-      <CompanyInfoCard
+      <EntityInfoCard
         id={entity.id}
         name={entity.display_name ?? entity.legal_identifier}
         contactPerson={entity.contact_name}
