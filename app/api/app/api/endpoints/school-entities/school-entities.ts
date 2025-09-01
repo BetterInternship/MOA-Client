@@ -26,12 +26,11 @@ import type {
 import type {
   BaseResponse,
   CreateCompanyDto,
+  EntitiesResponse,
   EntityResponse,
   ErrorResponse,
   RequestsResponse,
   SchoolEntitiesControllerGetMyPartnersParams,
-  SchoolEntitiesResponse,
-  SchoolEntityResponse,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -40,7 +39,7 @@ export const schoolEntitiesControllerGetMyPartners = (
   params?: SchoolEntitiesControllerGetMyPartnersParams,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<SchoolEntitiesResponse>({
+  return preconfiguredAxiosFunction<EntitiesResponse>({
     url: `/api/school/entities/my-partners`,
     method: "GET",
     params,
@@ -920,7 +919,7 @@ export const schoolEntitiesControllerGetAPartner = (
   id: string | undefined | null,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<SchoolEntityResponse>({
+  return preconfiguredAxiosFunction<EntityResponse>({
     url: `/api/school/entities/${id}`,
     method: "GET",
     signal,

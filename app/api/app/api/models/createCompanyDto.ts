@@ -14,7 +14,7 @@ export interface CreateCompanyDto {
   office_location: string;
   industry: string;
   contact: ContactDto;
-  profile: ProfileDto;
+  profile?: ProfileDto;
   password: string;
   type?: string;
 }
