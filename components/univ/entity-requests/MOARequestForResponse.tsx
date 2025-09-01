@@ -45,11 +45,12 @@ export default function MoaRequestResponseActions({
           <Button
             className=""
             disabled={loading}
-            onClick={() =>
+            onClick={() => {
+              if (!note.trim()) return alert("You cannot send an empty clarification.");
               onRespond(note, file ?? undefined).then(
                 () => (setNote(""), setFile(null), ref.current?.clear())
-              )
-            }
+              );
+            }}
           >
             <SendHorizonal />
             Send as Clarification
