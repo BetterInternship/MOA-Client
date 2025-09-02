@@ -44,6 +44,10 @@ export default function CompanyDetails({
     }
   }
 
+  const isBlacklisted =
+    String(entity.moaStatus)
+      .trim()
+      .toLowerCase() === "blacklisted";
   return (
     <section className="h-full space-y-3 overflow-y-auto p-4">
       <MoaDetailsCard
@@ -70,7 +74,9 @@ export default function CompanyDetails({
 
       <HistoryLog history={history as any} loading={loadingHistory} />
 
-      <ActionsBar onBlacklist={handleBlacklist} pending={loading || blacklisting} />
+      {!isBlacklisted && (
+        <ActionsBar onBlacklist={handleBlacklist} pending={loading || blacklisting} />
+      )}
     </section>
   );
 }
