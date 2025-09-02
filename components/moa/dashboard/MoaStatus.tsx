@@ -102,8 +102,8 @@ export default function MoaStatus({ requests, loading }: Props) {
                     {statusUpdates[moa?.outcome ?? ""] ?? "-"}
                   </div>
                 )}
-                <span className="">
-                  Requested at <span className="font-semibold">{formatWhen(moa.timestamp)}</span>
+                <span className="text-xs">
+                  Requested at <span className="font-bold">{formatWhen(moa.timestamp)}</span>
                 </span>
               </div>
             </div>

@@ -13,6 +13,7 @@ import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/ent
 import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import { preconfiguredAxiosFunction } from "@/app/api/preconfig.axios";
 import { useMemo } from "react";
+import { useSchoolEntitiesControllerGetSelfForSchool } from "./app/api/endpoints/school-entities/school-entities";
 
 /**
  * Grabs a public list of lean entity DTOs.
@@ -110,6 +111,21 @@ export const usePartneredSchools = () => {
   return {
     schools: (data?.schools as unknown as School[]) ?? [],
     isLoading: isFetching || isLoading,
+  };
+};
+
+const DEFAULT_SCHOOL_ID = "0fde7360-7c13-4d27-82e9-7db8413a08a5";
+
+export const useEntitySchoolEntitySelf = (schoolId?: string) => {
+  const params = useMemo(() => ({ schoolId: schoolId ?? DEFAULT_SCHOOL_ID }), [schoolId]);
+
+  const q = useSchoolEntitiesControllerGetSelfForSchool(params, {
+    query: { staleTime: 60_000, refetchOnWindowFocus: false },
+  });
+
+  return {
+    schoolEntity: q.data?.schoolEntity ?? null,
+    refetch: q.refetch,
   };
 };
 

@@ -172,7 +172,7 @@ export default function CompanyVerificationPage() {
               <DocumentsCard documents={documents} />
               {tab === "pending" && (
                 <>
-                  <EntityRequestForResponse onSend={sendRequestForResponse} loading={busy} />
+                  {/* <EntityRequestForResponse onSend={sendRequestForResponse} loading={busy} /> */}
                   <FinalDecision onApprove={onApprove} onDeny={onDeny} loading={busy} />
                 </>
               )}

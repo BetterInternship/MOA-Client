@@ -408,6 +408,23 @@
         "tags": ["SchoolEntities"]
       }
     },
+    "/api/school/entities/self": {
+      "get": {
+        "operationId": "SchoolEntitiesController_getSelfForSchool",
+        "parameters": [
+          { "name": "schoolId", "required": true, "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SchoolEntities"]
+      }
+    },
     "/api/school/moa/mine": {
       "get": {
         "operationId": "SchoolMoaController_getMine",

@@ -31,6 +31,7 @@ import type {
   ErrorResponse,
   RequestsResponse,
   SchoolEntitiesControllerGetMyPartnersParams,
+  SchoolEntitiesControllerGetSelfForSchoolParams,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -1321,3 +1322,264 @@ export const useSchoolEntitiesControllerCreateCompany = <
 
   return useMutation(mutationOptions, queryClient);
 };
+export const schoolEntitiesControllerGetSelfForSchool = (
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<unknown>({
+    url: `/api/school/entities/self`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getSchoolEntitiesControllerGetSelfForSchoolQueryKey = (
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams
+) => {
+  return [`/api/school/entities/self`, ...(params ? [params] : [])] as const;
+};
+
+export const getSchoolEntitiesControllerGetSelfForSchoolQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSchoolEntitiesControllerGetSelfForSchoolQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>
+  > = ({ signal }) => schoolEntitiesControllerGetSelfForSchool(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolEntitiesControllerGetSelfForSchoolQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>
+>;
+export type SchoolEntitiesControllerGetSelfForSchoolQueryError = ErrorResponse;
+
+export function useSchoolEntitiesControllerGetSelfForSchool<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | SchoolEntitiesControllerGetSelfForSchoolParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+          TError,
+          Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolEntitiesControllerGetSelfForSchool<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+          TError,
+          Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolEntitiesControllerGetSelfForSchool<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolEntitiesControllerGetSelfForSchool<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolEntitiesControllerGetSelfForSchoolQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSchoolEntitiesControllerGetSelfForSchoolSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSchoolEntitiesControllerGetSelfForSchoolQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>
+  > = ({ signal }) => schoolEntitiesControllerGetSelfForSchool(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SchoolEntitiesControllerGetSelfForSchoolSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>
+>;
+export type SchoolEntitiesControllerGetSelfForSchoolSuspenseQueryError = ErrorResponse;
+
+export function useSchoolEntitiesControllerGetSelfForSchoolSuspense<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | SchoolEntitiesControllerGetSelfForSchoolParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolEntitiesControllerGetSelfForSchoolSuspense<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSchoolEntitiesControllerGetSelfForSchoolSuspense<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSchoolEntitiesControllerGetSelfForSchoolSuspense<
+  TData = Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+  TError = ErrorResponse,
+>(
+  params?: SchoolEntitiesControllerGetSelfForSchoolParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof schoolEntitiesControllerGetSelfForSchool>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSchoolEntitiesControllerGetSelfForSchoolSuspenseQueryOptions(
+    params,
+    options
+  );
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
