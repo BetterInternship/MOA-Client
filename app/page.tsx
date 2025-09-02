@@ -7,15 +7,13 @@ export default function HomePage() {
     if (typeof window === "undefined") return;
 
     // Deconstruct url components
-    const baseUrl = window.location.hostname;
-    const domainParts = baseUrl.split(".");
-    const rootDomain = domainParts.slice(-2).join(".");
-    const protocol = window?.location.protocol || "http:";
-    let port = window.location.port;
-    port = port && port !== "80" && port !== "443" ? `:${port}` : "";
+    const url =
+      subdomain === "moa"
+        ? (process.env.NEXT_PUBLIC_MOA_URL as string)
+        : (process.env.NEXT_PUBLIC_UNI_URL as string);
 
     // Reconstruct and redirect
-    const fullUrl = `${protocol}//${subdomain}.${rootDomain}${port}/login`;
+    const fullUrl = `${url}/login`;
     window.location.href = fullUrl;
   }
 
