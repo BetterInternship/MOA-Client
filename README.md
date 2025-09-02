@@ -8,6 +8,12 @@ A platform for managing MOAs and other similar agreements.
 npm run dev
 ```
 
+## Build Client API
+
+```bash
+npm run spec
+```
+
 ## Code Formatting with Prettier
 
 This project uses Prettier to maintain a consistent code style.
