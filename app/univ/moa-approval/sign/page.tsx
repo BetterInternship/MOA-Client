@@ -1,7 +1,7 @@
 "use client";
 
 import { useMoaRequests, useRequestThread } from "@/app/api/entity.api";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { validate } from "uuid";
 import { Loader } from "@/components/ui/loader";
@@ -20,7 +20,9 @@ import {
 import "./react-pdf-highlighter.css";
 import { Button } from "@/components/ui/button";
 import { Autocomplete } from "@/components/ui/autocomplete";
+import { PDFDocument } from "pdf-lib";
 
+// ! replace or make standardized
 const signatoryOptions = [
   { id: "school_signatory_name", name: "Signatory name" },
   { id: "school_signatory_signature", name: "Signatory signature" },
@@ -86,7 +88,12 @@ export function MoaSigningPage() {
   return (
     <div className="relative h-[720px] w-1/2 p-5">
       <div className="absolute flex h-full w-full flex-row gap-2">
-        <Sidebar requestId={requestId} highlights={highlights} reset={resetHighlights} />
+        <Sidebar
+          requestId={requestId}
+          highlights={highlights}
+          latestDocumentUrl={requestThread.latestDocument?.document_url}
+          reset={resetHighlights}
+        />
         <PdfLoader url={requestThread.latestDocument?.document_url ?? ""} beforeLoad={<Loader />}>
           {(pdfDocument) => (
             <PdfHighlighter
@@ -193,15 +200,31 @@ function AreaDropdown({
 function Sidebar({
   requestId,
   highlights,
+  latestDocumentUrl,
   reset,
 }: {
   requestId: string;
   highlights: Array<IHighlight>;
+  latestDocumentUrl?: string | null;
   reset: () => void;
 }) {
   const moaRequests = useMoaRequests();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    async function fetchPdf() {
+      if (!latestDocumentUrl) return;
+      const res = await fetch(latestDocumentUrl);
+      const arrayBuffer = await res.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      const firstPage = pdfDoc.getPages()[0];
+      const width = firstPage.getWidth();
+      setWidth(width);
+    }
+    fetchPdf().catch(console.error);
+  }, [latestDocumentUrl]);
 
   return (
     <div className="sidebar" style={{ width: "25vw" }}>
@@ -246,19 +269,20 @@ function Sidebar({
               const formSchema: any[] = [];
               highlights.forEach((highlight) => {
                 setLoading(true);
-                const x = highlight.position.boundingRect.x1;
-                const y = highlight.position.boundingRect.y1;
-                const w = highlight.position.boundingRect.x2 - x;
-                const h = highlight.position.boundingRect.y2 - y;
+                const scale = width / highlight.position.boundingRect.width;
+                const x = highlight.position.boundingRect.x1 * scale;
+                const y = highlight.position.boundingRect.y1 * scale;
+                const w = highlight.position.boundingRect.x2 * scale - x;
+                const h = highlight.position.boundingRect.y2 * scale - y;
 
                 formSchema.push({
                   field: highlight.comment.text,
                   value: "test value for " + highlight.comment.text,
                   type: "text", // ! change
-                  x: ~~x + 2,
-                  y: ~~y + 2,
-                  w: ~~w + 4,
-                  h: ~~h + 4,
+                  x: Math.round(x),
+                  y: Math.round(y),
+                  w: Math.round(w),
+                  h: Math.round(h),
                   page: highlight.position.pageNumber,
                 });
               });
