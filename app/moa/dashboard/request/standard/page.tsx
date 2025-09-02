@@ -86,7 +86,7 @@ export default function StandardMoaRequestPage() {
           <Badge className="text-sm font-medium">1 minute</Badge>
         </div>
 
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" scheme="secondary">
           <Link
             href="https://storage.googleapis.com/better-internship-public-bucket/dlsu-standard-moa-template.pdf"
             target="_blank"
@@ -111,7 +111,7 @@ export default function StandardMoaRequestPage() {
                       Authorized Signatory Name<span className="text-red-500"> *</span>
                     </Label>
                     <FormControl>
-                      <Input placeholder="e.g., Juan Dela Cruz" {...field} />
+                      <Input placeholder="e.g., Juan Dela Cruz" {...field} maxLength={48} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -127,7 +127,11 @@ export default function StandardMoaRequestPage() {
                       Signatory Title/Position<span className="text-red-500"> *</span>
                     </Label>
                     <FormControl>
-                      <Input placeholder="e.g., Chief Executive Officer" {...field} />
+                      <Input
+                        placeholder="e.g., Chief Executive Officer"
+                        {...field}
+                        maxLength={48}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

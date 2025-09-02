@@ -39,7 +39,7 @@ export default function FinalDecision({ onApprove, onDeny, loading }: Props) {
           </Button>
         </div>
       </div>
-      <div className="max-w-[600px] min-w-[600px]">
+      <div className="space-y-3">
         <Textarea
           rows={3}
           placeholder="Optional note for the decision (will be included in the notification)."

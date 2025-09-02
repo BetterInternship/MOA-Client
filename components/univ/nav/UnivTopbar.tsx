@@ -108,21 +108,13 @@ export default function UnivTopbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2">
-              {/* <Avatar className="h-7 w-7">
-                <AvatarImage src="" alt="User" />
-                <AvatarFallback>@</AvatarFallback>
-              </Avatar> */}
               <span className="hidden sm:inline">{auth.schoolAccount?.name ?? "Loading..."}</span>
               <ChevronDown className="mt-0.5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/profile")}>Profile</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/settings")}>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+          <DropdownMenuContent align="end" className="min-w-48">
+            <span className="p-2 text-xs tracking-tight">{auth.schoolAccount.email}</span>
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:cursor-pointer">
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

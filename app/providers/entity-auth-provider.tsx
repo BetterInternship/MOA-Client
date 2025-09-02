@@ -57,7 +57,8 @@ export const EntityAuthContextProvider = ({ children }: { children: React.ReactN
   // Save self details on hook
   const loadSelf = async () => {
     const self = await entitySelf.mutateAsync();
-    setEntity((self.entity as Entity) ?? null);
+    // ! fix this type error, it probably has something to do with the generated orval
+    setEntity((self as Entity) ?? null);
   };
 
   // Refresh 'self'; will only be work if cookie still exists and is valid (not exactly a 'refresh')

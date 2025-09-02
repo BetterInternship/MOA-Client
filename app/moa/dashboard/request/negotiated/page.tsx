@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/form";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useEntityMoaControllerRequestNewCustom } from "../../../../api/app/api/endpoints/entity-moa/entity-moa";
+import { Download } from "lucide-react";
+import Link from "next/link";
 
 // TEMP: validation off — simple RHF types
 type FormValues = {
@@ -86,8 +88,18 @@ export default function NegotiatedMoaRequestPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <span>Processing time:</span>
-          <Badge className="text-sm font-medium">4 weeks</Badge>
+          <Badge className="text-sm font-medium">1 minute</Badge>
         </div>
+
+        <Button asChild variant="outline" scheme="secondary">
+          <Link
+            href="https://storage.googleapis.com/better-internship-public-bucket/dlsu-standard-moa-template.pdf"
+            target="_blank"
+          >
+            <Download className="mr-1 h-4 w-4" />
+            Reference MOA Template
+          </Link>
+        </Button>
       </div>
 
       <CustomCard
