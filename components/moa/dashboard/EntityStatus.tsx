@@ -5,6 +5,7 @@ import CustomCard from "@/components/shared/CustomCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { formatWhen } from "@/lib/format";
 import { ShieldCheck, Clock, XCircle, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 /**
  * EntityStatus
@@ -30,9 +31,9 @@ type Props = {
   /** Optional: Entity display name for context */
   entityName?: string;
   /** If pending, when the request was filed */
-  requestedAt?: string | Date | null;
+  requestedAt?: string;
   /** If approved, when approval became effective */
-  approvedAt?: string | Date | null;
+  approvedAt?: string;
   /** If approved, when the approval expires */
   expiryAt?: string | Date | null;
   /** Loading state shows a subtle skeleton */
@@ -94,9 +95,11 @@ export default function EntityStatus({
   const expiryDays = useMemo(() => daysUntil(expiryAt), [expiryAt]);
   const isExpiringSoon = typeof expiryDays === "number" && expiryDays <= 60 && expiryDays >= 0;
 
-  if (loading) {
+  if (loading && !status) {
     return (
-      <div className="text-muted-foreground rounded-md border border-dashed p-6">Loading…</div>
+      <div className="text-muted-foreground rounded-md border border-dashed p-6">
+        Loading account status...
+      </div>
     );
   }
 
@@ -106,7 +109,7 @@ export default function EntityStatus({
         {/* Left */}
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={status ?? ""} className="text-sm w-fit" />
+            <Badge>Current Account Status</Badge>
           </div>
 
           <div className="text-foreground mt-1 text-base font-semibold tracking-tight">{title}</div>
@@ -114,7 +117,7 @@ export default function EntityStatus({
           {!compact && <p className="text-muted-foreground text-sm">{blurb}</p>}
 
           {/* Meta rows */}
-          {/* <div className="text-muted-foreground mt-1 space-y-1 text-xs">
+          <div className="text-muted-foreground mt-1 space-y-1 text-xs">
             {status === "approved" && (
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
@@ -135,7 +138,7 @@ export default function EntityStatus({
                 <span>Contact your MOA office for next steps.</span>
               </div>
             )}
-          </div> */}
+          </div>
         </div>
       </div>
     </CustomCard>

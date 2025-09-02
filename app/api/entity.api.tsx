@@ -179,7 +179,9 @@ export const DEFAULT_SCHOOL_ID = "0fde7360-7c13-4d27-82e9-7db8413a08a5";
 type RelationBucket = "approved" | "pending" | "not-approved" | "blacklisted";
 
 function mapRelationStatus(s?: string | null): RelationBucket {
-  const v = String(s ?? "").trim().toLowerCase();
+  const v = String(s ?? "")
+    .trim()
+    .toLowerCase();
   if (v === "blacklisted") return "blacklisted";
   if (["approved", "active", "valid", "registered"].includes(v)) return "approved";
   if (["denied", "rejected", "not-approved"].includes(v)) return "not-approved";
@@ -191,26 +193,23 @@ function mapRelationStatus(s?: string | null): RelationBucket {
  * GET /api/entity/school-entities/self?schoolId=...
  */
 export function useMyEntityForSchool(schoolId?: string) {
-  const params = useMemo(
-    () => ({ schoolId: schoolId ?? DEFAULT_SCHOOL_ID }),
-    [schoolId]
-  );
+  const params = useMemo(() => ({ schoolId: schoolId ?? DEFAULT_SCHOOL_ID }), [schoolId]);
 
   const q = useGetMyEntityForSchool(params, {
     query: {
       staleTime: 60_000,
       refetchOnWindowFocus: false,
+      placeholderData: keepPreviousData,
     },
   });
 
   const entity = q.data?.entity ?? null;
 
   return {
-    entity,                                           // EntityWithStatusDto | null
+    entity, // EntityWithStatusDto | null
     relationStatus: mapRelationStatus(entity?.moaStatus), // 'approved' | 'pending' | 'not-approved' | 'blacklisted'
     isLoading: q.isLoading || q.isFetching,
     error: q.error,
     refetch: q.refetch,
   };
 }
-

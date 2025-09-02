@@ -12,6 +12,7 @@ import { useMoaRequests, useMyEntityForSchool } from "@/app/api/entity.api";
 import { useSchoolPartner } from "@/app/api/school.api";
 
 import type { MoaRequest } from "@/types/db";
+import { cn } from "@/lib/utils";
 
 /* ----------------------------- local helpers ----------------------------- */
 
@@ -30,18 +31,14 @@ const DEFAULT_SCHOOL_ID = "0fde7360-7c13-4d27-82e9-7db8413a08a5";
 
 /* ------------------- small Suspense-fed EntityStatus card ------------------ */
 
-function EntityStatusSelfCard({
-  entityName,
-  schoolId,
-}: {
-  entityName?: string;
-  schoolId?: string;
-}) {
+function EntityStatusSelfCard({ schoolId }: { schoolId?: string }) {
   const { entity, relationStatus, isLoading } = useMyEntityForSchool();
+
+  if (relationStatus === "approved") return <></>;
 
   return (
     <EntityStatus
-      entityName={entity?.display_name ?? "—"}
+      entityName={entity?.legal_identifier ?? "-"}
       status={relationStatus}
       loading={isLoading}
     />
@@ -55,6 +52,7 @@ export default function DashboardPage() {
   const [requests, setRequests] = useState<MoaRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const { requests: moaRequests, isLoading } = useMoaRequests();
+  const { relationStatus } = useMyEntityForSchool();
 
   // Keep MOA requests in sync
   useEffect(() => {
@@ -82,7 +80,7 @@ export default function DashboardPage() {
   const uiHistory = partnerHistory?.history ?? [];
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-96 space-y-8">
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-foreground text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -92,18 +90,7 @@ export default function DashboardPage() {
       <MoaStatus title="MOA Status" requests={requests} loading={loading} />
 
       {/* Entity status with the university (approved/pending/not-approved) via entity.api (Suspense) */}
-      <Suspense
-        fallback={
-          <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
-            Loading status…
-          </div>
-        }
-      >
-        <EntityStatusSelfCard
-          entityName={entity?.display_name ?? "—"}
-          schoolId={DEFAULT_SCHOOL_ID}
-        />
-      </Suspense>
+      <EntityStatusSelfCard schoolId={DEFAULT_SCHOOL_ID} />
 
       {/* Company Log */}
       <div className="space-y-4">
@@ -113,7 +100,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Actions (only Standard / Negotiated) */}
-      <div className="space-y-2">
+      <div className={cn("space-y-2", relationStatus === "approved" ? "" : "invisible")}>
         <MoaActions />
       </div>
     </div>
