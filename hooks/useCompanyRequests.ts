@@ -111,14 +111,14 @@ export function useCompanyRequest(entityId?: string) {
 export function useEntityRequestActions() {
   const approve = useMutation({
     mutationKey: ["company-request", "approve"],
-    mutationFn: async ({ id }: { id: string }) => {
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       await preconfiguredAxios.post(`/api/school/entities/requests/${id}/approve`);
     },
   });
 
   const deny = useMutation({
     mutationKey: ["company-request", "deny"],
-    mutationFn: async ({ id }: { id: string }) => {
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       await preconfiguredAxios.post(`/api/school/entities/requests/${id}/deny`);
     },
   });

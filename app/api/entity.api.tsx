@@ -197,8 +197,8 @@ export function useMyEntityForSchool(schoolId?: string) {
 
   const q = useGetMyEntityForSchool(params, {
     query: {
-      staleTime: 60_000,
-      refetchOnWindowFocus: false,
+      staleTime: 1000,
+      refetchOnWindowFocus: true,
       placeholderData: keepPreviousData,
     },
   });

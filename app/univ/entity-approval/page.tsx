@@ -65,15 +65,15 @@ export default function CompanyVerificationPage() {
   // actions
   const { approve, deny, isPending: busy } = useEntityRequestActions();
 
-  async function onApprove(_note: string) {
+  async function onApprove(note: string) {
     if (!selectedId) return;
-    await approve({ id: selectedId });
+    await approve({ id: selectedId, reason: note });
     await reqsQ.refetch();
   }
 
-  async function onDeny(_note: string) {
+  async function onDeny(note: string) {
     if (!selectedId) return;
-    await deny({ id: selectedId });
+    await deny({ id: selectedId, reason: note });
     await reqsQ.refetch();
   }
 
