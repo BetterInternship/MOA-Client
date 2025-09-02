@@ -408,13 +408,21 @@
         "tags": ["SchoolEntities"]
       }
     },
-    "/api/school/entities/self": {
+    "/api/entity/school-entities/self": {
       "get": {
-        "operationId": "SchoolEntitiesController_getSelfForSchool",
+        "operationId": "getMyEntityForSchool",
         "parameters": [
           { "name": "schoolId", "required": true, "in": "query", "schema": { "type": "string" } }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EntityWithStatusResponse" }
+              }
+            }
+          },
           "400": {
             "description": "Error Response",
             "content": {
@@ -422,7 +430,8 @@
             }
           }
         },
-        "tags": ["SchoolEntities"]
+        "summary": "",
+        "tags": ["EntitySchoolEntities"]
       }
     },
     "/api/school/moa/mine": {
@@ -1227,6 +1236,34 @@
           "requests": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["success", "message", "requests"]
+      },
+      "EntityWithStatusDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "display_name": { "type": "object", "nullable": true },
+          "legal_identifier": { "type": "string" },
+          "type": { "type": "object" },
+          "contact_name": { "type": "object" },
+          "contact_email": { "type": "object" },
+          "contact_phone": { "type": "object" },
+          "address": { "type": "object" },
+          "moaStatus": {
+            "type": "string",
+            "enum": ["under_review", "approved", "denied", "pending"]
+          }
+        },
+        "required": ["id", "display_name", "legal_identifier", "type", "moaStatus"]
+      },
+      "EntityWithStatusResponse": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/EntityWithStatusDto" }]
+          }
+        },
+        "required": ["entity"]
       },
       "MoaRequestsResponse": {
         "type": "object",

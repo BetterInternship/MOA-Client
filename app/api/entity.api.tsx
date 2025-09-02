@@ -13,8 +13,7 @@ import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/ent
 import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import { preconfiguredAxiosFunction } from "@/app/api/preconfig.axios";
 import { useMemo } from "react";
-import { useSchoolEntitiesControllerGetSelfForSchool } from "./app/api/endpoints/school-entities/school-entities";
-
+import { useGetMyEntityForSchool } from "./app/api/endpoints/entity-school-entities/entity-school-entities";
 /**
  * Grabs a public list of lean entity DTOs.
  * Only names and ids are included.
@@ -114,21 +113,6 @@ export const usePartneredSchools = () => {
   };
 };
 
-const DEFAULT_SCHOOL_ID = "0fde7360-7c13-4d27-82e9-7db8413a08a5";
-
-export const useEntitySchoolEntitySelf = (schoolId?: string) => {
-  const params = useMemo(() => ({ schoolId: schoolId ?? DEFAULT_SCHOOL_ID }), [schoolId]);
-
-  const q = useSchoolEntitiesControllerGetSelfForSchool(params, {
-    query: { staleTime: 60_000, refetchOnWindowFocus: false },
-  });
-
-  return {
-    schoolEntity: q.data?.schoolEntity ?? null,
-    refetch: q.refetch,
-  };
-};
-
 type PublicRegisterPayload = {
   display_name: string;
   legal_name: string;
@@ -187,3 +171,46 @@ export function usePublicCompanyRegister() {
     reset: m.reset,
   };
 }
+
+/* ───────────────── Entity ⇄ School relation (entity-side) ───────────────── */
+
+export const DEFAULT_SCHOOL_ID = "0fde7360-7c13-4d27-82e9-7db8413a08a5";
+
+type RelationBucket = "approved" | "pending" | "not-approved" | "blacklisted";
+
+function mapRelationStatus(s?: string | null): RelationBucket {
+  const v = String(s ?? "").trim().toLowerCase();
+  if (v === "blacklisted") return "blacklisted";
+  if (["approved", "active", "valid", "registered"].includes(v)) return "approved";
+  if (["denied", "rejected", "not-approved"].includes(v)) return "not-approved";
+  return "pending"; // pending / under_review / waiting-* / etc.
+}
+
+/**
+ * Entity-side: relationship with a school
+ * GET /api/entity/school-entities/self?schoolId=...
+ */
+export function useMyEntityForSchool(schoolId?: string) {
+  const params = useMemo(
+    () => ({ schoolId: schoolId ?? DEFAULT_SCHOOL_ID }),
+    [schoolId]
+  );
+
+  const q = useGetMyEntityForSchool(params, {
+    query: {
+      staleTime: 60_000,
+      refetchOnWindowFocus: false,
+    },
+  });
+
+  const entity = q.data?.entity ?? null;
+
+  return {
+    entity,                                           // EntityWithStatusDto | null
+    relationStatus: mapRelationStatus(entity?.moaStatus), // 'approved' | 'pending' | 'not-approved' | 'blacklisted'
+    isLoading: q.isLoading || q.isFetching,
+    error: q.error,
+    refetch: q.refetch,
+  };
+}
+

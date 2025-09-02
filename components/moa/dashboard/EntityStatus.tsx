@@ -114,7 +114,7 @@ export default function EntityStatus({
           {!compact && <p className="text-muted-foreground text-sm">{blurb}</p>}
 
           {/* Meta rows */}
-          <div className="text-muted-foreground mt-1 space-y-1 text-xs">
+          {/* <div className="text-muted-foreground mt-1 space-y-1 text-xs">
             {status === "approved" && (
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
@@ -135,7 +135,7 @@ export default function EntityStatus({
                 <span>Contact your MOA office for next steps.</span>
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </CustomCard>

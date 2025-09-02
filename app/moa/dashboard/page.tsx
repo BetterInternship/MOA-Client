@@ -8,7 +8,7 @@ import HistoryLog from "@/components/shared/HistoryLog";
 import EntityStatus from "@/components/moa/dashboard/EntityStatus";
 import { Button } from "@/components/ui/button";
 
-import { useMoaRequests, useEntitySchoolEntitySelf } from "@/app/api/entity.api";
+import { useMoaRequests, useMyEntityForSchool } from "@/app/api/entity.api";
 import { useSchoolPartner } from "@/app/api/school.api";
 
 import type { MoaRequest } from "@/types/db";
@@ -37,16 +37,13 @@ function EntityStatusSelfCard({
   entityName?: string;
   schoolId?: string;
 }) {
-  const { schoolEntity } = useEntitySchoolEntitySelf(schoolId);
-  const status = toEntityApprovalStatus(schoolEntity?.status, !!schoolEntity);
+  const { entity, relationStatus, isLoading } = useMyEntityForSchool();
 
   return (
     <EntityStatus
-      entityName={entityName ?? "—"}
-      status={status}
-      // If you later store effective/expiry on school_entity, map here:
-      // approvedAt={schoolEntity?.effective_date}
-      // expiryAt={schoolEntity?.expiry_date}
+      entityName={entity?.display_name ?? "—"}
+      status={relationStatus}
+      loading={isLoading}
     />
   );
 }
