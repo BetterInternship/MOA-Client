@@ -13,6 +13,8 @@ import { useSchoolPartner } from "@/app/api/school.api";
 
 import type { MoaRequest } from "@/types/db";
 import { cn } from "@/lib/utils";
+import { MessageCircleWarning } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 /* ----------------------------- local helpers ----------------------------- */
 
@@ -84,6 +86,12 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-foreground text-3xl font-bold tracking-tight">Dashboard</h1>
+        {relationStatus !== "approved" && (
+          <Badge type="destructive">
+            Account not yet approved
+            <MessageCircleWarning className="ml-2 h-4 w-4" />
+          </Badge>
+        )}
       </div>
 
       {/* One-card MOA status (transaction-level) */}
