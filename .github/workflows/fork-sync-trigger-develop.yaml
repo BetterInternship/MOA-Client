@@ -1,0 +1,30 @@
+# This is meant to run on the deployment fork
+
+name: Sync Dev Fork with Upstream
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Add upstream and fetch
+        run: |
+          git remote add upstream https://github.com/BetterInternship/MOA-Client.git
+          git fetch upstream
+          git reset --hard upstream/develop
+
+      - name: Push changes to fork
+        run: |
+          git push origin develop --force
