@@ -110,22 +110,7 @@ export default function DashboardPage() {
 
       {/* Company Log */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-foreground text-2xl font-semibold">Company Log</h2>
-          <div className="flex items-center gap-2">
-            {historyError ? (
-              <span className="text-destructive text-sm">Failed to load history</span>
-            ) : null}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetchHistory()}
-              disabled={isLoadingHistory}
-            >
-              {isLoadingHistory ? "Refreshing…" : "Refresh"}
-            </Button>
-          </div>
-        </div>
+        <h2 className="text-foreground text-2xl font-semibold">Company Log</h2>
 
         <HistoryLog showTitle={false} history={uiHistory} />
       </div>
