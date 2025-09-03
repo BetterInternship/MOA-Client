@@ -79,7 +79,7 @@ export const useMoaRequests = () => {
     sign: ({
       entity_id,
       request_id,
-      additional_form_schema: [],
+      additional_form_schema,
     }: {
       entity_id: string;
       request_id: string;
@@ -88,9 +88,9 @@ export const useMoaRequests = () => {
       signMoaRequest
         .mutateAsync({
           data: {
-            entity_id: "",
-            request_id: "",
-            additional_form_schema: [],
+            entity_id,
+            request_id,
+            additional_form_schema,
           },
         })
         .then(() => queryClient.invalidateQueries({ queryKey: ["moa-requests"] })),

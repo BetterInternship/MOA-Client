@@ -42,7 +42,6 @@ export const useMoaRequests = () => {
   });
   const createStandard = useEntityMoaControllerRequestNewStandard();
   const createCustom = useEntityMoaControllerRequestNewCustom();
-  const signCustom = useSchoolMoaControllerSignApprovedCustom();
   const respond = useEntityMoaControllerRespond();
 
   return {
@@ -50,7 +49,6 @@ export const useMoaRequests = () => {
     isLoading: isFetching || isLoading,
     createStandard: createStandard.mutateAsync,
     createCustom: createCustom.mutateAsync,
-    signCustom: signCustom.mutateAsync,
     respond: respond.mutateAsync,
   };
 };
