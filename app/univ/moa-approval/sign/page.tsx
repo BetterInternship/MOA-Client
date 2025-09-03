@@ -1,7 +1,7 @@
 "use client";
 
 import { useMoaRequests, useRequestThread } from "@/app/api/entity.api";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { validate } from "uuid";
 import { Loader } from "@/components/ui/loader";
@@ -212,6 +212,10 @@ function Sidebar({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [width, setWidth] = useState(0);
+  const request = useMemo(
+    () => moaRequests.requests.find((r) => r.id === requestId) ?? null,
+    [moaRequests, requestId]
+  );
 
   useEffect(() => {
     async function fetchPdf() {
@@ -225,6 +229,8 @@ function Sidebar({
     }
     fetchPdf().catch(console.error);
   }, [latestDocumentUrl]);
+
+  if (!request?.entity_id) return <Loader></Loader>;
 
   return (
     <div className="sidebar" style={{ width: "25vw" }}>
@@ -289,7 +295,7 @@ function Sidebar({
               moaRequests
                 .signCustom({
                   data: {
-                    school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
+                    entity_id: request?.entity_id,
                     request_id: requestId,
                     additional_form_schema: formSchema,
                   },

@@ -25,7 +25,7 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/entities", label: "Browse Entities", match: ["/entities"] },
+  { href: "/entities", label: "Approved Entities", match: ["/entities"] },
   { href: "/entity-approval", label: "Entity Approval", match: ["/entity-approval"] },
   { href: "/moa-approval", label: "MOA Approval", match: ["/moa", "/moa-approval"] },
 ];

@@ -7,7 +7,7 @@
  */
 
 export interface SignCustomMoaRequestDto {
-  school_id: string;
+  entity_id: string;
   request_id: string;
   additional_form_schema: string[];
 }

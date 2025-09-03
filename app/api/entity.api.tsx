@@ -7,13 +7,13 @@ import {
   useEntityMoaControllerRequestNewCustom,
   useEntityMoaControllerRequestNewStandard,
   useEntityMoaControllerRespond,
-  useEntityMoaControllerSignApprovedCustom,
 } from "./app/api/endpoints/entity-moa/entity-moa";
 import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
 import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import { preconfiguredAxiosFunction } from "@/app/api/preconfig.axios";
 import { useMemo } from "react";
 import { useGetMyEntityForSchool } from "./app/api/endpoints/entity-school-entities/entity-school-entities";
+import { useSchoolMoaControllerSignApprovedCustom } from "./app/api/endpoints/school-moa/school-moa";
 /**
  * Grabs a public list of lean entity DTOs.
  * Only names and ids are included.
@@ -42,7 +42,7 @@ export const useMoaRequests = () => {
   });
   const createStandard = useEntityMoaControllerRequestNewStandard();
   const createCustom = useEntityMoaControllerRequestNewCustom();
-  const signCustom = useEntityMoaControllerSignApprovedCustom();
+  const signCustom = useSchoolMoaControllerSignApprovedCustom();
   const respond = useEntityMoaControllerRespond();
 
   return {

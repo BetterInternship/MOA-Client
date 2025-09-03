@@ -29,10 +29,7 @@ export default function MoaRequestsPage() {
   return (
     <div className="min-h-[88vh]">
       <div className="mb-6 flex items-center gap-3 space-y-1">
-        <div className="inline-flex items-center gap-3 rounded-md bg-green-100 px-3 py-1 text-2xl font-semibold text-green-800">
-          <FileSignature />
-          <h1 className="text-2xl font-semibold">MOA Approvals</h1>
-        </div>
+        <span className="text-3xl font-bold tracking-tight text-gray-800">MOA Approvals</span>
       </div>
 
       {/* Resizable layout */}

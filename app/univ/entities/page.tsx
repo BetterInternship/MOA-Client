@@ -46,22 +46,15 @@ export default function CompaniesPage() {
     <div className="min-h-[88vh]">
       {/* header */}
       <div className="mb-6 flex items-center justify-between gap-3 space-y-1">
-        <div className="flex items-center gap-3 space-y-1">
-          <div className="inline-flex items-center gap-3 rounded-md bg-blue-100 px-3 py-1 text-2xl font-semibold text-blue-800">
-            <Building2 />
-            Browse Partner Entities
-          </div>
-          <p className="text-muted-foreground text-sm">
-            Browse partner entities and view MOA details.
-          </p>
+        <div className="flex flex-col items-start gap-3 space-y-1">
+          <span className="text-3xl font-bold tracking-tight text-gray-800">Approved Entities</span>
+          <Link href="/companies/add">
+            <Button>
+              <Plus />
+              Add new entity
+            </Button>
+          </Link>
         </div>
-
-        <Link href="/companies/add">
-          <Button>
-            <Plus />
-            Add new entity
-          </Button>
-        </Link>
       </div>
 
       <ResizablePanelGroup

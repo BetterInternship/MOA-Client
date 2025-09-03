@@ -1,4 +1,10 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+  QueryClient,
+} from "@tanstack/react-query";
 import { Entity, Message, MoaHistory, MoaRequest } from "@/types/db";
 import { preconfiguredAxios } from "@/app/api/preconfig.axios";
 import {
@@ -9,12 +15,12 @@ import {
   useSchoolEntitiesControllerBlacklistEntity,
 } from "./app/api/endpoints/school-entities/school-entities";
 import {
-  useSchoolMoaControllerApprove,
   useSchoolMoaControllerDeny,
   useSchoolMoaControllerGetMine,
   useSchoolMoaControllerGetOneHistory,
   useSchoolMoaControllerGetOneThread,
   useSchoolMoaControllerRespond,
+  useSchoolMoaControllerSignApprovedCustom,
 } from "./app/api/endpoints/school-moa/school-moa";
 import { useMemo } from "react";
 
@@ -59,23 +65,40 @@ export const useEntities = (opts?: { offset?: number; limit?: number }) => {
  * @hook
  */
 export const useMoaRequests = () => {
+  const queryClient = useQueryClient();
   const { data, isLoading, isFetching, refetch } = useSchoolMoaControllerGetMine({
     query: {
       queryKey: ["moa-requests"],
       staleTime: 5 * 60 * 1000,
-      placeholderData: keepPreviousData,
     },
   });
-  const approveMoaRequest = useSchoolMoaControllerApprove();
   const denyMoaRequest = useSchoolMoaControllerDeny();
   const respondMoaRequest = useSchoolMoaControllerRespond();
+  const signMoaRequest = useSchoolMoaControllerSignApprovedCustom();
 
   return {
     requests: (data?.requests as unknown as MoaRequest[]) ?? [],
     isLoading: isLoading || isFetching,
-    approve: approveMoaRequest.mutateAsync,
     deny: denyMoaRequest.mutateAsync,
     respond: respondMoaRequest.mutateAsync,
+    sign: ({
+      entity_id,
+      request_id,
+      additional_form_schema: [],
+    }: {
+      entity_id: string;
+      request_id: string;
+      additional_form_schema: any[];
+    }) =>
+      signMoaRequest
+        .mutateAsync({
+          data: {
+            entity_id: "",
+            request_id: "",
+            additional_form_schema: [],
+          },
+        })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["moa-requests"] })),
     refetch,
   };
 };

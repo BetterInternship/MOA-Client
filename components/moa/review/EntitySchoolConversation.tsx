@@ -174,12 +174,12 @@ function ChatBubble({
                     <Button
                       variant="outline"
                       className=""
-                      scheme={action === "sign-approve" ? "supportive" : "secondary"}
+                      scheme={action === "approve" ? "supportive" : "secondary"}
                     >
                       <a href={document} target="_blank">
                         <div className="flex flex-row items-center gap-1">
                           <Download />
-                          {action === "sign-approve" ? <>Approved MOA</> : <>Revised MOA</>}
+                          {action === "approve" ? <>Approved MOA</> : <>Revised MOA</>}
                         </div>
                       </a>
                     </Button>

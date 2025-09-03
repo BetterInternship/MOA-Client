@@ -26,7 +26,7 @@ function toEntityApprovalStatus(
   if (!s && !hasAnyRecord) return "not-approved";
   if (s === "approved" || s === "active" || s === "valid") return "approved";
   if (s === "denied" || s === "rejected" || s === "not-approved") return "not-approved";
-  return "pending"; // pending / waiting-* / sign-approved / unknown non-final
+  return "pending"; // pending / waiting-* / unknown non-final
 }
 
 const DEFAULT_SCHOOL_ID = "0fde7360-7c13-4d27-82e9-7db8413a08a5";
@@ -79,7 +79,7 @@ export default function DashboardPage() {
     refetchHistory,
   } = useSchoolPartner(entityId);
 
-  const uiHistory = partnerHistory?.history ?? [];
+  const uiHistory = (partnerHistory?.history as any) ?? [];
 
   return (
     <div className="min-w-96 space-y-8">
