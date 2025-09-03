@@ -1,10 +1,4 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-  QueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { Entity, Message, MoaHistory, MoaRequest } from "@/types/db";
 import { preconfiguredAxios } from "@/app/api/preconfig.axios";
 import {
@@ -23,6 +17,7 @@ import {
   useSchoolMoaControllerSignApprovedCustom,
 } from "./app/api/endpoints/school-moa/school-moa";
 import { useMemo } from "react";
+import { QueryClient } from "@tanstack/react-query";
 
 /**
  * Gives information about school partners.
@@ -394,12 +389,25 @@ export function useSchoolCompanyRequest(entityId?: string) {
 }
 
 export function useEntityRequestActions() {
+  const queryClient = useQueryClient();
   const approve = useSchoolEntitiesControllerApproveRequest();
   const deny = useSchoolEntitiesControllerDenyRequest();
 
   return {
-    approve: ({ id }: { id: string }) => approve.mutateAsync({ id }),
-    deny: ({ id }: { id: string }) => deny.mutateAsync({ id }),
+    approve: ({ id, reason }: { id: string; reason: string }) =>
+      approve
+        .mutateAsync({
+          id,
+          data: { reason },
+        })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["new-entity-requests"] })),
+    deny: ({ id, reason }: { id: string; reason: string }) =>
+      deny
+        .mutateAsync({
+          id,
+          data: { reason },
+        })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["new-entity-requests"] })),
     isPending: approve.isPending || deny.isPending,
   };
 }

@@ -7,12 +7,10 @@ import RequestsList from "@/components/univ/entity-requests/RequestsList";
 import EntityInfoCard from "@/components/shared/EntityInfoCard";
 import DocumentsCard from "@/components/univ/browse-entities/DocumentsCard";
 import RequestMeta from "@/components/univ/entity-requests/RequestMeta";
-import EntityRequestForResponse from "@/components/univ/entity-requests/EntityRequestForResponse";
 import FinalDecision from "@/components/univ/entity-requests/FinalDecision";
-import { ClipboardCheck } from "lucide-react";
-
-import { useCompanyRequests, useEntityRequestActions } from "@/hooks/useCompanyRequests";
+import { useCompanyRequests } from "@/hooks/useCompanyRequests";
 import type { CompanyRequest } from "@/types/company-request";
+import { useEntityRequestActions } from "@/app/api/school.api";
 
 const norm = (s?: string | null) =>
   String(s ?? "")
@@ -75,10 +73,6 @@ export default function CompanyVerificationPage() {
     if (!selectedId) return;
     await deny({ id: selectedId, reason: note });
     await reqsQ.refetch();
-  }
-
-  async function sendRequestForResponse(_msg: string) {
-    return;
   }
 
   console.log(selected);

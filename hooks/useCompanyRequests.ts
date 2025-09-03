@@ -71,10 +71,11 @@ const mapRequestRow = (r: RawCompanyRequest): CompanyRequest => {
 };
 
 /* ------------------------- LIST hook ------------------------- */
+// ! move this to school or something, god we really gotta refactor this somehow
 export function useCompanyRequests(opts?: { offset?: number; limit?: number }) {
   const { offset = 0, limit = 50 } = opts ?? {};
   return useQuery({
-    queryKey: ["schools", "company-requests", { offset, limit }],
+    queryKey: ["new-entity-requests", { offset, limit }],
     queryFn: async () => {
       const res = await preconfiguredAxios.get<{ requests: RawCompanyRequest[] }>(
         "/api/schools/company-requests",
@@ -105,27 +106,4 @@ export function useCompanyRequest(entityId?: string) {
     staleTime: 10_000,
     refetchOnWindowFocus: false,
   });
-}
-
-/* ------------------------- actions (approve/deny) ------------------------- */
-export function useEntityRequestActions() {
-  const approve = useMutation({
-    mutationKey: ["company-request", "approve"],
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      await preconfiguredAxios.post(`/api/school/entities/requests/${id}/approve`);
-    },
-  });
-
-  const deny = useMutation({
-    mutationKey: ["company-request", "deny"],
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      await preconfiguredAxios.post(`/api/school/entities/requests/${id}/deny`);
-    },
-  });
-
-  return {
-    approve: approve.mutateAsync,
-    deny: deny.mutateAsync,
-    isPending: approve.isPending || deny.isPending,
-  };
 }

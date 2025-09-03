@@ -48,7 +48,7 @@ export default function CompaniesPage() {
       <div className="mb-6 flex items-center justify-between gap-3 space-y-1">
         <div className="flex flex-col items-start gap-3 space-y-1">
           <span className="text-3xl font-bold tracking-tight text-gray-800">Approved Entities</span>
-          <Link href="/companies/add">
+          <Link href="/entities/add">
             <Button>
               <Plus />
               Add new entity
