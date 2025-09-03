@@ -45,16 +45,15 @@ export default function CompaniesPage() {
   return (
     <div className="min-h-[88vh]">
       {/* header */}
-      <div className="mb-6 flex items-center justify-between gap-3 space-y-1">
-        <div className="flex flex-col items-start gap-3 space-y-1">
-          <span className="text-3xl font-bold tracking-tight text-gray-800">Approved Entities</span>
-          <Link href="/entities/add">
-            <Button>
-              <Plus />
-              Add new entity
-            </Button>
-          </Link>
-        </div>
+      <div className="mb-6 flex w-full items-center justify-between">
+        <span className="text-3xl font-bold tracking-tight text-gray-800">Approved Entities</span>
+
+        <Link href="/entities/add" className="shrink-0">
+          <Button className="inline-flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add new entity
+          </Button>
+        </Link>
       </div>
 
       <ResizablePanelGroup
