@@ -1,47 +1,24 @@
 "use client";
 
+import * as React from "react";
 import { useMemo } from "react";
 import CustomCard from "@/components/shared/CustomCard";
-import StatusBadge from "@/components/shared/StatusBadge";
-import { formatWhen } from "@/lib/format";
-import { ShieldCheck, Clock, XCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-/**
- * EntityStatus
- * Displays whether an entity (company) is approved with the university, pending, or not approved.
- *
- * Example:
- * <EntityStatus
- *   entityName="Acme Corp"
- *   status="approved"
- *   approvedAt="2025-08-01T00:00:00Z"
- *   expiryAt="2026-07-31T23:59:59Z"
- * />
- */
+import { Button } from "@/components/ui/button";
+import { useMyEntityForSchool, useEntityReconsider, DEFAULT_SCHOOL_ID } from "@/app/api/entity.api";
 
 export type EntityApprovalStatus = "approved" | "pending" | "not-approved";
 
 type Props = {
-  /**
-   * Current approval status of the entity relative to the university.
-   * Supported: "approved" | "pending" | "not-approved" (fallbacks gracefully for unknown strings)
-   */
   status?: EntityApprovalStatus | string | null;
-  /** Optional: Entity display name for context */
   entityName?: string;
-  /** If pending, when the request was filed */
   requestedAt?: string;
-  /** If approved, when approval became effective */
   approvedAt?: string;
-  /** If approved, when the approval expires */
   expiryAt?: string | Date | null;
-  /** Loading state shows a subtle skeleton */
   loading?: boolean;
-  /** Compact mode trims descriptions and spacing (for list rows, sidebars, etc.) */
   compact?: boolean;
-  /** Extra className for the outer card */
   className?: string;
+  action?: React.ReactNode;
 };
 
 const toneByStatus: Record<string, string> = {
@@ -76,6 +53,7 @@ function daysUntil(date?: string | Date | null): number | null {
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 }
 
+/* -------------------------- Presentational card -------------------------- */
 export default function EntityStatus({
   status: rawStatus,
   entityName,
@@ -85,15 +63,14 @@ export default function EntityStatus({
   loading,
   compact,
   className,
+  action,
 }: Props) {
   const status = (rawStatus || "").toString().toLowerCase();
-
   const tone = toneByStatus[status] ?? "bg-white border-border";
   const title = titleByStatus[status] ?? "Status";
   const blurb = blurbByStatus[status] ?? "";
 
-  const expiryDays = useMemo(() => daysUntil(expiryAt), [expiryAt]);
-  const isExpiringSoon = typeof expiryDays === "number" && expiryDays <= 60 && expiryDays >= 0;
+  useMemo(() => daysUntil(expiryAt), [expiryAt]);
 
   if (loading && !status) {
     return (
@@ -104,9 +81,8 @@ export default function EntityStatus({
   }
 
   return (
-    <CustomCard className={`border ${tone} "p-4" ${className ?? ""}`}>
+    <CustomCard className={`border ${tone} p-4 ${className ?? ""}`}>
       <div className="flex items-start justify-between gap-4">
-        {/* Left */}
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <Badge>Current Account Status</Badge>
@@ -116,31 +92,90 @@ export default function EntityStatus({
 
           {!compact && <p className="text-muted-foreground text-sm">{blurb}</p>}
 
-          {/* Meta rows */}
-          <div className="text-muted-foreground mt-1 space-y-1 text-xs">
-            {status === "approved" && (
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                <span>Effective {approvedAt ? <b>{formatWhen(approvedAt)}</b> : <i>—</i>} </span>
-              </div>
-            )}
-
-            {status === "pending" && (
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" aria-hidden="true" />
-                <span>Requested {requestedAt ? <b>{formatWhen(requestedAt)}</b> : <i>—</i>}</span>
-              </div>
-            )}
-
-            {status === "not-approved" && (
-              <div className="flex items-center gap-2">
-                <XCircle className="h-4 w-4" aria-hidden="true" />
-                <span>Contact your MOA office for next steps.</span>
-              </div>
-            )}
-          </div>
+          {entityName ? (
+            <div className="text-muted-foreground mt-1 text-xs">
+              Entity: <b className="text-foreground">{entityName}</b>
+            </div>
+          ) : null}
         </div>
       </div>
+
+      {action ? <div className="pt-3">{action}</div> : null}
     </CustomCard>
+  );
+}
+
+/* ------------------------ Smart wrapper (self) ------------------------ */
+
+function toEntityApprovalStatus(
+  outcome?: string | null,
+  hasAnyRecord = false
+): EntityApprovalStatus {
+  const s = (outcome ?? "").toLowerCase();
+  if (!s && !hasAnyRecord) return "not-approved";
+  if (s === "approved" || s === "active" || s === "valid") return "approved";
+  if (s === "denied" || s === "rejected" || s === "not-approved") return "not-approved";
+  return "pending";
+}
+
+type RequestRow = {
+  id: string;
+  entity_id: string;
+  school_id: string;
+  timestamp?: string;
+  processed_date?: string | null;
+  outcome?: string | null;
+};
+
+/** Fetches status and renders the card + in-card reconsider action */
+export function EntityStatusSelf({ schoolId }: { schoolId?: string }) {
+  const sid = schoolId ?? DEFAULT_SCHOOL_ID;
+
+  // ⬇️ Now the hook already gives us latestRequest + relationStatus based on the latest outcome
+  const {
+    entity, // original payload (array or single)
+    latestRequest, // RequestRow | null
+    latestOutcome, // string | null
+    relationStatus, // normalized status (approved/pending/not-approved)
+    isLoading,
+    refetch,
+  } = useMyEntityForSchool(sid) as any;
+
+  const { reconsider, isPending } = useEntityReconsider();
+
+  const hasAnyRecord = Array.isArray(entity) ? entity.length > 0 : Boolean(entity);
+
+  const entityName =
+    (entity as any)?.legal_identifier ??
+    (entity as any)?.display_name ??
+    (latestRequest as RequestRow | null)?.entity_id ??
+    "-";
+
+  // Prefer the normalized bucket from the hook; fall back to local mapping
+  const status: EntityApprovalStatus =
+    relationStatus ?? toEntityApprovalStatus(latestOutcome, hasAnyRecord);
+
+  async function handleReconsider() {
+    await reconsider({ schoolId: sid });
+    await refetch?.();
+  }
+
+  if (status === "approved") return null;
+
+  return (
+    <EntityStatus
+      entityName={entityName}
+      status={status}
+      requestedAt={latestRequest?.timestamp}
+      approvedAt={latestRequest?.processed_date ?? undefined}
+      loading={isLoading}
+      action={
+        status === "not-approved" ? (
+          <Button onClick={handleReconsider} disabled={isPending} className="w-full sm:w-auto">
+            {isPending ? "Requesting…" : "Request reconsideration"}
+          </Button>
+        ) : null
+      }
+    />
   );
 }

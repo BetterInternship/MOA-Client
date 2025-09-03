@@ -15,7 +15,7 @@ export default function CompaniesPage() {
   const [selectedId, setSelectedId] = useState("");
 
   // fetch list (stable)
-  const { partners, isLoading } = useSchoolPartners({ limit: 300 });
+  const { partners, isLoading } = useSchoolPartners();
   const entities =
     (partners.toSorted(
       (a, b) => a.display_name?.localeCompare(b.display_name ?? "") ?? 0

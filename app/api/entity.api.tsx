@@ -1,5 +1,8 @@
 import { Entity, Message, MoaRequest, School } from "@/types/db";
-import { useEntitiesControllerGetList } from "./app/api/endpoints/entities/entities";
+import {
+  useEntitiesControllerGetList,
+  useEntitiesControllerReconsider,
+} from "./app/api/endpoints/entities/entities";
 import {
   useEntityMoaControllerGetMine,
   useEntityMoaControllerGetOneThread,
@@ -174,7 +177,24 @@ export function usePublicCompanyRegister() {
 
 export const DEFAULT_SCHOOL_ID = "0fde7360-7c13-4d27-82e9-7db8413a08a5";
 
-type RelationBucket = "approved" | "pending" | "not-approved" | "blacklisted";
+type RequestRow = {
+  id: string;
+  entity_id: string;
+  school_id: string;
+  timestamp?: string; // created at
+  processed_date?: string | null; // when approved/denied
+  outcome?: string | null; // "approved" | "denied" | null
+};
+
+function pickLatestRequest(rows: RequestRow[]): RequestRow | null {
+  const ts = (s?: string | null) => (s ? new Date(s).getTime() : 0);
+  return rows.reduce<RequestRow | null>((acc, r) => {
+    const t = Math.max(ts(r.processed_date), ts(r.timestamp));
+    if (!acc) return r;
+    const accT = Math.max(ts(acc.processed_date), ts(acc.timestamp));
+    return t > accT ? r : acc;
+  }, null);
+}
 
 function mapRelationStatus(s?: string | null): RelationBucket {
   const v = String(s ?? "")
@@ -183,12 +203,14 @@ function mapRelationStatus(s?: string | null): RelationBucket {
   if (v === "blacklisted") return "blacklisted";
   if (["approved", "active", "valid", "registered"].includes(v)) return "approved";
   if (["denied", "rejected", "not-approved"].includes(v)) return "not-approved";
-  return "pending"; // pending / under_review / waiting-* / etc.
+  return "pending";
 }
 
 /**
  * Entity-side: relationship with a school
  * GET /api/entity/school-entities/self?schoolId=...
+ * - Normalizes array vs single payload
+ * - Picks latest request and derives relationStatus from latest outcome
  */
 export function useMyEntityForSchool(schoolId?: string) {
   const params = useMemo(() => ({ schoolId: schoolId ?? DEFAULT_SCHOOL_ID }), [schoolId]);
@@ -201,13 +223,42 @@ export function useMyEntityForSchool(schoolId?: string) {
     },
   });
 
-  const entity = q.data?.entity ?? null;
+  const raw = q.data?.entity ?? null;
+
+  const rows: RequestRow[] = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const latestRequest: RequestRow | null = rows.length ? pickLatestRequest(rows) : null;
+
+  const latestOutcome: string | null = latestRequest?.outcome ?? null;
+
+  // IMPORTANT: relationStatus now derives from the latest outcome
+  const relationStatus = mapRelationStatus(latestOutcome);
 
   return {
-    entity, // EntityWithStatusDto | null
-    relationStatus: mapRelationStatus(entity?.moaStatus), // 'approved' | 'pending' | 'not-approved' | 'blacklisted'
+    entity: raw, // original payload
+    entityRequests: rows, // normalized array of requests
+    latestRequest,
+    latestOutcome, // literal outcome
+    relationStatus, 
     isLoading: q.isLoading || q.isFetching,
     error: q.error,
     refetch: q.refetch,
+  };
+}
+
+/**
+ * Generated mutation wrapper:
+ *   POST /api/entity/school-entities/reconsider
+ * Usage:
+ *   const { reconsider, isPending } = useEntityReconsider();
+ *   await reconsider({ schoolId });
+ */
+export function useEntityReconsider() {
+  const m = useEntitiesControllerReconsider();
+  return {
+    reconsider: (vars: { schoolId: string }) =>
+      m.mutateAsync({ data: { school_id: vars.schoolId } }),
+    isPending: m.isPending,
+    error: m.error as Error | null,
+    reset: m.reset,
   };
 }
