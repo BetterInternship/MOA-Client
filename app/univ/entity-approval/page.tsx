@@ -106,21 +106,29 @@ export default function CompanyVerificationPage() {
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as "pending" | "denied")} className="mb-3">
-        <TabsList>
-          <TabsTrigger value="pending">
+        <TabsList className="overflow-hidden rounded-[0.33em] border border-gray-300 p-0 font-semibold tracking-tight">
+          <TabsTrigger
+            value="pending"
+            className="data-[state=active]:text-primary rounded-none opacity-40 hover:cursor-pointer data-[state=active]:opacity-100"
+          >
             Pending / Needs Action
-            <span className="rounded bg-rose-100 px-1.5 text-[11px] font-semibold text-rose-700">
+            <span className="bg-primary/10 text-primary rounded-full px-1.5 text-[11px] font-semibold">
               {pendingItems.length}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="denied">Denied</TabsTrigger>
+          <TabsTrigger
+            value="denied"
+            className="data-[state=active]:text-primary rounded-none opacity-40 hover:cursor-pointer data-[state=active]:opacity-100"
+          >
+            Denied
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId="moa:requests:layout"
-        className="max-h-[77vh] min-h-[77vh] rounded-md border lg:overflow-hidden"
+        className="max-h-[77vh] min-h-[77vh] rounded-[0.33em] border border-gray-300 lg:overflow-hidden"
       >
         {/* Left list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>

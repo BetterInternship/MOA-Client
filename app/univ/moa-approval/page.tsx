@@ -36,7 +36,7 @@ export default function MoaRequestsPage() {
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId={`moa:requests:asideWidth`}
-        className="max-h-[80vh] min-h-[80vh] rounded-md border lg:overflow-hidden"
+        className="max-h-[80vh] min-h-[80vh] rounded-[0.33em] border border-gray-300 lg:overflow-hidden"
       >
         {/* LEFT: Company list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>

@@ -26,54 +26,48 @@ export default function MoaRequestList({ pendingRequests, selectedId, onSelect }
   const entities = useEntities({ limit: 370 }); // ! (TEMP FIX for now) lets fix soon
 
   return (
-    <aside className="h-full">
-      <div className="space-y-3 p-3">
-        {/* Single impact stat (style preserved) */}
-        <div className="flex items-end gap-2 rounded-lg border border-rose-300 bg-rose-50 p-3">
-          <div className="-mt-1 text-4xl leading-none font-bold text-rose-900">
-            {pendingRequests.length}
-          </div>
-          <div className="text-xs font-semibold tracking-wider text-rose-700/90 uppercase">
-            outstanding MOA requests
-          </div>
+    <aside className="h-full overflow-hidden">
+      <div className="bg-primary/10 flex flex-col items-start gap-1 border-b p-3">
+        <div className="text-primary text-xs font-semibold uppercase">
+          pending MOA requests ({pendingRequests.length})
         </div>
+      </div>
 
-        {/* List (style preserved) */}
-        <div className="max-h-[71vh] overflow-y-auto rounded-md border">
-          <ul className="divide-y">
-            {entities.isLoading ? (
-              <Loader />
-            ) : (
-              pendingRequests.map((r) => {
-                const id = r.id;
-                const active = id === selectedId;
-                const companyName = getCompanyName(r, entities.entities);
-                const requested = formatWhen(r.timestamp);
+      {/* List (style preserved) */}
+      <div className="max-h-[71vh] overflow-y-auto">
+        <ul className="divide-y border-b">
+          {entities.isLoading ? (
+            <Loader />
+          ) : (
+            pendingRequests.map((r) => {
+              const id = r.id;
+              const active = id === selectedId;
+              const companyName = getCompanyName(r, entities.entities);
+              const requested = formatWhen(r.timestamp);
 
-                return (
-                  <li key={id || Math.random()}>
-                    <button
-                      onClick={() => id && onSelect(id)}
-                      className={cn(
-                        "flex w-full items-center justify-between px-3 py-2 text-left transition",
-                        active ? "bg-accent" : "hover:bg-accent/60"
-                      )}
-                    >
-                      <div>
-                        <div className="font-medium">{companyName}</div>
-                        <div className="text-muted-foreground text-xs">Requested: {requested}</div>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })
-            )}
+              return (
+                <li key={id || Math.random()}>
+                  <button
+                    onClick={() => id && onSelect(id)}
+                    className={cn(
+                      "flex w-full items-center justify-between px-3 py-2 text-left transition",
+                      active ? "bg-accent" : "hover:bg-accent/60"
+                    )}
+                  >
+                    <div>
+                      <div className="font-medium">{companyName}</div>
+                      <div className="text-muted-foreground text-xs">Requested: {requested}</div>
+                    </div>
+                  </button>
+                </li>
+              );
+            })
+          )}
 
-            {pendingRequests.length === 0 && (
-              <li className="text-muted-foreground px-3 py-2 text-sm">No matches found.</li>
-            )}
-          </ul>
-        </div>
+          {pendingRequests.length === 0 && (
+            <li className="text-muted-foreground px-3 py-2 text-sm">No matches found.</li>
+          )}
+        </ul>
       </div>
     </aside>
   );

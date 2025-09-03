@@ -12,6 +12,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export default function ActionsBar({
   onBlacklist,
@@ -26,13 +27,13 @@ export default function ActionsBar({
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <button
+          <Button
             disabled={pending}
-            className="inline-flex items-center rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:cursor-pointer hover:bg-rose-100 disabled:opacity-50"
+            className="border-destructive/50 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-[0.33em] border text-sm hover:cursor-pointer disabled:opacity-50"
           >
-            <ShieldAlert className="mr-2 h-4 w-4" />
+            <ShieldAlert className="h-4 w-4" />
             {pending ? "Blacklisting..." : "Blacklist Entity"}
-          </button>
+          </Button>
         </AlertDialogTrigger>
         <AlertDialogContent variant="destructive">
           <AlertDialogHeader>
