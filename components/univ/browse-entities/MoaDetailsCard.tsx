@@ -12,7 +12,6 @@ type Props = {
   status: MoaStatus;
   validUntil?: string;
   loading?: boolean;
-  /** Latest MOA document URL derived from history */
   latestMoaUrl?: string;
 };
 
@@ -25,6 +24,11 @@ export default function MoaDetailsCard({
   latestMoaUrl,
 }: Props) {
   const canDownload = !!latestMoaUrl && !loading;
+  const moaStatus =
+    status === "approved" ? "Active"
+      : status === "registered" ? "Inactive"
+      : status === "blacklisted" ? "Blacklisted"
+      : undefined;
 
   return (
     <div className="rounded-[0.33em] border bg-white p-4">
@@ -53,7 +57,7 @@ export default function MoaDetailsCard({
           <div className="text-muted-foreground text-sm">MOA Status</div>
           <div className="mt-1">
             {/* @ts-ignore */}
-            <StatusBadge status={status} />
+            <StatusBadge status={moaStatus} />
           </div>
         </div>
 

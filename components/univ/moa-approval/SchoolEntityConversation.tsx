@@ -14,6 +14,7 @@ import { Loader } from "@/components/ui/loader";
 import CustomCard from "@/components/shared/CustomCard";
 import { useState } from "react";
 import MoaRequestResponseActions from "../entity-requests/MOARequestForResponse";
+import { useRouter } from "next/navigation";
 
 interface EntityConversationProps {
   req?: MoaRequest;
@@ -30,6 +31,7 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
   const [loading, setLoading] = useState(false);
   const thread = useRequestThread(req?.thread_id);
   const messages: Message[] = thread.messages ?? [];
+  const router = useRouter();
 
   if (thread.isLoading) return <Loader />;
   if (!messages.length) {
@@ -70,10 +72,8 @@ export const SchoolEntityConversation = ({ req }: EntityConversationProps) => {
       </div>
       <MoaRequestResponseActions
         onApprove={async () => {
-          window.open(
-            `/moa-approval/sign?request-id=${encodeURIComponent(req?.id ?? "")}&thread-id=${encodeURIComponent(req?.thread_id ?? "")}`,
-            "_blank",
-            "noopener,noreferrer"
+          router.push(
+            `/moa-approval/sign?request-id=${encodeURIComponent(req?.id ?? "")}&thread-id=${encodeURIComponent(req?.thread_id ?? "")}`
           );
         }}
         onRespond={async (message) => {
@@ -175,12 +175,12 @@ function ChatBubble({
                     <Button
                       variant="outline"
                       className=""
-                      scheme={action === "sign-approve" ? "supportive" : "secondary"}
+                      scheme={action === "approve" ? "supportive" : "secondary"}
                     >
                       <a href={document} target="_blank">
                         <div className="flex flex-row items-center gap-1">
                           <Download />
-                          {action === "sign-approve" ? <>Approved MOA</> : <>Revised MOA</>}
+                          {action === "approve" ? <>Approved MOA</> : <>Revised MOA</>}
                         </div>
                       </a>
                     </Button>

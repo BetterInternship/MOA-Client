@@ -5,22 +5,31 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
   UseSuspenseQueryOptions,
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import type { EntitiesResponse, EntityResponse, ErrorResponse } from "../../models";
+import type {
+  BaseResponse,
+  EntitiesResponse,
+  EntityResponse,
+  ErrorResponse,
+  ReconsiderEntityDto,
+} from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
@@ -417,3 +426,78 @@ export function useEntitiesControllerGetSelfSuspense<
 
   return query;
 }
+
+export const entitiesControllerReconsider = (
+  reconsiderEntityDto: ReconsiderEntityDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/entities/reconsider`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: reconsiderEntityDto,
+    signal,
+  });
+};
+
+export const getEntitiesControllerReconsiderMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof entitiesControllerReconsider>>,
+    TError,
+    { data: ReconsiderEntityDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof entitiesControllerReconsider>>,
+  TError,
+  { data: ReconsiderEntityDto },
+  TContext
+> => {
+  const mutationKey = ["entitiesControllerReconsider"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof entitiesControllerReconsider>>,
+    { data: ReconsiderEntityDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return entitiesControllerReconsider(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EntitiesControllerReconsiderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof entitiesControllerReconsider>>
+>;
+export type EntitiesControllerReconsiderMutationBody = ReconsiderEntityDto;
+export type EntitiesControllerReconsiderMutationError = ErrorResponse;
+
+export const useEntitiesControllerReconsider = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof entitiesControllerReconsider>>,
+      TError,
+      { data: ReconsiderEntityDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof entitiesControllerReconsider>>,
+  TError,
+  { data: ReconsiderEntityDto },
+  TContext
+> => {
+  const mutationOptions = getEntitiesControllerReconsiderMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};

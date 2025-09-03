@@ -26,13 +26,14 @@ import type {
 import type {
   BaseResponse,
   ErrorResponse,
-  MoaApproveDto,
   MoaDenyDto,
   MoaHistoryResponse,
   MoaRequestResponse,
   MoaRequestsResponse,
   MoaRespondDto,
   MoaThreadResponse,
+  NewCustomMoaRequestResponse,
+  SignCustomMoaRequestDto,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -913,81 +914,6 @@ export function useSchoolMoaControllerGetOneSuspense<
   return query;
 }
 
-export const schoolMoaControllerApprove = (
-  id: string | undefined | null,
-  moaApproveDto: MoaApproveDto,
-  signal?: AbortSignal
-) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/school/moa/${id}/approve`,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: moaApproveDto,
-    signal,
-  });
-};
-
-export const getSchoolMoaControllerApproveMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof schoolMoaControllerApprove>>,
-    TError,
-    { id: string | undefined | null; data: MoaApproveDto },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof schoolMoaControllerApprove>>,
-  TError,
-  { id: string | undefined | null; data: MoaApproveDto },
-  TContext
-> => {
-  const mutationKey = ["schoolMoaControllerApprove"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof schoolMoaControllerApprove>>,
-    { id: string | undefined | null; data: MoaApproveDto }
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return schoolMoaControllerApprove(id, data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SchoolMoaControllerApproveMutationResult = NonNullable<
-  Awaited<ReturnType<typeof schoolMoaControllerApprove>>
->;
-export type SchoolMoaControllerApproveMutationBody = MoaApproveDto;
-export type SchoolMoaControllerApproveMutationError = ErrorResponse;
-
-export const useSchoolMoaControllerApprove = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof schoolMoaControllerApprove>>,
-      TError,
-      { id: string | undefined | null; data: MoaApproveDto },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof schoolMoaControllerApprove>>,
-  TError,
-  { id: string | undefined | null; data: MoaApproveDto },
-  TContext
-> => {
-  const mutationOptions = getSchoolMoaControllerApproveMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
 export const schoolMoaControllerDeny = (
   id: string | undefined | null,
   moaDenyDto: MoaDenyDto,
@@ -1135,6 +1061,83 @@ export const useSchoolMoaControllerRespond = <TError = ErrorResponse, TContext =
   TContext
 > => {
   const mutationOptions = getSchoolMoaControllerRespondMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const schoolMoaControllerSignApprovedCustom = (
+  signCustomMoaRequestDto: SignCustomMoaRequestDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<NewCustomMoaRequestResponse>({
+    url: `/api/school/moa/sign-custom`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: signCustomMoaRequestDto,
+    signal,
+  });
+};
+
+export const getSchoolMoaControllerSignApprovedCustomMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof schoolMoaControllerSignApprovedCustom>>,
+    TError,
+    { data: SignCustomMoaRequestDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof schoolMoaControllerSignApprovedCustom>>,
+  TError,
+  { data: SignCustomMoaRequestDto },
+  TContext
+> => {
+  const mutationKey = ["schoolMoaControllerSignApprovedCustom"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof schoolMoaControllerSignApprovedCustom>>,
+    { data: SignCustomMoaRequestDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return schoolMoaControllerSignApprovedCustom(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SchoolMoaControllerSignApprovedCustomMutationResult = NonNullable<
+  Awaited<ReturnType<typeof schoolMoaControllerSignApprovedCustom>>
+>;
+export type SchoolMoaControllerSignApprovedCustomMutationBody = SignCustomMoaRequestDto;
+export type SchoolMoaControllerSignApprovedCustomMutationError = ErrorResponse;
+
+export const useSchoolMoaControllerSignApprovedCustom = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof schoolMoaControllerSignApprovedCustom>>,
+      TError,
+      { data: SignCustomMoaRequestDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof schoolMoaControllerSignApprovedCustom>>,
+  TError,
+  { data: SignCustomMoaRequestDto },
+  TContext
+> => {
+  const mutationOptions = getSchoolMoaControllerSignApprovedCustomMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

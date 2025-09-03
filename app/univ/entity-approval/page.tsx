@@ -7,12 +7,10 @@ import RequestsList from "@/components/univ/entity-requests/RequestsList";
 import EntityInfoCard from "@/components/shared/EntityInfoCard";
 import DocumentsCard from "@/components/univ/browse-entities/DocumentsCard";
 import RequestMeta from "@/components/univ/entity-requests/RequestMeta";
-import EntityRequestForResponse from "@/components/univ/entity-requests/EntityRequestForResponse";
 import FinalDecision from "@/components/univ/entity-requests/FinalDecision";
-import { ClipboardCheck } from "lucide-react";
-
-import { useCompanyRequests, useEntityRequestActions } from "@/hooks/useCompanyRequests";
+import { useCompanyRequests } from "@/hooks/useCompanyRequests";
 import type { CompanyRequest } from "@/types/company-request";
+import { useEntityRequestActions } from "@/app/api/school.api";
 
 const norm = (s?: string | null) =>
   String(s ?? "")
@@ -65,20 +63,16 @@ export default function CompanyVerificationPage() {
   // actions
   const { approve, deny, isPending: busy } = useEntityRequestActions();
 
-  async function onApprove(_note: string) {
+  async function onApprove(note: string) {
     if (!selectedId) return;
-    await approve({ id: selectedId });
+    await approve({ id: selectedId, reason: note });
     await reqsQ.refetch();
   }
 
-  async function onDeny(_note: string) {
+  async function onDeny(note: string) {
     if (!selectedId) return;
-    await deny({ id: selectedId });
+    await deny({ id: selectedId, reason: note });
     await reqsQ.refetch();
-  }
-
-  async function sendRequestForResponse(_msg: string) {
-    return;
   }
 
   console.log(selected);
@@ -101,32 +95,34 @@ export default function CompanyVerificationPage() {
     <div className="min-h-[88vh]">
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
-        <div className="inline-flex items-center gap-3 rounded-md bg-purple-100 px-3 py-1 text-2xl font-semibold text-purple-800">
-          <ClipboardCheck />
-          Entity Approvals
-        </div>
-        <p className="text-muted-foreground text-sm">
-          Review new entity registrations, request clarifications, and approve or deny submissions.
-        </p>
+        <span className="text-3xl font-bold tracking-tight text-gray-800">Entity Approvals</span>
       </div>
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as "pending" | "denied")} className="mb-3">
-        <TabsList>
-          <TabsTrigger value="pending">
+        <TabsList className="overflow-hidden rounded-[0.33em] border border-gray-300 p-0 font-semibold tracking-tight">
+          <TabsTrigger
+            value="pending"
+            className="data-[state=active]:text-primary rounded-none opacity-40 hover:cursor-pointer data-[state=active]:opacity-100"
+          >
             Pending / Needs Action
-            <span className="rounded bg-rose-100 px-1.5 text-[11px] font-semibold text-rose-700">
+            <span className="bg-primary/10 text-primary rounded-full px-1.5 text-[11px] font-semibold">
               {pendingItems.length}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="denied">Denied</TabsTrigger>
+          <TabsTrigger
+            value="denied"
+            className="data-[state=active]:text-primary rounded-none opacity-40 hover:cursor-pointer data-[state=active]:opacity-100"
+          >
+            Denied
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId="moa:requests:layout"
-        className="max-h-[77vh] min-h-[77vh] rounded-md border lg:overflow-hidden"
+        className="max-h-[77vh] min-h-[77vh] rounded-[0.33em] border border-gray-300 lg:overflow-hidden"
       >
         {/* Left list */}
         <ResizablePanel defaultSize={26} minSize={18} maxSize={50}>
@@ -172,7 +168,7 @@ export default function CompanyVerificationPage() {
               <DocumentsCard documents={documents} />
               {tab === "pending" && (
                 <>
-                  <EntityRequestForResponse onSend={sendRequestForResponse} loading={busy} />
+                  {/* <EntityRequestForResponse onSend={sendRequestForResponse} loading={busy} /> */}
                   <FinalDecision onApprove={onApprove} onDeny={onDeny} loading={busy} />
                 </>
               )}

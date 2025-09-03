@@ -9,14 +9,15 @@ import {
   useSchoolEntitiesControllerBlacklistEntity,
 } from "./app/api/endpoints/school-entities/school-entities";
 import {
-  useSchoolMoaControllerApprove,
   useSchoolMoaControllerDeny,
   useSchoolMoaControllerGetMine,
   useSchoolMoaControllerGetOneHistory,
   useSchoolMoaControllerGetOneThread,
   useSchoolMoaControllerRespond,
+  useSchoolMoaControllerSignApprovedCustom,
 } from "./app/api/endpoints/school-moa/school-moa";
 import { useMemo } from "react";
+import { QueryClient } from "@tanstack/react-query";
 
 /**
  * Gives information about school partners.
@@ -59,23 +60,40 @@ export const useEntities = (opts?: { offset?: number; limit?: number }) => {
  * @hook
  */
 export const useMoaRequests = () => {
+  const queryClient = useQueryClient();
   const { data, isLoading, isFetching, refetch } = useSchoolMoaControllerGetMine({
     query: {
       queryKey: ["moa-requests"],
       staleTime: 5 * 60 * 1000,
-      placeholderData: keepPreviousData,
     },
   });
-  const approveMoaRequest = useSchoolMoaControllerApprove();
   const denyMoaRequest = useSchoolMoaControllerDeny();
   const respondMoaRequest = useSchoolMoaControllerRespond();
+  const signMoaRequest = useSchoolMoaControllerSignApprovedCustom();
 
   return {
     requests: (data?.requests as unknown as MoaRequest[]) ?? [],
     isLoading: isLoading || isFetching,
-    approve: approveMoaRequest.mutateAsync,
     deny: denyMoaRequest.mutateAsync,
     respond: respondMoaRequest.mutateAsync,
+    sign: ({
+      entity_id,
+      request_id,
+      additional_form_schema,
+    }: {
+      entity_id: string;
+      request_id: string;
+      additional_form_schema: any[];
+    }) =>
+      signMoaRequest
+        .mutateAsync({
+          data: {
+            entity_id,
+            request_id,
+            additional_form_schema,
+          },
+        })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["moa-requests"] })),
     refetch,
   };
 };
@@ -371,12 +389,25 @@ export function useSchoolCompanyRequest(entityId?: string) {
 }
 
 export function useEntityRequestActions() {
+  const queryClient = useQueryClient();
   const approve = useSchoolEntitiesControllerApproveRequest();
   const deny = useSchoolEntitiesControllerDenyRequest();
 
   return {
-    approve: ({ id }: { id: string }) => approve.mutateAsync({ id }),
-    deny: ({ id }: { id: string }) => deny.mutateAsync({ id }),
+    approve: ({ id, reason }: { id: string; reason: string }) =>
+      approve
+        .mutateAsync({
+          id,
+          data: { reason },
+        })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["new-entity-requests"] })),
+    deny: ({ id, reason }: { id: string; reason: string }) =>
+      deny
+        .mutateAsync({
+          id,
+          data: { reason },
+        })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["new-entity-requests"] })),
     isPending: approve.isPending || deny.isPending,
   };
 }

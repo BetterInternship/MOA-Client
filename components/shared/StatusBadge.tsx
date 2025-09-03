@@ -28,8 +28,6 @@ export default function StatusBadge({ status, className }: Props) {
       return base("primary", "Needs Info");
     case "under review":
       return base("warning", "Under Review");
-    case "sign-approved":
-      return base("warning", "Needs Signing");
     case "pending":
     default:
       return base("warning", "Pending");

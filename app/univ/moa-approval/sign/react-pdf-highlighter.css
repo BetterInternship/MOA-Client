@@ -75,7 +75,7 @@ blockquote:after {
 ._mouseSelection_1p43j_1 {
   position: absolute;
   border: 1px dashed #333;
-  background: rgba(252, 232, 151, 1);
+  background: rgba(143, 226, 255, 1);
   mix-blend-mode: multiply;
 }
 /* Internet Explorer support method */
@@ -143,7 +143,7 @@ blockquote:after {
 ._part_3l4zw_12 {
   cursor: pointer;
   position: absolute;
-  background: rgba(255, 226, 143, 1);
+  background: rgba(143, 226, 255, 1);
   transition: background 0.3s;
 }
 
@@ -152,7 +152,7 @@ blockquote:after {
 }
 ._areaHighlight_1ppoh_1 {
   border: 1px solid #333;
-  background-color: rgba(252, 232, 151, 1.0);
+  background-color: rgba(143, 226, 255, 1);
   opacity: 1;
   mix-blend-mode: multiply;
 }
@@ -160,8 +160,9 @@ blockquote:after {
 ._part_1ppoh_8 {
   cursor: pointer;
   position: absolute;
-  background: rgba(255, 226, 143, 1);
+  background: rgba(143, 226, 255, 1);
   transition: background 0.3s;
+  z-index: 999;
 }
 
 ._scrolledTo_1ppoh_15 ._part_1ppoh_8 {
@@ -2952,5 +2953,5 @@ html
   border-radius: 3px;
   max-width: 300px;
   max-height: 100px;
-  overflow-y: scroll;
+  overflow-y: auto;
 }

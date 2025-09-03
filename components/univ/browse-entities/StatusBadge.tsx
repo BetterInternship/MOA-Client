@@ -9,13 +9,15 @@ const toKey = (s: AnyStatus) => {
 
 import { Company } from "@/types/company";
 
-export default function StatusBadge({ status }: { status: Company["moaStatus"] }) {
+export default function StatusBadge({ status }: { status: string }) {
   const key = toKey(status);
 
   const map: Record<string, string> = {
-    registered: "bg-amber-100 text-amber-800", // Pending-like
-    approved: "bg-emerald-100 text-emerald-700", // Success
-    blacklisted: "bg-rose-100 text-rose-700", // Danger
+    registered: "bg-amber-100 text-amber-800", 
+    inactive: "bg-amber-100 text-amber-800", 
+    approved: "bg-emerald-100 text-emerald-700", 
+    active: "bg-emerald-100 text-emerald-700", 
+    blacklisted: "bg-rose-100 text-rose-700",
   };
 
   const cls = map[key] ?? "bg-gray-100 text-gray-700";

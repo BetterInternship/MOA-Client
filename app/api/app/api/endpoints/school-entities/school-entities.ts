@@ -29,6 +29,7 @@ import type {
   EntitiesResponse,
   EntityResponse,
   ErrorResponse,
+  NewEntityRequestReplyDto,
   RequestsResponse,
   SchoolEntitiesControllerGetMyPartnersParams,
 } from "../../models";
@@ -770,11 +771,14 @@ export function useSchoolEntitiesControllerGetRequestSuspense<
 
 export const schoolEntitiesControllerApproveRequest = (
   id: string | undefined | null,
+  newEntityRequestReplyDto: NewEntityRequestReplyDto,
   signal?: AbortSignal
 ) => {
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/school/entities/requests/${id}/approve`,
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: newEntityRequestReplyDto,
     signal,
   });
 };
@@ -786,13 +790,13 @@ export const getSchoolEntitiesControllerApproveRequestMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof schoolEntitiesControllerApproveRequest>>,
     TError,
-    { id: string | undefined | null },
+    { id: string | undefined | null; data: NewEntityRequestReplyDto },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof schoolEntitiesControllerApproveRequest>>,
   TError,
-  { id: string | undefined | null },
+  { id: string | undefined | null; data: NewEntityRequestReplyDto },
   TContext
 > => {
   const mutationKey = ["schoolEntitiesControllerApproveRequest"];
@@ -804,11 +808,11 @@ export const getSchoolEntitiesControllerApproveRequestMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof schoolEntitiesControllerApproveRequest>>,
-    { id: string | undefined | null }
+    { id: string | undefined | null; data: NewEntityRequestReplyDto }
   > = (props) => {
-    const { id } = props ?? {};
+    const { id, data } = props ?? {};
 
-    return schoolEntitiesControllerApproveRequest(id);
+    return schoolEntitiesControllerApproveRequest(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -817,7 +821,7 @@ export const getSchoolEntitiesControllerApproveRequestMutationOptions = <
 export type SchoolEntitiesControllerApproveRequestMutationResult = NonNullable<
   Awaited<ReturnType<typeof schoolEntitiesControllerApproveRequest>>
 >;
-
+export type SchoolEntitiesControllerApproveRequestMutationBody = NewEntityRequestReplyDto;
 export type SchoolEntitiesControllerApproveRequestMutationError = ErrorResponse;
 
 export const useSchoolEntitiesControllerApproveRequest = <
@@ -828,7 +832,7 @@ export const useSchoolEntitiesControllerApproveRequest = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof schoolEntitiesControllerApproveRequest>>,
       TError,
-      { id: string | undefined | null },
+      { id: string | undefined | null; data: NewEntityRequestReplyDto },
       TContext
     >;
   },
@@ -836,7 +840,7 @@ export const useSchoolEntitiesControllerApproveRequest = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof schoolEntitiesControllerApproveRequest>>,
   TError,
-  { id: string | undefined | null },
+  { id: string | undefined | null; data: NewEntityRequestReplyDto },
   TContext
 > => {
   const mutationOptions = getSchoolEntitiesControllerApproveRequestMutationOptions(options);
@@ -845,11 +849,14 @@ export const useSchoolEntitiesControllerApproveRequest = <
 };
 export const schoolEntitiesControllerDenyRequest = (
   id: string | undefined | null,
+  newEntityRequestReplyDto: NewEntityRequestReplyDto,
   signal?: AbortSignal
 ) => {
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/school/entities/requests/${id}/deny`,
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: newEntityRequestReplyDto,
     signal,
   });
 };
@@ -861,13 +868,13 @@ export const getSchoolEntitiesControllerDenyRequestMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof schoolEntitiesControllerDenyRequest>>,
     TError,
-    { id: string | undefined | null },
+    { id: string | undefined | null; data: NewEntityRequestReplyDto },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof schoolEntitiesControllerDenyRequest>>,
   TError,
-  { id: string | undefined | null },
+  { id: string | undefined | null; data: NewEntityRequestReplyDto },
   TContext
 > => {
   const mutationKey = ["schoolEntitiesControllerDenyRequest"];
@@ -879,11 +886,11 @@ export const getSchoolEntitiesControllerDenyRequestMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof schoolEntitiesControllerDenyRequest>>,
-    { id: string | undefined | null }
+    { id: string | undefined | null; data: NewEntityRequestReplyDto }
   > = (props) => {
-    const { id } = props ?? {};
+    const { id, data } = props ?? {};
 
-    return schoolEntitiesControllerDenyRequest(id);
+    return schoolEntitiesControllerDenyRequest(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -892,7 +899,7 @@ export const getSchoolEntitiesControllerDenyRequestMutationOptions = <
 export type SchoolEntitiesControllerDenyRequestMutationResult = NonNullable<
   Awaited<ReturnType<typeof schoolEntitiesControllerDenyRequest>>
 >;
-
+export type SchoolEntitiesControllerDenyRequestMutationBody = NewEntityRequestReplyDto;
 export type SchoolEntitiesControllerDenyRequestMutationError = ErrorResponse;
 
 export const useSchoolEntitiesControllerDenyRequest = <TError = ErrorResponse, TContext = unknown>(
@@ -900,7 +907,7 @@ export const useSchoolEntitiesControllerDenyRequest = <TError = ErrorResponse, T
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof schoolEntitiesControllerDenyRequest>>,
       TError,
-      { id: string | undefined | null },
+      { id: string | undefined | null; data: NewEntityRequestReplyDto },
       TContext
     >;
   },
@@ -908,7 +915,7 @@ export const useSchoolEntitiesControllerDenyRequest = <TError = ErrorResponse, T
 ): UseMutationResult<
   Awaited<ReturnType<typeof schoolEntitiesControllerDenyRequest>>,
   TError,
-  { id: string | undefined | null },
+  { id: string | undefined | null; data: NewEntityRequestReplyDto },
   TContext
 > => {
   const mutationOptions = getSchoolEntitiesControllerDenyRequestMutationOptions(options);

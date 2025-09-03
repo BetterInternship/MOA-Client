@@ -35,11 +35,17 @@ export default function CompanyList({
   }, [companies, query]);
 
   return (
-    <aside className="h-full overflow-y-auto">
-      <div className="space-y-3 p-3">
+    <aside className="relative flex h-full flex-col overflow-hidden">
+      <div className="flex h-full flex-col">
+        <div className="bg-primary/10 flex flex-col items-start gap-1 border-b p-3">
+          <div className="text-primary text-xs font-semibold uppercase">
+            approved partner entities ({companies.length})
+          </div>
+        </div>
+
         <div className="relative">
           <Input
-            className="pr-8 pl-9"
+            className="rounded-none pr-8 pl-9"
             placeholder="Search entity..."
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
@@ -57,7 +63,7 @@ export default function CompanyList({
           )}
         </div>
 
-        <div className="rounded-md border">
+        <div className="overflow-y-auto border">
           {isLoading ? (
             <ul className="divide-y">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -67,7 +73,7 @@ export default function CompanyList({
               ))}
             </ul>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y border-b border-gray-200">
               {filtered.map((c) => {
                 const active = c.id === selectedId;
                 const subline = [ucfirst(c.type), c.contact_name || c.contact_email]
@@ -77,20 +83,21 @@ export default function CompanyList({
                   <li key={c.id}>
                     <button
                       onClick={() => onSelect(c.id)}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left transition ${
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition ${
                         active ? "bg-accent" : "hover:bg-accent/60"
                       }`}
                     >
                       <div className="min-w-0">
-                        <div className="truncate font-medium">{c.display_name}</div>
-                        {/* <div className="text-muted-foreground truncate text-xs">{subline}</div> */}
+                        <div className="truncate tracking-tight">{c.display_name}</div>
                       </div>
                     </button>
                   </li>
                 );
               })}
-              {filtered.length === 0 && (
-                <li className="text-muted-foreground px-3 py-2 text-sm">No matches found.</li>
+              {filtered.length === 0 && !isLoading && (
+                <li className="text-muted-foreground border-b px-3 py-2 text-sm">
+                  No matches found.
+                </li>
               )}
             </ul>
           )}

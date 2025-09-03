@@ -25,7 +25,6 @@ const statusUpdates: Record<string, string> = {
   denied: "Your MOA request has been denied. Click to review their feedback.",
   "waiting-for-school": "Waiting for university feedback.",
   "waiting-for-entity": "The university has provided feedback on your request. Review it now.",
-  "sign-approved": "Your MOA request has been approved and is in need of signing.",
 };
 
 const toneByOutcome: Record<string, string> = {
@@ -34,7 +33,6 @@ const toneByOutcome: Record<string, string> = {
   pending: "bg-warning/5 border-warning",
   "waiting-for-school": "bg-primary/5 border-primary",
   "waiting-for-entity": "bg-primary/5 border-primary",
-  "sign-approved": "bg-supportive/5 border-supportive",
 };
 
 export default function MoaStatus({ requests, loading }: Props) {
@@ -102,8 +100,8 @@ export default function MoaStatus({ requests, loading }: Props) {
                     {statusUpdates[moa?.outcome ?? ""] ?? "-"}
                   </div>
                 )}
-                <span className="">
-                  Requested at <span className="font-semibold">{formatWhen(moa.timestamp)}</span>
+                <span className="text-xs">
+                  Requested at <span className="font-bold">{formatWhen(moa.timestamp)}</span>
                 </span>
               </div>
             </div>
@@ -125,15 +123,6 @@ export default function MoaStatus({ requests, loading }: Props) {
               {moa.outcome === "waiting-for-entity" && (
                 <Button scheme="secondary" onClick={() => router.push("/dashboard/review")}>
                   Review Request
-                  <SidebarOpen />
-                </Button>
-              )}
-              {moa.outcome === "sign-approved" && (
-                <Button
-                  scheme="secondary"
-                  onClick={() => router.push("/dashboard/request/sign-approved")}
-                >
-                  Sign MOA
                   <SidebarOpen />
                 </Button>
               )}

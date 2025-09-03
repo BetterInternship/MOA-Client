@@ -1,7 +1,7 @@
 "use client";
 
-import { useMoaRequests, useRequestThread } from "@/app/api/entity.api";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRequestThread } from "@/app/api/entity.api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { validate } from "uuid";
 import { Loader } from "@/components/ui/loader";
@@ -21,6 +21,8 @@ import "./react-pdf-highlighter.css";
 import { Button } from "@/components/ui/button";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { PDFDocument } from "pdf-lib";
+import { Divider } from "@/components/ui/divider";
+import { useMoaRequests } from "@/app/api/school.api";
 
 // ! replace or make standardized
 const signatoryOptions = [
@@ -38,6 +40,7 @@ export function MoaSigningPage() {
   const router = useRouter();
   const requestThread = useRequestThread(threadId);
   const [highlights, setHighlights] = useState<IHighlight[]>([]);
+  const [selectedHighlightType, setSelectedHighlightType] = useState<string | null>(null);
 
   const resetHighlights = () => {
     setHighlights([]);
@@ -91,6 +94,11 @@ export function MoaSigningPage() {
         <Sidebar
           requestId={requestId}
           highlights={highlights}
+          selectedHighlightType={selectedHighlightType}
+          setHighlightType={setSelectedHighlightType}
+          removeHighlight={(highlight: IHighlight) => {
+            setHighlights(highlights.filter((h) => h.id !== highlight.id));
+          }}
           latestDocumentUrl={requestThread.latestDocument?.document_url}
           reset={resetHighlights}
         />
@@ -98,7 +106,7 @@ export function MoaSigningPage() {
           {(pdfDocument) => (
             <PdfHighlighter
               pdfDocument={pdfDocument}
-              enableAreaSelection={(event) => event.altKey}
+              enableAreaSelection={(event) => !!selectedHighlightType}
               onScrollChange={() => (document.location.hash = "")}
               scrollRef={(scrollTo) => {
                 scrollViewerTo.current = scrollTo as (highlight: IHighlight) => void;
@@ -110,18 +118,13 @@ export function MoaSigningPage() {
                 hideDropdownAndSelection,
                 transformSelection
               ) => (
-                <AreaDropdown
-                  options={signatoryOptions}
-                  onSelect={(id?: string | null) => {
-                    if (!id) return alert("You must specify area content.");
-                    addHighlight({
-                      content,
-                      position,
-                      comment: { text: id, emoji: "" } as unknown as Comment,
-                    });
-                    hideDropdownAndSelection();
-                  }}
-                />
+                addHighlight({
+                  content,
+                  position,
+                  comment: { text: selectedHighlightType, emoji: "" } as unknown as Comment,
+                }),
+                setSelectedHighlightType(null),
+                (<div></div>)
               )}
               highlightTransform={(
                 highlight,
@@ -200,11 +203,17 @@ function AreaDropdown({
 function Sidebar({
   requestId,
   highlights,
+  selectedHighlightType,
+  setHighlightType,
+  removeHighlight,
   latestDocumentUrl,
   reset,
 }: {
   requestId: string;
   highlights: Array<IHighlight>;
+  selectedHighlightType: string | null;
+  setHighlightType: (highlightType: string) => void;
+  removeHighlight: (highlight: IHighlight) => void;
   latestDocumentUrl?: string | null;
   reset: () => void;
 }) {
@@ -212,6 +221,10 @@ function Sidebar({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [width, setWidth] = useState(0);
+  const request = useMemo(
+    () => moaRequests.requests.find((r) => r.id === requestId) ?? null,
+    [moaRequests, requestId]
+  );
 
   useEffect(() => {
     async function fetchPdf() {
@@ -226,11 +239,12 @@ function Sidebar({
     fetchPdf().catch(console.error);
   }, [latestDocumentUrl]);
 
+  if (!request?.entity_id) return <Loader></Loader>;
+
   return (
     <div className="sidebar" style={{ width: "25vw" }}>
       <div className="description" style={{ padding: "1rem" }}>
         <h1 className="text-2xl font-bold tracking-tight">Select Signing Areas</h1>
-        <small>To select an area, hold ⌥ Option key (Alt), then click and drag.</small>
       </div>
 
       <ul className="sidebar__highlights">
@@ -253,61 +267,103 @@ function Sidebar({
                 </div>
               ) : null}
             </div>
-            <div className="highlight__location">Page {highlight.position.pageNumber}</div>
+            <div className="mt-2 flex flex-row justify-between">
+              <Button
+                scheme="destructive"
+                size="xs"
+                className="text-right"
+                onClick={() => removeHighlight(highlight)}
+              >
+                remove
+              </Button>
+              <div className="highlight__location">Page {highlight.position.pageNumber}</div>
+            </div>
           </li>
         ))}
       </ul>
-      {highlights.length > 0 ? (
-        <div className="flex flex-row gap-2 p-[1rem]">
-          <Button scheme="destructive" onClick={reset}>
-            Clear Selections
-          </Button>
-          <Button
-            scheme="primary"
-            disabled={loading}
-            onClick={() => {
-              const formSchema: any[] = [];
-              highlights.forEach((highlight) => {
-                setLoading(true);
-                const scale = width / highlight.position.boundingRect.width;
-                const x = highlight.position.boundingRect.x1 * scale;
-                const y = highlight.position.boundingRect.y1 * scale;
-                const w = highlight.position.boundingRect.x2 * scale - x;
-                const h = highlight.position.boundingRect.y2 * scale - y;
+      <div className="flex flex-col gap-2 p-[1rem]">
+        {!!selectedHighlightType && (
+          <span className="text-primary bg-primary/10 rounded-[0.33em] p-2 px-4 tracking-tight">
+            Click and drag to select an area on the pdf to place the field.
+          </span>
+        )}
+        <Button
+          variant="outline"
+          scheme="secondary"
+          disabled={!!selectedHighlightType}
+          onClick={() => setHighlightType("school_signatory_name")}
+        >
+          Place Signatory Name
+        </Button>
+        <Button
+          variant="outline"
+          scheme="secondary"
+          disabled={!!selectedHighlightType}
+          onClick={() => setHighlightType("school_signatory_title")}
+        >
+          Place Signatory Title
+        </Button>
+        <Button
+          variant="outline"
+          scheme="secondary"
+          disabled={!!selectedHighlightType}
+          onClick={() => setHighlightType("school_signatory_signature")}
+        >
+          Place Signatory Signature
+        </Button>
+        <div className="p-2">
+          <Divider />
+        </div>
+        {highlights.length > 0 ? (
+          <>
+            <Button scheme="destructive" onClick={reset}>
+              Clear Selections
+            </Button>
+            <Button
+              scheme="primary"
+              disabled={loading}
+              onClick={() => {
+                const formSchema: any[] = [];
+                highlights.forEach((highlight) => {
+                  setLoading(true);
+                  const scale = width / highlight.position.boundingRect.width;
+                  const x = highlight.position.boundingRect.x1 * scale;
+                  const y = highlight.position.boundingRect.y1 * scale;
+                  const w = highlight.position.boundingRect.x2 * scale - x;
+                  const h = highlight.position.boundingRect.y2 * scale - y;
 
-                formSchema.push({
-                  field: highlight.comment.text,
-                  value: "test value for " + highlight.comment.text,
-                  type: "text", // ! change
-                  x: Math.round(x),
-                  y: Math.round(y),
-                  w: Math.round(w),
-                  h: Math.round(h),
-                  page: highlight.position.pageNumber,
+                  formSchema.push({
+                    field: highlight.comment.text,
+                    value: "test value for " + highlight.comment.text,
+                    type: "text", // ! change
+                    x: Math.round(x),
+                    y: Math.round(y),
+                    w: Math.round(w),
+                    h: Math.round(h),
+                    page: highlight.position.pageNumber,
+                  });
                 });
-              });
-              moaRequests
-                .signCustom({
-                  data: {
-                    school_id: "0fde7360-7c13-4d27-82e9-7db8413a08a5",
+                moaRequests
+                  .sign({
+                    entity_id: request?.entity_id,
                     request_id: requestId,
                     additional_form_schema: formSchema,
-                  },
-                })
-                .then(
-                  () => (
-                    alert("Successfully signed MOA."),
-                    router.push("/moa-approval"),
-                    setLoading(false)
+                  })
+                  .then(
+                    () => (
+                      alert("Successfully signed MOA."),
+                      router.push("/moa-approval"),
+                      setLoading(false)
+                    )
                   )
-                )
-                .catch(() => (alert("Something went wrong."), setLoading(false)));
-            }}
-          >
-            {loading ? "Submitting..." : "Sign and Submit"}
-          </Button>
-        </div>
-      ) : null}
+                  .catch(() => (alert("Something went wrong."), setLoading(false)));
+              }}
+            >
+              {loading ? "Submitting..." : "Sign and Submit"}
+            </Button>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -5,9 +5,9 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { SchoolEntityResponseSchoolEntity } from "./schoolEntityResponseSchoolEntity";
+import type { EntityWithStatusResponseEntity } from "./entityWithStatusResponseEntity";
 
-export interface SchoolEntityResponse {
+export interface EntityWithStatusResponse {
   /** @nullable */
-  schoolEntity: SchoolEntityResponseSchoolEntity;
+  entity: EntityWithStatusResponseEntity;
 }

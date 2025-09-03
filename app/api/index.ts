@@ -8,3 +8,4 @@ export * from "./app/api/endpoints/docs/docs";
 export * from "./app/api/endpoints/schools/schools";
 export * from "./app/api/endpoints/entities/entities";
 export * from "./app/api/endpoints/entity-schools/entity-schools";
+export * from "./app/api/endpoints/entity-school-entities/entity-school-entities";

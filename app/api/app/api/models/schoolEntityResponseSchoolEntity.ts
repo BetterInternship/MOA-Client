@@ -5,9 +5,9 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { SchoolEntityDto } from "./schoolEntityDto";
 
-export interface SignCustomMoaRequestDto {
-  entity_id: string;
-  request_id: string;
-  additional_form_schema: string[];
-}
+/**
+ * @nullable
+ */
+export type SchoolEntityResponseSchoolEntity = SchoolEntityDto | null;

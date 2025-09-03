@@ -35,7 +35,6 @@ import type {
   NewCustomMoaRequestResponse,
   NewStandardMoaRequestDto,
   NewStandardMoaRequestResponse,
-  SignCustomMoaRequestDto,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -1046,83 +1045,6 @@ export function useEntityMoaControllerGetOneThreadLatestDocumentSuspense<
   return query;
 }
 
-export const entityMoaControllerSignApprovedCustom = (
-  signCustomMoaRequestDto: SignCustomMoaRequestDto,
-  signal?: AbortSignal
-) => {
-  return preconfiguredAxiosFunction<NewCustomMoaRequestResponse>({
-    url: `/api/entity/moa/sign-custom`,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: signCustomMoaRequestDto,
-    signal,
-  });
-};
-
-export const getEntityMoaControllerSignApprovedCustomMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
-    TError,
-    { data: SignCustomMoaRequestDto },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
-  TError,
-  { data: SignCustomMoaRequestDto },
-  TContext
-> => {
-  const mutationKey = ["entityMoaControllerSignApprovedCustom"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
-    { data: SignCustomMoaRequestDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return entityMoaControllerSignApprovedCustom(data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type EntityMoaControllerSignApprovedCustomMutationResult = NonNullable<
-  Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>
->;
-export type EntityMoaControllerSignApprovedCustomMutationBody = SignCustomMoaRequestDto;
-export type EntityMoaControllerSignApprovedCustomMutationError = ErrorResponse;
-
-export const useEntityMoaControllerSignApprovedCustom = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
-      TError,
-      { data: SignCustomMoaRequestDto },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof entityMoaControllerSignApprovedCustom>>,
-  TError,
-  { data: SignCustomMoaRequestDto },
-  TContext
-> => {
-  const mutationOptions = getEntityMoaControllerSignApprovedCustomMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
 export const entityMoaControllerRequestNewCustom = (
   newCustomMoaRequestDto: NewCustomMoaRequestDto,
   signal?: AbortSignal

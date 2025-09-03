@@ -7,13 +7,13 @@ import {
   useEntityMoaControllerRequestNewCustom,
   useEntityMoaControllerRequestNewStandard,
   useEntityMoaControllerRespond,
-  useEntityMoaControllerSignApprovedCustom,
 } from "./app/api/endpoints/entity-moa/entity-moa";
 import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/entity-schools/entity-schools";
 import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import { preconfiguredAxiosFunction } from "@/app/api/preconfig.axios";
 import { useMemo } from "react";
-
+import { useGetMyEntityForSchool } from "./app/api/endpoints/entity-school-entities/entity-school-entities";
+import { useSchoolMoaControllerSignApprovedCustom } from "./app/api/endpoints/school-moa/school-moa";
 /**
  * Grabs a public list of lean entity DTOs.
  * Only names and ids are included.
@@ -42,7 +42,6 @@ export const useMoaRequests = () => {
   });
   const createStandard = useEntityMoaControllerRequestNewStandard();
   const createCustom = useEntityMoaControllerRequestNewCustom();
-  const signCustom = useEntityMoaControllerSignApprovedCustom();
   const respond = useEntityMoaControllerRespond();
 
   return {
@@ -50,7 +49,6 @@ export const useMoaRequests = () => {
     isLoading: isFetching || isLoading,
     createStandard: createStandard.mutateAsync,
     createCustom: createCustom.mutateAsync,
-    signCustom: signCustom.mutateAsync,
     respond: respond.mutateAsync,
   };
 };
@@ -169,5 +167,47 @@ export function usePublicCompanyRegister() {
     isPending: m.isPending,
     error: m.error,
     reset: m.reset,
+  };
+}
+
+/* ───────────────── Entity ⇄ School relation (entity-side) ───────────────── */
+
+export const DEFAULT_SCHOOL_ID = "0fde7360-7c13-4d27-82e9-7db8413a08a5";
+
+type RelationBucket = "approved" | "pending" | "not-approved" | "blacklisted";
+
+function mapRelationStatus(s?: string | null): RelationBucket {
+  const v = String(s ?? "")
+    .trim()
+    .toLowerCase();
+  if (v === "blacklisted") return "blacklisted";
+  if (["approved", "active", "valid", "registered"].includes(v)) return "approved";
+  if (["denied", "rejected", "not-approved"].includes(v)) return "not-approved";
+  return "pending"; // pending / under_review / waiting-* / etc.
+}
+
+/**
+ * Entity-side: relationship with a school
+ * GET /api/entity/school-entities/self?schoolId=...
+ */
+export function useMyEntityForSchool(schoolId?: string) {
+  const params = useMemo(() => ({ schoolId: schoolId ?? DEFAULT_SCHOOL_ID }), [schoolId]);
+
+  const q = useGetMyEntityForSchool(params, {
+    query: {
+      staleTime: 1000,
+      refetchOnWindowFocus: true,
+      placeholderData: keepPreviousData,
+    },
+  });
+
+  const entity = q.data?.entity ?? null;
+
+  return {
+    entity, // EntityWithStatusDto | null
+    relationStatus: mapRelationStatus(entity?.moaStatus), // 'approved' | 'pending' | 'not-approved' | 'blacklisted'
+    isLoading: q.isLoading || q.isFetching,
+    error: q.error,
+    refetch: q.refetch,
   };
 }

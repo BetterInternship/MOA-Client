@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface SignCustomMoaRequestDto {
+export interface SchoolEntityDto {
+  school_id: string;
   entity_id: string;
-  request_id: string;
-  additional_form_schema: string[];
+  status: string;
 }
