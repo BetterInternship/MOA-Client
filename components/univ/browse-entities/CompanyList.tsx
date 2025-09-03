@@ -73,7 +73,7 @@ export default function CompanyList({
               ))}
             </ul>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y border-b border-gray-200">
               {filtered.map((c) => {
                 const active = c.id === selectedId;
                 const subline = [ucfirst(c.type), c.contact_name || c.contact_email]
@@ -83,7 +83,7 @@ export default function CompanyList({
                   <li key={c.id}>
                     <button
                       onClick={() => onSelect(c.id)}
-                      className={`flex w-full items-center justify-between border-b px-3 py-2 text-left text-sm transition ${
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition ${
                         active ? "bg-accent" : "hover:bg-accent/60"
                       }`}
                     >
@@ -94,7 +94,7 @@ export default function CompanyList({
                   </li>
                 );
               })}
-              {filtered.length === 0 && (
+              {filtered.length === 0 && !isLoading && (
                 <li className="text-muted-foreground border-b px-3 py-2 text-sm">
                   No matches found.
                 </li>

@@ -22,7 +22,7 @@ export default function ActionsBar({
   pending?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border bg-white p-4">
+    <div className="flex items-center gap-4 rounded-[0.33em] border bg-white p-4">
       <h2 className="text-lg font-semibold">Actions</h2>
 
       <AlertDialog>

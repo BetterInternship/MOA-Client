@@ -35,7 +35,7 @@ export default function MoaRequestList({ pendingRequests, selectedId, onSelect }
 
       {/* List (style preserved) */}
       <div className="max-h-[71vh] overflow-y-auto">
-        <ul className="divide-y border-b">
+        <ul className="divide-y border-b border-gray-200">
           {entities.isLoading ? (
             <Loader />
           ) : (
@@ -55,7 +55,7 @@ export default function MoaRequestList({ pendingRequests, selectedId, onSelect }
                     )}
                   >
                     <div>
-                      <div className="font-medium">{companyName}</div>
+                      <div className="font-medium tracking-tight">{companyName}</div>
                       <div className="text-muted-foreground text-xs">Requested: {requested}</div>
                     </div>
                   </button>
@@ -64,7 +64,7 @@ export default function MoaRequestList({ pendingRequests, selectedId, onSelect }
             })
           )}
 
-          {pendingRequests.length === 0 && (
+          {pendingRequests.length === 0 && !entities.isLoading && (
             <li className="text-muted-foreground px-3 py-2 text-sm">No matches found.</li>
           )}
         </ul>
