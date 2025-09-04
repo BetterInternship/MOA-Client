@@ -52,15 +52,15 @@ export default function DashboardPage() {
   return (
     <div className="min-w-96 space-y-8">
       {/* Header */}
-      <div className="space-y-1">
+      {/* <div className="space-y-1">
         <h1 className="text-foreground text-3xl font-bold tracking-tight">Dashboard</h1>
-        {relationStatus !== "approved" && (
+        {relationStatus !== "approved" && !!relationStatus.trim() && (
           <Badge type="destructive">
             Account not yet approved
             <MessageCircleWarning className="ml-2 h-4 w-4" />
           </Badge>
         )}
-      </div>
+      </div> */}
 
       {/* One-card MOA status (transaction-level) */}
       <MoaStatus title="MOA Status" requests={requests} loading={loading} />

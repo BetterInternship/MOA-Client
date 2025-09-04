@@ -1,11 +1,12 @@
 "use client";
 
-import * as React from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CustomCard from "@/components/shared/CustomCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useMyEntityForSchool, useEntityReconsider, DEFAULT_SCHOOL_ID } from "@/app/api/entity.api";
+import { formatWhen } from "@/lib/format";
+import { Clock, ShieldCheck, XCircle } from "lucide-react";
 
 export type EntityApprovalStatus = "approved" | "pending" | "not-approved";
 
@@ -69,10 +70,15 @@ export default function EntityStatus({
   const tone = toneByStatus[status] ?? "bg-white border-border";
   const title = titleByStatus[status] ?? "Status";
   const blurb = blurbByStatus[status] ?? "";
+  const [load, setLoad] = useState(true);
+  const expiryDays = useMemo(() => daysUntil(expiryAt), [expiryAt]);
+  const isExpiringSoon = typeof expiryDays === "number" && expiryDays <= 60 && expiryDays >= 0;
 
-  useMemo(() => daysUntil(expiryAt), [expiryAt]);
+  useEffect(() => {
+    if (!loading) setLoad(false);
+  }, [loading]);
 
-  if (loading && !status) {
+  if (load || !status) {
     return (
       <div className="text-muted-foreground rounded-md border border-dashed p-6">
         Loading account status...
@@ -81,27 +87,46 @@ export default function EntityStatus({
   }
 
   return (
-    <CustomCard className={`border ${tone} p-4 ${className ?? ""}`}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge>Current Account Status</Badge>
-          </div>
-
-          <div className="text-foreground mt-1 text-base font-semibold tracking-tight">{title}</div>
-
-          {!compact && <p className="text-muted-foreground text-sm">{blurb}</p>}
-
-          {entityName ? (
-            <div className="text-muted-foreground mt-1 text-xs">
-              Entity: <b className="text-foreground">{entityName}</b>
+    status?.trim() && (
+      <CustomCard className={`border ${tone} "p-4" ${className ?? ""}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge>Current Account Status</Badge>
             </div>
-          ) : null}
-        </div>
-      </div>
 
-      {action ? <div className="pt-3">{action}</div> : null}
-    </CustomCard>
+            <div className="text-foreground mt-1 text-base font-semibold tracking-tight">
+              {title}
+            </div>
+
+            {!compact && <p className="text-muted-foreground text-sm">{blurb}</p>}
+
+            <div className="text-muted-foreground mt-1 space-y-1 text-xs">
+              {status === "approved" && (
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                  <span>Effective {approvedAt ? <b>{formatWhen(approvedAt)}</b> : <i>—</i>} </span>
+                </div>
+              )}
+
+              {status === "pending" && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" aria-hidden="true" />
+                  <span>Requested {requestedAt ? <b>{formatWhen(requestedAt)}</b> : <i>—</i>}</span>
+                </div>
+              )}
+
+              {status === "not-approved" && (
+                <div className="flex items-center gap-2">
+                  <XCircle className="h-4 w-4" aria-hidden="true" />
+                  <span>Contact your MOA office for next steps.</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </CustomCard>
+    )
   );
 }
 
