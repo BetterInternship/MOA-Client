@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import CustomCard from "@/components/shared/CustomCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { formatWhen } from "@/lib/format";
@@ -91,15 +91,11 @@ export default function EntityStatus({
   const tone = toneByStatus[status] ?? "bg-white border-border";
   const title = titleByStatus[status] ?? "Status";
   const blurb = blurbByStatus[status] ?? "";
-  const [load, setLoad] = useState(true);
+
   const expiryDays = useMemo(() => daysUntil(expiryAt), [expiryAt]);
   const isExpiringSoon = typeof expiryDays === "number" && expiryDays <= 60 && expiryDays >= 0;
 
-  useEffect(() => {
-    if (!loading) setLoad(false);
-  }, [loading]);
-
-  if (load || !status) {
+  if (loading && !status) {
     return (
       <div className="text-muted-foreground rounded-md border border-dashed p-6">
         Loading account status...
@@ -108,45 +104,43 @@ export default function EntityStatus({
   }
 
   return (
-    status?.trim() && (
-      <CustomCard className={`border ${tone} "p-4" ${className ?? ""}`}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge>Current Account Status</Badge>
-            </div>
+    <CustomCard className={`border ${tone} "p-4" ${className ?? ""}`}>
+      <div className="flex items-start justify-between gap-4">
+        {/* Left */}
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge>Current Account Status</Badge>
+          </div>
 
-            <div className="text-foreground mt-1 text-base font-semibold tracking-tight">
-              {title}
-            </div>
+          <div className="text-foreground mt-1 text-base font-semibold tracking-tight">{title}</div>
 
-            {!compact && <p className="text-muted-foreground text-sm">{blurb}</p>}
+          {!compact && <p className="text-muted-foreground text-sm">{blurb}</p>}
 
-            <div className="text-muted-foreground mt-1 space-y-1 text-xs">
-              {status === "approved" && (
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                  <span>Effective {approvedAt ? <b>{formatWhen(approvedAt)}</b> : <i>—</i>} </span>
-                </div>
-              )}
+          {/* Meta rows */}
+          <div className="text-muted-foreground mt-1 space-y-1 text-xs">
+            {status === "approved" && (
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                <span>Effective {approvedAt ? <b>{formatWhen(approvedAt)}</b> : <i>—</i>} </span>
+              </div>
+            )}
 
-              {status === "pending" && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" aria-hidden="true" />
-                  <span>Requested {requestedAt ? <b>{formatWhen(requestedAt)}</b> : <i>—</i>}</span>
-                </div>
-              )}
+            {status === "pending" && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" aria-hidden="true" />
+                <span>Requested {requestedAt ? <b>{formatWhen(requestedAt)}</b> : <i>—</i>}</span>
+              </div>
+            )}
 
-              {status === "not-approved" && (
-                <div className="flex items-center gap-2">
-                  <XCircle className="h-4 w-4" aria-hidden="true" />
-                  <span>Contact your MOA office for next steps.</span>
-                </div>
-              )}
-            </div>
+            {status === "not-approved" && (
+              <div className="flex items-center gap-2">
+                <XCircle className="h-4 w-4" aria-hidden="true" />
+                <span>Contact your MOA office for next steps.</span>
+              </div>
+            )}
           </div>
         </div>
-      </CustomCard>
-    )
+      </div>
+    </CustomCard>
   );
 }
