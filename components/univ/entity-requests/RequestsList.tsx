@@ -3,9 +3,10 @@
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CompanyRequest } from "@/types/company-request";
+import { NewEntityRequet } from "@/types/db";
 
 type Props = {
-  items: CompanyRequest[];
+  items: NewEntityRequet[];
   selectedId: string;
   onSelect: (id: string) => void;
   variant?: "pending" | "denied";
@@ -19,13 +20,11 @@ export default function RequestsList({
   variant = "pending",
   loading,
 }: Props) {
-  const count = items.length;
-
   return (
     <aside className="h-full overflow-hidden">
       <div className="bg-primary/10 flex flex-col items-start gap-1 border-b p-3">
         <div className="text-primary text-xs font-semibold uppercase">
-          pending entity requests ({items.length})
+          {variant} entity requests ({items.length})
         </div>
       </div>
 
@@ -54,10 +53,8 @@ export default function RequestsList({
                     )}
                   >
                     <div>
-                      <div className="font-medium">{r.companyName}</div>
-                      <div className="text-muted-foreground text-xs">
-                        Submitted: {r.submittedAt}
-                      </div>
+                      <div className="font-medium">{r.entities?.display_name}</div>
+                      <div className="text-muted-foreground text-xs">Submitted: {r.timestamp}</div>
                     </div>
                   </button>
                 </li>
