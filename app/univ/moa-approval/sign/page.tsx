@@ -52,7 +52,7 @@ export function MoaSigningPage() {
     return highlights.find((highlight) => highlight.id === id);
   };
   const addHighlight = (highlight: NewHighlight) => {
-    console.log("Saving highlight", highlight);
+    // console.log("Saving highlight", highlight);
     setHighlights((prevHighlights) => [{ ...highlight, id: getNextId() }, ...prevHighlights]);
   };
 
@@ -61,7 +61,7 @@ export function MoaSigningPage() {
     position: Partial<ScaledPosition>,
     content: Partial<Content>
   ) => {
-    console.log("Updating highlight", highlightId, position, content);
+    // console.log("Updating highlight", highlightId, position, content);
     setHighlights((prevHighlights) =>
       prevHighlights.map((h) => {
         const { id, position: originalPosition, content: originalContent, ...rest } = h;
@@ -126,7 +126,7 @@ export function MoaSigningPage() {
                   });
                   setTimeout(() => {
                     const draggables = document.querySelectorAll(".react-draggable");
-                    console.log(draggables);
+                    // console.log(draggables);
                     draggables.forEach((draggable) => {
                       draggable.dispatchEvent(
                         new MouseEvent("mousedown", {

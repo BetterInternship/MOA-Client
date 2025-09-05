@@ -150,12 +150,11 @@ type RequestRow = {
 export function EntityStatusSelf({ schoolId }: { schoolId?: string }) {
   const sid = schoolId ?? DEFAULT_SCHOOL_ID;
 
-  // ⬇️ Now the hook already gives us latestRequest + relationStatus based on the latest outcome
   const {
-    entity, // original payload (array or single)
-    latestRequest, // RequestRow | null
-    latestOutcome, // string | null
-    relationStatus, // normalized status (approved/pending/not-approved)
+    entity, 
+    latestRequest, 
+    latestOutcome, 
+    relationStatus,
     isLoading,
     refetch,
   } = useMyEntityForSchool(sid) as any;

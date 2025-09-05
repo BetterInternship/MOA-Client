@@ -47,7 +47,7 @@ export default function CompanyVerificationPage() {
   );
 
   const list = tab === "pending" ? pendingItems : deniedItems;
-  console.log("list", reqsQ.data);
+  // console.log("list", reqsQ.data);
 
   // maintain selection scoped to current tab
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function CompanyVerificationPage() {
   }, [selected]);
 
   const isLoading = reqsQ.isLoading;
-  console.log("selected", selected);
+  // console.log("selected", selected);
 
   return (
     <div className="min-h-[88vh]">

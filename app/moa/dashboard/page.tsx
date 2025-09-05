@@ -73,7 +73,6 @@ export default function DashboardPage() {
       </div>
 
       {/* Actions (only Standard / Negotiated) */}
-      {/* // ! hide this eventually when not yet approved */}
       <div
         className={cn(
           "space-y-2",
