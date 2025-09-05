@@ -20,16 +20,12 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import type {
-  EntityWithStatusResponse,
-  ErrorResponse,
-  GetMyEntityForSchoolParams,
-} from "../../models";
+import type { ErrorResponse, GetMyEntityForSchoolParams } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const getMyEntityForSchool = (params?: GetMyEntityForSchoolParams, signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<EntityWithStatusResponse>({
+  return preconfiguredAxiosFunction<null>({
     url: `/api/entity/school-entities/self`,
     method: "GET",
     params,
@@ -227,6 +223,215 @@ export function useGetMyEntityForSchoolSuspense<
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetMyEntityForSchoolSuspenseQueryOptions(params, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getEntityWithStatus = (schoolId: string | undefined | null, signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<null>({
+    url: `/api/entity/school-entities/get-entity-with-status/${schoolId}`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getGetEntityWithStatusQueryKey = (schoolId?: string | undefined | null) => {
+  return [`/api/entity/school-entities/get-entity-with-status/${schoolId}`] as const;
+};
+
+export const getGetEntityWithStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetEntityWithStatusQueryKey(schoolId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getEntityWithStatus>>> = ({ signal }) =>
+    getEntityWithStatus(schoolId, signal);
+
+  return { queryKey, queryFn, enabled: !!schoolId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEntityWithStatus>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetEntityWithStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEntityWithStatus>>
+>;
+export type GetEntityWithStatusQueryError = unknown;
+
+export function useGetEntityWithStatus<
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEntityWithStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getEntityWithStatus>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetEntityWithStatus<
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEntityWithStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getEntityWithStatus>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetEntityWithStatus<
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetEntityWithStatus<
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetEntityWithStatusQueryOptions(schoolId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getGetEntityWithStatusSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetEntityWithStatusQueryKey(schoolId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getEntityWithStatus>>> = ({ signal }) =>
+    getEntityWithStatus(schoolId, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof getEntityWithStatus>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetEntityWithStatusSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEntityWithStatus>>
+>;
+export type GetEntityWithStatusSuspenseQueryError = unknown;
+
+export function useGetEntityWithStatusSuspense<
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetEntityWithStatusSuspense<
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetEntityWithStatusSuspense<
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetEntityWithStatusSuspense<
+  TData = Awaited<ReturnType<typeof getEntityWithStatus>>,
+  TError = unknown,
+>(
+  schoolId: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof getEntityWithStatus>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetEntityWithStatusSuspenseQueryOptions(schoolId, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

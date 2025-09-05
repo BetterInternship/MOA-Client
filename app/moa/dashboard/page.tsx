@@ -21,7 +21,7 @@ export default function DashboardPage() {
   const [requests, setRequests] = useState<MoaRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const { requests: moaRequests, isLoading } = useMoaRequests();
-  const { relationStatus } = useMyEntityForSchool();
+  const {  latestOutcome } = useMyEntityForSchool();
 
   // Keep MOA requests in sync
   useEffect(() => {
@@ -46,39 +46,38 @@ export default function DashboardPage() {
   } = useSchoolPartner(entityId);
 
   const uiHistory = (partnerHistory?.history as any) ?? [];
-  console.log(relationStatus);
 
   return (
     <div className="min-w-96 space-y-8">
       {/* Header */}
-      {/* <div className="space-y-1">
+      <div className="space-y-1">
         <h1 className="text-foreground text-3xl font-bold tracking-tight">Dashboard</h1>
-        {relationStatus !== "approved" && (
+        {latestOutcome !== "approved" && (
           <Badge type="destructive">
             Account not yet approved
             <MessageCircleWarning className="ml-2 h-4 w-4" />
           </Badge>
         )}
-      </div> */}
+      </div>
 
       {/* One-card MOA status (transaction-level) */}
       <MoaStatus title="MOA Status" requests={requests} loading={loading} />
 
       {/* Entity status with the university (approved/pending/not-approved) */}
-      {/* <EntityStatusSelf schoolId={DEFAULT_SCHOOL_ID} /> */}
+      <EntityStatusSelf schoolId={DEFAULT_SCHOOL_ID} />
 
       {/* Company Log */}
-      {/* <div className="space-y-4">
+      <div className="space-y-4">
         <h2 className="text-foreground text-2xl font-semibold">Company Log</h2>
         <HistoryLog showTitle={false} history={uiHistory} />
-      </div> */}
+      </div>
 
       {/* Actions (only Standard / Negotiated) */}
       {/* // ! hide this eventually when not yet approved */}
       <div
         className={cn(
           "space-y-2",
-          relationStatus === "approved" || relationStatus === "pending" ? "" : "invisible"
+          latestOutcome === "approved" || latestOutcome === "pending" ? "" : "invisible"
         )}
       >
         <MoaActions />

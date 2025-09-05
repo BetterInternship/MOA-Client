@@ -15,7 +15,11 @@ import { useEntitySchoolsControllerGetMyPartners } from "./app/api/endpoints/ent
 import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import { preconfiguredAxiosFunction } from "@/app/api/preconfig.axios";
 import { useMemo } from "react";
-import { useGetMyEntityForSchool } from "./app/api/endpoints/entity-school-entities/entity-school-entities";
+import {
+  getEntityWithStatus,
+  useGetEntityWithStatus,
+  useGetMyEntityForSchool,
+} from "./app/api/endpoints/entity-school-entities/entity-school-entities";
 import { useSchoolMoaControllerSignApprovedCustom } from "./app/api/endpoints/school-moa/school-moa";
 /**
  * Grabs a public list of lean entity DTOs.
@@ -213,9 +217,9 @@ function mapRelationStatus(s?: string | null): RelationBucket {
  * - Picks latest request and derives relationStatus from latest outcome
  */
 export function useMyEntityForSchool(schoolId?: string) {
-  const params = useMemo(() => ({ schoolId: schoolId ?? DEFAULT_SCHOOL_ID }), [schoolId]);
+  const id = schoolId ?? DEFAULT_SCHOOL_ID;
 
-  const q = useGetMyEntityForSchool(params, {
+  const requestsQ = useGetMyEntityForSchool(id as any, {
     query: {
       staleTime: 1000,
       refetchOnWindowFocus: true,
@@ -223,25 +227,57 @@ export function useMyEntityForSchool(schoolId?: string) {
     },
   });
 
-  const raw = q.data?.entity ?? null;
+  // Generated hook for boolean endpoint (operationId: getEntityWithStatus)
+  // If your codegen named it useGetEntityWithStatus, use that.
+  const linkQ =
+    useGetEntityWithStatus?.(id as any, {
+      query: {
+        staleTime: 1000,
+        refetchOnWindowFocus: true,
+        placeholderData: keepPreviousData,
+      },
+    }) ??
+    (getEntityWithStatus as any)(id as any, {
+      query: {
+        staleTime: 1000,
+        refetchOnWindowFocus: true,
+        placeholderData: keepPreviousData,
+      },
+    });
 
+  // ----- derive from requests -----
+  const raw = requestsQ.data?.entity ?? null;
   const rows: RequestRow[] = Array.isArray(raw) ? raw : raw ? [raw] : [];
   const latestRequest: RequestRow | null = rows.length ? pickLatestRequest(rows) : null;
 
-  const latestOutcome: string | null = latestRequest?.outcome ?? null;
+  // Normalize to the union you actually allow
+  const o = latestRequest?.outcome ?? null;
+  const outcomeFromRequests: "approved" | "denied" | null =
+    o === "approved" || o === "denied" ? o : null;
 
-  // IMPORTANT: relationStatus now derives from the latest outcome
-  const relationStatus = mapRelationStatus(latestOutcome);
+  // ----- override with link check (true => approved) -----
+  // Handles either { isLinked } or { data: { isLinked } }
+  const approvedByLink = Boolean(
+    (linkQ.data as any)?.isLinked ?? (linkQ.data as any)?.data?.isLinked
+  );
+
+  const latestOutcome: "approved" | "denied" | null = approvedByLink
+    ? "approved"
+    : outcomeFromRequests;
+
+  const relationStatus: "approved" | "denied" | "pending" = latestOutcome ?? "pending";
 
   return {
-    entity: raw, // original payload
-    entityRequests: rows, // normalized array of requests
+    entity: raw,
+    entityRequests: rows,
     latestRequest,
-    latestOutcome, // literal outcome
-    relationStatus, 
-    isLoading: q.isLoading || q.isFetching,
-    error: q.error,
-    refetch: q.refetch,
+    latestOutcome,
+    relationStatus,
+    isLoading: requestsQ.isLoading || requestsQ.isFetching || linkQ.isLoading || linkQ.isFetching,
+    error: (requestsQ.error as unknown) ?? (linkQ.error as unknown),
+    refetch: async () => {
+      await Promise.all([requestsQ.refetch(), linkQ.refetch()]);
+    },
   };
 }
 

@@ -76,7 +76,6 @@ export default function UnivDashboardPage() {
       </div>
 
       {/* Activity Data Table */}
-      {/* Hide for now */}
       {/* <CustomCard className="space-y-2">
         <h2 className="text-lg font-semibold">Recent Activity</h2>
         <div>
