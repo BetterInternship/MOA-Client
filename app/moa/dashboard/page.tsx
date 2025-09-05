@@ -101,11 +101,11 @@ export default function DashboardPage() {
       <EntityStatusSelfCard schoolId={DEFAULT_SCHOOL_ID} />
 
       {/* Company Log */}
-      <div className="space-y-4">
+      {/* <div className="space-y-4">
         <h2 className="text-foreground text-2xl font-semibold">Company Log</h2>
 
         <HistoryLog showTitle={false} history={uiHistory} />
-      </div>
+      </div> */}
 
       {/* Actions (only Standard / Negotiated) */}
       <div className={cn("space-y-2", relationStatus === "approved" ? "" : "invisible")}>

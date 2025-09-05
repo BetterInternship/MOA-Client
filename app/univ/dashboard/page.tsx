@@ -76,12 +76,13 @@ export default function UnivDashboardPage() {
       </div>
 
       {/* Activity Data Table */}
-      <CustomCard className="space-y-2">
+      {/* Hide for now */}
+      {/* <CustomCard className="space-y-2">
         <h2 className="text-lg font-semibold">Recent Activity</h2>
         <div>
           <DataTable columns={columns} data={[]} searchKey="company" />
         </div>
-      </CustomCard>
+      </CustomCard> */}
     </div>
   );
 }
