@@ -64,13 +64,11 @@ export const Autocomplete = <ID extends number | string>({
           if (match) {
             setSelected(match);
             setter(match.id);
-            setQuery("");
-            setIsOpen(false);
           }
         }}
         onFocus={() => setIsOpen(true)}
       />
-      {isOpen && !selected ? (
+      {isOpen ? (
         <ul className="ring-opacity-5 absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-[0.33em] bg-white py-1 text-sm shadow-lg ring-1 ring-black">
           {filteredOptions.length ? (
             filteredOptions

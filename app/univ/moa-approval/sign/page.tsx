@@ -106,7 +106,48 @@ export function MoaSigningPage() {
           {(pdfDocument) => (
             <PdfHighlighter
               pdfDocument={pdfDocument}
-              enableAreaSelection={(event) => !!selectedHighlightType}
+              enableAreaSelection={(event) => {
+                if (!!selectedHighlightType) {
+                  setTimeout(() => {
+                    event.target?.dispatchEvent(
+                      new MouseEvent("mouseup", {
+                        ...event,
+                        bubbles: true,
+                        cancelable: true,
+                      })
+                    );
+                    event.target?.dispatchEvent(
+                      new MouseEvent("mousedown", {
+                        ...event,
+                        bubbles: true,
+                        cancelable: true,
+                      })
+                    );
+                  });
+                  setTimeout(() => {
+                    const draggables = document.querySelectorAll(".react-draggable");
+                    console.log(draggables);
+                    draggables.forEach((draggable) => {
+                      draggable.dispatchEvent(
+                        new MouseEvent("mousedown", {
+                          ...event,
+                          bubbles: true,
+                          cancelable: true,
+                        })
+                      );
+                      draggable.dispatchEvent(
+                        new MouseEvent("mouseup", {
+                          ...event,
+                          bubbles: true,
+                          cancelable: true,
+                        })
+                      );
+                    });
+                  }, 100);
+                  return true;
+                }
+                return false;
+              }}
               onScrollChange={() => (document.location.hash = "")}
               scrollRef={(scrollTo) => {
                 scrollViewerTo.current = scrollTo as (highlight: IHighlight) => void;
@@ -117,15 +158,23 @@ export function MoaSigningPage() {
                 content,
                 hideDropdownAndSelection,
                 transformSelection
-              ) => (
+              ) => {
+                position.boundingRect.x1 = position.boundingRect.x2 - 96;
+                position.boundingRect.y1 = position.boundingRect.y2 - 9;
+                position.boundingRect.x2 = position.boundingRect.x2 + 96;
+                position.boundingRect.y2 = position.boundingRect.y2 + 9;
+
                 addHighlight({
                   content,
                   position,
                   comment: { text: selectedHighlightType, emoji: "" } as unknown as Comment,
-                }),
-                setSelectedHighlightType(null),
-                (<div></div>)
-              )}
+                });
+
+                hideDropdownAndSelection();
+                setSelectedHighlightType(null);
+
+                return <div></div>;
+              }}
               highlightTransform={(
                 highlight,
                 index,
@@ -256,7 +305,7 @@ function Sidebar({
           >
             <div>
               <strong>{highlight.comment.text}</strong>
-              {highlight.content.text ? (
+              {/* {highlight.content.text ? (
                 <blockquote style={{ marginTop: "0.5rem" }}>
                   {`${highlight.content.text.slice(0, 90).trim()}…`}
                 </blockquote>
@@ -265,7 +314,7 @@ function Sidebar({
                 <div className="highlight__image" style={{ marginTop: "0.5rem" }}>
                   <img src={highlight.content.image} alt={"Screenshot"} />
                 </div>
-              ) : null}
+              ) : null} */}
             </div>
             <div className="mt-2 flex flex-row justify-between">
               <Button

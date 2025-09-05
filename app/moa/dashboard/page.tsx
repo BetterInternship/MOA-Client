@@ -23,7 +23,6 @@ export default function DashboardPage() {
   const { requests: moaRequests, isLoading } = useMoaRequests();
   const { relationStatus } = useMyEntityForSchool();
 
-
   // Keep MOA requests in sync
   useEffect(() => {
     setRequests(moaRequests ?? []);
@@ -52,7 +51,7 @@ export default function DashboardPage() {
   return (
     <div className="min-w-96 space-y-8">
       {/* Header */}
-      <div className="space-y-1">
+      {/* <div className="space-y-1">
         <h1 className="text-foreground text-3xl font-bold tracking-tight">Dashboard</h1>
         {relationStatus !== "approved" && (
           <Badge type="destructive">
@@ -60,13 +59,13 @@ export default function DashboardPage() {
             <MessageCircleWarning className="ml-2 h-4 w-4" />
           </Badge>
         )}
-      </div>
+      </div> */}
 
       {/* One-card MOA status (transaction-level) */}
       <MoaStatus title="MOA Status" requests={requests} loading={loading} />
 
       {/* Entity status with the university (approved/pending/not-approved) */}
-      <EntityStatusSelf schoolId={DEFAULT_SCHOOL_ID} />
+      {/* <EntityStatusSelf schoolId={DEFAULT_SCHOOL_ID} /> */}
 
       {/* Company Log */}
       {/* <div className="space-y-4">
@@ -75,7 +74,13 @@ export default function DashboardPage() {
       </div> */}
 
       {/* Actions (only Standard / Negotiated) */}
-      <div className={cn("space-y-2", relationStatus === "approved" ? "" : "invisible")}>
+      {/* // ! hide this eventually when not yet approved */}
+      <div
+        className={cn(
+          "space-y-2",
+          relationStatus === "approved" || relationStatus === "pending" ? "" : "invisible"
+        )}
+      >
         <MoaActions />
       </div>
     </div>
