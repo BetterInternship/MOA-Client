@@ -3,7 +3,7 @@
 export default function TermsPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight sm:text-3xl">Terms & Privacy</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight sm:text-3xl">Privacy</h1>
 
       <div className="bg-card text-card-foreground rounded-2xl border shadow-sm">
         <div className="space-y-4 p-5 text-sm leading-relaxed sm:p-6 sm:text-base">
