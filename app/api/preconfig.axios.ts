@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_SERVER_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_SERVER_URL || "http://localhost:5500";
 
 /** Shared axios instance (important for interceptors, caching, dedupe) */
 export const preconfiguredAxios = axios.create({

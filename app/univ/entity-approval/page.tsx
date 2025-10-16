@@ -11,6 +11,7 @@ import FinalDecision from "@/components/univ/entity-requests/FinalDecision";
 import { useCompanyRequests } from "@/hooks/useCompanyRequests";
 import type { CompanyRequest } from "@/types/company-request";
 import { useEntityRequestActions } from "@/app/api/school.api";
+import { NewEntityRequet } from "@/types/db";
 
 const norm = (s?: string | null) =>
   String(s ?? "")
@@ -23,7 +24,7 @@ export default function CompanyVerificationPage() {
 
   // fetch all requests
   const reqsQ = useCompanyRequests({ offset: 0, limit: 100 });
-  const all = (reqsQ.data ?? []) as CompanyRequest[];
+  const all = (reqsQ.data ?? []) as NewEntityRequet[];
 
   // split lists (frontend filter)
   const pendingItems = useMemo(
@@ -46,6 +47,7 @@ export default function CompanyVerificationPage() {
   );
 
   const list = tab === "pending" ? pendingItems : deniedItems;
+  // console.log("list", reqsQ.data);
 
   // maintain selection scoped to current tab
   useEffect(() => {
@@ -75,7 +77,6 @@ export default function CompanyVerificationPage() {
     await reqsQ.refetch();
   }
 
-  console.log(selected);
   // documents
   type AnyDoc = { documentType?: string; url?: string; label?: string; href?: string };
   const documents = useMemo(() => {
@@ -90,6 +91,7 @@ export default function CompanyVerificationPage() {
   }, [selected]);
 
   const isLoading = reqsQ.isLoading;
+  // console.log("selected", selected);
 
   return (
     <div className="min-h-[88vh]">
@@ -156,13 +158,13 @@ export default function CompanyVerificationPage() {
               <RequestMeta req={selected} />
 
               <EntityInfoCard
-                id={selected.entity.id}
-                name={selected.entity.display_name}
-                contactPerson={selected.entity.contact_name}
-                phone={selected.entity.contact_phone}
-                address={selected.entity.address}
-                type={selected.entity.type}
-                legalIdentifier={selected.entity.legal_identifier}
+                id={selected.entities?.id}
+                name={selected.entities?.display_name}
+                contactPerson={selected.entities?.contact_name}
+                phone={selected.entities?.contact_phone}
+                address={selected.entities?.address}
+                type={selected.entities?.type}
+                legalIdentifier={selected.entities?.legal_identifier}
               />
 
               <DocumentsCard documents={documents} />

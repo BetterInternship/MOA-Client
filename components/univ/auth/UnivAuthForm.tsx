@@ -25,7 +25,7 @@ export function UnivAuthForm() {
       // ! move this to inside of auth hook later on
       .then(
         (r) => (
-          console.log(r),
+          // console.log(r),
           r.success ? router.push("/dashboard") : alert("Invalid credentials.")
         )
       )

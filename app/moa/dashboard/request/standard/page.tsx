@@ -52,7 +52,7 @@ export default function StandardMoaRequestPage() {
 
   async function onSubmit(values: FormValues) {
     try {
-      console.log(form.getValues());
+      // console.log(form.getValues());
       setSubmitting(true);
       const r = await moaRequests.createStandard({
         data: {

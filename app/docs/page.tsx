@@ -1,18 +1,16 @@
 // app/docs/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { z } from "zod";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { VerificationResponse } from "@/types/docs";
 import { VerificationDetailsCard } from "@/components/docs/VerificationDetailsCard";
 import { PdfViewerPanel } from "@/components/docs/PdfViewerPanel";
-import { NotFoundCard } from "@/components/docs/NotFoundCard";
-import { SerialInput } from "@/components/docs/SerialInput";
 import { useDocsControllerGetByVerificationCode } from "../api";
 import { SignedDocument } from "@/types/db";
+import { useSearchParams } from "next/navigation";
 
 const SerialSchema = z
   .string()
@@ -23,11 +21,25 @@ const SerialSchema = z
   );
 
 export default function VerifyDocsPage() {
+  return (
+    <Suspense>
+      <VerifyDocsPageContent />;
+    </Suspense>
+  );
+}
+
+function VerifyDocsPageContent() {
   const [serial, setSerial] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SignedDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
   const signedDocument = useDocsControllerGetByVerificationCode(serial);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const verificationCode = searchParams.get("verification-code");
+    if (verificationCode) setSerial(verificationCode);
+  }, [searchParams]);
 
   useEffect(() => {
     const doc = signedDocument.data?.signedDocument;
