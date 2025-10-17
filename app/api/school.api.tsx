@@ -17,7 +17,6 @@ import {
   useSchoolMoaControllerSignApprovedCustom,
 } from "./app/api/endpoints/school-moa/school-moa";
 import { useMemo } from "react";
-import { QueryClient } from "@tanstack/react-query";
 
 /**
  * Gives information about school partners.

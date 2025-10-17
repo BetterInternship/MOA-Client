@@ -20,7 +20,7 @@ export default function HistoryLog({
   showTitle?: boolean;
   loading?: boolean;
 }) {
-  console.log(history);
+  // console.log(history);
   if (loading) {
     return (
       <div className="rounded-[0.33em] border bg-white p-4">

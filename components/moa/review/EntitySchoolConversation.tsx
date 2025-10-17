@@ -74,7 +74,7 @@ export const EntitySchoolConversation = ({ req }: EntityConversationProps) => {
       </div>
       <MoaRequestResponseActions
         onRespond={async (message, file) => {
-          console.log(message, file);
+          // console.log(message, file);
           setLoading(true);
           await moaRequests.respond({
             id: req?.id,

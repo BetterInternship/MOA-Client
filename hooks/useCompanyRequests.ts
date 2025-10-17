@@ -36,6 +36,7 @@ const toMDY = (d?: string) => {
 };
 
 /* ---------- mapper: backend → UI (CompanyRequest) ---------- */
+// ! remove this eventually, i dont think we need a mapper
 const mapRequestRow = (r: RawCompanyRequest): CompanyRequest => {
   const e = r.entities ?? {};
   const companyName =
@@ -81,8 +82,7 @@ export function useCompanyRequests(opts?: { offset?: number; limit?: number }) {
         "/api/schools/company-requests",
         { params: { offset, limit } }
       );
-      const rows = (res?.requests ?? (res as any)?.data?.requests ?? []) as RawCompanyRequest[];
-      return rows.map(mapRequestRow);
+      return (res?.requests ?? (res as any)?.data?.requests ?? []) as RawCompanyRequest[];
     },
     staleTime: 10_000,
     refetchOnWindowFocus: false,

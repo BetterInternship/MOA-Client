@@ -19,7 +19,9 @@ export type EntityDocument = {
 
 export type Entity = EntityTables<"entities">;
 export type MoaRequest = EntityTables<"moa_requests">;
-export type NewEntityRequet = EntityTables<"new_entity_requests">;
+export interface NewEntityRequet extends EntityTables<"new_entity_requests"> {
+  entities?: Entity;
+}
 export type EntityLog = EntityTables<"entity_logs">;
 export type Thread = EntityTables<"threads">;
 export type Message = EntityTables<"messages">;

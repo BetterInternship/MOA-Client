@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Document Verification | BetterInternship × DLSU",
@@ -20,9 +21,19 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
         <main className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">{children}</main>
 
-        {/* <footer className="text-muted-foreground mx-auto max-w-screen-sm px-4 pt-6 pb-10 text-center text-xs">
-          By using this service, you agree to the Terms of Service and Privacy Policy.
-        </footer> */}
+        <footer className="text-muted-foreground mx-auto max-w-screen-sm px-4 pt-6 pb-10 text-center text-xs">
+          <p className="text-muted-foreground mt-8 text-left text-sm leading-relaxed">
+            By continuing, you agree to the{" "}
+            <Link href="/terms" className="hover:text-primary underline underline-offset-4">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="hover:text-primary underline underline-offset-4">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </footer>
       </body>
     </html>
   );
