@@ -23,7 +23,7 @@ const SerialSchema = z
 export default function VerifyDocsPage() {
   return (
     <Suspense>
-      <VerifyDocsPageContent />;
+      <VerifyDocsPageContent />
     </Suspense>
   );
 }
