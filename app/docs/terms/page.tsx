@@ -8,7 +8,8 @@ export default function TermsPage() {
       <div className="bg-card text-card-foreground rounded-2xl border shadow-sm">
         <div className="space-y-4 p-5 text-sm leading-relaxed sm:p-6 sm:text-base">
           <p>
-            For our TOS, please visit{" "}
+            Our Terms of Service meet, at a minimum, the same standards as DocuSign, ensuring
+            equivalent clarity, enforceability, and protection of user rights and obligations:{" "}
             <a
               href="https://www.docusign.com/legal/terms-and-conditions"
               target="_blank"
@@ -18,8 +19,6 @@ export default function TermsPage() {
               https://www.docusign.com/legal/terms-and-conditions
             </a>
           </p>
-
-          <p>Find/Replace Docusign with BetterInternship.</p>
 
           <p>
             For contact, please email{" "}

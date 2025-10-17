@@ -8,7 +8,9 @@ export default function TermsPage() {
       <div className="bg-card text-card-foreground rounded-2xl border shadow-sm">
         <div className="space-y-4 p-5 text-sm leading-relaxed sm:p-6 sm:text-base">
           <p>
-            For our privacy, please visit{" "}
+            Our privacy policy meets, at a minimum, the same standards as DocuSign, ensuring
+            equivalent safeguards, controls, and practices to protect the confidentiality and
+            integrity of user data:{" "}
             <a
               href="https://www.docusign.com/en-au/privacy"
               target="_blank"
@@ -18,8 +20,6 @@ export default function TermsPage() {
               https://www.docusign.com/en-au/privacy
             </a>
           </p>
-
-          <p>Find/Replace Docusign with BetterInternship.</p>
 
           <p>
             For contact, please email{" "}

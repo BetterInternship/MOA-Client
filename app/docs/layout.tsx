@@ -21,7 +21,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
         <main className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">{children}</main>
 
-        <footer className="text-muted-foreground mx-auto max-w-screen-sm px-4 pt-6 pb-10 text-center text-xs">
+        <footer className="text-muted-foreground mx-auto max-w-screen-sm px-4 pt-6 pb-10 text-center text-x flex justify-center">
           <p className="text-muted-foreground mt-8 text-left text-sm leading-relaxed">
             By continuing, you agree to the{" "}
             <Link href="/terms" className="hover:text-primary underline underline-offset-4">
