@@ -10,7 +10,7 @@ export default function TermsPage() {
           <p>
             Our privacy policy meets, at a minimum, the same standards as DocuSign, ensuring
             equivalent safeguards, controls, and practices to protect the confidentiality and
-            integrity of user data:
+            integrity of user data:{" "}
             <a
               href="https://www.docusign.com/en-au/privacy"
               target="_blank"

@@ -9,7 +9,7 @@ export default function TermsPage() {
         <div className="space-y-4 p-5 text-sm leading-relaxed sm:p-6 sm:text-base">
           <p>
             Our Terms of Service meet, at a minimum, the same standards as DocuSign, ensuring
-            equivalent clarity, enforceability, and protection of user rights and obligations:
+            equivalent clarity, enforceability, and protection of user rights and obligations:{" "}
             <a
               href="https://www.docusign.com/legal/terms-and-conditions"
               target="_blank"
