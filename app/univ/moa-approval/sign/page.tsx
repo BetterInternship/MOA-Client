@@ -107,7 +107,7 @@ export function MoaSigningPage() {
             <PdfHighlighter
               pdfDocument={pdfDocument}
               enableAreaSelection={(event) => {
-                if (!!selectedHighlightType) {
+                if (selectedHighlightType) {
                   setTimeout(() => {
                     event.target?.dispatchEvent(
                       new MouseEvent("mouseup", {

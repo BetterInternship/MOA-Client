@@ -10,7 +10,13 @@ export const metadata: Metadata = {
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-gradient-to-b from-white to-emerald-50/30")}>
+      <body
+        className={cn(
+          "min-h-screen bg-gradient-to-b from-white to-emerald-50/30",
+          "w-[100vw]",
+          "overflow-x-hidden"
+        )}
+      >
         {/* Topbar */}
         <header className="bg-background/70 border-b backdrop-blur">
           <div className="mx-auto flex h-16 max-w-screen-xl items-center gap-2">
@@ -19,7 +25,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        <main className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">{children}</main>
+        <main className="mx-auto">{children}</main>
 
         <footer className="text-muted-foreground mx-auto max-w-screen-sm px-4 pt-6 pb-10 text-center text-x flex justify-center">
           <p className="text-muted-foreground mt-8 text-left text-sm leading-relaxed">
