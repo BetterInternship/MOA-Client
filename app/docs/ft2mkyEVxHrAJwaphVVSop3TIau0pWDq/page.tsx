@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-25 06:04:13
+ * @ Modified time: 2025-10-25 06:22:22
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -10,24 +10,28 @@
 "use client";
 
 import { Loader } from "@/components/ui/loader";
-import { JSX, useState } from "react";
+import { useState } from "react";
 import {
   AreaHighlight,
   Comment,
-  Highlight,
+  Content,
   IHighlight,
   PdfHighlighter,
   PdfLoader,
   Popup,
+  ViewportHighlight,
 } from "react-pdf-highlighter";
 import "./react-pdf-highlighter.css";
+import { ScaledPosition } from "react-pdf-highlighter";
 
 /**
  * Helps us upload forms and find their coords quickly.
+ * Displays the PDF and allows highlighting on pdf.
  *
- * @returns
+ * @component
  */
 const FormUploadPage = () => {
+  // The current highlight and its transform; only need one for coordinates
   const [highlight, setHighlight] = useState<IHighlight | null>(null);
   const [fieldTransform, setFieldTransform] = useState<{
     x: number;
@@ -37,6 +41,41 @@ const FormUploadPage = () => {
     page: number;
   }>({ x: 0, y: 0, w: 0, h: 0, page: 1 });
 
+  // Executes when user is done dragging highlight
+  const onHighlightFinished = (position: ScaledPosition, content: Content) => {
+    // Create new highlight
+    setHighlight({
+      id: "highlight",
+      content: content,
+      position: position,
+      comment: { text: "", emoji: "" } as unknown as Comment,
+    });
+
+    // Set bounding rect to display
+    const boundingRect = position.boundingRect;
+    setFieldTransform({
+      x: ~~boundingRect.x1,
+      y: ~~boundingRect.y1,
+      w: ~~boundingRect.x2 - ~~boundingRect.x1,
+      h: ~~boundingRect.y2 - ~~boundingRect.y1,
+      page: position.pageNumber,
+    });
+
+    // Maybe in the future you want to return a component to render per highlight
+    // Do it here
+    return <></>;
+  };
+
+  // Renders a highlight into a component
+  const highlightRenderer = (highlight: ViewportHighlight, index: number) => {
+    return (
+      <Popup popupContent={<></>} onMouseOver={() => {}} onMouseOut={() => {}} key={index}>
+        <AreaHighlight highlight={highlight} onChange={() => {}} isScrolledTo={false} />
+      </Popup>
+    );
+  };
+
+  // Component layout
   return (
     <div className="relative mx-auto h-[70vh] max-w-5xl">
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
@@ -47,62 +86,10 @@ const FormUploadPage = () => {
               pdfDocument={pdfDocument}
               enableAreaSelection={(event) => event.altKey}
               onScrollChange={() => (document.location.hash = "")}
-              scrollRef={(scrollTo) => {}}
-              onSelectionFinished={(position, content, hideDropdownAndSelection) => {
-                setHighlight({
-                  id: "highlight",
-                  content,
-                  position,
-                  comment: { text: "", emoji: "" } as unknown as Comment,
-                });
-                setFieldTransform({
-                  x: ~~position.boundingRect.x1,
-                  y: ~~position.boundingRect.y1,
-                  w: ~~position.boundingRect.x2 - ~~position.boundingRect.x1,
-                  h: ~~position.boundingRect.y2 - ~~position.boundingRect.y1,
-                  page: position.pageNumber,
-                });
-                hideDropdownAndSelection();
-                return <></>;
-              }}
-              highlightTransform={(
-                highlight,
-                index,
-                setTip,
-                hideTip,
-                viewportToScaled,
-                screenshot,
-                isScrolledTo
-              ) => {
-                const isTextHighlight = !highlight.content?.image;
-                const component = isTextHighlight ? (
-                  <Highlight
-                    isScrolledTo={isScrolledTo}
-                    position={highlight.position}
-                    comment={highlight.comment}
-                  />
-                ) : (
-                  <AreaHighlight
-                    isScrolledTo={isScrolledTo}
-                    highlight={highlight}
-                    onChange={(boundingRect) => {}}
-                  />
-                );
-
-                return (
-                  <Popup
-                    popupContent={<HighlightPopup {...highlight} />}
-                    onMouseOver={(popupContent: JSX.Element) =>
-                      setTip(highlight, (highlight) => popupContent)
-                    }
-                    onMouseOut={hideTip}
-                    key={index}
-                  >
-                    {component}
-                  </Popup>
-                );
-              }}
+              scrollRef={() => {}}
+              highlightTransform={highlightRenderer}
               highlights={highlight ? [highlight] : []}
+              onSelectionFinished={onHighlightFinished}
             />
           )}
         </PdfLoader>
@@ -111,6 +98,12 @@ const FormUploadPage = () => {
   );
 };
 
+/**
+ * The sidebar shows metadata about the pdf.
+ * This is where Sherwin can add new fields and stuff.
+ *
+ * @component
+ */
 const Sidebar = ({
   fieldTransform,
 }: {
@@ -127,12 +120,5 @@ const Sidebar = ({
     </div>
   );
 };
-
-const HighlightPopup = ({ comment }: { comment: { text: string; emoji: string } }) =>
-  comment.text ? (
-    <div className="Highlight__popup">
-      {comment.emoji} {comment.text}
-    </div>
-  ) : null;
 
 export default FormUploadPage;
