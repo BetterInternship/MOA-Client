@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-26 19:13:41
+ * @ Modified time: 2025-10-26 21:01:40
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -34,6 +34,7 @@ import JsonView from "@uiw/react-json-view";
 import path from "path";
 import { Divider } from "@/components/ui/divider";
 import { downloadJSON } from "@/lib/files";
+import { formsControllerRegisterForm } from "../../../api/app/api/endpoints/forms/forms";
 
 /**
  * Helps us upload forms and find their coords quickly.
@@ -330,14 +331,22 @@ const Sidebar = ({
 
   // Handles when a file is registered to the db
   const handleFileRegister = () => {
+    if (!documentFile) return;
+
     openModal(
       "register-file-modal",
       <RegisterFileModal
         formMetadataDraft={constructMetadataDraft()}
         documentNamePlaceholder={documentName}
+        documentFile={documentFile}
         close={() => closeModal()}
       />,
-      { title: "Register Form into DB?" }
+      {
+        title: "Register Form into DB?",
+        allowBackdropClick: false,
+        hasClose: false,
+        closeOnEsc: false,
+      }
     );
   };
 
@@ -454,18 +463,27 @@ const Sidebar = ({
 const RegisterFileModal = ({
   documentNamePlaceholder,
   formMetadataDraft,
+  documentFile,
   close,
 }: {
   documentNamePlaceholder: string;
   formMetadataDraft: IFormMetadata;
+  documentFile: File;
   close: () => void;
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
+  const [submitting, setSubmitting] = useState(false);
 
   // Handle submitting form to registry
   const handleSubmit = async () => {
-    // ! perform call to endpoint here
-    await Promise.resolve("");
+    setSubmitting(true);
+    await formsControllerRegisterForm({
+      base_document: documentFile,
+      ...formMetadataDraft,
+      name: documentName,
+    });
+
+    setSubmitting(false);
     close();
   };
 
@@ -481,7 +499,7 @@ const RegisterFileModal = ({
         value={documentName}
         placeholder="Enter form name..."
         onChange={(e) => setDocumentName(e.target.value)}
-      ></Input>
+      />
       <div className="max-h-[600px] overflow-y-auto">
         <JsonView
           collapsed={true}
@@ -498,10 +516,10 @@ const RegisterFileModal = ({
           Export JSON
         </Button>
         <div className="flex-1" />
-        <Button disabled={!documentName.trim()} onClick={() => void handleSubmit()}>
-          Submit
+        <Button disabled={!documentName.trim() || submitting} onClick={() => void handleSubmit()}>
+          {submitting ? "Submitting..." : "Submit"}
         </Button>
-        <Button scheme="destructive" variant="outline" onClick={close}>
+        <Button disabled={submitting} scheme="destructive" variant="outline" onClick={close}>
           Cancel
         </Button>
       </div>

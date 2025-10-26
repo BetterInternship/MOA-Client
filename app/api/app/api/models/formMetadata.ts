@@ -8,10 +8,10 @@
 import type { FormField } from "./formField";
 import type { FormMetadataEmail } from "./formMetadataEmail";
 
-export interface RegisterFormSchemaDto {
+export interface FormMetadata {
   name: string;
-  schema: FormField[];
+  version: number;
+  schema: FormField;
   subscribers: string[];
   email: FormMetadataEmail;
-  base_document: Blob;
 }

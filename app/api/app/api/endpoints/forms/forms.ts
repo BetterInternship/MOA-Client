@@ -29,9 +29,11 @@ import type {
   CreatePrefilledFormDto,
   CreateSignedFormDto,
   ErrorResponse,
+  FormMetadataResponse,
   FormPendingResponse,
   FormRegistryResponse,
   FormsControllerGetPendingParams,
+  FormsControllerGetRegistryFormMetadataParams,
   RegisterFormSchemaDto,
 } from "../../models";
 
@@ -234,6 +236,349 @@ export function useFormsControllerGetRegistrySuspense<
   return query;
 }
 
+export const formsControllerGetRegistryFormMetadata = (
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<FormMetadataResponse>({
+    url: `/api/forms/form-metadata`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getFormsControllerGetRegistryFormMetadataQueryKey = (
+  params?: FormsControllerGetRegistryFormMetadataParams
+) => {
+  return [`/api/forms/form-metadata`, ...(params ? [params] : [])] as const;
+};
+
+export const getFormsControllerGetRegistryFormMetadataQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetRegistryFormMetadataQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>
+  > = ({ signal }) => formsControllerGetRegistryFormMetadata(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetRegistryFormMetadataQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>
+>;
+export type FormsControllerGetRegistryFormMetadataQueryError = ErrorResponse;
+
+export function useFormsControllerGetRegistryFormMetadata<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetRegistryFormMetadataParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetRegistryFormMetadata<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetRegistryFormMetadata<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetRegistryFormMetadata<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetRegistryFormMetadataQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getFormsControllerGetRegistryFormMetadataSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetRegistryFormMetadataQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>
+  > = ({ signal }) => formsControllerGetRegistryFormMetadata(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetRegistryFormMetadataSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>
+>;
+export type FormsControllerGetRegistryFormMetadataSuspenseQueryError = ErrorResponse;
+
+export function useFormsControllerGetRegistryFormMetadataSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetRegistryFormMetadataParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetRegistryFormMetadataSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetRegistryFormMetadataSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetRegistryFormMetadataSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormMetadataParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetRegistryFormMetadataSuspenseQueryOptions(
+    params,
+    options
+  );
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const formsControllerRegisterForm = (
+  registerFormSchemaDto: RegisterFormSchemaDto,
+  signal?: AbortSignal
+) => {
+  const formData = new FormData();
+  formData.append(`name`, registerFormSchemaDto.name);
+  registerFormSchemaDto.schema.forEach((value) => formData.append(`schema`, JSON.stringify(value)));
+  registerFormSchemaDto.subscribers.forEach((value) => formData.append(`subscribers`, value));
+  formData.append(`email`, JSON.stringify(registerFormSchemaDto.email));
+  formData.append(`base_document`, registerFormSchemaDto.base_document);
+
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/register-form`,
+    method: "POST",
+    headers: { "Content-Type": "multipart/form-data" },
+    data: formData,
+    signal,
+  });
+};
+
+export const getFormsControllerRegisterFormMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerRegisterForm>>,
+    TError,
+    { data: RegisterFormSchemaDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerRegisterForm>>,
+  TError,
+  { data: RegisterFormSchemaDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerRegisterForm"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerRegisterForm>>,
+    { data: RegisterFormSchemaDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerRegisterForm(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerRegisterFormMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerRegisterForm>>
+>;
+export type FormsControllerRegisterFormMutationBody = RegisterFormSchemaDto;
+export type FormsControllerRegisterFormMutationError = ErrorResponse;
+
+export const useFormsControllerRegisterForm = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerRegisterForm>>,
+      TError,
+      { data: RegisterFormSchemaDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerRegisterForm>>,
+  TError,
+  { data: RegisterFormSchemaDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerRegisterFormMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const formsControllerGetPending = (
   params?: FormsControllerGetPendingParams,
   signal?: AbortSignal
@@ -932,80 +1277,6 @@ export const useFormsControllerCreatePrefilled = <TError = ErrorResponse, TConte
   TContext
 > => {
   const mutationOptions = getFormsControllerCreatePrefilledMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-export const formsControllerUploadSchema = (
-  registerFormSchemaDto: RegisterFormSchemaDto,
-  signal?: AbortSignal
-) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/upload-form-version`,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: registerFormSchemaDto,
-    signal,
-  });
-};
-
-export const getFormsControllerUploadSchemaMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerUploadSchema>>,
-    TError,
-    { data: RegisterFormSchemaDto },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerUploadSchema>>,
-  TError,
-  { data: RegisterFormSchemaDto },
-  TContext
-> => {
-  const mutationKey = ["formsControllerUploadSchema"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerUploadSchema>>,
-    { data: RegisterFormSchemaDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return formsControllerUploadSchema(data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FormsControllerUploadSchemaMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerUploadSchema>>
->;
-export type FormsControllerUploadSchemaMutationBody = RegisterFormSchemaDto;
-export type FormsControllerUploadSchemaMutationError = ErrorResponse;
-
-export const useFormsControllerUploadSchema = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerUploadSchema>>,
-      TError,
-      { data: RegisterFormSchemaDto },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerUploadSchema>>,
-  TError,
-  { data: RegisterFormSchemaDto },
-  TContext
-> => {
-  const mutationOptions = getFormsControllerUploadSchemaMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
