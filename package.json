@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@betterinternship/core": "^1.2.2",
+    "@betterinternship/core": "^1.2.3",
     "@betterinternship/schema.base": "^1.0.19",
     "@betterinternship/schema.moa": "^1.4.19",
     "@hookform/resolvers": "^5.2.1",
