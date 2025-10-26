@@ -5,15 +5,18 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
   UseSuspenseQueryOptions,
@@ -503,6 +506,303 @@ export function useDocsControllerGetMoaSignedDocumentSuspense<
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getDocsControllerGetMoaSignedDocumentSuspenseQueryOptions(id, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const docsControllerPushStudentMoa = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<null>({ url: `/api/docs/student-moa`, method: "POST", signal });
+};
+
+export const getDocsControllerPushStudentMoaMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof docsControllerPushStudentMoa>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof docsControllerPushStudentMoa>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["docsControllerPushStudentMoa"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof docsControllerPushStudentMoa>>,
+    void
+  > = () => {
+    return docsControllerPushStudentMoa();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DocsControllerPushStudentMoaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof docsControllerPushStudentMoa>>
+>;
+
+export type DocsControllerPushStudentMoaMutationError = unknown;
+
+export const useDocsControllerPushStudentMoa = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof docsControllerPushStudentMoa>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof docsControllerPushStudentMoa>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getDocsControllerPushStudentMoaMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const docsControllerGetStudentMoa = (
+  id: string | undefined | null,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<null>({
+    url: `/api/docs/student-moa/${id}`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getDocsControllerGetStudentMoaQueryKey = (id?: string | undefined | null) => {
+  return [`/api/docs/student-moa/${id}`] as const;
+};
+
+export const getDocsControllerGetStudentMoaQueryOptions = <
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetStudentMoa>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getDocsControllerGetStudentMoaQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof docsControllerGetStudentMoa>>> = ({
+    signal,
+  }) => docsControllerGetStudentMoa(id, signal);
+
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type DocsControllerGetStudentMoaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof docsControllerGetStudentMoa>>
+>;
+export type DocsControllerGetStudentMoaQueryError = unknown;
+
+export function useDocsControllerGetStudentMoa<
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetStudentMoa>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+          TError,
+          Awaited<ReturnType<typeof docsControllerGetStudentMoa>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDocsControllerGetStudentMoa<
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetStudentMoa>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+          TError,
+          Awaited<ReturnType<typeof docsControllerGetStudentMoa>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDocsControllerGetStudentMoa<
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetStudentMoa>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useDocsControllerGetStudentMoa<
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetStudentMoa>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getDocsControllerGetStudentMoaQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getDocsControllerGetStudentMoaSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getDocsControllerGetStudentMoaQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof docsControllerGetStudentMoa>>> = ({
+    signal,
+  }) => docsControllerGetStudentMoa(id, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type DocsControllerGetStudentMoaSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof docsControllerGetStudentMoa>>
+>;
+export type DocsControllerGetStudentMoaSuspenseQueryError = unknown;
+
+export function useDocsControllerGetStudentMoaSuspense<
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDocsControllerGetStudentMoaSuspense<
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDocsControllerGetStudentMoaSuspense<
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useDocsControllerGetStudentMoaSuspense<
+  TData = Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+  TError = unknown,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetStudentMoa>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getDocsControllerGetStudentMoaSuspenseQueryOptions(id, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

@@ -90,3 +90,8 @@ export * from "./selfSchoolResponse";
 export * from "./selfSchoolResponseSchool";
 export * from "./selfSchoolResponseSchoolAccount";
 export * from "./signCustomMoaRequestDto";
+export * from "./createPendingFormDto";
+export * from "./createPrefilledFormDto";
+export * from "./createSignedFormDto";
+export * from "./formsControllerGetPendingParams";
+export * from "./registerFormSchemaDto";
