@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-26 21:01:40
+ * @ Modified time: 2025-10-26 23:04:50
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -293,7 +293,7 @@ const Sidebar = ({
   const [selectedFieldKey, setSelectedFieldKey] = useState<number | null>(null);
 
   // Constructs the latest metadata given the state
-  const constructMetadataDraft = () => {
+  const constructMetadataDraft = useCallback(() => {
     return {
       version: 0,
       schema: documentFields,
@@ -304,7 +304,7 @@ const Sidebar = ({
       },
       subscribers: [],
     };
-  };
+  }, [documentFields]);
 
   // Handle changes in file upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,7 +327,7 @@ const Sidebar = ({
       transformer: "",
       prefiller: "",
     });
-  }, [fieldTransform]);
+  }, [addDocumentField]);
 
   // Handles when a file is registered to the db
   const handleFileRegister = () => {
