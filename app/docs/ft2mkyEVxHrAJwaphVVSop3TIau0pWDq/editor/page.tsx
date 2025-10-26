@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-26 16:40:38
+ * @ Modified time: 2025-10-26 19:13:41
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -24,13 +24,16 @@ import {
 import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, PlusCircle, Upload } from "lucide-react";
-import { IFormField } from "@betterinternship/core";
+import { CheckCircle, Download, PlusCircle, Upload } from "lucide-react";
+import { IFormField, IFormMetadata } from "@betterinternship/core";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
 import { createPortal } from "react-dom";
-import path from "path";
 import { cn } from "@/lib/utils";
+import JsonView from "@uiw/react-json-view";
+import path from "path";
+import { Divider } from "@/components/ui/divider";
+import { downloadJSON } from "@/lib/files";
 
 /**
  * Helps us upload forms and find their coords quickly.
@@ -103,7 +106,7 @@ const FormEditorPage = () => {
   };
 
   return (
-    <div className="relative mx-auto h-[70vh] max-w-5xl">
+    <div className="relative mx-auto h-[70vh] max-w-7xl">
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
         <Sidebar
           fieldTransform={fieldTransform}
@@ -288,6 +291,20 @@ const Sidebar = ({
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
   const [selectedFieldKey, setSelectedFieldKey] = useState<number | null>(null);
 
+  // Constructs the latest metadata given the state
+  const constructMetadataDraft = () => {
+    return {
+      version: 0,
+      schema: documentFields,
+      email: {
+        sender: "",
+        subject: "",
+        content: "",
+      },
+      subscribers: [],
+    };
+  };
+
   // Handle changes in file upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -315,15 +332,23 @@ const Sidebar = ({
   const handleFileRegister = () => {
     openModal(
       "register-file-modal",
-      <RegisterFileModal documentNamePlaceholder={documentName} close={() => closeModal()} />,
+      <RegisterFileModal
+        formMetadataDraft={constructMetadataDraft()}
+        documentNamePlaceholder={documentName}
+        close={() => closeModal()}
+      />,
       { title: "Register Form into DB?" }
     );
+  };
+
+  // Handle exporting current draft metadata
+  const handleExportMetadata = () => {
+    downloadJSON(`${documentName}.metadata.json`, constructMetadataDraft());
   };
 
   // Makes sure that the selected field is always shown at the top
   const sortedDocumentFields = useMemo(() => {
     if (selectedFieldKey === null) return documentFields.toReversed();
-    console.log("ind", selectedFieldKey);
     return [
       documentFields[selectedFieldKey],
       ...documentFields.filter((f, i) => i !== selectedFieldKey).toReversed(),
@@ -362,7 +387,7 @@ const Sidebar = ({
   }, [selectedFieldKey, documentFields]);
 
   return (
-    <div className="sidebar w-[25vw] p-10">
+    <div className="sidebar w-[30vw] p-10">
       <h1 className="my-2 text-lg font-bold">{documentName}</h1>
       <pre className="my-2">
         x: {fieldTransform.x}, y: {fieldTransform.y}, w: {fieldTransform.w}, h: {fieldTransform.h},
@@ -373,6 +398,12 @@ const Sidebar = ({
           <Button variant="outline" onClick={handleFieldAdd}>
             <PlusCircle />
             Add Field
+          </Button>
+        )}
+        {documentFile && (
+          <Button variant="outline" onClick={handleExportMetadata}>
+            <Download />
+            Export JSON
           </Button>
         )}
         {documentFile && (
@@ -422,33 +453,52 @@ const Sidebar = ({
  */
 const RegisterFileModal = ({
   documentNamePlaceholder,
+  formMetadataDraft,
   close,
 }: {
   documentNamePlaceholder: string;
+  formMetadataDraft: IFormMetadata;
   close: () => void;
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
+
+  // Handle submitting form to registry
   const handleSubmit = async () => {
     // ! perform call to endpoint here
     await Promise.resolve("");
     close();
   };
 
+  // Handle exporting current draft metadata
+  const handleExportMetadata = () => {
+    downloadJSON(`${documentName}.metadata.json`, formMetadataDraft);
+  };
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-w-xl flex-col gap-2">
       <Input
         type="text"
         value={documentName}
         placeholder="Enter form name..."
         onChange={(e) => setDocumentName(e.target.value)}
       ></Input>
+      <div className="max-h-[600px] overflow-y-auto">
+        <JsonView
+          collapsed={true}
+          indentWidth={22}
+          displayDataTypes={false}
+          enableClipboard={false}
+          value={formMetadataDraft}
+        />
+      </div>
+      <Divider />
       <div className="flex flex-row justify-between gap-1">
+        <Button variant="outline" onClick={handleExportMetadata}>
+          <Download />
+          Export JSON
+        </Button>
         <div className="flex-1" />
-        <Button
-          scheme="supportive"
-          disabled={!documentName.trim()}
-          onClick={() => void handleSubmit()}
-        >
+        <Button disabled={!documentName.trim()} onClick={() => void handleSubmit()}>
           Submit
         </Button>
         <Button scheme="destructive" variant="outline" onClick={close}>
