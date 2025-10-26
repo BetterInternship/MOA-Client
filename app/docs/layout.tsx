@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { ModalProvider } from "../providers/modal-provider";
 
 export const metadata: Metadata = {
   title: "Document Verification | BetterInternship × DLSU",
@@ -25,9 +26,11 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        <main className="mx-auto">{children}</main>
+        <ModalProvider>
+          <main className="mx-auto">{children}</main>
+        </ModalProvider>
 
-        <footer className="text-muted-foreground mx-auto max-w-screen-sm px-4 pt-6 pb-10 text-center text-x flex justify-center">
+        <footer className="text-muted-foreground text-x mx-auto flex max-w-screen-sm justify-center px-4 pt-6 pb-10 text-center">
           <p className="text-muted-foreground mt-8 text-left text-sm leading-relaxed">
             By continuing, you agree to the{" "}
             <Link href="/terms" className="hover:text-primary underline underline-offset-4">
