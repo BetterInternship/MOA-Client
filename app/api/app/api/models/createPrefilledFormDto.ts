@@ -5,7 +5,9 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { CreatePrefilledFormDtoValues } from "./createPrefilledFormDtoValues";
 
 export interface CreatePrefilledFormDto {
-  [key: string]: unknown;
+  formName: string;
+  values: CreatePrefilledFormDtoValues;
 }

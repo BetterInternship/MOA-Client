@@ -5,11 +5,10 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { FormRegistryEntry } from "./formRegistryEntry";
 
-export interface RegisterFormSchemaDto {
-  formName: string;
-  version: number;
-  schema: string[];
-  subscribers: string[];
-  email_template: string;
+export interface FormRegistryResponse {
+  success: boolean;
+  message: string;
+  registry: FormRegistryEntry[];
 }

@@ -5,7 +5,12 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { CreateSignedFormDtoValues } from "./createSignedFormDtoValues";
+import type { CreateSignedFormDtoParties } from "./createSignedFormDtoParties";
 
 export interface CreateSignedFormDto {
-  [key: string]: unknown;
+  formName: string;
+  values: CreateSignedFormDtoValues;
+  signatories: string[];
+  parties: CreateSignedFormDtoParties;
 }

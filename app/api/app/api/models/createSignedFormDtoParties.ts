@@ -6,10 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface RegisterFormSchemaDto {
-  formName: string;
-  version: number;
-  schema: string[];
-  subscribers: string[];
-  email_template: string;
-}
+export type CreateSignedFormDtoParties = { [key: string]: unknown };

@@ -29,6 +29,8 @@ import type {
   CreatePrefilledFormDto,
   CreateSignedFormDto,
   ErrorResponse,
+  FormPendingResponse,
+  FormRegistryResponse,
   FormsControllerGetPendingParams,
   RegisterFormSchemaDto,
 } from "../../models";
@@ -36,7 +38,7 @@ import type {
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
 export const formsControllerGetRegistry = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<FormRegistryResponse>({
     url: `/api/forms/registry`,
     method: "GET",
     signal,
@@ -236,7 +238,7 @@ export const formsControllerGetPending = (
   params?: FormsControllerGetPendingParams,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<FormPendingResponse>({
     url: `/api/forms/pending`,
     method: "GET",
     params,

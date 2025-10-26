@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-26 16:39:33
+ * @ Modified time: 2025-10-26 16:40:38
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -38,7 +38,7 @@ import { cn } from "@/lib/utils";
  *
  * @component
  */
-const FormUploadPage = () => {
+const FormEditorPage = () => {
   // The current highlight and its transform; only need one for coordinates
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<IHighlight | null>(null);
@@ -459,4 +459,4 @@ const RegisterFileModal = ({
   );
 };
 
-export default FormUploadPage;
+export default FormEditorPage;
