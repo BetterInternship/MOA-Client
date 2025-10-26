@@ -11,7 +11,7 @@ import type { FormMetadataEmail } from "./formMetadataEmail";
 export interface FormMetadata {
   name: string;
   version: number;
-  schema: FormField;
+  schema: FormField[];
   subscribers: string[];
   email: FormMetadataEmail;
 }

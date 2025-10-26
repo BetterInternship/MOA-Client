@@ -109,3 +109,4 @@ export * from "./selfSchoolResponse";
 export * from "./selfSchoolResponseSchool";
 export * from "./selfSchoolResponseSchoolAccount";
 export * from "./signCustomMoaRequestDto";
+export * from "./formFieldType";

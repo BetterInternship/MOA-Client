@@ -1,9 +1,19 @@
 "use client";
 
 import { useFormsControllerGetRegistry } from "@/app/api";
+import { useModal } from "@/app/providers/modal-provider";
 import { Button } from "@/components/ui/button";
 import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
+import {
+  formsControllerGetRegistryFormMetadata,
+  useFormsControllerGetRegistryFormMetadata,
+} from "../../../api/app/api/endpoints/forms/forms";
+import { IFormMetadata } from "@betterinternship/core";
+import JsonView from "@uiw/react-json-view";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader } from "@/components/ui/loader";
+import { Badge } from "@/components/ui/badge";
 
 /**
  * Displays all the forms we have, and their latest versions.
@@ -37,10 +47,27 @@ const FormRegistryPage = () => {
  */
 const FormRegistryEntry = ({ name, version }: { name: string; version: number }) => {
   const router = useRouter();
+  const { openModal, closeModal } = useModal();
+
+  // Opens the document in the editor page
   const handleView = () => {
     const encodedName = encodeURIComponent(name);
     const encodedVersion = encodeURIComponent(version);
     router.push(`./editor?name=${encodedName}&version=${encodedVersion}`);
+  };
+
+  // Opens the document in the editor page
+  const handleMetadataPreview = () => {
+    openModal("form-metadata-preview", <FormMetadataPreview name={name} version={version} />, {
+      title: (
+        <div className="flex flex-row items-center gap-2 font-bold">
+          <Badge>
+            <pre className="inline-block">{name}</pre>
+          </Badge>
+          Metadata Preview
+        </div>
+      ),
+    });
   };
 
   return (
@@ -48,11 +75,52 @@ const FormRegistryEntry = ({ name, version }: { name: string; version: number })
       <TableCell>{name}</TableCell>
       <TableCell>{version}</TableCell>
       <TableCell>
-        <Button variant="outline" scheme="primary" size="xs" onClick={handleView}>
-          View
-        </Button>
+        <div className="flex flex-row gap-2">
+          <Button variant="outline" scheme="primary" size="xs" onClick={handleMetadataPreview}>
+            Preview Metadata
+          </Button>
+          <Button variant="outline" scheme="primary" size="xs" onClick={handleView}>
+            View
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
+  );
+};
+
+/**
+ * Shows a preview of the form metadata.
+ *
+ * @component
+ */
+const FormMetadataPreview = ({ name, version }: { name: string; version: number }) => {
+  const formMetadata = useFormsControllerGetRegistryFormMetadata({ name, version });
+
+  // Something went wrong
+  if (formMetadata.error) {
+    return (
+      <div className="flex min-w-xl flex-col gap-2">
+        <div className="text-destructive">{formMetadata.error.message}</div>
+      </div>
+    );
+  }
+
+  // Fetching preview
+  if (formMetadata.isFetching || formMetadata.isLoading || !formMetadata.data) {
+    return (
+      <div className="flex min-w-xl flex-col gap-2">
+        <Loader>Loading preview...</Loader>
+      </div>
+    );
+  }
+
+  // Show preview
+  return (
+    <div className="flex min-w-xl flex-col gap-2">
+      <div className="max-h-[600px] overflow-y-auto">
+        <JsonView indentWidth={22} displayDataTypes={false} value={formMetadata.data} />
+      </div>
+    </div>
   );
 };
 

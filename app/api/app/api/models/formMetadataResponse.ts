@@ -10,5 +10,5 @@ import type { FormMetadata } from "./formMetadata";
 export interface FormMetadataResponse {
   success: boolean;
   message: string;
-  FormMetadata: FormMetadata;
+  formMetadata: FormMetadata;
 }

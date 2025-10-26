@@ -5,10 +5,11 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { FormFieldType } from "./formFieldType";
 
 export interface FormField {
   field: string;
-  type: string;
+  type: FormFieldType;
   x: number;
   y: number;
   w: number;
