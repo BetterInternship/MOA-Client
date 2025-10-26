@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-26 12:42:20
- * @ Modified time: 2025-10-26 13:08:48
+ * @ Modified time: 2025-10-26 13:44:57
  * @ Description:
  *
  * Creds to J. Bantolino for the original code; modified later on but original concept is the same.
@@ -39,14 +39,22 @@ type ModalOptions = {
   onClose?: () => void;
 };
 
-type RegistryEntry = { contentNode: React.ReactNode; options: ModalOptions };
-type Open = (name: string, contentNode: React.ReactNode, options?: ModalOptions) => void;
-type Close = (name?: string) => void;
+// Actions to open or close modals
+type OpenModalCallback = (
+  name: string,
+  contentNode: React.ReactNode,
+  options?: ModalOptions
+) => void;
+type CloseModalCallback = (name?: string) => void;
 
-const ModalCtx = createContext<{ open: Open; close: Close }>({
-  open: () => {},
-  close: () => {},
+// This is the interface returned by the modal hook
+const ModalCtx = createContext<{ openModal: OpenModalCallback; closeModal: CloseModalCallback }>({
+  openModal: () => {},
+  closeModal: () => {},
 });
+
+// Store a currently active modal
+type ActiveModalRegistryEntry = { contentNode: React.ReactNode; options: ModalOptions };
 
 // This used to be called useGlobalModal
 // But because we will replace useModal with this, might as well rename it
@@ -59,15 +67,17 @@ export const useModal = () => useContext(ModalCtx);
  * @provider
  */
 export function ModalProvider({ children }: { children: React.ReactNode }) {
-  const [activeModalRegistry, setActiveModalRegistry] = useState<Record<string, RegistryEntry>>({});
+  const [activeModalRegistry, setActiveModalRegistry] = useState<
+    Record<string, ActiveModalRegistryEntry>
+  >({});
 
   // Opens the specified modal with the given content, and registers it in registry
-  const open = useCallback<Open>((name, content, opts = {}) => {
+  const openModal = useCallback<OpenModalCallback>((name, content, opts = {}) => {
     setActiveModalRegistry((m) => ({ ...m, [name]: { contentNode: content, options: opts } }));
   }, []);
 
   // Closes all currently open modals, or a specified one
-  const close = useCallback<Close>((name) => {
+  const closeModal = useCallback<CloseModalCallback>((name) => {
     setActiveModalRegistry((m) => {
       // Just close everything
       if (!name) {
@@ -113,11 +123,11 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
       const entries = Object.entries(activeModalRegistry);
       if (!entries.length) return;
       const [lastName, lastEntry] = entries[entries.length - 1];
-      if (lastEntry.options.closeOnEsc !== false) close(lastName);
+      if (lastEntry.options.closeOnEsc !== false) closeModal(lastName);
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [activeModalRegistry, close]);
+  }, [activeModalRegistry, closeModal]);
 
   // Portals to the actual modal component
   const portals = useMemo(() => {
@@ -127,17 +137,17 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
     return createPortal(
       <AnimatePresence>
         {entries.map(([name, { contentNode, options }]) => (
-          <ModalWrapper name={name} options={options} close={close}>
+          <ModalWrapper name={name} options={options} close={closeModal}>
             {contentNode}
           </ModalWrapper>
         ))}
       </AnimatePresence>,
       document.body
     );
-  }, [activeModalRegistry, close]);
+  }, [activeModalRegistry, closeModal]);
 
   return (
-    <ModalCtx.Provider value={{ open, close }}>
+    <ModalCtx.Provider value={{ openModal, closeModal }}>
       {children}
       {portals}
     </ModalCtx.Provider>
@@ -227,7 +237,7 @@ const ModalWrapper = ({
           >
             {options.title ? (
               typeof options.title === "string" ? (
-                <h2 className="truncate text-base font-semibold">{options.title}</h2>
+                <h2 className="truncate text-2xl font-bold tracking-tight">{options.title}</h2>
               ) : (
                 <div className="min-w-0 flex-1">{options.title}</div>
               )
