@@ -5,15 +5,11 @@ import { useModal } from "@/app/providers/modal-provider";
 import { Button } from "@/components/ui/button";
 import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
-import {
-  formsControllerGetRegistryFormMetadata,
-  useFormsControllerGetRegistryFormMetadata,
-} from "../../../api/app/api/endpoints/forms/forms";
-import { IFormMetadata } from "@betterinternship/core";
+import { useFormsControllerGetRegistryFormMetadata } from "../../../api/app/api/endpoints/forms/forms";
 import JsonView from "@uiw/react-json-view";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader } from "@/components/ui/loader";
 import { Badge } from "@/components/ui/badge";
+import { Divider } from "@/components/ui/divider";
 
 /**
  * Displays all the forms we have, and their latest versions.
@@ -60,11 +56,14 @@ const FormRegistryEntry = ({ name, version }: { name: string; version: number })
   const handleMetadataPreview = () => {
     openModal("form-metadata-preview", <FormMetadataPreview name={name} version={version} />, {
       title: (
-        <div className="flex flex-row items-center gap-2 font-bold">
-          <Badge>
-            <pre className="inline-block">{name}</pre>
-          </Badge>
-          Metadata Preview
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row items-center gap-2">
+            <Badge>
+              <pre className="inline-block">{name}</pre>
+            </Badge>
+            <span className="font-semibold tracking-tight">Metadata Preview</span>
+          </div>
+          <Divider />
         </div>
       ),
     });
@@ -96,29 +95,24 @@ const FormRegistryEntry = ({ name, version }: { name: string; version: number })
 const FormMetadataPreview = ({ name, version }: { name: string; version: number }) => {
   const formMetadata = useFormsControllerGetRegistryFormMetadata({ name, version });
 
-  // Something went wrong
-  if (formMetadata.error) {
-    return (
-      <div className="flex min-w-xl flex-col gap-2">
-        <div className="text-destructive">{formMetadata.error.message}</div>
-      </div>
-    );
-  }
-
-  // Fetching preview
-  if (formMetadata.isFetching || formMetadata.isLoading || !formMetadata.data) {
-    return (
-      <div className="flex min-w-xl flex-col gap-2">
-        <Loader>Loading preview...</Loader>
-      </div>
-    );
-  }
-
-  // Show preview
   return (
     <div className="flex min-w-xl flex-col gap-2">
-      <div className="max-h-[600px] overflow-y-auto">
-        <JsonView indentWidth={22} displayDataTypes={false} value={formMetadata.data} />
+      <div className="h-[600px] max-h-[600px] overflow-y-auto">
+        {formMetadata.error || !formMetadata.data?.success ? (
+          <div className="text-destructive">
+            {formMetadata.error?.message ?? formMetadata.data?.message}
+          </div>
+        ) : formMetadata.isLoading || formMetadata.isFetching ? (
+          <Loader>Loading preview...</Loader>
+        ) : (
+          <div className="py-4">
+            <JsonView
+              indentWidth={22}
+              displayDataTypes={false}
+              value={formMetadata.data?.formMetadata}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
