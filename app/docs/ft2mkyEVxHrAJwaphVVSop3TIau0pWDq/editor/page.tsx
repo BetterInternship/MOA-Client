@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-26 23:04:50
+ * @ Modified time: 2025-10-26 23:11:42
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -502,7 +502,6 @@ const RegisterFileModal = ({
       />
       <div className="max-h-[600px] overflow-y-auto">
         <JsonView
-          collapsed={true}
           indentWidth={22}
           displayDataTypes={false}
           enableClipboard={false}
