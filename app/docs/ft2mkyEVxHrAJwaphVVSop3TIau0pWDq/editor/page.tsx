@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-27 09:50:15
+ * @ Modified time: 2025-10-27 10:41:25
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import JsonView from "@uiw/react-json-view";
 import path from "path";
 import { Divider } from "@/components/ui/divider";
-import { downloadJSON } from "@/lib/files";
+import { downloadJSON, loadPdfAsFile } from "@/lib/files";
 import {
   formsControllerRegisterForm,
   formsControllerGetRegistryFormMetadata,
@@ -164,6 +164,7 @@ const FormEditorPageContent = () => {
     <div className="relative mx-auto h-[70vh] max-w-7xl">
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
         <Sidebar
+          documentUrl={documentUrl}
           fieldTransform={fieldTransform}
           documentFields={fields}
           initialDocumentName={documentName}
@@ -360,6 +361,7 @@ const FieldPreview = ({
  * @component
  */
 const Sidebar = ({
+  documentUrl,
   fieldTransform,
   documentFields,
   initialDocumentName,
@@ -367,6 +369,7 @@ const Sidebar = ({
   addDocumentField,
   editDocumentField,
 }: {
+  documentUrl: string | null;
   fieldTransform: { x: number; y: number; w: number; h: number; page: number };
   documentFields: IFormField[];
   initialDocumentName: string | null;
@@ -420,7 +423,7 @@ const Sidebar = ({
   }, [addDocumentField]);
 
   // Handles when a file is registered to the db
-  const handleFileRegister = () => {
+  const handleFileRegister = useCallback(() => {
     if (!documentFile) return;
 
     openModal(
@@ -438,7 +441,7 @@ const Sidebar = ({
         closeOnEsc: false,
       }
     );
-  };
+  }, [documentFile, documentUrl]);
 
   // Handle exporting current draft metadata
   const handleExportMetadata = () => {
@@ -484,6 +487,12 @@ const Sidebar = ({
     setFieldPreviews(fieldPreviews);
     return () => setFieldPreviews([]);
   }, [selectedFieldKey, documentFields]);
+
+  // Make sure to set the file when it's specified in the parent
+  useEffect(() => {
+    if (!documentUrl) return;
+    void loadPdfAsFile(documentUrl, documentName).then((file) => setDocumentFile(file));
+  }, [documentUrl]);
 
   return (
     <div className="sidebar w-[30vw] p-10">
@@ -566,6 +575,8 @@ const RegisterFileModal = ({
 
   // Handle submitting form to registry
   const handleSubmit = async () => {
+    if (!documentFile) return;
+
     setSubmitting(true);
     await formsControllerRegisterForm({
       base_document: documentFile,
@@ -605,7 +616,10 @@ const RegisterFileModal = ({
           Export JSON
         </Button>
         <div className="flex-1" />
-        <Button disabled={!documentName.trim() || submitting} onClick={() => void handleSubmit()}>
+        <Button
+          disabled={!documentName.trim() || submitting || !documentFile}
+          onClick={() => void handleSubmit()}
+        >
           {submitting ? "Submitting..." : "Submit"}
         </Button>
         <Button disabled={submitting} scheme="destructive" variant="outline" onClick={close}>
