@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-27 10:41:25
+ * @ Modified time: 2025-10-27 11:25:03
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -110,13 +110,9 @@ const FormEditorPageContent = () => {
 
   // Edit field from the array
   // This breaks the rules on how to use useState but makes up for it by calling setState() on the updated array LMAO
-  const editField = useCallback(
-    (key: number) => (newField: Partial<IFormField>) => {
-      fields[key] = { ...fields[key], ...newField };
-      setFields(fields.slice());
-    },
-    [fields]
-  );
+  const editField = (key: number) => (newField: Partial<IFormField>) => {
+    setFields([...fields.slice(0, key), { ...fields[key], ...newField }, ...fields.slice(key + 1)]);
+  };
 
   // Load the specified JSON first, if any
   useEffect(() => {
@@ -385,20 +381,6 @@ const Sidebar = ({
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
   const [selectedFieldKey, setSelectedFieldKey] = useState<number | null>(null);
 
-  // Constructs the latest metadata given the state
-  const constructMetadataDraft = useCallback(() => {
-    return {
-      version: 0,
-      schema: documentFields,
-      email: {
-        sender: "",
-        subject: "",
-        content: "",
-      },
-      subscribers: [],
-    };
-  }, [documentFields]);
-
   // Handle changes in file upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -429,7 +411,7 @@ const Sidebar = ({
     openModal(
       "register-file-modal",
       <RegisterFileModal
-        formMetadataDraft={constructMetadataDraft()}
+        documentFields={documentFields}
         documentNamePlaceholder={documentName}
         documentFile={documentFile}
         close={() => closeModal()}
@@ -441,12 +423,7 @@ const Sidebar = ({
         closeOnEsc: false,
       }
     );
-  }, [documentFile, documentUrl]);
-
-  // Handle exporting current draft metadata
-  const handleExportMetadata = () => {
-    downloadJSON(`${documentName}.metadata.json`, constructMetadataDraft());
-  };
+  }, [documentFile, documentUrl, documentFields]);
 
   // Makes sure that the selected field is always shown at the top
   const sortedDocumentFields = useMemo(() => {
@@ -509,12 +486,6 @@ const Sidebar = ({
           </Button>
         )}
         {documentFile && (
-          <Button variant="outline" onClick={handleExportMetadata}>
-            <Download />
-            Export JSON
-          </Button>
-        )}
-        {documentFile && (
           <Button variant="outline" scheme="supportive" onClick={handleFileRegister}>
             <CheckCircle />
             Register File
@@ -561,28 +532,45 @@ const Sidebar = ({
  */
 const RegisterFileModal = ({
   documentNamePlaceholder,
-  formMetadataDraft,
+  documentFields,
   documentFile,
   close,
 }: {
   documentNamePlaceholder: string;
-  formMetadataDraft: IFormMetadata;
+  documentFields: IFormField[];
   documentFile: File;
   close: () => void;
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
   const [submitting, setSubmitting] = useState(false);
 
+  // Constructs the latest metadata given the state
+  const formMetadataDraft: IFormMetadata & { name: string; base_document: File } = useMemo(
+    () => ({
+      version: 0,
+      name: documentName,
+      base_document: documentFile,
+      schema: documentFields,
+      email: {
+        sender: "",
+        subject: "",
+        content: "",
+      },
+      subscribers: [],
+    }),
+    [documentName, documentFile, documentFields]
+  );
+
+  useEffect(() => {
+    console.log("latest FIELDS", documentFields);
+  }, [documentFields]);
+
   // Handle submitting form to registry
   const handleSubmit = async () => {
     if (!documentFile) return;
 
     setSubmitting(true);
-    await formsControllerRegisterForm({
-      base_document: documentFile,
-      ...formMetadataDraft,
-      name: documentName,
-    });
+    await formsControllerRegisterForm(formMetadataDraft);
 
     setSubmitting(false);
     close();
