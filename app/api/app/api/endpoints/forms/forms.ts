@@ -29,10 +29,12 @@ import type {
   CreatePrefilledFormDto,
   CreateSignedFormDto,
   ErrorResponse,
+  FormDocumentResponse,
   FormMetadataResponse,
   FormPendingResponse,
   FormRegistryResponse,
   FormsControllerGetPendingParams,
+  FormsControllerGetRegistryFormDocumentParams,
   FormsControllerGetRegistryFormMetadataParams,
   RegisterFormSchemaDto,
 } from "../../models";
@@ -484,6 +486,268 @@ export function useFormsControllerGetRegistryFormMetadataSuspense<
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getFormsControllerGetRegistryFormMetadataSuspenseQueryOptions(
+    params,
+    options
+  );
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const formsControllerGetRegistryFormDocument = (
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<FormDocumentResponse>({
+    url: `/api/forms/form-document`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getFormsControllerGetRegistryFormDocumentQueryKey = (
+  params?: FormsControllerGetRegistryFormDocumentParams
+) => {
+  return [`/api/forms/form-document`, ...(params ? [params] : [])] as const;
+};
+
+export const getFormsControllerGetRegistryFormDocumentQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetRegistryFormDocumentQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>
+  > = ({ signal }) => formsControllerGetRegistryFormDocument(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetRegistryFormDocumentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>
+>;
+export type FormsControllerGetRegistryFormDocumentQueryError = ErrorResponse;
+
+export function useFormsControllerGetRegistryFormDocument<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetRegistryFormDocumentParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetRegistryFormDocument<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetRegistryFormDocument<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetRegistryFormDocument<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetRegistryFormDocumentQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getFormsControllerGetRegistryFormDocumentSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetRegistryFormDocumentQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>
+  > = ({ signal }) => formsControllerGetRegistryFormDocument(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetRegistryFormDocumentSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>
+>;
+export type FormsControllerGetRegistryFormDocumentSuspenseQueryError = ErrorResponse;
+
+export function useFormsControllerGetRegistryFormDocumentSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetRegistryFormDocumentParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetRegistryFormDocumentSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetRegistryFormDocumentSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetRegistryFormDocumentSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetRegistryFormDocumentParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetRegistryFormDocument>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetRegistryFormDocumentSuspenseQueryOptions(
     params,
     options
   );

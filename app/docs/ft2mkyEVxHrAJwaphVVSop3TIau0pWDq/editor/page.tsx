@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-26 23:11:42
+ * @ Modified time: 2025-10-27 09:50:15
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -10,7 +10,7 @@
 "use client";
 
 import { Loader } from "@/components/ui/loader";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AreaHighlight,
   Comment,
@@ -34,7 +34,25 @@ import JsonView from "@uiw/react-json-view";
 import path from "path";
 import { Divider } from "@/components/ui/divider";
 import { downloadJSON } from "@/lib/files";
-import { formsControllerRegisterForm } from "../../../api/app/api/endpoints/forms/forms";
+import {
+  formsControllerRegisterForm,
+  formsControllerGetRegistryFormMetadata,
+  formsControllerGetRegistryFormDocument,
+} from "../../../api/app/api/endpoints/forms/forms";
+import { useSearchParams } from "next/navigation";
+
+/**
+ * We wrap the page around a suspense boundary to use search params.
+ *
+ * @component
+ */
+const FormEditorPage = () => {
+  return (
+    <Suspense>
+      <FormEditorPageContent />
+    </Suspense>
+  );
+};
 
 /**
  * Helps us upload forms and find their coords quickly.
@@ -42,9 +60,13 @@ import { formsControllerRegisterForm } from "../../../api/app/api/endpoints/form
  *
  * @component
  */
-const FormEditorPage = () => {
+const FormEditorPageContent = () => {
+  const searchParams = useSearchParams();
+
   // The current highlight and its transform; only need one for coordinates
+  const [loading, setLoading] = useState(true);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [documentName, setDocumentName] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<IHighlight | null>(null);
   const [fields, setFields] = useState<IFormField[]>([]);
   const [fieldTransform, setFieldTransform] = useState<{
@@ -96,43 +118,109 @@ const FormEditorPage = () => {
     [fields]
   );
 
-  // Renders a highlight into a component
-  const highlightRenderer = (highlight: ViewportHighlight, index: number) => {
-    console.log(highlight.position.boundingRect);
-    return (
-      <Popup popupContent={<></>} onMouseOver={() => {}} onMouseOut={() => {}} key={index}>
-        <AreaHighlight highlight={highlight} onChange={() => {}} isScrolledTo={false} />
-      </Popup>
+  // Load the specified JSON first, if any
+  useEffect(() => {
+    const promises = [];
+    const formName = searchParams.get("name");
+    const formVersion = searchParams.get("version");
+    const formVersionNumber = parseInt(formVersion ?? "nan");
+    if (!formName || !formVersion || isNaN(formVersionNumber)) return setLoading(false);
+
+    // Request the specified form metadata
+    promises.push(
+      formsControllerGetRegistryFormMetadata({
+        name: formName,
+        version: formVersionNumber,
+      }).then(({ formMetadata }) => {
+        // ! change this in the future
+        // ! make sure to use FormMetadata class to mediate all access
+        setFields(formMetadata.schema);
+        setDocumentName(formMetadata.name);
+      })
     );
-  };
+
+    // Request the specified form url
+    promises.push(
+      formsControllerGetRegistryFormDocument({
+        name: formName,
+        version: formVersionNumber,
+      }).then(({ formDocument }) => {
+        setDocumentUrl(formDocument);
+      })
+    );
+
+    // Remove loading when done processing, including fail
+    void Promise.all(promises)
+      .then(() => setLoading(false))
+      .catch((e) => {
+        alert(e);
+        setLoading(false);
+      });
+  }, [searchParams]);
+
+  if (loading) return <Loader>Loading form editor...</Loader>;
 
   return (
     <div className="relative mx-auto h-[70vh] max-w-7xl">
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
         <Sidebar
           fieldTransform={fieldTransform}
-          setDocumentUrl={setDocumentUrl}
           documentFields={fields}
+          initialDocumentName={documentName}
+          setDocumentUrl={setDocumentUrl}
           addDocumentField={addField}
           editDocumentField={editField}
         />
         {documentUrl && (
-          <PdfLoader url={documentUrl} beforeLoad={<Loader />}>
-            {(pdfDocument) => (
-              <PdfHighlighter
-                pdfDocument={pdfDocument}
-                enableAreaSelection={(event) => true}
-                onScrollChange={() => (document.location.hash = "")}
-                scrollRef={() => {}}
-                highlightTransform={highlightRenderer}
-                highlights={highlight ? [highlight] : []}
-                onSelectionFinished={onHighlightFinished}
-              />
-            )}
-          </PdfLoader>
+          <FormRenderer
+            documentUrl={documentUrl}
+            highlight={highlight}
+            onHighlightFinished={onHighlightFinished}
+          />
         )}
       </div>
     </div>
+  );
+};
+
+/**
+ * A component that just renders the document itself.
+ *
+ * @component
+ */
+const FormRenderer = ({
+  documentUrl,
+  highlight,
+  onHighlightFinished,
+}: {
+  documentUrl: string;
+  highlight: IHighlight | null;
+  onHighlightFinished: (position: ScaledPosition, content: Content) => void;
+}) => {
+  // Renders a highlight object into a component
+  const highlightRenderer = (highlight: ViewportHighlight, index: number) => (
+    <Popup popupContent={<></>} onMouseOver={() => {}} onMouseOut={() => {}} key={index}>
+      <AreaHighlight highlight={highlight} onChange={() => {}} isScrolledTo={false} />
+    </Popup>
+  );
+
+  // No document to show
+  if (!documentUrl) return <></>;
+
+  return (
+    <PdfLoader url={documentUrl} beforeLoad={<Loader />}>
+      {(pdfDocument) => (
+        <PdfHighlighter
+          pdfDocument={pdfDocument}
+          enableAreaSelection={(event) => true}
+          onScrollChange={() => {}}
+          scrollRef={() => {}}
+          highlightTransform={highlightRenderer}
+          highlights={highlight ? [highlight] : []}
+          onSelectionFinished={onHighlightFinished}
+        />
+      )}
+    </PdfLoader>
   );
 };
 
@@ -273,21 +361,23 @@ const FieldPreview = ({
  */
 const Sidebar = ({
   fieldTransform,
-  setDocumentUrl,
   documentFields,
+  initialDocumentName,
+  setDocumentUrl,
   addDocumentField,
   editDocumentField,
 }: {
   fieldTransform: { x: number; y: number; w: number; h: number; page: number };
-  setDocumentUrl: (documentUrl: string) => void;
   documentFields: IFormField[];
+  initialDocumentName: string | null;
+  setDocumentUrl: (documentUrl: string) => void;
   addDocumentField: (field: IFormField) => void;
   editDocumentField: (key: number) => (field: Partial<IFormField>) => void;
 }) => {
   // Allows us to click the input without showing it
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { openModal, closeModal } = useModal();
-  const [documentName, setDocumentName] = useState<string>("No File Selected");
+  const [documentName, setDocumentName] = useState<string>(initialDocumentName ?? "Select file");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
   const [selectedFieldKey, setSelectedFieldKey] = useState<number | null>(null);
