@@ -32,10 +32,12 @@ import type {
   FieldRegistryResponse,
   FieldRequestResponse,
   FormDocumentResponse,
+  FormLatestResponse,
   FormMetadataResponse,
   FormPendingResponse,
   FormRegistryResponse,
   FormsControllerGetFieldFromRegistryParams,
+  FormsControllerGetLatestFormDocumentAndMetadataParams,
   FormsControllerGetPendingParams,
   FormsControllerGetRegistryFormDocumentParams,
   FormsControllerGetRegistryFormMetadataParams,
@@ -767,6 +769,271 @@ export function useFormsControllerGetRegistryFormDocumentSuspense<
   return query;
 }
 
+export const formsControllerGetLatestFormDocumentAndMetadata = (
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<FormLatestResponse>({
+    url: `/api/forms/form-latest`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getFormsControllerGetLatestFormDocumentAndMetadataQueryKey = (
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams
+) => {
+  return [`/api/forms/form-latest`, ...(params ? [params] : [])] as const;
+};
+
+export const getFormsControllerGetLatestFormDocumentAndMetadataQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetLatestFormDocumentAndMetadataQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>
+  > = ({ signal }) => formsControllerGetLatestFormDocumentAndMetadata(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetLatestFormDocumentAndMetadataQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>
+>;
+export type FormsControllerGetLatestFormDocumentAndMetadataQueryError = ErrorResponse;
+
+export function useFormsControllerGetLatestFormDocumentAndMetadata<
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetLatestFormDocumentAndMetadata<
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetLatestFormDocumentAndMetadata<
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetLatestFormDocumentAndMetadata<
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetLatestFormDocumentAndMetadataQueryOptions(
+    params,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getFormsControllerGetLatestFormDocumentAndMetadataSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetLatestFormDocumentAndMetadataQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>
+  > = ({ signal }) => formsControllerGetLatestFormDocumentAndMetadata(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetLatestFormDocumentAndMetadataSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>
+>;
+export type FormsControllerGetLatestFormDocumentAndMetadataSuspenseQueryError = ErrorResponse;
+
+export function useFormsControllerGetLatestFormDocumentAndMetadataSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetLatestFormDocumentAndMetadataSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetLatestFormDocumentAndMetadataSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetLatestFormDocumentAndMetadataSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetLatestFormDocumentAndMetadataParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetLatestFormDocumentAndMetadata>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetLatestFormDocumentAndMetadataSuspenseQueryOptions(
+    params,
+    options
+  );
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
 export const formsControllerRegisterForm = (
   registerFormSchemaDto: RegisterFormSchemaDto,
   signal?: AbortSignal
@@ -854,510 +1121,6 @@ export const useFormsControllerRegisterForm = <TError = ErrorResponse, TContext 
   TContext
 > => {
   const mutationOptions = getFormsControllerRegisterFormMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-export const formsControllerGetPending = (
-  params?: FormsControllerGetPendingParams,
-  signal?: AbortSignal
-) => {
-  return preconfiguredAxiosFunction<FormPendingResponse>({
-    url: `/api/forms/pending`,
-    method: "GET",
-    params,
-    signal,
-  });
-};
-
-export const getFormsControllerGetPendingQueryKey = (params?: FormsControllerGetPendingParams) => {
-  return [`/api/forms/pending`, ...(params ? [params] : [])] as const;
-};
-
-export const getFormsControllerGetPendingQueryOptions = <
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params?: FormsControllerGetPendingParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    >;
-  }
-) => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetPendingQueryKey(params);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetPending>>> = ({
-    signal,
-  }) => formsControllerGetPending(params, signal);
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof formsControllerGetPending>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type FormsControllerGetPendingQueryResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerGetPending>>
->;
-export type FormsControllerGetPendingQueryError = ErrorResponse;
-
-export function useFormsControllerGetPending<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params: undefined | FormsControllerGetPendingParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof formsControllerGetPending>>,
-          TError,
-          Awaited<ReturnType<typeof formsControllerGetPending>>
-        >,
-        "initialData"
-      >;
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetPending<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params?: FormsControllerGetPendingParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof formsControllerGetPending>>,
-          TError,
-          Awaited<ReturnType<typeof formsControllerGetPending>>
-        >,
-        "initialData"
-      >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetPending<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params?: FormsControllerGetPendingParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-export function useFormsControllerGetPending<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params?: FormsControllerGetPendingParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getFormsControllerGetPendingQueryOptions(params, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>;
-  };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-export const getFormsControllerGetPendingSuspenseQueryOptions = <
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params?: FormsControllerGetPendingParams,
-  options?: {
-    query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    >;
-  }
-) => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetPendingQueryKey(params);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetPending>>> = ({
-    signal,
-  }) => formsControllerGetPending(params, signal);
-
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof formsControllerGetPending>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type FormsControllerGetPendingSuspenseQueryResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerGetPending>>
->;
-export type FormsControllerGetPendingSuspenseQueryError = ErrorResponse;
-
-export function useFormsControllerGetPendingSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params: undefined | FormsControllerGetPendingParams,
-  options: {
-    query: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetPendingSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params?: FormsControllerGetPendingParams,
-  options?: {
-    query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetPendingSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params?: FormsControllerGetPendingParams,
-  options?: {
-    query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-export function useFormsControllerGetPendingSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
-  TError = ErrorResponse,
->(
-  params?: FormsControllerGetPendingParams,
-  options?: {
-    query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getFormsControllerGetPendingSuspenseQueryOptions(params, options);
-
-  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-export const formsControllerCreatePending = (
-  createPendingFormDto: CreatePendingFormDto,
-  signal?: AbortSignal
-) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/pending`,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: createPendingFormDto,
-    signal,
-  });
-};
-
-export const getFormsControllerCreatePendingMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerCreatePending>>,
-    TError,
-    { data: CreatePendingFormDto },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerCreatePending>>,
-  TError,
-  { data: CreatePendingFormDto },
-  TContext
-> => {
-  const mutationKey = ["formsControllerCreatePending"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerCreatePending>>,
-    { data: CreatePendingFormDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return formsControllerCreatePending(data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FormsControllerCreatePendingMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerCreatePending>>
->;
-export type FormsControllerCreatePendingMutationBody = CreatePendingFormDto;
-export type FormsControllerCreatePendingMutationError = ErrorResponse;
-
-export const useFormsControllerCreatePending = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerCreatePending>>,
-      TError,
-      { data: CreatePendingFormDto },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerCreatePending>>,
-  TError,
-  { data: CreatePendingFormDto },
-  TContext
-> => {
-  const mutationOptions = getFormsControllerCreatePendingMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-export const formsControllerApproveSignatory = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/approve`,
-    method: "POST",
-    signal,
-  });
-};
-
-export const getFormsControllerApproveSignatoryMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
-    TError,
-    void,
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ["formsControllerApproveSignatory"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
-    void
-  > = () => {
-    return formsControllerApproveSignatory();
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FormsControllerApproveSignatoryMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerApproveSignatory>>
->;
-
-export type FormsControllerApproveSignatoryMutationError = ErrorResponse;
-
-export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
-      TError,
-      void,
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions = getFormsControllerApproveSignatoryMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-export const formsControllerCreateSigned = (
-  createSignedFormDto: CreateSignedFormDto,
-  signal?: AbortSignal
-) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/signed`,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: createSignedFormDto,
-    signal,
-  });
-};
-
-export const getFormsControllerCreateSignedMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-    TError,
-    { data: CreateSignedFormDto },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-  TError,
-  { data: CreateSignedFormDto },
-  TContext
-> => {
-  const mutationKey = ["formsControllerCreateSigned"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-    { data: CreateSignedFormDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return formsControllerCreateSigned(data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FormsControllerCreateSignedMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerCreateSigned>>
->;
-export type FormsControllerCreateSignedMutationBody = CreateSignedFormDto;
-export type FormsControllerCreateSignedMutationError = ErrorResponse;
-
-export const useFormsControllerCreateSigned = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-      TError,
-      { data: CreateSignedFormDto },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-  TError,
-  { data: CreateSignedFormDto },
-  TContext
-> => {
-  const mutationOptions = getFormsControllerCreateSignedMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-export const formsControllerCreatePrefilled = (
-  createPrefilledFormDto: CreatePrefilledFormDto,
-  signal?: AbortSignal
-) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/prefill`,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: createPrefilledFormDto,
-    signal,
-  });
-};
-
-export const getFormsControllerCreatePrefilledMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
-    TError,
-    { data: CreatePrefilledFormDto },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
-  TError,
-  { data: CreatePrefilledFormDto },
-  TContext
-> => {
-  const mutationKey = ["formsControllerCreatePrefilled"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
-    { data: CreatePrefilledFormDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return formsControllerCreatePrefilled(data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FormsControllerCreatePrefilledMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>
->;
-export type FormsControllerCreatePrefilledMutationBody = CreatePrefilledFormDto;
-export type FormsControllerCreatePrefilledMutationError = ErrorResponse;
-
-export const useFormsControllerCreatePrefilled = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
-      TError,
-      { data: CreatePrefilledFormDto },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
-  TError,
-  { data: CreatePrefilledFormDto },
-  TContext
-> => {
-  const mutationOptions = getFormsControllerCreatePrefilledMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -1982,3 +1745,508 @@ export function useFormsControllerGetFieldFromRegistrySuspense<
 
   return query;
 }
+
+export const formsControllerGetPending = (
+  params?: FormsControllerGetPendingParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<FormPendingResponse>({
+    url: `/api/forms/pending`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getFormsControllerGetPendingQueryKey = (params?: FormsControllerGetPendingParams) => {
+  return [`/api/forms/pending`, ...(params ? [params] : [])] as const;
+};
+
+export const getFormsControllerGetPendingQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetPendingParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetPendingQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetPending>>> = ({
+    signal,
+  }) => formsControllerGetPending(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetPending>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetPendingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetPending>>
+>;
+export type FormsControllerGetPendingQueryError = ErrorResponse;
+
+export function useFormsControllerGetPending<
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetPendingParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetPending>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetPending>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetPending<
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetPendingParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetPending>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetPending>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetPending<
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetPendingParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetPending<
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetPendingParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetPendingQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getFormsControllerGetPendingSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetPendingParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetPendingQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetPending>>> = ({
+    signal,
+  }) => formsControllerGetPending(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetPending>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetPendingSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetPending>>
+>;
+export type FormsControllerGetPendingSuspenseQueryError = ErrorResponse;
+
+export function useFormsControllerGetPendingSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetPendingParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetPendingSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetPendingParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetPendingSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetPendingParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetPendingSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetPendingParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetPendingSuspenseQueryOptions(params, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const formsControllerCreatePending = (
+  createPendingFormDto: CreatePendingFormDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/pending`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: createPendingFormDto,
+    signal,
+  });
+};
+
+export const getFormsControllerCreatePendingMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerCreatePending>>,
+    TError,
+    { data: CreatePendingFormDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerCreatePending>>,
+  TError,
+  { data: CreatePendingFormDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerCreatePending"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerCreatePending>>,
+    { data: CreatePendingFormDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerCreatePending(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerCreatePendingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerCreatePending>>
+>;
+export type FormsControllerCreatePendingMutationBody = CreatePendingFormDto;
+export type FormsControllerCreatePendingMutationError = ErrorResponse;
+
+export const useFormsControllerCreatePending = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerCreatePending>>,
+      TError,
+      { data: CreatePendingFormDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerCreatePending>>,
+  TError,
+  { data: CreatePendingFormDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerCreatePendingMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerApproveSignatory = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/approve`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getFormsControllerApproveSignatoryMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["formsControllerApproveSignatory"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+    void
+  > = () => {
+    return formsControllerApproveSignatory();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerApproveSignatoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerApproveSignatory>>
+>;
+
+export type FormsControllerApproveSignatoryMutationError = ErrorResponse;
+
+export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getFormsControllerApproveSignatoryMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerCreatePrefilled = (
+  createPrefilledFormDto: CreatePrefilledFormDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/prefill`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: createPrefilledFormDto,
+    signal,
+  });
+};
+
+export const getFormsControllerCreatePrefilledMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+    TError,
+    { data: CreatePrefilledFormDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+  TError,
+  { data: CreatePrefilledFormDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerCreatePrefilled"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+    { data: CreatePrefilledFormDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerCreatePrefilled(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerCreatePrefilledMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>
+>;
+export type FormsControllerCreatePrefilledMutationBody = CreatePrefilledFormDto;
+export type FormsControllerCreatePrefilledMutationError = ErrorResponse;
+
+export const useFormsControllerCreatePrefilled = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+      TError,
+      { data: CreatePrefilledFormDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+  TError,
+  { data: CreatePrefilledFormDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerCreatePrefilledMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerCreateSigned = (
+  createSignedFormDto: CreateSignedFormDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/signed`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: createSignedFormDto,
+    signal,
+  });
+};
+
+export const getFormsControllerCreateSignedMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerCreateSigned>>,
+    TError,
+    { data: CreateSignedFormDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerCreateSigned>>,
+  TError,
+  { data: CreateSignedFormDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerCreateSigned"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerCreateSigned>>,
+    { data: CreateSignedFormDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerCreateSigned(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerCreateSignedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerCreateSigned>>
+>;
+export type FormsControllerCreateSignedMutationBody = CreateSignedFormDto;
+export type FormsControllerCreateSignedMutationError = ErrorResponse;
+
+export const useFormsControllerCreateSigned = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerCreateSigned>>,
+      TError,
+      { data: CreateSignedFormDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerCreateSigned>>,
+  TError,
+  { data: CreateSignedFormDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerCreateSignedMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};

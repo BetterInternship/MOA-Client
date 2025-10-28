@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { getFormFields } from "@/app/api/forms.api";
 import {
   RecipientDynamicForm,
   type RecipientFieldDef,
@@ -80,32 +81,90 @@ export default function Page() {
   const pendingInfo = pendingRes?.pendingInformation ?? null;
   const pendingUrl = pendingInfo?.latest_document_url;
 
-  // Pull defs (validators already evaluated on backend)
-  // const { fields: defs, isLoading, error } = useDynamicFormSchema(formName, { role }); // TODO: Make this in API
+  // Fetch form fields schema from API
+  const {
+    data: formRes,
+    isLoading: loadingForm,
+    error: formErr,
+  } = useQuery({
+    queryKey: ["form-fields", formName],
+    queryFn: () => getFormFields(formName),
+    enabled: !!formName,
+    staleTime: 60_000,
+  });
 
-  // Map internal defs -> RecipientFieldDef
-  // const fields: RecipientFieldDef[] = useMemo(
-  //   () =>
-  //     (defs ?? []).map((f) => ({
-  //       id: f.id ?? f.name ?? crypto.randomUUID(),
-  //       key: f.name ?? f.label ?? "",
-  //       label: f.label ?? f.name ?? "",
-  //       type: f.type ?? "text",
-  //       section: f.section ?? null,
-  //       placeholder: f.placeholder,
-  //       helper: f.helper,
-  //       maxLength: f.maxLength,
-  //       options: Array.isArray(f.options)
-  //         ? f.options.map((o) => ({
-  //             value: o?.value,
-  //             label: o?.label,
-  //           }))
-  //         : undefined,
-  //       validators: (f.validators as unknown as ZodTypeAny[]) ?? [],
-  //       params: f.params ?? undefined,
-  //     })),
-  //   [defs]
-  // );
+  // Map returned schema into RecipientFieldDef[]
+  const fields: RecipientFieldDef[] = useMemo(() => {
+    const rawSchema = (formRes as any)?.formFields?.formMetadata?.schema ?? [];
+    if (!Array.isArray(rawSchema)) return [];
+
+    return rawSchema.map((s: any) => {
+      const rawField = s.field ?? "";
+      const key = String(rawField).split(":")[0] ?? rawField ?? crypto.randomUUID();
+      const id = s.id ?? rawField ?? crypto.randomUUID();
+      const label = s.label ?? key;
+      const type = (s.type ?? "text").toLowerCase();
+
+      const validators: ZodTypeAny[] = [];
+
+      // If API returns a validator string like "z.string()" attempt to evaluate it.
+      // This is intentionally conservative: we only provide z as the context.
+      try {
+        const validatorRaw = s.validator ?? s.validators ?? null;
+        if (typeof validatorRaw === "string" && validatorRaw.trim()) {
+          // eslint-disable-next-line no-new-func
+          const fn = new Function("z", `return (${validatorRaw})`);
+          const zschema = fn(z);
+          if (zschema && typeof (zschema as any).safeParse === "function") {
+            validators.push(zschema as ZodTypeAny);
+          }
+        } else if (Array.isArray(validatorRaw)) {
+          for (const v of validatorRaw) {
+            if (typeof v === "string") {
+              try {
+                // eslint-disable-next-line no-new-func
+                const fn2 = new Function("z", `return (${v})`);
+                const zschema2 = fn2(z);
+                if (zschema2 && typeof (zschema2 as any).safeParse === "function") {
+                  validators.push(zschema2 as ZodTypeAny);
+                }
+              } catch (e) {
+                console.warn("Failed to parse validator array item", v, e);
+              }
+            } else if (v && typeof v.safeParse === "function") {
+              validators.push(v as ZodTypeAny);
+            }
+          }
+        } else if (validatorRaw && typeof validatorRaw.safeParse === "function") {
+          validators.push(validatorRaw as ZodTypeAny);
+        }
+      } catch (e) {
+        console.warn("Failed to evaluate validator for field", key, e);
+      }
+
+      const options =
+        Array.isArray(s.options) && s.options.length
+          ? s.options.map((o: any) => ({
+              value: o?.value ?? o,
+              label: o?.label ?? String(o?.value ?? o),
+            }))
+          : undefined;
+
+      return {
+        id,
+        key,
+        label,
+        type,
+        section: s.section ?? null,
+        placeholder: s.placeholder ?? undefined,
+        helper: s.helper ?? undefined,
+        maxLength: s.maxLength ?? undefined,
+        options,
+        validators,
+        params: s.params ?? undefined,
+      } as RecipientFieldDef;
+    });
+  }, [formRes]);
 
   // local form state
   const [values, setValues] = useState<Record<string, any>>({});
@@ -123,13 +182,13 @@ export default function Page() {
 
   const setField = (k: string, v: any) => setValues((p) => ({ ...p, [k]: v }));
 
-  // const validatorFns = useMemo(() => compileValidators(fields), [fields]);
+  const validatorFns = useMemo(() => compileValidators(fields), [fields]);
 
-  // const validateNow = () => {
-  //   const next = validateAll(fields, values, validatorFns);
-  //   setErrors(next);
-  //   return Object.values(next).every((m) => !m);
-  // };
+  const validateNow = () => {
+    const next = validateAll(fields, values, validatorFns);
+    setErrors(next);
+    return Object.values(next).every((m) => !m);
+  };
 
   // Section titles per audience
   const sectionTitleMap = {
@@ -144,16 +203,16 @@ export default function Page() {
     setSubmitted(true);
 
     if (!formName || !pendingDocumentId) return;
-    // if (!validateNow()) return;
+    if (!validateNow()) return;
 
     // Flatten the fields present on this page
     const flatValues: Record<string, string> = {};
-    // for (const f of fields) {
-    //   const v = values[f.key];
-    //   if (v === undefined || v === null) continue;
-    //   const s = typeof v === "string" ? v : String(v);
-    //   if (s !== "undefined") flatValues[f.key] = s;
-    // }
+    for (const f of fields) {
+      const v = values[f.key];
+      if (v === undefined || v === null) continue;
+      const s = typeof v === "string" ? v : String(v);
+      if (s !== "undefined") flatValues[f.key] = s;
+    }
 
     try {
       setBusy(true);
@@ -269,14 +328,14 @@ export default function Page() {
         </p>
 
         {/* loading / error / empty / form */}
-        {/* {isLoading ? (
+        {loadingForm ? (
           <Card className="flex items-center justify-center p-6">
             <span className="inline-flex items-center gap-2 text-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading form…
             </span>
           </Card>
-        ) : error ? (
+        ) : formErr ? (
           <Card className="p-6 text-sm text-rose-600">Failed to load fields.</Card>
         ) : fields.length === 0 ? (
           <Card className="p-6 text-sm text-gray-500">No fields available for this request.</Card>
@@ -306,7 +365,7 @@ export default function Page() {
               </Button>
             </div>
           </Card>
-        )} */}
+        )}
 
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <ShieldCheck className="size-4" />

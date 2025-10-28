@@ -140,3 +140,5 @@ export * from "./updateFieldDtoPrefiller";
 export * from "./updateFieldDtoSource";
 export * from "./updateFieldDtoTooltipLabel";
 export * from "./updateFieldDtoValidator";
+export * from "./formLatestResponse";
+export * from "./formsControllerGetLatestFormDocumentAndMetadataParams";
