@@ -19,8 +19,8 @@ import {
   RecipientDynamicForm,
   type RecipientFieldDef,
 } from "@/components/docs/forms/RecipientDynamicForm";
-// import { useDynamicFormSchema } from "@/lib/db/use-moa-backend"; // TODO: Migrate to server
 import { useQuery } from "@tanstack/react-query";
+import { getPendingInformation } from "@/app/api/forms.api";
 import { useRouter } from "next/navigation";
 
 type Audience = "entity" | "student-guardian" | "university";
@@ -65,20 +65,20 @@ export default function Page() {
   const studentName = params.get("student") || "The student";
   const templateHref = params.get("template") || "";
 
-  // // Pending document preview
-  // const {
-  //   data: pendingRes,
-  //   isLoading: loadingPending,
-  //   error: pendingErr,
-  // } = useQuery({
-  //   queryKey: ["pending-info", pendingDocumentId],
-  //   queryFn: () => UserService.getPendingInformation(pendingDocumentId), // TODO: Do this
-  //   staleTime: 60_000,
-  //   enabled: !!pendingDocumentId,
-  // });
+  // Pending document preview
+  const {
+    data: pendingRes,
+    isLoading: loadingPending,
+    error: pendingErr,
+  } = useQuery({
+    queryKey: ["pending-info", pendingDocumentId],
+    queryFn: () => getPendingInformation(pendingDocumentId),
+    staleTime: 60_000,
+    enabled: !!pendingDocumentId,
+  });
 
-  // const pendingInfo = (pendingRes as any)?.pendingInfo ?? null;
-  // const pendingUrl = pendingInfo?.latest_document_url;
+  const pendingInfo = pendingRes?.pendingInformation ?? null;
+  const pendingUrl = pendingInfo?.latest_document_url;
 
   // Pull defs (validators already evaluated on backend)
   // const { fields: defs, isLoading, error } = useDynamicFormSchema(formName, { role }); // TODO: Make this in API

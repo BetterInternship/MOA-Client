@@ -227,8 +227,6 @@ export function useMyEntityForSchool(schoolId?: string) {
     },
   });
 
-  // Generated hook for boolean endpoint (operationId: getEntityWithStatus)
-  // If your codegen named it useGetEntityWithStatus, use that.
   const linkQ =
     useGetEntityWithStatus?.(id as any, {
       query: {
@@ -245,18 +243,14 @@ export function useMyEntityForSchool(schoolId?: string) {
       },
     });
 
-  // ----- derive from requests -----
   const raw = requestsQ.data?.entity ?? null;
   const rows: RequestRow[] = Array.isArray(raw) ? raw : raw ? [raw] : [];
   const latestRequest: RequestRow | null = rows.length ? pickLatestRequest(rows) : null;
 
-  // Normalize to the union you actually allow
   const o = latestRequest?.outcome ?? null;
   const outcomeFromRequests: "approved" | "denied" | null =
     o === "approved" || o === "denied" ? o : null;
 
-  // ----- override with link check (true => approved) -----
-  // Handles either { isLinked } or { data: { isLinked } }
   const approvedByLink = Boolean(
     (linkQ.data as any)?.isLinked ?? (linkQ.data as any)?.data?.isLinked
   );

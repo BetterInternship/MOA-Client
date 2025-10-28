@@ -35,6 +35,7 @@ export * from "./entityWithStatusDtoType";
 export * from "./entityWithStatusResponse";
 export * from "./entityWithStatusResponseEntity";
 export * from "./errorResponse";
+export * from "./formDocumentResponse";
 export * from "./fieldRegistry";
 export * from "./fieldRegistryEntry";
 export * from "./fieldRegistryEntryDetails";
