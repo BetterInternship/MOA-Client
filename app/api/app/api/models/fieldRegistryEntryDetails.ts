@@ -5,11 +5,15 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { FieldRegistryEntryDetailsType } from "./fieldRegistryEntryDetailsType";
+import type { FieldRegistryEntryDetailsSource } from "./fieldRegistryEntryDetailsSource";
 
 export interface FieldRegistryEntryDetails {
   id: string;
   name: string;
   label: string;
+  type: FieldRegistryEntryDetailsType;
+  source: FieldRegistryEntryDetailsSource;
   preset: string;
   /** @nullable */
   prefiller: string | null;

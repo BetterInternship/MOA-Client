@@ -16,6 +16,19 @@ import { formsControllerUpdateField } from "../../../api/app/api/endpoints/forms
 import { Loader } from "@/components/ui/loader";
 import { Plus } from "lucide-react";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
+import { Autocomplete } from "@/components/ui/autocomplete";
+
+// ! Store this elsewhere soon
+interface FieldRegistryEntry {
+  name: string;
+  preset: string;
+  type: "text" | "signature";
+  label: string;
+  source: "student" | "university" | "entity" | "student-guardian";
+  tooltip_label: string;
+  validator: string;
+  prefiller: string;
+}
 
 /**
  * Displays all the forms we have, and their latest versions.
@@ -118,14 +131,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
     { query: { enabled: !!id } }
   );
   const [fieldId, setFieldId] = useState<string | null>(null);
-  const [field, setField] = useState<{
-    name: string;
-    label: string;
-    preset: string;
-    tooltip_label?: string;
-    validator?: string;
-    prefiller?: string;
-  }>();
+  const [field, setField] = useState<FieldRegistryEntry>();
   const [editing, setEditing] = useState(false);
 
   // Handles editing the field
@@ -146,9 +152,9 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
   };
 
   // Creates handlers for each field prop
-  const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement> | string) => {
     if (!field) return;
-    setField({ ...field, [property]: e.target.value });
+    setField({ ...field, [property]: typeof e === "string" ? e : e.target.value });
   };
 
   // Update inputs if ever
@@ -157,9 +163,9 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
       setFieldId(data.field.id);
       setField({
         ...data.field,
-        tooltip_label: data.field.tooltip_label ?? undefined,
-        validator: data.field.validator ?? undefined,
-        prefiller: data.field.prefiller ?? undefined,
+        tooltip_label: data.field.tooltip_label ?? "",
+        validator: data.field.validator ?? "",
+        prefiller: data.field.prefiller ?? "",
       });
     } else {
       setFieldId(null);
@@ -172,24 +178,69 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
         {isLoading || isFetching ? (
           <Loader>Loading field...</Loader>
         ) : (
-          <div className="flex flex-col gap-2 font-mono">
-            Name: <Input value={field?.name} onChange={handleChangeFactory("name")} />
-            Preset Name: <Input value={field?.preset} onChange={handleChangeFactory("preset")} />
-            Label: <Input value={field?.label} onChange={handleChangeFactory("label")} />
-            Tooltip Label:{" "}
+          <div className="grid grid-cols-2 gap-2 font-mono">
+            <Badge>Name</Badge>
             <Input
+              className="h-7 py-1 text-xs"
+              placeholder="category.fieldname"
+              value={field?.name}
+              onChange={handleChangeFactory("name")}
+            />
+            <Badge>Preset Name (optional)</Badge>
+            <Input
+              className="h-7 py-1 text-xs"
+              placeholder="default"
+              value={field?.preset}
+              onChange={handleChangeFactory("preset")}
+            />
+            <Badge>Field Label</Badge>
+            <Input
+              className="h-7 py-1 text-xs"
+              placeholder="Field Label"
+              value={field?.label}
+              onChange={handleChangeFactory("label")}
+            />
+            <Badge>Field Type</Badge>
+            <Autocomplete
+              value={field?.type}
+              inputClassName="h-7 py-1 text-xs"
+              placeholder="text, signature"
+              options={[
+                { id: "text", name: "text" },
+                { id: "signature", name: "signature" },
+              ]}
+              setter={(id) => id && handleChangeFactory("type")(id)}
+            />
+            <Badge>Field Source</Badge>
+            <Autocomplete
+              value={field?.source}
+              inputClassName="h-7 py-1 text-xs"
+              placeholder="entity, student, student-guardian, university"
+              options={[
+                { id: "entity", name: "entity" },
+                { id: "student", name: "student" },
+                { id: "student-guardian", name: "student-guardian" },
+                { id: "university", name: "university" },
+              ]}
+              setter={(id) => id && handleChangeFactory("source")(id)}
+            />
+            <Badge>Tooltip Label (optional)</Badge>
+            <Input
+              className="h-7 py-1 text-xs"
               placeholder={"none"}
               value={field?.tooltip_label}
               onChange={handleChangeFactory("tooltip_label")}
             />
-            Validator:{" "}
+            <Badge>Validator (optional)</Badge>
             <Input
+              className="h-7 py-1 text-xs"
               placeholder={"none"}
               value={field?.validator}
               onChange={handleChangeFactory("validator")}
             />
-            Prefiller:{" "}
+            <Badge>Prefiller (optional)</Badge>
             <Input
+              className="h-7 py-1 text-xs"
               placeholder={"none"}
               value={field?.prefiller}
               onChange={handleChangeFactory("prefiller")}
@@ -216,74 +267,108 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
  * @component
  */
 const FieldRegistration = ({ close }: { close: () => void }) => {
-  const [field, setField] = useState<{
-    name: string;
-    label: string;
-    preset?: string;
-    tooltip_label?: string;
-    validator?: string;
-    prefiller?: string;
-  }>({ name: "", label: "" });
+  const [field, setField] = useState<Partial<FieldRegistryEntry>>({
+    name: "",
+    label: "",
+    type: "text",
+    source: "student",
+  });
   const [registering, setRegistering] = useState(false);
 
   // Handles editing the field
   const handleAdd = async () => {
     if (!field || !field?.name) return alert("Missing field name.");
+    if (!field.label) return alert("Missing field label");
+    if (!field.type) return alert("Missing field type");
+    if (!field.source) return alert("Missing field source");
 
     setRegistering(true);
     await formsControllerRegisterField({
-      ...field,
-      preset: field.preset ?? "default",
+      name: field.name || "",
+      label: field.label || "",
+      preset: field.preset || "default",
       tooltip_label: field.tooltip_label ?? null,
       validator: field.validator ?? null,
       prefiller: field.prefiller ?? null,
+      type: field.type,
+      source: field.source,
     });
     setRegistering(false);
     close();
   };
 
   // Creates handlers for each field prop
-  const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement> | string) => {
     if (!field) return;
-    setField({ ...field, [property]: e.target.value });
+    setField({ ...field, [property]: typeof e === "string" ? e : e.target.value });
   };
 
   return (
     <div className="max-h-[600px] overflow-y-auto">
       <div className="flex min-w-xl flex-col gap-2">
-        <div className="flex flex-col gap-2 font-mono">
-          Name:{" "}
+        <div className="grid grid-cols-2 gap-2 font-mono">
+          <Badge>Name</Badge>
           <Input
+            className="h-7 py-1 text-xs"
             placeholder="category.fieldname"
             value={field?.name}
             onChange={handleChangeFactory("name")}
           />
-          Preset Name:{" "}
+          <Badge>Preset Name (optional)</Badge>
           <Input
+            className="h-7 py-1 text-xs"
             placeholder="default"
             value={field?.preset}
             onChange={handleChangeFactory("preset")}
           />
-          Label:{" "}
+          <Badge>Field Label</Badge>
           <Input
+            className="h-7 py-1 text-xs"
             placeholder="Field Label"
             value={field?.label}
             onChange={handleChangeFactory("label")}
           />
-          Tooltip Label:{" "}
+          <Badge>Field Type</Badge>
+          <Autocomplete
+            value={field.type}
+            inputClassName="h-7 py-1 text-xs"
+            placeholder="text, signature"
+            options={[
+              { id: "text", name: "text" },
+              { id: "signature", name: "signature" },
+            ]}
+            setter={(id) => id && handleChangeFactory("type")(id)}
+          />
+          <Badge>Field Source</Badge>
+          <Autocomplete
+            value={field?.source}
+            inputClassName="h-7 py-1 text-xs"
+            placeholder="entity, student, student-guardian, university"
+            options={[
+              { id: "entity", name: "entity" },
+              { id: "student", name: "student" },
+              { id: "student-guardian", name: "student-guardian" },
+              { id: "university", name: "university" },
+            ]}
+            setter={(id) => id && handleChangeFactory("source")(id)}
+          />
+          <Badge>Tooltip Label (optional)</Badge>
           <Input
+            className="h-7 py-1 text-xs"
             placeholder={"none"}
             value={field?.tooltip_label}
             onChange={handleChangeFactory("tooltip_label")}
           />
-          Validator:{" "}
+          <Badge>Validator (optional)</Badge>
           <Input
+            className="h-7 py-1 text-xs"
             placeholder={"none"}
             value={field?.validator}
             onChange={handleChangeFactory("validator")}
           />
-          Prefiller:{" "}
+          <Badge>Prefiller (optional)</Badge>
           <Input
+            className="h-7 py-1 text-xs"
             placeholder={"none"}
             value={field?.prefiller}
             onChange={handleChangeFactory("prefiller")}

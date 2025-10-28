@@ -5,10 +5,13 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { RegisterFieldDtoSource } from "./registerFieldDtoSource";
 
 export interface RegisterFieldDto {
   name: string;
   label: string;
+  type: string;
+  source: RegisterFieldDtoSource;
   /** @nullable */
   prefiller: string | null;
   preset: string;

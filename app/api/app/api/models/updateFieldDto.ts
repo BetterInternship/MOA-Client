@@ -5,11 +5,14 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { UpdateFieldDtoSource } from "./updateFieldDtoSource";
 
 export interface UpdateFieldDto {
   id: string;
   name: string;
   label: string;
+  type: string;
+  source: UpdateFieldDtoSource;
   /** @nullable */
   prefiller: string | null;
   preset: string;

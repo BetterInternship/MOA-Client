@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-28 19:11:11
+ * @ Modified time: 2025-10-29 00:55:10
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -10,7 +10,7 @@
 "use client";
 
 import { Loader } from "@/components/ui/loader";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AreaHighlight,
   Comment,
@@ -43,6 +43,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
+import { Badge } from "@/components/ui/badge";
 
 // ? Update this when migrating
 const SCHEMA_VERSION = 0;
@@ -234,67 +235,53 @@ const FormRenderer = ({
  * @component
  */
 const FieldEditor = ({
-  initialX,
-  initialY,
-  initialW,
-  initialPage,
-  fieldName,
-  fields,
+  initialFieldDetails,
+  fieldRegistry,
   selected,
   updateField,
 }: {
-  initialX: number;
-  initialY: number;
-  initialW: number;
-  initialPage: number;
-  fieldName: string;
-  fields: { id: string; name: string; preset: string }[];
+  initialFieldDetails: IFormField;
+  fieldRegistry: { id: string; name: string; preset: string }[];
   selected: boolean;
-  updateField: (field: {
-    field: string;
-    x: number;
-    y: number;
-    w: number;
-    page: number;
-    tooltip_label?: string;
-    validator?: string;
-    prefiller?: string;
-  }) => void;
+  updateField: (field: Partial<IFormField>) => void;
 }) => {
-  const [x, setX] = useState(initialX);
-  const [y, setY] = useState(initialY);
-  const [w, setW] = useState(initialW);
-  const [page, setPage] = useState(initialPage);
-  const [field, setField] = useState(fieldName);
-  const [fieldDetails, setFieldDetails] = useState<{
-    name: string;
-    preset: string;
-    validator?: string | null;
-    prefiller?: string | null;
-  } | null>(null);
+  const [fieldDetails, setFieldDetails] = useState<IFormField>(initialFieldDetails);
 
   // Select a field and update details so we can use those
   const handleSelectField = async (id: string) => {
     const { field } = await formsControllerGetFieldFromRegistry({ id });
     const { id: _id, name: _name, preset: _preset, ...rest } = field;
     const fieldFullName = `${field.name}:${field.preset}`;
-    setField(fieldFullName);
-    updateField({
+    const newField = {
+      ...fieldDetails,
       ...rest,
       field: fieldFullName,
-      tooltip_label: field.tooltip_label ?? undefined,
-      validator: field.validator ?? undefined,
-      prefiller: field.prefiller ?? undefined,
-      x,
-      y,
-      w,
-      page,
-    });
+      validator: fieldDetails.validator ?? undefined,
+      prefiller: fieldDetails.prefiller ?? undefined,
+      tooltip_label: field.tooltip_label ?? "",
+      h: 10,
+    };
+
+    setFieldDetails(newField);
+    updateField(newField);
   };
 
-  useEffect(() => {
-    updateField({ field, x, y, w, page });
-  }, [field, x, y, w, page]);
+  // Handle change for any of the props of the field
+  const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement> | string) => {
+    const rawVal = typeof e === "string" ? e : e.target.value;
+    const value = ["x", "y", "w", "h", "page"].includes(property)
+      ? isNaN(parseInt(rawVal))
+        ? null
+        : parseInt(rawVal)
+      : rawVal;
+    const newField = {
+      ...fieldDetails,
+      [property]: value,
+    };
+
+    setFieldDetails(newField);
+    updateField(newField);
+  };
 
   return (
     <div
@@ -305,40 +292,60 @@ const FieldEditor = ({
     >
       <div className="flex flex-row gap-2">
         <Autocomplete
+          inputClassName="h-7 py-1 text-xs"
           placeholder="Select field..."
-          options={fields.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
+          options={fieldRegistry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
           setter={(id) => id && void handleSelectField(id)}
         />
       </div>
       <div className="grid grid-cols-2 grid-rows-2 gap-2">
-        x:
+        <Badge>Display Label</Badge>
+        <Input
+          placeholder="Field Display Label"
+          className="h-7 py-1 text-xs"
+          defaultValue={fieldDetails.label}
+          onChange={handleChangeFactory("label")}
+        />
+        <Badge>Source</Badge>
+        <Autocomplete
+          inputClassName="h-7 py-1 text-xs"
+          placeholder="Select Field Source"
+          options={[
+            { id: "entity", name: "entity" },
+            { id: "student", name: "student" },
+            { id: "student-guardian", name: "student-guardian" },
+            { id: "university", name: "university" },
+          ]}
+          setter={(id) => id && handleChangeFactory("source")(id)}
+        />
+        <Badge>Postion X</Badge>
         <Input
           type="number"
-          className="py-1"
-          defaultValue={x}
-          onChange={(e) => setX(parseInt(e.target.value))}
-        ></Input>{" "}
-        y:
+          className="h-7 py-1 text-xs"
+          defaultValue={fieldDetails.x}
+          onChange={handleChangeFactory("x")}
+        />
+        <Badge>Position Y</Badge>
         <Input
           type="number"
-          className="py-1"
-          defaultValue={y}
-          onChange={(e) => setY(parseInt(e.target.value))}
-        ></Input>{" "}
-        w:
+          className="h-7 py-1 text-xs"
+          defaultValue={fieldDetails.y}
+          onChange={handleChangeFactory("y")}
+        />
+        <Badge>Width</Badge>
         <Input
           type="number"
-          className="py-1"
-          defaultValue={w}
-          onChange={(e) => setW(parseInt(e.target.value))}
-        ></Input>
-        page:
+          className="h-7 py-1 text-xs"
+          defaultValue={fieldDetails.w}
+          onChange={handleChangeFactory("w")}
+        />
+        <Badge>Page</Badge>
         <Input
           type="number"
-          className="py-1"
-          defaultValue={page}
-          onChange={(e) => setPage(parseInt(e.target.value))}
-        ></Input>
+          className="h-7 py-1 text-xs"
+          defaultValue={fieldDetails.page}
+          onChange={handleChangeFactory("page")}
+        />
       </div>
     </div>
   );
@@ -435,7 +442,7 @@ const Sidebar = ({
 
   // Handle when a field is added by user
   const handleFieldAdd = useCallback(() => {
-    addDocumentField({
+    return addDocumentField({
       ...fieldTransform,
       h: 12,
       field: "",
@@ -443,6 +450,8 @@ const Sidebar = ({
       validator: "",
       prefiller: "",
       tooltip_label: "",
+      label: "",
+      source: "student",
     });
   }, [addDocumentField]);
 
@@ -558,14 +567,10 @@ const Sidebar = ({
         {sortedDocumentFields.map((field) => (
           <FieldEditor
             key={documentFields.indexOf(field)}
-            initialX={field.x}
-            initialY={field.y}
-            initialW={field.w}
-            initialPage={field.page}
-            fieldName={field.field}
             selected={documentFields.indexOf(field) === selectedFieldKey}
             updateField={editDocumentField(documentFields.indexOf(field))}
-            fields={fieldRegistry?.fields ?? []}
+            fieldRegistry={fieldRegistry?.fields ?? []}
+            initialFieldDetails={field}
           />
         ))}
       </div>
