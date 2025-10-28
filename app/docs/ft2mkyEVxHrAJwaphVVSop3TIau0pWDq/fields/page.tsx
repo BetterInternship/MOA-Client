@@ -165,49 +165,42 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
   }, [data]);
 
   return (
-    <div className="flex min-w-xl flex-col gap-2">
-      <div className="max-h-[600px] overflow-y-auto">
-        <div className="flex min-w-xl flex-col gap-2">
-          {isLoading || isFetching ? (
-            <Loader>Loading field...</Loader>
-          ) : (
-            <div className="flex flex-col gap-2 font-mono">
-              Name: <Input value={field?.name} onChange={handleChangeFactory("name")} />
-              Preset Name: <Input value={field?.preset} onChange={handleChangeFactory("preset")} />
-              Tooltip Label:{" "}
-              <Input
-                placeholder={"none"}
-                value={field?.tooltip_label}
-                onChange={handleChangeFactory("tooltip_label")}
-              />
-              Validator:{" "}
-              <Input
-                placeholder={"none"}
-                value={field?.validator}
-                onChange={handleChangeFactory("validator")}
-              />
-              Prefiller:{" "}
-              <Input
-                placeholder={"none"}
-                value={field?.prefiller}
-                onChange={handleChangeFactory("prefiller")}
-              />
-            </div>
-          )}
-          <div className="flex flex-row justify-between gap-1">
-            <div className="flex-1" />
-            <Button disabled={editing} onClick={() => void handleEdit()}>
-              {editing ? "Editing..." : "Edit"}
-            </Button>
-            <Button
-              disabled={editing}
-              scheme="destructive"
-              variant="outline"
-              onClick={() => close()}
-            >
-              Cancel
-            </Button>
+    <div className="max-h-[600px] overflow-y-auto">
+      <div className="flex min-w-xl flex-col gap-2">
+        {isLoading || isFetching ? (
+          <Loader>Loading field...</Loader>
+        ) : (
+          <div className="flex flex-col gap-2 font-mono">
+            Name: <Input value={field?.name} onChange={handleChangeFactory("name")} />
+            Preset Name: <Input value={field?.preset} onChange={handleChangeFactory("preset")} />
+            Tooltip Label:{" "}
+            <Input
+              placeholder={"none"}
+              value={field?.tooltip_label}
+              onChange={handleChangeFactory("tooltip_label")}
+            />
+            Validator:{" "}
+            <Input
+              placeholder={"none"}
+              value={field?.validator}
+              onChange={handleChangeFactory("validator")}
+            />
+            Prefiller:{" "}
+            <Input
+              placeholder={"none"}
+              value={field?.prefiller}
+              onChange={handleChangeFactory("prefiller")}
+            />
           </div>
+        )}
+        <div className="flex flex-row justify-between gap-1">
+          <div className="flex-1" />
+          <Button disabled={editing} onClick={() => void handleEdit()}>
+            {editing ? "Editing..." : "Edit"}
+          </Button>
+          <Button disabled={editing} scheme="destructive" variant="outline" onClick={() => close()}>
+            Cancel
+          </Button>
         </div>
       </div>
     </div>
@@ -252,55 +245,53 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
   };
 
   return (
-    <div className="flex min-w-xl flex-col gap-2">
-      <div className="max-h-[600px] overflow-y-auto">
-        <div className="flex min-w-xl flex-col gap-2">
-          <div className="flex flex-col gap-2 font-mono">
-            Name:{" "}
-            <Input
-              placeholder="category.fieldname"
-              value={field?.name}
-              onChange={handleChangeFactory("name")}
-            />
-            Preset Name:{" "}
-            <Input
-              placeholder="default"
-              value={field?.preset}
-              onChange={handleChangeFactory("preset")}
-            />
-            Tooltip Label:{" "}
-            <Input
-              placeholder={"none"}
-              value={field?.tooltip_label}
-              onChange={handleChangeFactory("tooltip_label")}
-            />
-            Validator:{" "}
-            <Input
-              placeholder={"none"}
-              value={field?.validator}
-              onChange={handleChangeFactory("validator")}
-            />
-            Prefiller:{" "}
-            <Input
-              placeholder={"none"}
-              value={field?.prefiller}
-              onChange={handleChangeFactory("prefiller")}
-            />
-          </div>
-          <div className="flex flex-row justify-between gap-1">
-            <div className="flex-1" />
-            <Button disabled={registering} onClick={() => void handleAdd()}>
-              {registering ? "Registering..." : "Register"}
-            </Button>
-            <Button
-              disabled={registering}
-              scheme="destructive"
-              variant="outline"
-              onClick={() => close()}
-            >
-              Cancel
-            </Button>
-          </div>
+    <div className="max-h-[600px] overflow-y-auto">
+      <div className="flex min-w-xl flex-col gap-2">
+        <div className="flex flex-col gap-2 font-mono">
+          Name:{" "}
+          <Input
+            placeholder="category.fieldname"
+            value={field?.name}
+            onChange={handleChangeFactory("name")}
+          />
+          Preset Name:{" "}
+          <Input
+            placeholder="default"
+            value={field?.preset}
+            onChange={handleChangeFactory("preset")}
+          />
+          Tooltip Label:{" "}
+          <Input
+            placeholder={"none"}
+            value={field?.tooltip_label}
+            onChange={handleChangeFactory("tooltip_label")}
+          />
+          Validator:{" "}
+          <Input
+            placeholder={"none"}
+            value={field?.validator}
+            onChange={handleChangeFactory("validator")}
+          />
+          Prefiller:{" "}
+          <Input
+            placeholder={"none"}
+            value={field?.prefiller}
+            onChange={handleChangeFactory("prefiller")}
+          />
+        </div>
+        <div className="flex flex-row justify-between gap-1">
+          <div className="flex-1" />
+          <Button disabled={registering} onClick={() => void handleAdd()}>
+            {registering ? "Registering..." : "Register"}
+          </Button>
+          <Button
+            disabled={registering}
+            scheme="destructive"
+            variant="outline"
+            onClick={() => close()}
+          >
+            Cancel
+          </Button>
         </div>
       </div>
     </div>
