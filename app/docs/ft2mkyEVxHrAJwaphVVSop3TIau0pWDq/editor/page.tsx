@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-29 01:56:50
+ * @ Modified time: 2025-10-29 02:07:42
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -25,7 +25,7 @@ import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, PlusCircle, Upload } from "lucide-react";
-import { IFormField, IFormMetadata } from "@betterinternship/core";
+import { FormMetadata, IFormField, IFormMetadata } from "@betterinternship/core/forms";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
 import { createPortal } from "react-dom";
@@ -667,5 +667,48 @@ const RegisterFileModal = ({
     </div>
   );
 };
+
+const TEST_JSON: IFormMetadata = {
+  name: "dlsu.it.endorsement-letter",
+  label: "[DLSU - IT] Endorsement Letter",
+  schema_version: 0,
+  schema: [
+    {
+      field: "student.fullname:default",
+      type: "text",
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0,
+      page: 1,
+      source: "student",
+      validator: "",
+      prefiller: "",
+      tooltip_label: "",
+      label: "Full Name",
+    },
+    {
+      field: "student.address:lowercase",
+      type: "text",
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0,
+      page: 1,
+      source: "student",
+      validator: "z.enum(['A', 'B', 'C'])",
+      prefiller: "",
+      tooltip_label: "",
+      label: "Address",
+    },
+  ],
+  subscribers: [],
+  signatories: [],
+  required_parties: ["student", "university"],
+};
+
+const m = new FormMetadata(TEST_JSON);
+console.log(m);
+console.log(m.getFieldsForClient());
 
 export default FormEditorPage;
