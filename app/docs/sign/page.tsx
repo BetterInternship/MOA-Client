@@ -93,6 +93,8 @@ export default function Page() {
     staleTime: 60_000,
   });
 
+  console.log("formRes", formRes);
+
   // Map returned schema into RecipientFieldDef[]
   const fields: RecipientFieldDef[] = useMemo(() => {
     const rawSchema = (formRes as any)?.formFields?.formMetadata?.schema ?? [];
