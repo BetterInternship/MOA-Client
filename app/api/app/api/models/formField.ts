@@ -16,6 +16,5 @@ export interface FormField {
   h: number;
   page: number;
   validator: string;
-  transformer: string;
   prefiller: string;
 }

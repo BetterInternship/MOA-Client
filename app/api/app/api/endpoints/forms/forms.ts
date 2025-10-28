@@ -768,10 +768,19 @@ export const formsControllerRegisterForm = (
 ) => {
   const formData = new FormData();
   formData.append(`name`, registerFormSchemaDto.name);
+  formData.append(`label`, registerFormSchemaDto.label);
+  formData.append(`schema_version`, registerFormSchemaDto.schema_version.toString());
   registerFormSchemaDto.schema.forEach((value) => formData.append(`schema`, JSON.stringify(value)));
-  registerFormSchemaDto.subscribers.forEach((value) => formData.append(`subscribers`, value));
-  formData.append(`email`, JSON.stringify(registerFormSchemaDto.email));
+  registerFormSchemaDto.subscribers.forEach((value) =>
+    formData.append(`subscribers`, JSON.stringify(value))
+  );
+  registerFormSchemaDto.signatories.forEach((value) =>
+    formData.append(`signatories`, JSON.stringify(value))
+  );
   formData.append(`base_document`, registerFormSchemaDto.base_document);
+  registerFormSchemaDto.required_parties.forEach((value) =>
+    formData.append(`required_parties`, value)
+  );
 
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/forms/register-form`,

@@ -6,12 +6,16 @@
  * OpenAPI spec version: 1.0
  */
 import type { FormField } from "./formField";
-import type { FormMetadataEmail } from "./formMetadataEmail";
+import type { FormContact } from "./formContact";
+import type { RegisterFormSchemaDtoRequiredPartiesItem } from "./registerFormSchemaDtoRequiredPartiesItem";
 
 export interface RegisterFormSchemaDto {
   name: string;
+  label: string;
+  schema_version: number;
   schema: FormField[];
-  subscribers: string[];
-  email: FormMetadataEmail;
+  subscribers: FormContact[];
+  signatories: FormContact[];
   base_document: Blob;
+  required_parties: RegisterFormSchemaDtoRequiredPartiesItem[];
 }

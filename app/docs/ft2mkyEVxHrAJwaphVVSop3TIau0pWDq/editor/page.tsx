@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-27 11:25:03
+ * @ Modified time: 2025-10-28 15:00:11
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -25,7 +25,7 @@ import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, PlusCircle, Upload } from "lucide-react";
-import { IFormField, IFormMetadata } from "@betterinternship/core";
+import { IFormField, IFormMetadata, SCHEMA_VERSION } from "@betterinternship/core";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
 import { createPortal } from "react-dom";
@@ -399,7 +399,6 @@ const Sidebar = ({
       field: "enter-field-name",
       type: "text",
       validator: "",
-      transformer: "",
       prefiller: "",
     });
   }, [addDocumentField]);
@@ -547,16 +546,14 @@ const RegisterFileModal = ({
   // Constructs the latest metadata given the state
   const formMetadataDraft: IFormMetadata & { name: string; base_document: File } = useMemo(
     () => ({
-      version: 0,
+      schema_version: SCHEMA_VERSION,
       name: documentName,
+      label: "",
       base_document: documentFile,
       schema: documentFields,
-      email: {
-        sender: "",
-        subject: "",
-        content: "",
-      },
+      signatories: [],
       subscribers: [],
+      required_parties: [],
     }),
     [documentName, documentFile, documentFields]
   );
