@@ -9,6 +9,7 @@
 export interface FieldRegistryEntryDetails {
   id: string;
   name: string;
+  label: string;
   preset: string;
   /** @nullable */
   prefiller: string | null;

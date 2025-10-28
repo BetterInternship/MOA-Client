@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { formsControllerUpdateField } from "../../../api/app/api/endpoints/forms/forms";
 import { Loader } from "@/components/ui/loader";
 import { Plus } from "lucide-react";
+import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 
 /**
  * Displays all the forms we have, and their latest versions.
@@ -119,6 +120,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
   const [fieldId, setFieldId] = useState<string | null>(null);
   const [field, setField] = useState<{
     name: string;
+    label: string;
     preset: string;
     tooltip_label?: string;
     validator?: string;
@@ -173,6 +175,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
           <div className="flex flex-col gap-2 font-mono">
             Name: <Input value={field?.name} onChange={handleChangeFactory("name")} />
             Preset Name: <Input value={field?.preset} onChange={handleChangeFactory("preset")} />
+            Label: <Input value={field?.label} onChange={handleChangeFactory("label")} />
             Tooltip Label:{" "}
             <Input
               placeholder={"none"}
@@ -215,11 +218,12 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
 const FieldRegistration = ({ close }: { close: () => void }) => {
   const [field, setField] = useState<{
     name: string;
+    label: string;
     preset?: string;
     tooltip_label?: string;
     validator?: string;
     prefiller?: string;
-  }>({ name: "" });
+  }>({ name: "", label: "" });
   const [registering, setRegistering] = useState(false);
 
   // Handles editing the field
@@ -260,6 +264,12 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
             value={field?.preset}
             onChange={handleChangeFactory("preset")}
           />
+          Label:{" "}
+          <Input
+            placeholder="Field Label"
+            value={field?.label}
+            onChange={handleChangeFactory("label")}
+          />
           Tooltip Label:{" "}
           <Input
             placeholder={"none"}
@@ -297,5 +307,48 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
     </div>
   );
 };
+
+const TEST_JSON: IFormMetadata = {
+  name: "dlsu.it.endorsement-letter",
+  label: "[DLSU - IT] Endorsement Letter",
+  schema_version: 0,
+  schema: [
+    {
+      field: "student.fullname:default",
+      type: "text",
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0,
+      page: 1,
+      source: "student",
+      validator: "",
+      prefiller: "",
+      tooltip_label: "",
+      label: "Full Name",
+    },
+    {
+      field: "student.address:lowercase",
+      type: "text",
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0,
+      page: 1,
+      source: "student",
+      validator: "",
+      prefiller: "",
+      tooltip_label: "",
+      label: "Address",
+    },
+  ],
+  subscribers: [],
+  signatories: [],
+  required_parties: ["student", "university"],
+};
+
+const m = new FormMetadata(TEST_JSON);
+console.log(m);
+console.log(m.getFieldsForClient());
 
 export default FieldRegistryPage;

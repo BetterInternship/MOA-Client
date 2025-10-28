@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-28 15:00:11
+ * @ Modified time: 2025-10-28 19:11:11
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -25,7 +25,7 @@ import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, PlusCircle, Upload } from "lucide-react";
-import { IFormField, IFormMetadata, SCHEMA_VERSION } from "@betterinternship/core";
+import { IFormField, IFormMetadata } from "@betterinternship/core";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
 import { createPortal } from "react-dom";
@@ -38,8 +38,14 @@ import {
   formsControllerRegisterForm,
   formsControllerGetRegistryFormMetadata,
   formsControllerGetRegistryFormDocument,
+  useFormsControllerGetFieldRegistry,
 } from "../../../api/app/api/endpoints/forms/forms";
 import { useSearchParams } from "next/navigation";
+import { Autocomplete } from "@/components/ui/autocomplete";
+import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
+
+// ? Update this when migrating
+const SCHEMA_VERSION = 0;
 
 /**
  * We wrap the page around a suspense boundary to use search params.
@@ -233,6 +239,7 @@ const FieldEditor = ({
   initialW,
   initialPage,
   fieldName,
+  fields,
   selected,
   updateField,
 }: {
@@ -241,14 +248,49 @@ const FieldEditor = ({
   initialW: number;
   initialPage: number;
   fieldName: string;
+  fields: { id: string; name: string; preset: string }[];
   selected: boolean;
-  updateField: (field: { field: string; x: number; y: number; w: number; page: number }) => void;
+  updateField: (field: {
+    field: string;
+    x: number;
+    y: number;
+    w: number;
+    page: number;
+    tooltip_label?: string;
+    validator?: string;
+    prefiller?: string;
+  }) => void;
 }) => {
   const [x, setX] = useState(initialX);
   const [y, setY] = useState(initialY);
   const [w, setW] = useState(initialW);
   const [page, setPage] = useState(initialPage);
   const [field, setField] = useState(fieldName);
+  const [fieldDetails, setFieldDetails] = useState<{
+    name: string;
+    preset: string;
+    validator?: string | null;
+    prefiller?: string | null;
+  } | null>(null);
+
+  // Select a field and update details so we can use those
+  const handleSelectField = async (id: string) => {
+    const { field } = await formsControllerGetFieldFromRegistry({ id });
+    const { id: _id, name: _name, preset: _preset, ...rest } = field;
+    const fieldFullName = `${field.name}:${field.preset}`;
+    setField(fieldFullName);
+    updateField({
+      ...rest,
+      field: fieldFullName,
+      tooltip_label: field.tooltip_label ?? undefined,
+      validator: field.validator ?? undefined,
+      prefiller: field.prefiller ?? undefined,
+      x,
+      y,
+      w,
+      page,
+    });
+  };
 
   useEffect(() => {
     updateField({ field, x, y, w, page });
@@ -262,12 +304,11 @@ const FieldEditor = ({
       )}
     >
       <div className="flex flex-row gap-2">
-        <Input
-          className="py-1"
-          placeholder={"enter-field-name"}
-          defaultValue={field}
-          onChange={(e) => setField(e.target.value)}
-        ></Input>
+        <Autocomplete
+          placeholder="Select field..."
+          options={fields.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
+          setter={(id) => id && void handleSelectField(id)}
+        />
       </div>
       <div className="grid grid-cols-2 grid-rows-2 gap-2">
         x:
@@ -375,6 +416,7 @@ const Sidebar = ({
 }) => {
   // Allows us to click the input without showing it
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: fieldRegistry } = useFormsControllerGetFieldRegistry();
   const { openModal, closeModal } = useModal();
   const [documentName, setDocumentName] = useState<string>(initialDocumentName ?? "Select file");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
@@ -396,16 +438,24 @@ const Sidebar = ({
     addDocumentField({
       ...fieldTransform,
       h: 12,
-      field: "enter-field-name",
+      field: "",
       type: "text",
       validator: "",
       prefiller: "",
+      tooltip_label: "",
     });
   }, [addDocumentField]);
 
   // Handles when a file is registered to the db
   const handleFileRegister = useCallback(() => {
     if (!documentFile) return;
+
+    // Check if all fields are valid
+    const fieldFullNameList = fieldRegistry?.fields.map((f) => `${f.name}:${f.preset}`) ?? [];
+    for (const field of documentFields) {
+      if (!fieldFullNameList.includes(field.field))
+        return alert(`${field.field} is not a valid field.`);
+    }
 
     openModal(
       "register-file-modal",
@@ -515,6 +565,7 @@ const Sidebar = ({
             fieldName={field.field}
             selected={documentFields.indexOf(field) === selectedFieldKey}
             updateField={editDocumentField(documentFields.indexOf(field))}
+            fields={fieldRegistry?.fields ?? []}
           />
         ))}
       </div>
@@ -550,17 +601,13 @@ const RegisterFileModal = ({
       name: documentName,
       label: "",
       base_document: documentFile,
-      schema: documentFields,
+      schema: [...documentFields],
       signatories: [],
       subscribers: [],
       required_parties: [],
     }),
     [documentName, documentFile, documentFields]
   );
-
-  useEffect(() => {
-    console.log("latest FIELDS", documentFields);
-  }, [documentFields]);
 
   // Handle submitting form to registry
   const handleSubmit = async () => {

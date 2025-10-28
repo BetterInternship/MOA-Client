@@ -10,7 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@betterinternship/core": "^1.2.11",
+    "@babel/runtime": "^7.28.4",
+    "@betterinternship/core": "^1.2.22",
     "@betterinternship/schema.base": "^1.0.19",
     "@betterinternship/schema.moa": "^1.4.19",
     "@hookform/resolvers": "^5.2.1",

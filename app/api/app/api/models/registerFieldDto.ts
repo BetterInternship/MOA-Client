@@ -8,6 +8,7 @@
 
 export interface RegisterFieldDto {
   name: string;
+  label: string;
   /** @nullable */
   prefiller: string | null;
   preset: string;

@@ -9,6 +9,7 @@
 export interface UpdateFieldDto {
   id: string;
   name: string;
+  label: string;
   /** @nullable */
   prefiller: string | null;
   preset: string;

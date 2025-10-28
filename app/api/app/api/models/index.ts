@@ -135,3 +135,4 @@ export * from "./updateFieldDto";
 export * from "./updateFieldDtoPrefiller";
 export * from "./updateFieldDtoTooltipLabel";
 export * from "./updateFieldDtoValidator";
+export * from "./formFieldSource";
