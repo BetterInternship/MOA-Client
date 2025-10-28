@@ -29,14 +29,19 @@ import type {
   CreatePrefilledFormDto,
   CreateSignedFormDto,
   ErrorResponse,
+  FieldRegistryResponse,
+  FieldRequestResponse,
   FormDocumentResponse,
   FormMetadataResponse,
   FormPendingResponse,
   FormRegistryResponse,
+  FormsControllerGetFieldFromRegistryParams,
   FormsControllerGetPendingParams,
   FormsControllerGetRegistryFormDocumentParams,
   FormsControllerGetRegistryFormMetadataParams,
+  RegisterFieldDto,
   RegisterFormSchemaDto,
+  UpdateFieldDto,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -1141,203 +1146,6 @@ export const useFormsControllerCreatePending = <TError = ErrorResponse, TContext
 
   return useMutation(mutationOptions, queryClient);
 };
-export const formsControllerGetFields = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/fields`,
-    method: "GET",
-    signal,
-  });
-};
-
-export const getFormsControllerGetFieldsQueryKey = () => {
-  return [`/api/forms/fields`] as const;
-};
-
-export const getFormsControllerGetFieldsQueryOptions = <
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-  >;
-}) => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetFieldsQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetFields>>> = ({
-    signal,
-  }) => formsControllerGetFields(signal);
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof formsControllerGetFields>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type FormsControllerGetFieldsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerGetFields>>
->;
-export type FormsControllerGetFieldsQueryError = ErrorResponse;
-
-export function useFormsControllerGetFields<
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof formsControllerGetFields>>,
-          TError,
-          Awaited<ReturnType<typeof formsControllerGetFields>>
-        >,
-        "initialData"
-      >;
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetFields<
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof formsControllerGetFields>>,
-          TError,
-          Awaited<ReturnType<typeof formsControllerGetFields>>
-        >,
-        "initialData"
-      >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetFields<
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-export function useFormsControllerGetFields<
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getFormsControllerGetFieldsQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>;
-  };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-export const getFormsControllerGetFieldsSuspenseQueryOptions = <
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(options?: {
-  query?: Partial<
-    UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-  >;
-}) => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetFieldsQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetFields>>> = ({
-    signal,
-  }) => formsControllerGetFields(signal);
-
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof formsControllerGetFields>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type FormsControllerGetFieldsSuspenseQueryResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerGetFields>>
->;
-export type FormsControllerGetFieldsSuspenseQueryError = ErrorResponse;
-
-export function useFormsControllerGetFieldsSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(
-  options: {
-    query: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetFieldsSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetFieldsSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-export function useFormsControllerGetFieldsSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetFields>>,
-  TError = ErrorResponse,
->(
-  options?: {
-    query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFields>>, TError, TData>
-    >;
-  },
-  queryClient?: QueryClient
-): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getFormsControllerGetFieldsSuspenseQueryOptions(options);
-
-  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
 export const formsControllerApproveSignatory = (signal?: AbortSignal) => {
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/forms/approve`,
@@ -1553,3 +1361,624 @@ export const useFormsControllerCreatePrefilled = <TError = ErrorResponse, TConte
 
   return useMutation(mutationOptions, queryClient);
 };
+export const formsControllerGetFieldRegistry = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<FieldRegistryResponse>({
+    url: `/api/forms/fields`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getFormsControllerGetFieldRegistryQueryKey = () => {
+  return [`/api/forms/fields`] as const;
+};
+
+export const getFormsControllerGetFieldRegistryQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>, TError, TData>
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetFieldRegistryQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>> = ({
+    signal,
+  }) => formsControllerGetFieldRegistry(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetFieldRegistryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>
+>;
+export type FormsControllerGetFieldRegistryQueryError = ErrorResponse;
+
+export function useFormsControllerGetFieldRegistry<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFieldRegistry<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFieldRegistry<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetFieldRegistry<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetFieldRegistryQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getFormsControllerGetFieldRegistrySuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseSuspenseQueryOptions<
+      Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+      TError,
+      TData
+    >
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetFieldRegistryQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>> = ({
+    signal,
+  }) => formsControllerGetFieldRegistry(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetFieldRegistrySuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>
+>;
+export type FormsControllerGetFieldRegistrySuspenseQueryError = ErrorResponse;
+
+export function useFormsControllerGetFieldRegistrySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFieldRegistrySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFieldRegistrySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetFieldRegistrySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetFieldRegistrySuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const formsControllerRegisterField = (
+  registerFieldDto: RegisterFieldDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/add-field`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: registerFieldDto,
+    signal,
+  });
+};
+
+export const getFormsControllerRegisterFieldMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerRegisterField>>,
+    TError,
+    { data: RegisterFieldDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerRegisterField>>,
+  TError,
+  { data: RegisterFieldDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerRegisterField"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerRegisterField>>,
+    { data: RegisterFieldDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerRegisterField(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerRegisterFieldMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerRegisterField>>
+>;
+export type FormsControllerRegisterFieldMutationBody = RegisterFieldDto;
+export type FormsControllerRegisterFieldMutationError = ErrorResponse;
+
+export const useFormsControllerRegisterField = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerRegisterField>>,
+      TError,
+      { data: RegisterFieldDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerRegisterField>>,
+  TError,
+  { data: RegisterFieldDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerRegisterFieldMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerUpdateField = (
+  updateFieldDto: UpdateFieldDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/edit-field`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: updateFieldDto,
+    signal,
+  });
+};
+
+export const getFormsControllerUpdateFieldMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerUpdateField>>,
+    TError,
+    { data: UpdateFieldDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerUpdateField>>,
+  TError,
+  { data: UpdateFieldDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerUpdateField"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerUpdateField>>,
+    { data: UpdateFieldDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerUpdateField(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerUpdateFieldMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerUpdateField>>
+>;
+export type FormsControllerUpdateFieldMutationBody = UpdateFieldDto;
+export type FormsControllerUpdateFieldMutationError = ErrorResponse;
+
+export const useFormsControllerUpdateField = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerUpdateField>>,
+      TError,
+      { data: UpdateFieldDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerUpdateField>>,
+  TError,
+  { data: UpdateFieldDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerUpdateFieldMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerGetFieldFromRegistry = (
+  params?: FormsControllerGetFieldFromRegistryParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<FieldRequestResponse>({
+    url: `/api/forms/field`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getFormsControllerGetFieldFromRegistryQueryKey = (
+  params?: FormsControllerGetFieldFromRegistryParams
+) => {
+  return [`/api/forms/field`, ...(params ? [params] : [])] as const;
+};
+
+export const getFormsControllerGetFieldFromRegistryQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFieldFromRegistryParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetFieldFromRegistryQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>> = ({
+    signal,
+  }) => formsControllerGetFieldFromRegistry(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetFieldFromRegistryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>
+>;
+export type FormsControllerGetFieldFromRegistryQueryError = ErrorResponse;
+
+export function useFormsControllerGetFieldFromRegistry<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetFieldFromRegistryParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFieldFromRegistry<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFieldFromRegistryParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFieldFromRegistry<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFieldFromRegistryParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetFieldFromRegistry<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFieldFromRegistryParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetFieldFromRegistryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getFormsControllerGetFieldFromRegistrySuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFieldFromRegistryParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetFieldFromRegistryQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>> = ({
+    signal,
+  }) => formsControllerGetFieldFromRegistry(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetFieldFromRegistrySuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>
+>;
+export type FormsControllerGetFieldFromRegistrySuspenseQueryError = ErrorResponse;
+
+export function useFormsControllerGetFieldFromRegistrySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetFieldFromRegistryParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFieldFromRegistrySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFieldFromRegistryParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFieldFromRegistrySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFieldFromRegistryParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetFieldFromRegistrySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFieldFromRegistryParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFieldFromRegistry>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetFieldFromRegistrySuspenseQueryOptions(params, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
