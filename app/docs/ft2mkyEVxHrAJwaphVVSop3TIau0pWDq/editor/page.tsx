@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-29 01:55:14
+ * @ Modified time: 2025-10-29 01:56:50
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -305,17 +305,6 @@ const FieldEditor = ({
           className="h-7 py-1 text-xs"
           defaultValue={fieldDetails.label}
           onChange={handleChangeFactory("label")}
-        />
-        <Badge>Type</Badge>
-        <Autocomplete
-          value={fieldDetails.type}
-          inputClassName="h-7 py-1 text-xs"
-          placeholder="Select Field Type"
-          options={[
-            { id: "text", name: "text" },
-            { id: "signature", name: "signature" },
-          ]}
-          setter={(id) => id && handleChangeFactory("type")(id)}
         />
         <Badge>Source</Badge>
         <Autocomplete
