@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-29 13:49:44
+ * @ Modified time: 2025-10-29 14:42:04
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -25,7 +25,7 @@ import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, PlusCircle, Upload } from "lucide-react";
-import { IFormField, IFormMetadata } from "@betterinternship/core/forms";
+import { IFormContact, IFormField, IFormMetadata } from "@betterinternship/core/forms";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
 import { createPortal } from "react-dom";
@@ -226,6 +226,73 @@ const FormRenderer = ({
         />
       )}
     </PdfLoader>
+  );
+};
+
+/**
+ * Edits contacts.
+ *
+ * @component
+ */
+const ContactEditor = ({
+  initialContactDetails,
+  updateContact,
+}: {
+  initialContactDetails: IFormContact;
+  updateContact: (field: Partial<IFormContact>) => void;
+}) => {
+  const [contactDetails, setContactDetails] = useState<IFormContact>(initialContactDetails);
+
+  // Handle change for any of the props of the field
+  const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement> | string) => {
+    const rawVal = typeof e === "string" ? e : e.target.value;
+    const value = ["x", "y", "w", "h", "page"].includes(property)
+      ? isNaN(parseInt(rawVal))
+        ? null
+        : parseInt(rawVal)
+      : rawVal;
+    const newContact = {
+      ...contactDetails,
+      [property]: value,
+    };
+
+    setContactDetails(newContact);
+    updateContact(newContact);
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-[0.25em] border border-gray-300 p-2">
+      <div className="grid grid-cols-2 grid-rows-2 gap-2">
+        <Badge>Contact Name</Badge>
+        <Input
+          placeholder="Full Name..."
+          className="h-7 py-1 text-xs"
+          defaultValue={contactDetails.name}
+          onChange={handleChangeFactory("name")}
+        />
+        <Badge>Contact Honorific</Badge>
+        <Input
+          placeholder="Mr., Mrs., etc."
+          className="h-7 py-1 text-xs"
+          defaultValue={contactDetails.honorific}
+          onChange={handleChangeFactory("honorific")}
+        />
+        <Badge>Contact Title</Badge>
+        <Input
+          placeholder="CEO, Practicum Coordinator, etc."
+          className="h-7 py-1 text-xs"
+          defaultValue={contactDetails.title}
+          onChange={handleChangeFactory("title")}
+        />
+        <Badge>Contact Email</Badge>
+        <Input
+          placeholder="contact@email.com"
+          className="h-7 py-1 text-xs"
+          defaultValue={contactDetails.email}
+          onChange={handleChangeFactory("email")}
+        />
+      </div>
+    </div>
   );
 };
 
@@ -440,6 +507,8 @@ const Sidebar = ({
   const [documentName, setDocumentName] = useState<string>(initialDocumentName ?? "Select file");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
+  const [subscribers, setSubscribers] = useState<IFormContact[]>([]);
+  const [signatories, setSignatories] = useState<IFormContact[]>([]);
   const [selectedFieldKey, setSelectedFieldKey] = useState<number | null>(null);
 
   // Handle changes in file upload
@@ -467,20 +536,73 @@ const Sidebar = ({
     });
   }, [addDocumentField]);
 
+  // Adds a new subscriber to the schema
+  const handleSubscriberAdd = () => {
+    setSubscribers([
+      {
+        name: "",
+        honorific: "",
+        title: "",
+        email: "",
+      },
+      ...subscribers,
+    ]);
+  };
+
+  // Adds a signatory
+  const handleSignatoryAdd = () => {
+    setSignatories([
+      {
+        name: "",
+        honorific: "",
+        title: "",
+        email: "",
+      },
+      ...signatories,
+    ]);
+  };
+
   // Handles when a file is registered to the db
   const handleFileRegister = useCallback(() => {
     if (!documentFile) return;
+    console.log("subs", subscribers);
+    console.log("sigs", signatories);
 
     // Check if all fields are valid
     const fieldFullNameList = fieldRegistry?.fields.map((f) => `${f.name}:${f.preset}`) ?? [];
     for (const field of documentFields) {
       if (!fieldFullNameList.includes(field.field))
         return alert(`${field.field} is not a valid field.`);
+      if (!field.source) return alert(`${field.field} is missing its source.`);
+      if (!field.type) return alert(`${field.field} is missing its type.`);
+      if (!field.label) return alert(`${field.field} is missing its label.`);
+    }
+
+    // Check if all subscribers are okay
+    for (const subscriber of subscribers) {
+      if (!subscriber.name) return alert(`A subscriber entry is missing a name.`);
+      if (!subscriber.email)
+        return alert(`${subscriber.name} (subscriber) entry is missing an email.`);
+      if (!subscriber.title)
+        return alert(`${subscriber.name} (subscriber) entry is missing a title.`);
+      if (!subscriber.honorific)
+        return alert(`${subscriber.name} (subscriber) entry is missing an honorific.`);
+    }
+
+    for (const signatory of signatories) {
+      if (!signatory.name) return alert(`A signatory entry is missing a name.`);
+      if (!signatory.email)
+        return alert(`${signatory.name} (signatory) entry is missing an email.`);
+      if (!signatory.title) return alert(`${signatory.name} (signatory) entry is missing a title.`);
+      if (!signatory.honorific)
+        return alert(`${signatory.name} (signatory) entry is missing an honorific.`);
     }
 
     openModal(
       "register-file-modal",
       <RegisterFileModal
+        subscribers={subscribers}
+        signatories={signatories}
         documentFields={documentFields}
         documentNamePlaceholder={documentName}
         documentFile={documentFile}
@@ -493,7 +615,7 @@ const Sidebar = ({
         closeOnEsc: false,
       }
     );
-  }, [documentFile, documentUrl, documentFields, fieldRegistry?.fields]);
+  }, [documentFile, documentUrl, documentFields, fieldRegistry?.fields, subscribers, signatories]);
 
   // Makes sure that the selected field is always shown at the top
   const sortedDocumentFields = useMemo(() => {
@@ -541,9 +663,27 @@ const Sidebar = ({
     void loadPdfAsFile(documentUrl, documentName).then((file) => setDocumentFile(file));
   }, [documentUrl]);
 
+  // Handle editing subs and sigs
+  const editSubscriber = (key: number) => (newSubscriber: Partial<IFormContact>) => {
+    setSubscribers([
+      ...subscribers.slice(0, subscribers.length - key),
+      { ...subscribers[subscribers.length - key], ...newSubscriber },
+      ...subscribers.slice(subscribers.length - key + 1),
+    ]);
+  };
+
+  // Edit signatories
+  const editSignatory = (key: number) => (newSignatory: Partial<IFormContact>) => {
+    setSignatories([
+      ...signatories.slice(0, signatories.length - key),
+      { ...signatories[signatories.length - key], ...newSignatory },
+      ...signatories.slice(signatories.length - key + 1),
+    ]);
+  };
+
   return (
     <Tabs defaultValue="fields">
-      <div className="pt-2">
+      <div className="flex flex-row items-center gap-2 pt-2">
         <TabsList className="rounded-[0.33em]">
           <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
             Fields
@@ -555,57 +695,107 @@ const Sidebar = ({
             Signatories
           </TabsTrigger>
         </TabsList>
+        <Button onClick={() => fileInputRef.current?.click()}>
+          <Upload />
+          Select File
+        </Button>
+        {documentFile && (
+          <Button variant="outline" scheme="supportive" onClick={handleFileRegister}>
+            <CheckCircle />
+            Register File
+          </Button>
+        )}
       </div>
-      <div className="sidebar w-[30vw]">
+      <div className="sidebar w-[30vw] p-4">
         <TabsContent value="fields">
-          <div>
-            <h1 className="my-2 text-lg font-bold">{documentName}</h1>
-            <pre className="my-2">
-              x: {fieldTransform.x}, y: {fieldTransform.y}, w: {fieldTransform.w}, h:{" "}
-              {fieldTransform.h}, page: {fieldTransform.page}
-            </pre>
-            <div className="mb-2 flex flex-row gap-2">
-              {documentFile && (
-                <Button variant="outline" onClick={handleFieldAdd}>
-                  <PlusCircle />
-                  Add Field
-                </Button>
-              )}
-              {documentFile && (
-                <Button variant="outline" scheme="supportive" onClick={handleFileRegister}>
-                  <CheckCircle />
-                  Register File
-                </Button>
-              )}
-              {!documentFile && (
-                <Button onClick={() => fileInputRef.current?.click()}>
-                  <Upload />
-                  Select File
-                </Button>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-            <div className="flex flex-col gap-2">
-              {sortedDocumentFields.map((field) => (
-                <FieldEditor
-                  key={documentFields.indexOf(field)}
-                  selected={documentFields.indexOf(field) === selectedFieldKey}
-                  updateField={editDocumentField(documentFields.indexOf(field))}
-                  fieldRegistry={fieldRegistry?.fields ?? []}
-                  initialFieldDetails={field}
-                />
-              ))}
-            </div>
+          <h1 className="my-2 text-lg font-bold">"{documentName}" - Schema</h1>
+          <pre className="my-2">
+            x: {fieldTransform.x}, y: {fieldTransform.y}, w: {fieldTransform.w}, h:{" "}
+            {fieldTransform.h}, page: {fieldTransform.page}
+          </pre>
+          <div className="mb-2 flex flex-row gap-2">
+            {documentFile && (
+              <Button variant="outline" onClick={handleFieldAdd}>
+                <PlusCircle />
+                Add Field
+              </Button>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <div className="flex flex-col gap-2">
+            {sortedDocumentFields.map((field) => (
+              <FieldEditor
+                key={documentFields.indexOf(field)}
+                selected={documentFields.indexOf(field) === selectedFieldKey}
+                updateField={editDocumentField(documentFields.indexOf(field))}
+                fieldRegistry={fieldRegistry?.fields ?? []}
+                initialFieldDetails={field}
+              />
+            ))}
           </div>
         </TabsContent>
-        <TabsContent value="subscribers"></TabsContent>
-        <TabsContent value="signatories"></TabsContent>
+        <TabsContent value="subscribers">
+          <h1 className="my-2 text-lg font-bold">"{documentName}" - Subscribers</h1>
+          <pre className="my-2">{subscribers.length} subscribers</pre>
+          <div className="mb-2 flex flex-row gap-2">
+            {documentFile && (
+              <Button variant="outline" onClick={handleSubscriberAdd}>
+                <PlusCircle />
+                Add Subscriber
+              </Button>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <div className="flex flex-col gap-2">
+            {subscribers.map((subscriber, i) => (
+              <ContactEditor
+                key={subscribers.length - i}
+                initialContactDetails={subscriber}
+                updateContact={editSubscriber(subscribers.length - i)}
+              />
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="signatories">
+          <h1 className="my-2 text-lg font-bold">"{documentName}" - Signatories</h1>
+          <pre className="my-2">{signatories.length} signatories</pre>
+          <div className="mb-2 flex flex-row gap-2">
+            {documentFile && (
+              <Button variant="outline" onClick={handleSignatoryAdd}>
+                <PlusCircle />
+                Add Signatory
+              </Button>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <div className="flex flex-col gap-2">
+            {signatories.map((signatory, i) => (
+              <ContactEditor
+                key={signatories.length - i}
+                initialContactDetails={signatory}
+                updateContact={editSignatory(signatories.length - i)}
+              />
+            ))}
+          </div>
+        </TabsContent>
       </div>
       {fieldPreviews}
     </Tabs>
@@ -622,11 +812,15 @@ const RegisterFileModal = ({
   documentNamePlaceholder,
   documentFields,
   documentFile,
+  subscribers,
+  signatories,
   close,
 }: {
   documentNamePlaceholder: string;
   documentFields: IFormField[];
   documentFile: File;
+  subscribers: IFormContact[];
+  signatories: IFormContact[];
   close: () => void;
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
@@ -640,11 +834,11 @@ const RegisterFileModal = ({
       label: "",
       base_document: documentFile,
       schema: [...documentFields],
-      signatories: [],
-      subscribers: [],
+      signatories: signatories,
+      subscribers: subscribers,
       required_parties: [],
     }),
-    [documentName, documentFile, documentFields]
+    [documentName, documentFile, documentFields, subscribers, signatories]
   );
 
   // Handle submitting form to registry
