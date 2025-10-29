@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { ModalProvider } from "../providers/modal-provider";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Document Verification | BetterInternship × DLSU",
@@ -20,9 +21,14 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       >
         {/* Topbar */}
         <header className="bg-background/70 border-b backdrop-blur">
-          <div className="mx-auto flex h-16 max-w-screen-xl items-center gap-2">
-            <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
-            <div className="flex items-center gap-2 font-semibold">BetterInternship</div>
+          <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
+              <div className="flex items-center gap-2 font-semibold">BetterInternship</div>
+            </div>
+            <Link href="/login">
+              <Button variant="outline">Login</Button>
+            </Link>
           </div>
         </header>
 
