@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-29 14:42:04
+ * @ Modified time: 2025-10-29 15:26:52
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -824,11 +824,24 @@ const RegisterFileModal = ({
   close: () => void;
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
+  const [requiredParties, setRequiredParties] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
   // Constructs the latest metadata given the state
-  const formMetadataDraft: IFormMetadata & { name: string; base_document: File } = useMemo(
-    () => ({
+  const formMetadataDraft: IFormMetadata & { name: string; base_document: File } = useMemo(() => {
+    const requiredPartiesRaw = requiredParties.split(",").map((rp) => rp.trim());
+
+    // Make sure required parties are unique and valid
+    const requiredPartiesArray = Array.from(
+      new Set(
+        requiredPartiesRaw.filter((rp) =>
+          ["student", "student-guardian", "entity", "university"].includes(rp)
+        )
+      )
+    ) as ("student" | "student-guardian" | "entity" | "university")[];
+
+    return {
+      required_parties: requiredPartiesArray,
       schema_version: SCHEMA_VERSION,
       name: documentName,
       label: "",
@@ -836,10 +849,8 @@ const RegisterFileModal = ({
       schema: [...documentFields],
       signatories: signatories,
       subscribers: subscribers,
-      required_parties: [],
-    }),
-    [documentName, documentFile, documentFields, subscribers, signatories]
-  );
+    };
+  }, [documentName, documentFile, documentFields, requiredParties, subscribers, signatories]);
 
   // Handle submitting form to registry
   const handleSubmit = async () => {
@@ -859,15 +870,30 @@ const RegisterFileModal = ({
 
   return (
     <div className="flex min-w-xl flex-col gap-2">
-      <Input
-        type="text"
-        value={documentName}
-        placeholder="Enter form name..."
-        onChange={(e) => setDocumentName(e.target.value)}
-      />
-      <div className="max-h-[600px] overflow-y-auto">
+      <div className="flex flex-row gap-2">
+        <Badge className="max-w-prose min-w-[200px]">Form Name</Badge>
+        <Input
+          type="text"
+          className="h-7 py-1 text-xs"
+          value={documentName}
+          placeholder="Enter form name..."
+          onChange={(e) => setDocumentName(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-row gap-2">
+        <Badge className="max-w-prose min-w-[200px]">Who Needs to Sign?</Badge>
+        <Input
+          type="text"
+          className="h-7 py-1 text-xs"
+          value={requiredParties}
+          placeholder="Comma separated, any of: student, entity, student-guardian, university"
+          onChange={(e) => setRequiredParties(e.target.value)}
+        />
+      </div>
+      <div className="max-h-[480px] overflow-y-auto">
         <JsonView
           indentWidth={22}
+          highlightUpdates={true}
           displayDataTypes={false}
           enableClipboard={false}
           value={formMetadataDraft}
