@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-29 02:09:30
+ * @ Modified time: 2025-10-29 13:04:57
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -252,12 +252,13 @@ const FieldEditor = ({
     const { field } = await formsControllerGetFieldFromRegistry({ id });
     const { id: _id, name: _name, preset: _preset, ...rest } = field;
     const fieldFullName = `${field.name}:${field.preset}`;
+    console.log(field);
     const newField = {
       ...fieldDetails,
       ...rest,
       field: fieldFullName,
-      validator: fieldDetails.validator ?? undefined,
-      prefiller: fieldDetails.prefiller ?? undefined,
+      validator: field.validator ?? "",
+      prefiller: field.prefiller ?? "",
       tooltip_label: field.tooltip_label ?? "",
       h: 10,
     };

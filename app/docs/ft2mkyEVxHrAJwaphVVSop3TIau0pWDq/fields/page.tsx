@@ -17,6 +17,7 @@ import { Loader } from "@/components/ui/loader";
 import { Plus } from "lucide-react";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import { Autocomplete } from "@/components/ui/autocomplete";
+import z from "zod";
 
 // ! Store this elsewhere soon
 interface FieldRegistryEntry {
@@ -431,9 +432,5 @@ const TEST_JSON: IFormMetadata = {
   signatories: [],
   required_parties: ["student", "university"],
 };
-
-const m = new FormMetadata(TEST_JSON);
-console.log(m);
-console.log(m.getFieldsForClient());
 
 export default FieldRegistryPage;
