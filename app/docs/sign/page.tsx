@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { z, ZodTypeAny } from "zod";
@@ -43,12 +43,20 @@ function mapAudienceToRoleAndParty(aud: Audience): {
   }
 }
 
-export default function Page() {
+const Page = () => {
+  return (
+    <Suspense>
+      <PageContent />
+    </Suspense>
+  );
+};
+
+function PageContent() {
   const params = useSearchParams();
   const router = useRouter();
 
   // URL params
-  const audienceParam = ((params.get("for") || "entity") as string).trim() as Audience;
+  const audienceParam = (params.get("for") || "entity").trim() as Audience;
   const { role, party } = mapAudienceToRoleAndParty(audienceParam);
 
   const formName = (params.get("form") || "").trim();
@@ -125,20 +133,18 @@ export default function Page() {
         try {
           const validatorRaw = s.validator ?? null;
           if (typeof validatorRaw === "string" && validatorRaw.trim()) {
-            // eslint-disable-next-line no-new-func
             const fn = new Function("z", `return (${validatorRaw})`);
             const zschema = fn(z);
-            if (zschema && typeof (zschema as any).safeParse === "function") {
+            if (zschema && typeof zschema.safeParse === "function") {
               validators.push(zschema as ZodTypeAny);
             }
           } else if (Array.isArray(validatorRaw)) {
             for (const v of validatorRaw) {
               if (typeof v === "string") {
                 try {
-                  // eslint-disable-next-line no-new-func
                   const fn2 = new Function("z", `return (${v})`);
                   const zschema2 = fn2(z);
-                  if (zschema2 && typeof (zschema2 as any).safeParse === "function") {
+                  if (zschema2 && typeof zschema2.safeParse === "function") {
                     validators.push(zschema2 as ZodTypeAny);
                   }
                 } catch (e) {
@@ -464,7 +470,7 @@ function compileValidators(defs: RecipientFieldDef[]) {
     fns.push(requiredCheckFor(d));
 
     for (const schema of d.validators ?? []) {
-      const zschema = schema as ZodTypeAny;
+      const zschema = schema;
       fns.push((value: any) => {
         const res = zschema.safeParse(value);
         if (res.success) return null;
@@ -493,3 +499,5 @@ function validateAll(
   }
   return next;
 }
+
+export default Page;
