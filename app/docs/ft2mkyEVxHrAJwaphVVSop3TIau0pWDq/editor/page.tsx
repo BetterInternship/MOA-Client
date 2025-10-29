@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-30 03:22:12
+ * @ Modified time: 2025-10-29 20:50:46
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -24,7 +24,7 @@ import {
 import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Download, PlusCircle, Upload, X } from "lucide-react";
+import { CheckCircle, Download, PlusCircle, Upload } from "lucide-react";
 import { IFormContact, IFormField, IFormMetadata } from "@betterinternship/core/forms";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
@@ -122,12 +122,6 @@ const FormEditorPageContent = () => {
     setFields([...fields.slice(0, key), { ...fields[key], ...newField }, ...fields.slice(key + 1)]);
   };
 
-  // Removes a field from the list of fields
-  const removeField = (field: IFormField) => {
-    setHighlight(null);
-    setFields(fields.filter((f) => f !== field));
-  };
-
   // Load the specified JSON first, if any
   useEffect(() => {
     const promises = [];
@@ -181,7 +175,6 @@ const FormEditorPageContent = () => {
           setDocumentUrl={setDocumentUrl}
           addDocumentField={addField}
           editDocumentField={editField}
-          removeDocumentField={removeField}
         />
         {documentUrl && (
           <FormRenderer
@@ -314,13 +307,11 @@ const FieldEditor = ({
   fieldRegistry,
   selected,
   updateField,
-  removeField,
 }: {
   initialFieldDetails: IFormField;
   fieldRegistry: { id: string; name: string; preset: string }[];
   selected: boolean;
   updateField: (field: Partial<IFormField>) => void;
-  removeField: (field: IFormField) => void;
 }) => {
   const [fieldDetails, setFieldDetails] = useState<IFormField>(initialFieldDetails);
   const [fieldId, setFieldId] = useState<string | null>();
@@ -361,11 +352,6 @@ const FieldEditor = ({
     updateField(newField);
   };
 
-  // Removes field from the drafted schema
-  const handleRemoveField = (field: IFormField) => {
-    removeField(field);
-  };
-
   // Update field id from db
   useEffect(() => {
     const fieldFullNameList =
@@ -381,7 +367,7 @@ const FieldEditor = ({
         selected ? "border-supportive bg-supportive/10" : "border-gray-300"
       )}
     >
-      <div className="flex flex-row items-center gap-2">
+      <div className="flex flex-row gap-2">
         <Autocomplete
           value={fieldId}
           inputClassName="h-7 py-1 text-xs"
@@ -389,14 +375,6 @@ const FieldEditor = ({
           options={fieldRegistry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
           setter={(id) => id && void handleSelectField(id)}
         />
-        <Button
-          className="h-7 w-6!"
-          scheme="destructive"
-          variant="outline"
-          onClick={() => removeField(initialFieldDetails)}
-        >
-          <X></X>
-        </Button>
       </div>
       <div className="grid grid-cols-2 grid-rows-2 gap-2">
         <Badge>Display Label</Badge>
@@ -513,7 +491,6 @@ const Sidebar = ({
   setDocumentUrl,
   addDocumentField,
   editDocumentField,
-  removeDocumentField,
 }: {
   documentUrl: string | null;
   fieldTransform: { x: number; y: number; w: number; h: number; page: number };
@@ -522,7 +499,6 @@ const Sidebar = ({
   setDocumentUrl: (documentUrl: string) => void;
   addDocumentField: (field: IFormField) => void;
   editDocumentField: (key: number) => (field: Partial<IFormField>) => void;
-  removeDocumentField: (field: IFormField) => void;
 }) => {
   // Allows us to click the input without showing it
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -589,6 +565,8 @@ const Sidebar = ({
   // Handles when a file is registered to the db
   const handleFileRegister = useCallback(() => {
     if (!documentFile) return;
+    console.log("subs", subscribers);
+    console.log("sigs", signatories);
 
     // Check if all fields are valid
     const fieldFullNameList = fieldRegistry?.fields.map((f) => `${f.name}:${f.preset}`) ?? [];
@@ -646,10 +624,11 @@ const Sidebar = ({
       documentFields[selectedFieldKey],
       ...documentFields.filter((f, i) => i !== selectedFieldKey).toReversed(),
     ];
-  }, [selectedFieldKey, documentFields, fieldRegistry]);
+  }, [selectedFieldKey, documentFields]);
 
-  // Refresh the ui of the fields
-  const refreshFieldPreviews = () => {
+  // Updates the field previews
+  // (we have to touch the DOM directly for this to go under the hoods of the lib we're using)
+  useEffect(() => {
     const fieldPreviews = [];
     const fieldPreviewContainers =
       document.querySelectorAll(".PdfHighlighter__highlight-layer") ?? [];
@@ -675,14 +654,8 @@ const Sidebar = ({
     }
 
     setFieldPreviews(fieldPreviews);
-  };
-
-  // Updates the field previews
-  // (we have to touch the DOM directly for this to go under the hoods of the lib we're using)
-  useEffect(() => {
-    refreshFieldPreviews();
     return () => setFieldPreviews([]);
-  }, [selectedFieldKey, documentFields, fieldRegistry]);
+  }, [selectedFieldKey, documentFields]);
 
   // Make sure to set the file when it's specified in the parent
   useEffect(() => {
@@ -758,12 +731,11 @@ const Sidebar = ({
           <div className="flex flex-col gap-2">
             {sortedDocumentFields.map((field) => (
               <FieldEditor
-                key={JSON.stringify(field)}
+                key={documentFields.indexOf(field)}
                 selected={documentFields.indexOf(field) === selectedFieldKey}
                 updateField={editDocumentField(documentFields.indexOf(field))}
                 fieldRegistry={fieldRegistry?.fields ?? []}
                 initialFieldDetails={field}
-                removeField={removeDocumentField}
               />
             ))}
           </div>
@@ -789,7 +761,7 @@ const Sidebar = ({
           <div className="flex flex-col gap-2">
             {subscribers.map((subscriber, i) => (
               <ContactEditor
-                key={JSON.stringify(subscriber)}
+                key={subscribers.length - i}
                 initialContactDetails={subscriber}
                 updateContact={editSubscriber(subscribers.length - i)}
               />
@@ -817,7 +789,7 @@ const Sidebar = ({
           <div className="flex flex-col gap-2">
             {signatories.map((signatory, i) => (
               <ContactEditor
-                key={JSON.stringify(signatory)}
+                key={signatories.length - i}
                 initialContactDetails={signatory}
                 updateContact={editSignatory(signatories.length - i)}
               />
