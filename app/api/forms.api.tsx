@@ -4,6 +4,7 @@ import {
   formsControllerApproveSignatory,
 } from "./app/api/endpoints/forms/forms";
 import { FormMetadata, IFormField, IFormMetadata } from "@betterinternship/core/forms";
+import { formsControllerGetSignedDocumentsBySignatory } from "./app/api/endpoints/forms/forms";
 
 export const getPendingInformation = async (pendingDocumentId: string) => {
   try {
@@ -79,6 +80,16 @@ export const approveSignatory = async (payload: ApproveSignatoryRequest) => {
     return { approval: res as ApproveSignatoryResponse, isLoading: false, error: null };
   } catch (error) {
     return { approval: null, isLoading: false, error };
+  }
+};
+
+export const getAllSignedForms = async () => {
+  try {
+    const res = await formsControllerGetSignedDocumentsBySignatory();
+    const signedDocuments = res?.signedDocuments ?? [];
+    return { signedDocuments, isLoading: false, error: null };
+  } catch (error) {
+    return { signedDocuments: null, isLoading: false, error };
   }
 };
 

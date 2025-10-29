@@ -5,47 +5,32 @@ import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import FormCard from "@/components/docs/dashboard/FormCard";
+import { getAllSignedForms } from "@/app/api/forms.api";
 
-// TEMP: replace with your real API call
-type DocRow = {
-  id: string;
-  form_name: string;
-  requested_at: string; // ISO
-  status: "completed";
-  signed_document_url?: string;
+// Minimal shape for signed documents we expect from the API. Keep optional to be
+// resilient to backend shape differences and keep the UI lean.
+type SignedDoc = {
+  id?: string;
+  form_name?: string;
+  date_made?: string; // ISO
+  url?: string;
 };
-
-async function fetchSignedDocsMock(): Promise<DocRow[]> {
-  return [
-    {
-      id: "1",
-      form_name: "Student MOA",
-      requested_at: "2025-10-25T08:10:00.000Z",
-      status: "completed",
-      signed_document_url:
-        "https://storage.googleapis.com/better-internship-public-bucket/demo-signed-1.pdf",
-    },
-    {
-      id: "2",
-      form_name: "Company Evaluation Form",
-      requested_at: "2025-10-27T12:00:00.000Z",
-      status: "completed",
-      signed_document_url:
-        "https://storage.googleapis.com/better-internship-public-bucket/demo-signed-2.pdf",
-    },
-  ];
-}
 
 export default function DocsDashboardPage() {
   const {
     data: rows = [],
     isLoading,
     error,
-  } = useQuery({
+  } = useQuery<SignedDoc[], unknown>({
     queryKey: ["docs-signed"],
-    queryFn: fetchSignedDocsMock,
+    queryFn: async () => {
+      const res = await getAllSignedForms();
+      return res?.signedDocuments ?? [];
+    },
     staleTime: 60_000,
   });
+
+  console.log("Signed documents:", rows);
 
   return (
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
@@ -75,9 +60,10 @@ export default function DocsDashboardPage() {
           <div className="grid grid-cols-1 gap-3">
             {rows.map((row) => (
               <FormCard
-                title={row.form_name}
-                requestedAt={row.requested_at}
-                downloadUrl={row.signed_document_url}
+                key={row.id ?? `${row.form_name ?? "row"}-${Math.random()}`}
+                title={row.form_name ?? "Form"}
+                requestedAt={row.date_made}
+                downloadUrl={row.url}
               />
             ))}
           </div>

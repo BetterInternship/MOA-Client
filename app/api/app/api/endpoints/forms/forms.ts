@@ -43,6 +43,7 @@ import type {
   FormsControllerGetRegistryFormMetadataParams,
   RegisterFieldDto,
   RegisterFormSchemaDto,
+  SignedDocumentsResponse,
   UpdateFieldDto,
 } from "../../models";
 
@@ -1023,6 +1024,245 @@ export function useFormsControllerGetLatestFormDocumentAndMetadataSuspense<
     params,
     options
   );
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const formsControllerGetSignedDocumentsBySignatory = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<SignedDocumentsResponse>({
+    url: `/api/forms/signed-by`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getFormsControllerGetSignedDocumentsBySignatoryQueryKey = () => {
+  return [`/api/forms/signed-by`] as const;
+};
+
+export const getFormsControllerGetSignedDocumentsBySignatoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+      TError,
+      TData
+    >
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetSignedDocumentsBySignatoryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>
+  > = ({ signal }) => formsControllerGetSignedDocumentsBySignatory(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetSignedDocumentsBySignatoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>
+>;
+export type FormsControllerGetSignedDocumentsBySignatoryQueryError = ErrorResponse;
+
+export function useFormsControllerGetSignedDocumentsBySignatory<
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetSignedDocumentsBySignatory<
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetSignedDocumentsBySignatory<
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetSignedDocumentsBySignatory<
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetSignedDocumentsBySignatoryQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getFormsControllerGetSignedDocumentsBySignatorySuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseSuspenseQueryOptions<
+      Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+      TError,
+      TData
+    >
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetSignedDocumentsBySignatoryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>
+  > = ({ signal }) => formsControllerGetSignedDocumentsBySignatory(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetSignedDocumentsBySignatorySuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>
+>;
+export type FormsControllerGetSignedDocumentsBySignatorySuspenseQueryError = ErrorResponse;
+
+export function useFormsControllerGetSignedDocumentsBySignatorySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetSignedDocumentsBySignatorySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetSignedDocumentsBySignatorySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetSignedDocumentsBySignatorySuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetSignedDocumentsBySignatory>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetSignedDocumentsBySignatorySuspenseQueryOptions(options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

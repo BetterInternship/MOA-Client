@@ -1310,6 +1310,29 @@
         "tags": ["Forms"]
       }
     },
+    "/api/forms/signed-by": {
+      "get": {
+        "operationId": "FormsController_getSignedDocumentsBySignatory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SignedDocumentsResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Forms"]
+      }
+    },
     "/api/forms/register-form": {
       "post": {
         "operationId": "FormsController_registerForm",
@@ -2001,6 +2024,15 @@
           "formDocument": { "type": "string" }
         },
         "required": ["success", "message", "formMetadata", "formDocument"]
+      },
+      "SignedDocumentsResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "signedDocuments": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["success", "message", "signedDocuments"]
       },
       "RegisterFormSchemaDto": {
         "type": "object",
