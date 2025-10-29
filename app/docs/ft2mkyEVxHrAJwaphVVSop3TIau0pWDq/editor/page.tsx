@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-29 15:26:52
+ * @ Modified time: 2025-10-29 20:50:46
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -463,10 +463,10 @@ const FieldPreview = ({
       style={{
         userSelect: "auto",
         display: "inline-block",
-        width: `${w}px`,
-        height: `${h}px`,
+        width: `round(var(--scale-factor) * ${w}px, 1px)`,
+        height: `round(var(--scale-factor) * ${h}px, 1px)`,
         fontSize: "12px",
-        transform: `translate(${x}px, ${y}px)`,
+        transform: `translate(round(var(--scale-factor) * ${x}px, 1px), round(var(--scale-factor) * ${y}px, 1px))`,
         boxSizing: "border-box",
         cursor: "pointer",
         flexShrink: "0",
