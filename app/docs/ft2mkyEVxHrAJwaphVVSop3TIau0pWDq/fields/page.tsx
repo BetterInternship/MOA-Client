@@ -394,43 +394,4 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
   );
 };
 
-const TEST_JSON: IFormMetadata = {
-  name: "dlsu.it.endorsement-letter",
-  label: "[DLSU - IT] Endorsement Letter",
-  schema_version: 0,
-  schema: [
-    {
-      field: "student.fullname:default",
-      type: "text",
-      x: 0,
-      y: 0,
-      w: 0,
-      h: 0,
-      page: 1,
-      source: "student",
-      validator: "",
-      prefiller: "",
-      tooltip_label: "",
-      label: "Full Name",
-    },
-    {
-      field: "student.address:lowercase",
-      type: "text",
-      x: 0,
-      y: 0,
-      w: 0,
-      h: 0,
-      page: 1,
-      source: "student",
-      validator: "",
-      prefiller: "",
-      tooltip_label: "",
-      label: "Address",
-    },
-  ],
-  subscribers: [],
-  signatories: [],
-  required_parties: ["student", "university"],
-};
-
 export default FieldRegistryPage;

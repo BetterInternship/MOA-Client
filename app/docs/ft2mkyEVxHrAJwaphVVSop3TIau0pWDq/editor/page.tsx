@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-29 13:04:57
+ * @ Modified time: 2025-10-29 13:49:44
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -25,7 +25,7 @@ import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, PlusCircle, Upload } from "lucide-react";
-import { FormMetadata, IFormField, IFormMetadata } from "@betterinternship/core/forms";
+import { IFormField, IFormMetadata } from "@betterinternship/core/forms";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
 import { createPortal } from "react-dom";
@@ -44,6 +44,7 @@ import { useSearchParams } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // ? Update this when migrating
 const SCHEMA_VERSION = 0;
@@ -246,13 +247,13 @@ const FieldEditor = ({
   updateField: (field: Partial<IFormField>) => void;
 }) => {
   const [fieldDetails, setFieldDetails] = useState<IFormField>(initialFieldDetails);
+  const [fieldId, setFieldId] = useState<string | null>();
 
   // Select a field and update details so we can use those
   const handleSelectField = async (id: string) => {
     const { field } = await formsControllerGetFieldFromRegistry({ id });
     const { id: _id, name: _name, preset: _preset, ...rest } = field;
     const fieldFullName = `${field.name}:${field.preset}`;
-    console.log(field);
     const newField = {
       ...fieldDetails,
       ...rest,
@@ -284,6 +285,14 @@ const FieldEditor = ({
     updateField(newField);
   };
 
+  // Update field id from db
+  useEffect(() => {
+    const fieldFullNameList =
+      fieldRegistry?.map((f) => ({ id: f.id, name: `${f.name}:${f.preset}` })) ?? [];
+    const fieldId = fieldFullNameList.find((f) => f.name === fieldDetails.field)?.id;
+    setFieldId(fieldId);
+  }, [fieldDetails, fieldRegistry]);
+
   return (
     <div
       className={cn(
@@ -293,6 +302,7 @@ const FieldEditor = ({
     >
       <div className="flex flex-row gap-2">
         <Autocomplete
+          value={fieldId}
           inputClassName="h-7 py-1 text-xs"
           placeholder="Select field..."
           options={fieldRegistry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
@@ -483,7 +493,7 @@ const Sidebar = ({
         closeOnEsc: false,
       }
     );
-  }, [documentFile, documentUrl, documentFields]);
+  }, [documentFile, documentUrl, documentFields, fieldRegistry?.fields]);
 
   // Makes sure that the selected field is always shown at the top
   const sortedDocumentFields = useMemo(() => {
@@ -532,52 +542,73 @@ const Sidebar = ({
   }, [documentUrl]);
 
   return (
-    <div className="sidebar w-[30vw] p-10">
-      <h1 className="my-2 text-lg font-bold">{documentName}</h1>
-      <pre className="my-2">
-        x: {fieldTransform.x}, y: {fieldTransform.y}, w: {fieldTransform.w}, h: {fieldTransform.h},
-        page: {fieldTransform.page}
-      </pre>
-      <div className="mb-2 flex flex-row gap-2">
-        {documentFile && (
-          <Button variant="outline" onClick={handleFieldAdd}>
-            <PlusCircle />
-            Add Field
-          </Button>
-        )}
-        {documentFile && (
-          <Button variant="outline" scheme="supportive" onClick={handleFileRegister}>
-            <CheckCircle />
-            Register File
-          </Button>
-        )}
-        {!documentFile && (
-          <Button onClick={() => fileInputRef.current?.click()}>
-            <Upload />
-            Select File
-          </Button>
-        )}
+    <Tabs defaultValue="fields">
+      <div className="pt-2">
+        <TabsList className="rounded-[0.33em]">
+          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
+            Fields
+          </TabsTrigger>
+          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="subscribers">
+            Subscribers
+          </TabsTrigger>
+          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="signatories">
+            Signatories
+          </TabsTrigger>
+        </TabsList>
       </div>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={handleFileSelect}
-      />
-      <div className="flex flex-col gap-2">
-        {sortedDocumentFields.map((field) => (
-          <FieldEditor
-            key={documentFields.indexOf(field)}
-            selected={documentFields.indexOf(field) === selectedFieldKey}
-            updateField={editDocumentField(documentFields.indexOf(field))}
-            fieldRegistry={fieldRegistry?.fields ?? []}
-            initialFieldDetails={field}
-          />
-        ))}
+      <div className="sidebar w-[30vw]">
+        <TabsContent value="fields">
+          <div>
+            <h1 className="my-2 text-lg font-bold">{documentName}</h1>
+            <pre className="my-2">
+              x: {fieldTransform.x}, y: {fieldTransform.y}, w: {fieldTransform.w}, h:{" "}
+              {fieldTransform.h}, page: {fieldTransform.page}
+            </pre>
+            <div className="mb-2 flex flex-row gap-2">
+              {documentFile && (
+                <Button variant="outline" onClick={handleFieldAdd}>
+                  <PlusCircle />
+                  Add Field
+                </Button>
+              )}
+              {documentFile && (
+                <Button variant="outline" scheme="supportive" onClick={handleFileRegister}>
+                  <CheckCircle />
+                  Register File
+                </Button>
+              )}
+              {!documentFile && (
+                <Button onClick={() => fileInputRef.current?.click()}>
+                  <Upload />
+                  Select File
+                </Button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <div className="flex flex-col gap-2">
+              {sortedDocumentFields.map((field) => (
+                <FieldEditor
+                  key={documentFields.indexOf(field)}
+                  selected={documentFields.indexOf(field) === selectedFieldKey}
+                  updateField={editDocumentField(documentFields.indexOf(field))}
+                  fieldRegistry={fieldRegistry?.fields ?? []}
+                  initialFieldDetails={field}
+                />
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="subscribers"></TabsContent>
+        <TabsContent value="signatories"></TabsContent>
       </div>
       {fieldPreviews}
-    </div>
+    </Tabs>
   );
 };
 
