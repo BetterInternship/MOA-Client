@@ -13,6 +13,14 @@ export const getPendingInformation = async (pendingDocumentId: string) => {
   }
 };
 
+const deriveSection = (fieldName: string | undefined): string => {
+  if (!fieldName) return "";
+  const first = fieldName.split(".")[0];
+  if (first === "parent" || first === "guardian") return "parent-guardian";
+  if (first === "student" || first === "internship" || first === "entity") return first;
+  return first; // fallback to the first segment if needed
+};
+
 export const getFormFields = async (name: string) => {
   try {
     const res = await formsControllerGetLatestFormDocumentAndMetadata({ name });
@@ -32,10 +40,16 @@ export const getFormFields = async (name: string) => {
       const fm = new FormMetadata(meta as IFormMetadata);
       const clientFields = fm.getFieldsForClient();
 
+      // add section field derived from the field name (first word before the first '.')
+      const clientFieldsWithSection = (clientFields as IFormField[]).map((f) => ({
+        ...f,
+        section: deriveSection(f.field),
+      }));
+
       const molded = {
         name: fm.name,
         formMetadata: {
-          schema: clientFields,
+          schema: clientFieldsWithSection,
         },
       };
 
