@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-30 04:03:15
+ * @ Modified time: 2025-10-30 04:28:05
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -125,9 +125,9 @@ const FormEditorPageContent = () => {
   };
 
   // Removes a field from the list of fields
-  const removeField = (field: IFormField) => {
+  const removeField = (key: number) => {
     setHighlight(null);
-    setFields(fields.filter((f) => f !== field));
+    setFields(fields.filter((f, i) => i !== key));
   };
 
   // Load the specified JSON first, if any
@@ -149,8 +149,6 @@ const FormEditorPageContent = () => {
         setFields(formMetadata.schema);
         setDocumentName(formMetadata.name);
         setFormMetadata(formMetadata);
-
-        console.log(formMetadata);
       })
     );
 
@@ -322,12 +320,14 @@ const FieldEditor = ({
   selected,
   updateField,
   removeField,
+  index,
 }: {
   initialFieldDetails: IFormField;
   fieldRegistry: { id: string; name: string; preset: string }[];
   selected: boolean;
   updateField: (field: Partial<IFormField>) => void;
-  removeField: (field: IFormField) => void;
+  removeField: (key: number) => void;
+  index: number;
 }) => {
   const [fieldDetails, setFieldDetails] = useState<IFormField>(initialFieldDetails);
   const [fieldId, setFieldId] = useState<string | null>();
@@ -369,8 +369,8 @@ const FieldEditor = ({
   };
 
   // Removes field from the drafted schema
-  const handleRemoveField = (field: IFormField) => {
-    removeField(field);
+  const handleRemoveField = () => {
+    removeField(index);
   };
 
   // Update field id from db
@@ -400,7 +400,7 @@ const FieldEditor = ({
           className="h-7 w-6!"
           scheme="destructive"
           variant="outline"
-          onClick={() => removeField(initialFieldDetails)}
+          onClick={handleRemoveField}
         >
           <X></X>
         </Button>
@@ -533,7 +533,7 @@ const Sidebar = ({
   setDocumentUrl: (documentUrl: string) => void;
   addDocumentField: (field: IFormField) => void;
   editDocumentField: (key: number) => (field: Partial<IFormField>) => void;
-  removeDocumentField: (field: IFormField) => void;
+  removeDocumentField: (key: number) => void;
 }) => {
   // Allows us to click the input without showing it
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -542,9 +542,13 @@ const Sidebar = ({
   const [documentName, setDocumentName] = useState<string>(initialDocumentName ?? "Select file");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
-  const [subscribers, setSubscribers] = useState<IFormContact[]>(initialSubscribers);
-  const [signatories, setSignatories] = useState<IFormContact[]>(initialSignatories);
-  const [selectedFieldKey, setSelectedFieldKey] = useState<number | null>(null);
+  const [subscribers, setSubscribers] = useState<(IFormContact & { id: string })[]>([]);
+  const [signatories, setSignatories] = useState<(IFormContact & { id: string })[]>([]);
+  const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
+  const keyedDocumentFields = useMemo(
+    () => documentFields.map((field) => ({ id: Math.random().toString(), ...field })),
+    [documentFields]
+  );
 
   // Handle changes in file upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -575,6 +579,7 @@ const Sidebar = ({
   const handleSubscriberAdd = () => {
     setSubscribers([
       {
+        id: Math.random().toString(),
         name: "",
         honorific: "",
         title: "",
@@ -588,6 +593,7 @@ const Sidebar = ({
   const handleSignatoryAdd = () => {
     setSignatories([
       {
+        id: Math.random().toString(),
         name: "",
         honorific: "",
         title: "",
@@ -634,9 +640,18 @@ const Sidebar = ({
     openModal(
       "register-file-modal",
       <RegisterFileModal
-        subscribers={subscribers}
-        signatories={signatories}
-        documentFields={documentFields}
+        subscribers={subscribers.map((s) => {
+          const { id: _id, ...rest } = s;
+          return rest;
+        })}
+        signatories={signatories.map((s) => {
+          const { id: _id, ...rest } = s;
+          return rest;
+        })}
+        documentFields={keyedDocumentFields.map((f) => {
+          const { id: _id, ...rest } = f;
+          return rest;
+        })}
         documentNamePlaceholder={documentName}
         documentFile={documentFile}
         close={() => closeModal()}
@@ -652,10 +667,10 @@ const Sidebar = ({
 
   // Makes sure that the selected field is always shown at the top
   const sortedDocumentFields = useMemo(() => {
-    if (selectedFieldKey === null) return documentFields.toReversed();
+    if (selectedFieldKey === null) return keyedDocumentFields.toReversed();
     return [
-      documentFields[selectedFieldKey],
-      ...documentFields.filter((f, i) => i !== selectedFieldKey).toReversed(),
+      keyedDocumentFields.find((field) => field.id === selectedFieldKey)!,
+      ...keyedDocumentFields.filter((f) => f.id !== selectedFieldKey).toReversed(),
     ];
   }, [selectedFieldKey, documentFields, fieldRegistry]);
 
@@ -665,8 +680,8 @@ const Sidebar = ({
     const fieldPreviewContainers =
       document.querySelectorAll(".PdfHighlighter__highlight-layer") ?? [];
 
-    for (let i = 0; i < documentFields.length; i++) {
-      const field = documentFields[i];
+    for (let i = 0; i < keyedDocumentFields.length; i++) {
+      const field = keyedDocumentFields[i];
       const fieldPreviewContainer = fieldPreviewContainers[field.page - 1];
       if (!fieldPreviewContainer) continue;
       fieldPreviews.push(
@@ -677,8 +692,8 @@ const Sidebar = ({
             y={field.y}
             w={field.w}
             h={field.h}
-            selected={i === selectedFieldKey}
-            onClick={() => setSelectedFieldKey(i)}
+            selected={field.id === selectedFieldKey}
+            onClick={() => setSelectedFieldKey(field.id)}
           />,
           fieldPreviewContainer
         )
@@ -687,6 +702,12 @@ const Sidebar = ({
 
     setFieldPreviews(fieldPreviews);
   };
+
+  // Give them ids hopefully
+  useEffect(() => {
+    setSubscribers(initialSubscribers.map((s) => ({ id: Math.random().toString(), ...s })));
+    setSignatories(initialSignatories.map((s) => ({ id: Math.random().toString(), ...s })));
+  }, []);
 
   // Updates the field previews
   // (we have to touch the DOM directly for this to go under the hoods of the lib we're using)
@@ -769,9 +790,10 @@ const Sidebar = ({
           <div className="flex flex-col gap-2">
             {sortedDocumentFields.map((field) => (
               <FieldEditor
-                key={JSON.stringify(field)}
-                selected={documentFields.indexOf(field) === selectedFieldKey}
-                updateField={editDocumentField(documentFields.indexOf(field))}
+                key={field.id}
+                index={keyedDocumentFields.indexOf(field)}
+                selected={field?.id === selectedFieldKey}
+                updateField={editDocumentField(keyedDocumentFields.indexOf(field))}
                 fieldRegistry={fieldRegistry?.fields ?? []}
                 initialFieldDetails={field}
                 removeField={removeDocumentField}
@@ -800,7 +822,7 @@ const Sidebar = ({
           <div className="flex flex-col gap-2">
             {subscribers.map((subscriber, i) => (
               <ContactEditor
-                key={JSON.stringify(subscriber)}
+                key={subscriber.id}
                 initialContactDetails={subscriber}
                 updateContact={editSubscriber(subscribers.length - i)}
               />
@@ -828,7 +850,7 @@ const Sidebar = ({
           <div className="flex flex-col gap-2">
             {signatories.map((signatory, i) => (
               <ContactEditor
-                key={JSON.stringify(signatory)}
+                key={signatory.id}
                 initialContactDetails={signatory}
                 updateContact={editSignatory(signatories.length - i)}
               />
