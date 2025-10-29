@@ -23,17 +23,11 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { getPendingInformation } from "@/app/api/forms.api";
 import { useRouter } from "next/navigation";
+import { approveSignatory } from "@/app/api/forms.api";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university";
 type Role = "entity" | "student-guardian" | "university";
-
-function normalizeAudience(raw: string | null): Audience {
-  const s = (raw || "").trim().toLowerCase();
-  if (s === "guardian" || s === "student-guardian") return "student-guardian";
-  if (s === "university" || s === "uni" || s === "college") return "university";
-  return "entity";
-}
 
 function mapAudienceToRoleAndParty(aud: Audience): {
   role: Role;
@@ -54,8 +48,8 @@ export default function Page() {
   const router = useRouter();
 
   // URL params
-  const audience = normalizeAudience(params.get("for"));
-  const { role, party } = mapAudienceToRoleAndParty(audience);
+  const audienceParam = ((params.get("for") || "entity") as string).trim() as Audience;
+  const { role, party } = mapAudienceToRoleAndParty(audienceParam);
 
   const formName = (params.get("form") || "").trim();
   const pendingDocumentId = (params.get("pending") || "").trim();
@@ -78,8 +72,10 @@ export default function Page() {
     enabled: !!pendingDocumentId,
   });
 
-  const pendingInfo = pendingRes?.pendingInformation ?? null;
-  const pendingUrl = pendingInfo?.latest_document_url;
+  const pendingInfo = pendingRes?.pendingInformation;
+  // @ts-ignore: API returns latest_document_url but the generated type does not include it
+  const pendingUrl = (pendingInfo as any)?.latest_document_url;
+  console.log("pendingInfo", pendingInfo);
 
   // Fetch form fields schema from API
   const {
@@ -95,78 +91,93 @@ export default function Page() {
 
   console.log("formRes", formRes);
 
-  // Map returned schema into RecipientFieldDef[]
+  // Map returned schema into RecipientFieldDef[] and filter by source matching audienceParam.
   const fields: RecipientFieldDef[] = useMemo(() => {
     const rawSchema = (formRes as any)?.formFields?.formMetadata?.schema ?? [];
     if (!Array.isArray(rawSchema)) return [];
 
-    return rawSchema.map((s: any) => {
-      const rawField = s.field ?? "";
-      const key = String(rawField).split(":")[0] ?? rawField ?? crypto.randomUUID();
-      const id = s.id ?? rawField ?? crypto.randomUUID();
-      const label = s.label ?? key;
-      const type = (s.type ?? "text").toLowerCase();
-
-      const validators: ZodTypeAny[] = [];
-
-      // If API returns a validator string like "z.string()" attempt to evaluate it.
-      // This is intentionally conservative: we only provide z as the context.
-      try {
-        const validatorRaw = s.validator ?? s.validators ?? null;
-        if (typeof validatorRaw === "string" && validatorRaw.trim()) {
-          // eslint-disable-next-line no-new-func
-          const fn = new Function("z", `return (${validatorRaw})`);
-          const zschema = fn(z);
-          if (zschema && typeof (zschema as any).safeParse === "function") {
-            validators.push(zschema as ZodTypeAny);
-          }
-        } else if (Array.isArray(validatorRaw)) {
-          for (const v of validatorRaw) {
-            if (typeof v === "string") {
-              try {
-                // eslint-disable-next-line no-new-func
-                const fn2 = new Function("z", `return (${v})`);
-                const zschema2 = fn2(z);
-                if (zschema2 && typeof (zschema2 as any).safeParse === "function") {
-                  validators.push(zschema2 as ZodTypeAny);
-                }
-              } catch (e) {
-                console.warn("Failed to parse validator array item", v, e);
-              }
-            } else if (v && typeof v.safeParse === "function") {
-              validators.push(v as ZodTypeAny);
-            }
-          }
-        } else if (validatorRaw && typeof validatorRaw.safeParse === "function") {
-          validators.push(validatorRaw as ZodTypeAny);
+    return rawSchema
+      .filter((s: any) => {
+        // Normalize source info; accept string or array of strings
+        const rawSource = s.source;
+        if (!rawSource) {
+          // If the field has no source defined, include it.
+          return true;
         }
-      } catch (e) {
-        console.warn("Failed to evaluate validator for field", key, e);
-      }
+        const sources = Array.isArray(rawSource)
+          ? rawSource.map((x: any) => String(x).trim())
+          : String(rawSource)
+              .split(",")
+              .map((x) => x.trim());
+        return sources.includes(audienceParam);
+      })
+      .map((s: any) => {
+        const rawField = s.field ?? "";
+        const key = rawField;
+        const id = s.id;
+        const label = s.label;
+        const type = s.type ?? "text";
 
-      const options =
-        Array.isArray(s.options) && s.options.length
-          ? s.options.map((o: any) => ({
-              value: o?.value ?? o,
-              label: o?.label ?? String(o?.value ?? o),
-            }))
-          : undefined;
+        const validators: ZodTypeAny[] = [];
 
-      return {
-        id,
-        key,
-        label,
-        type,
-        section: s.section ?? null,
-        placeholder: s.placeholder ?? undefined,
-        helper: s.helper ?? undefined,
-        maxLength: s.maxLength ?? undefined,
-        options,
-        validators,
-        params: s.params ?? undefined,
-      } as RecipientFieldDef;
-    });
-  }, [formRes]);
+        // If API returns a validator string like "z.string()" attempt to evaluate it.
+        // This is intentionally conservative: we only provide z as the context.
+        try {
+          const validatorRaw = s.validator ?? null;
+          if (typeof validatorRaw === "string" && validatorRaw.trim()) {
+            // eslint-disable-next-line no-new-func
+            const fn = new Function("z", `return (${validatorRaw})`);
+            const zschema = fn(z);
+            if (zschema && typeof (zschema as any).safeParse === "function") {
+              validators.push(zschema as ZodTypeAny);
+            }
+          } else if (Array.isArray(validatorRaw)) {
+            for (const v of validatorRaw) {
+              if (typeof v === "string") {
+                try {
+                  // eslint-disable-next-line no-new-func
+                  const fn2 = new Function("z", `return (${v})`);
+                  const zschema2 = fn2(z);
+                  if (zschema2 && typeof (zschema2 as any).safeParse === "function") {
+                    validators.push(zschema2 as ZodTypeAny);
+                  }
+                } catch (e) {
+                  console.warn("Failed to parse validator array item", v, e);
+                }
+              } else if (v && typeof v.safeParse === "function") {
+                validators.push(v as ZodTypeAny);
+              }
+            }
+          } else if (validatorRaw && typeof validatorRaw.safeParse === "function") {
+            validators.push(validatorRaw as ZodTypeAny);
+          }
+        } catch (e) {
+          console.warn("Failed to evaluate validator for field", key, e);
+        }
+
+        const options =
+          Array.isArray(s.options) && s.options.length
+            ? s.options.map((o: any) => ({
+                value: o?.value ?? o,
+                label: o?.label ?? o,
+              }))
+            : undefined;
+
+        return {
+          id,
+          key,
+          label,
+          type,
+          section: s.section ?? null,
+          placeholder: s.placeholder ?? undefined,
+          helper: s.helper ?? undefined,
+          maxLength: s.maxLength ?? undefined,
+          options,
+          validators,
+          params: s.params ?? undefined,
+        } as RecipientFieldDef;
+      });
+  }, [formRes, audienceParam]);
 
   // local form state
   const [values, setValues] = useState<Record<string, any>>({});
@@ -218,33 +229,32 @@ export default function Page() {
 
     try {
       setBusy(true);
-      // const res = await UserService.approveSignatory({
-      //   pendingDocumentId,
-      //   signatoryName,
-      //   signatoryTitle,
-      //   party,
-      //   values: flatValues,
-      // });
+      const res = await approveSignatory({
+        pendingDocumentId,
+        signatoryName,
+        signatoryTitle,
+        party,
+        values: flatValues,
+      });
 
-      // const data = (res as any)?.data ?? res;
+      const data = res?.data;
 
-      // if (data?.signedDocumentUrl) {
-      //   setSuccess({
-      //     title: "Submitted & Signed",
-      //     body: "This document is now fully signed. You can download the signed copy below.",
-      //     href: data.signedDocumentUrl,
-      //   });
-      // } else {
-      //   setSuccess({
-      //     title: "Details Submitted",
-      //     body:
-      //       data?.message ??
-      //       "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
-      //   });
-      // }
+      if (data?.signedDocumentUrl) {
+        setSuccess({
+          title: "Submitted & Signed",
+          body: "This document is now fully signed. You can download the signed copy below.",
+          href: data.signedDocumentUrl,
+        });
+      } else {
+        setSuccess({
+          title: "Details Submitted",
+          body:
+            data?.message ??
+            "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
+        });
+      }
       setSuccessOpen(true);
     } catch (e: any) {
-      // Error as a blocking alert-style modal to keep UX consistent
       setSuccess({
         title: "Submission Failed",
         body: e?.message ?? "Something went wrong while submitting your details.",
@@ -321,9 +331,9 @@ export default function Page() {
 
         <p className="text-sm text-gray-600">
           Please provide the required{" "}
-          {audience === "entity"
+          {audienceParam === "entity"
             ? "entity"
-            : audience === "student-guardian"
+            : audienceParam === "student-guardian"
               ? "guardian"
               : "university"}{" "}
           details below.
@@ -344,7 +354,7 @@ export default function Page() {
         ) : (
           <Card className="space-y-4 p-4 sm:p-5">
             <RecipientDynamicForm
-              formKey={`recipient:${audience}:${formName || "unknown"}`}
+              formKey={`recipient:${audienceParam}:${formName || "unknown"}`}
               fields={fields}
               values={values}
               onChange={setField}

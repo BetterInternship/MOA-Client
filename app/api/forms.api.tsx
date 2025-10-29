@@ -1,6 +1,7 @@
 import {
   formsControllerGetLatestFormDocumentAndMetadata,
   formsControllerGetPending,
+  formsControllerApproveSignatory,
 } from "./app/api/endpoints/forms/forms";
 import { FormMetadata, IFormField, IFormMetadata } from "@betterinternship/core/forms";
 
@@ -11,14 +12,6 @@ export const getPendingInformation = async (pendingDocumentId: string) => {
   } catch (error) {
     return { pendingInformation: null, isLoading: false, error };
   }
-};
-
-const deriveSection = (fieldName: string | undefined): string => {
-  if (!fieldName) return "";
-  const first = fieldName.split(".")[0];
-  if (first === "parent" || first === "guardian") return "parent-guardian";
-  if (first === "student" || first === "internship" || first === "entity") return first;
-  return first; // fallback to the first segment if needed
 };
 
 export const getFormFields = async (name: string) => {
@@ -59,4 +52,41 @@ export const getFormFields = async (name: string) => {
   } catch (error) {
     return { formFields: null, isLoading: false, error };
   }
+};
+
+export type ApproveSignatoryRequest = {
+  pendingDocumentId: string;
+  signatoryName: string;
+  signatoryTitle: string;
+  party: "student" | "entity" | "student-guardian" | "university";
+  values?: Record<string, string>;
+};
+
+export type ApproveSignatoryResponse = {
+  message?: string;
+  signedDocumentId?: string;
+  signedDocumentUrl?: string;
+  [k: string]: any;
+};
+
+export const approveSignatory = async (payload: ApproveSignatoryRequest) => {
+  try {
+    const approveFn = formsControllerApproveSignatory as unknown as (
+      data: ApproveSignatoryRequest
+    ) => Promise<ApproveSignatoryResponse>;
+
+    const res = await approveFn(payload);
+    return { approval: res as ApproveSignatoryResponse, isLoading: false, error: null };
+  } catch (error) {
+    return { approval: null, isLoading: false, error };
+  }
+};
+
+// Helpers
+const deriveSection = (fieldName: string | undefined): string => {
+  if (!fieldName) return "";
+  const first = fieldName.split(".")[0];
+  if (first === "parent" || first === "guardian") return "parent-guardian";
+  if (first === "student" || first === "internship" || first === "entity") return first;
+  return first; // fallback to the first segment if needed
 };
