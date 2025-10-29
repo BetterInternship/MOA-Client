@@ -179,6 +179,81 @@
         "tags": ["Auth"]
       }
     },
+    "/api/auth/docs/login/request": {
+      "post": {
+        "operationId": "AuthController_docsLoginRequest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DocsLoginRequestDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/docs/login/verify": {
+      "post": {
+        "operationId": "AuthController_docsLoginVerify",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DocsVerifyDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/docs/self": {
+      "post": {
+        "operationId": "AuthController_docsSelf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
     "/api/entities/list": {
       "get": {
         "operationId": "EntitiesController_getList",
@@ -1594,6 +1669,8 @@
         },
         "required": ["success", "message", "school", "schoolAccount"]
       },
+      "DocsLoginRequestDto": { "type": "object", "properties": {} },
+      "DocsVerifyDto": { "type": "object", "properties": {} },
       "PublicEntityDto": {
         "type": "object",
         "properties": {
@@ -2085,10 +2162,11 @@
         "type": "object",
         "properties": {
           "formName": { "type": "string" },
+          "formVersion": { "type": "number" },
           "values": { "type": "object" },
           "parties": { "type": "object" }
         },
-        "required": ["formName", "values", "parties"]
+        "required": ["formName", "formVersion", "values", "parties"]
       },
       "CreatePrefilledFormDto": {
         "type": "object",
@@ -2099,11 +2177,12 @@
         "type": "object",
         "properties": {
           "formName": { "type": "string" },
+          "formVersion": { "type": "number" },
           "values": { "type": "object" },
           "signatories": { "type": "array", "items": { "type": "string" } },
           "parties": { "type": "object" }
         },
-        "required": ["formName", "values", "signatories", "parties"]
+        "required": ["formName", "formVersion", "values", "signatories", "parties"]
       }
     }
   }

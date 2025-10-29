@@ -10,6 +10,7 @@ import type { CreateSignedFormDtoParties } from "./createSignedFormDtoParties";
 
 export interface CreateSignedFormDto {
   formName: string;
+  formVersion: number;
   values: CreateSignedFormDtoValues;
   signatories: string[];
   parties: CreateSignedFormDtoParties;

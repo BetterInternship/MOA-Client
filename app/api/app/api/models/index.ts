@@ -142,3 +142,5 @@ export * from "./updateFieldDtoPrefiller";
 export * from "./updateFieldDtoSource";
 export * from "./updateFieldDtoTooltipLabel";
 export * from "./updateFieldDtoValidator";
+export * from "./docsLoginRequestDto";
+export * from "./docsVerifyDto";

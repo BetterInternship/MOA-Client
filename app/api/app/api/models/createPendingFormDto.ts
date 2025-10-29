@@ -10,6 +10,7 @@ import type { CreatePendingFormDtoParties } from "./createPendingFormDtoParties"
 
 export interface CreatePendingFormDto {
   formName: string;
+  formVersion: number;
   values: CreatePendingFormDtoValues;
   parties: CreatePendingFormDtoParties;
 }

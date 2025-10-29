@@ -8,32 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, ShieldCheck, Lock } from "lucide-react";
 
-const MOCK_DELAY = 650;
+import { requestLoginOtp, verifyLoginOtp } from "@/app/api/docs.api";
 
-// pretend DB has these emails
-const KNOWN_EMAILS = new Set<string>([
-  "you@example.com",
-  "student@dlsu.edu.ph",
-  "hr@company.com",
-  "jana_bantolino@dlsu.edu.ph",
-]);
-
-async function apiCheckEmailExists(email: string) {
-  await new Promise((r) => setTimeout(r, MOCK_DELAY));
-  return KNOWN_EMAILS.has(email.toLowerCase());
-}
-
-async function apiSendOtp(email: string) {
-  await new Promise((r) => setTimeout(r, MOCK_DELAY));
-  // backend would actually send; we just succeed
-  return { ok: true };
-}
-
-// For demo, accept 123456 as the OTP
-async function apiVerifyOtp(email: string, otp: string) {
-  await new Promise((r) => setTimeout(r, MOCK_DELAY));
-  return otp === "123456";
-}
+// NOTE
+// This page previously used mock helpers. We now call the real API helpers
+// `requestLoginOtp` and `verifyLoginOtp` exported from `app/api/docs.api.tsx`.
 
 /* ────────────────────────────
    OTP Input (6 boxes, paste-friendly)
@@ -192,16 +171,23 @@ export default function DocsLoginPage() {
 
     setBusy(true);
     try {
-      const exists = await apiCheckEmailExists(email.trim());
-      if (!exists) {
-        setEmailErr("We couldn’t find an account with that email.");
+      const res = await requestLoginOtp(email.trim());
+      if (!res || !res.ok) {
+        setEmailErr(res?.reason ?? "We couldn’t find an account with that email.");
         return;
       }
-      await apiSendOtp(email.trim());
       setStep("otp");
       setOtp("");
-      // start resend countdown
-      setResentAt(Date.now());
+      // start resend countdown. If the server provided `resendIn` (seconds), use it
+      if (typeof (res as any).resendIn === "number") {
+        // server may give seconds remaining; our UI uses a 60s window, so adjust resentAt
+        const resendIn = Math.max(0, (res as any).resendIn as number);
+        const assumedWindow = 60;
+        const resentAtTs = Date.now() - (assumedWindow - resendIn) * 1000;
+        setResentAt(resentAtTs);
+      } else {
+        setResentAt(Date.now());
+      }
     } finally {
       setBusy(false);
     }
@@ -218,9 +204,9 @@ export default function DocsLoginPage() {
 
     setBusy(true);
     try {
-      const ok = await apiVerifyOtp(email.trim(), otp);
-      if (!ok) {
-        setOtpErr("That code didn’t work. Try again.");
+      const res = await verifyLoginOtp(email.trim(), otp);
+      if (!res || !res.ok) {
+        setOtpErr(res?.reason ?? "That code didn’t work. Try again.");
         return;
       }
       // success → go to dashboard
@@ -234,8 +220,19 @@ export default function DocsLoginPage() {
     if (resendWait > 0) return;
     setBusy(true);
     try {
-      await apiSendOtp(email.trim());
-      setResentAt(Date.now());
+      const res = await requestLoginOtp(email.trim());
+      if (!res || !res.ok) {
+        setOtpErr(res?.reason ?? "Unable to resend code. Try again later.");
+        return;
+      }
+      if (typeof (res as any).resendIn === "number") {
+        const resendIn = Math.max(0, (res as any).resendIn as number);
+        const assumedWindow = 60;
+        const resentAtTs = Date.now() - (assumedWindow - resendIn) * 1000;
+        setResentAt(resentAtTs);
+      } else {
+        setResentAt(Date.now());
+      }
     } finally {
       setBusy(false);
     }
