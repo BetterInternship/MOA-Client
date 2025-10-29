@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-30 03:25:22
+ * @ Modified time: 2025-10-30 04:03:15
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -45,6 +45,7 @@ import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FormContact } from "@/app/api";
 
 // ? Update this when migrating
 const SCHEMA_VERSION = 0;
@@ -77,6 +78,7 @@ const FormEditorPageContent = () => {
   const [documentName, setDocumentName] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<IHighlight | null>(null);
   const [fields, setFields] = useState<IFormField[]>([]);
+  const [formMetadata, setFormMetadata] = useState<IFormMetadata>();
   const [fieldTransform, setFieldTransform] = useState<{
     x: number;
     y: number;
@@ -146,6 +148,9 @@ const FormEditorPageContent = () => {
         // ! make sure to use FormMetadata class to mediate all access
         setFields(formMetadata.schema);
         setDocumentName(formMetadata.name);
+        setFormMetadata(formMetadata);
+
+        console.log(formMetadata);
       })
     );
 
@@ -182,6 +187,8 @@ const FormEditorPageContent = () => {
           addDocumentField={addField}
           editDocumentField={editField}
           removeDocumentField={removeField}
+          initialSubscribers={formMetadata?.subscribers ?? []}
+          initialSignatories={formMetadata?.signatories ?? []}
         />
         {documentUrl && (
           <FormRenderer
@@ -510,6 +517,8 @@ const Sidebar = ({
   fieldTransform,
   documentFields,
   initialDocumentName,
+  initialSubscribers,
+  initialSignatories,
   setDocumentUrl,
   addDocumentField,
   editDocumentField,
@@ -519,6 +528,8 @@ const Sidebar = ({
   fieldTransform: { x: number; y: number; w: number; h: number; page: number };
   documentFields: IFormField[];
   initialDocumentName: string | null;
+  initialSubscribers: FormContact[];
+  initialSignatories: FormContact[];
   setDocumentUrl: (documentUrl: string) => void;
   addDocumentField: (field: IFormField) => void;
   editDocumentField: (key: number) => (field: Partial<IFormField>) => void;
@@ -531,8 +542,8 @@ const Sidebar = ({
   const [documentName, setDocumentName] = useState<string>(initialDocumentName ?? "Select file");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
-  const [subscribers, setSubscribers] = useState<IFormContact[]>([]);
-  const [signatories, setSignatories] = useState<IFormContact[]>([]);
+  const [subscribers, setSubscribers] = useState<IFormContact[]>(initialSubscribers);
+  const [signatories, setSignatories] = useState<IFormContact[]>(initialSignatories);
   const [selectedFieldKey, setSelectedFieldKey] = useState<number | null>(null);
 
   // Handle changes in file upload
