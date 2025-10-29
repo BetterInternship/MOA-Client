@@ -6,7 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { FormField } from "./formField";
-import type { FormContact } from "./formContact";
+import type { FormSubscriber } from "./formSubscriber";
+import type { FormSignatory } from "./formSignatory";
 import type { FormMetadataRequiredPartiesItem } from "./formMetadataRequiredPartiesItem";
 
 export interface FormMetadata {
@@ -15,7 +16,7 @@ export interface FormMetadata {
   label: string;
   version: number;
   schema: FormField[];
-  subscribers: FormContact[];
-  signatories: FormContact[];
+  subscribers: FormSubscriber[];
+  signatories: FormSignatory[];
   required_parties: FormMetadataRequiredPartiesItem[];
 }

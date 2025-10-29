@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-30 04:28:05
+ * @ Modified time: 2025-10-30 05:30:15
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -25,7 +25,12 @@ import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, PlusCircle, Upload, X } from "lucide-react";
-import { IFormContact, IFormField, IFormMetadata } from "@betterinternship/core/forms";
+import {
+  IFormField,
+  IFormMetadata,
+  IFormSignatory,
+  IFormSubscriber,
+} from "@betterinternship/core/forms";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
 import { createPortal } from "react-dom";
@@ -45,7 +50,7 @@ import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FormContact } from "@/app/api";
+import { FieldRegistryEntry } from "@/app/api";
 
 // ? Update this when migrating
 const SCHEMA_VERSION = 0;
@@ -248,12 +253,17 @@ const FormRenderer = ({
  */
 const ContactEditor = ({
   initialContactDetails,
+  fieldRegistry,
   updateContact,
 }: {
-  initialContactDetails: IFormContact;
-  updateContact: (field: Partial<IFormContact>) => void;
+  initialContactDetails: IFormSubscriber | IFormSignatory;
+  fieldRegistry: FieldRegistryEntry[];
+  updateContact: (field: Partial<IFormSubscriber> | Partial<IFormSignatory>) => void;
 }) => {
-  const [contactDetails, setContactDetails] = useState<IFormContact>(initialContactDetails);
+  const [fieldFullName, setFieldFullName] = useState<string>();
+  const [contactDetails, setContactDetails] = useState<IFormSubscriber | IFormSignatory>(
+    initialContactDetails
+  );
 
   // Handle change for any of the props of the field
   const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement> | string) => {
@@ -272,9 +282,30 @@ const ContactEditor = ({
     updateContact(newContact);
   };
 
+  // Select a field
+  const handleSelectField = (id: string) => {
+    setFieldFullName(id);
+    handleChangeFactory("field")(id);
+  };
+
   return (
     <div className="flex flex-col gap-2 rounded-[0.25em] border border-gray-300 p-2">
       <div className="grid grid-cols-2 grid-rows-2 gap-2">
+        {"field" in initialContactDetails && (
+          <>
+            <Badge>Field Placement</Badge>
+            <Autocomplete
+              value={fieldFullName}
+              inputClassName="h-7 py-1 text-xs"
+              placeholder="Select field..."
+              options={fieldRegistry.map((f) => ({
+                id: `${f.name}:${f.preset}`,
+                name: `${f.name}:${f.preset}`,
+              }))}
+              setter={(id) => id && handleSelectField(id)}
+            />
+          </>
+        )}
         <Badge>Contact Name</Badge>
         <Input
           placeholder="Full Name..."
@@ -528,8 +559,8 @@ const Sidebar = ({
   fieldTransform: { x: number; y: number; w: number; h: number; page: number };
   documentFields: IFormField[];
   initialDocumentName: string | null;
-  initialSubscribers: FormContact[];
-  initialSignatories: FormContact[];
+  initialSubscribers: IFormSubscriber[];
+  initialSignatories: IFormSignatory[];
   setDocumentUrl: (documentUrl: string) => void;
   addDocumentField: (field: IFormField) => void;
   editDocumentField: (key: number) => (field: Partial<IFormField>) => void;
@@ -542,8 +573,8 @@ const Sidebar = ({
   const [documentName, setDocumentName] = useState<string>(initialDocumentName ?? "Select file");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
-  const [subscribers, setSubscribers] = useState<(IFormContact & { id: string })[]>([]);
-  const [signatories, setSignatories] = useState<(IFormContact & { id: string })[]>([]);
+  const [subscribers, setSubscribers] = useState<(IFormSubscriber & { id: string })[]>([]);
+  const [signatories, setSignatories] = useState<(IFormSignatory & { id: string })[]>([]);
   const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
   const keyedDocumentFields = useMemo(
     () => documentFields.map((field) => ({ id: Math.random().toString(), ...field })),
@@ -598,6 +629,7 @@ const Sidebar = ({
         honorific: "",
         title: "",
         email: "",
+        field: "",
       },
       ...signatories,
     ]);
@@ -723,7 +755,7 @@ const Sidebar = ({
   }, [documentUrl]);
 
   // Handle editing subs and sigs
-  const editSubscriber = (key: number) => (newSubscriber: Partial<IFormContact>) => {
+  const editSubscriber = (key: number) => (newSubscriber: Partial<IFormSubscriber>) => {
     setSubscribers([
       ...subscribers.slice(0, subscribers.length - key),
       { ...subscribers[subscribers.length - key], ...newSubscriber },
@@ -732,7 +764,7 @@ const Sidebar = ({
   };
 
   // Edit signatories
-  const editSignatory = (key: number) => (newSignatory: Partial<IFormContact>) => {
+  const editSignatory = (key: number) => (newSignatory: Partial<IFormSignatory>) => {
     setSignatories([
       ...signatories.slice(0, signatories.length - key),
       { ...signatories[signatories.length - key], ...newSignatory },
@@ -825,6 +857,7 @@ const Sidebar = ({
                 key={subscriber.id}
                 initialContactDetails={subscriber}
                 updateContact={editSubscriber(subscribers.length - i)}
+                fieldRegistry={fieldRegistry?.fields.filter((f) => f.type === "signature") ?? []}
               />
             ))}
           </div>
@@ -853,6 +886,7 @@ const Sidebar = ({
                 key={signatory.id}
                 initialContactDetails={signatory}
                 updateContact={editSignatory(signatories.length - i)}
+                fieldRegistry={fieldRegistry?.fields.filter((f) => f.type === "signature") ?? []}
               />
             ))}
           </div>
@@ -880,8 +914,8 @@ const RegisterFileModal = ({
   documentNamePlaceholder: string;
   documentFields: IFormField[];
   documentFile: File;
-  subscribers: IFormContact[];
-  signatories: IFormContact[];
+  subscribers: IFormSubscriber[];
+  signatories: IFormSignatory[];
   close: () => void;
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
@@ -901,13 +935,19 @@ const RegisterFileModal = ({
       )
     ) as ("student" | "student-guardian" | "entity" | "university")[];
 
+    // Make signatures bigger
+    const resizedFields = documentFields.map((field) => ({
+      ...field,
+      h: field.type === "text" ? 10 : 25,
+    }));
+
     return {
       required_parties: requiredPartiesArray,
       schema_version: SCHEMA_VERSION,
       name: documentName,
       label: "",
       base_document: documentFile,
-      schema: [...documentFields],
+      schema: resizedFields,
       signatories: signatories,
       subscribers: subscribers,
     };
