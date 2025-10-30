@@ -14,10 +14,8 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { formsControllerUpdateField } from "../../../api/app/api/endpoints/forms/forms";
 import { Loader } from "@/components/ui/loader";
-import { Plus } from "lucide-react";
-import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
+import { Plus, Search } from "lucide-react";
 import { Autocomplete } from "@/components/ui/autocomplete";
-import z from "zod";
 
 // ! Store this elsewhere soon
 interface FieldRegistryEntry {
@@ -38,7 +36,8 @@ interface FieldRegistryEntry {
  */
 const FieldRegistryPage = () => {
   const fieldRegistry = useFormsControllerGetFieldRegistry();
-  const fields = fieldRegistry.data?.fields ?? [];
+  const [fields, setFields] = useState(fieldRegistry.data?.fields ?? []);
+  const [searchTerm, setSearchTerm] = useState("");
   const { openModal, closeModal } = useModal();
 
   // Handles opening the add field modal
@@ -55,15 +54,33 @@ const FieldRegistryPage = () => {
     });
   };
 
+  // Filter fields here
+  useEffect(() => {
+    setFields(
+      fieldRegistry.data?.fields?.filter((field) => {
+        const name = `${field.name}:${field.preset}`;
+        return name.includes(searchTerm);
+      }) ?? []
+    );
+  }, [searchTerm]);
+
   return (
     <div className="mx-auto mt-4 max-w-5xl">
       <div className="flex flex-row items-center">
         <h1 className="m-2 text-2xl font-bold tracking-tight">Field Registry</h1>
         <div className="flex-1"></div>
-        <Button size="sm" onClick={handleAdd}>
-          <Plus />
-          New Field
-        </Button>
+        <div className="flex h-7 flex-row items-center gap-2">
+          <Input
+            value={searchTerm}
+            placeholder="Enter search term..."
+            className="h-7 w-[200px]"
+            onChange={(e) => setSearchTerm(e.target.value)}
+          ></Input>
+          <Button size="sm" onClick={handleAdd}>
+            <Plus />
+            New Field
+          </Button>
+        </div>
       </div>
       <Table>
         <TableHeader>
