@@ -15,4 +15,5 @@ export const FieldRegistryEntryDetailsSource = {
   entity: "entity",
   student: "student",
   "student-guardian": "student-guardian",
+  auto: "auto",
 } as const;
