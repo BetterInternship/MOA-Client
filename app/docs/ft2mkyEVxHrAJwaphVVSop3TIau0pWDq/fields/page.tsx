@@ -23,7 +23,7 @@ interface FieldRegistryEntry {
   preset: string;
   type: "text" | "signature";
   label: string;
-  source: "student" | "university" | "entity" | "student-guardian";
+  source: "student" | "university" | "entity" | "student-guardian" | "auto";
   tooltip_label: string;
   validator: string;
   prefiller: string;
@@ -239,6 +239,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
                 { id: "student", name: "student" },
                 { id: "student-guardian", name: "student-guardian" },
                 { id: "university", name: "university" },
+                { id: "auto", name: "auto" },
               ]}
               setter={(id) => id && handleChangeFactory("source")(id)}
             />
@@ -367,6 +368,7 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
               { id: "student", name: "student" },
               { id: "student-guardian", name: "student-guardian" },
               { id: "university", name: "university" },
+              { id: "auto", name: "auto" },
             ]}
             setter={(id) => id && handleChangeFactory("source")(id)}
           />
