@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-30 05:30:15
+ * @ Modified time: 2025-10-30 14:36:30
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -772,6 +772,22 @@ const Sidebar = ({
     ]);
   };
 
+  // Remove subscriber
+  const removeSubscriber = (key: number) => {
+    setSubscribers([
+      ...subscribers.slice(0, subscribers.length - key),
+      ...subscribers.slice(subscribers.length - key + 1),
+    ]);
+  };
+
+  // Remove signatory
+  const removeSignatory = (key: number) => {
+    setSignatories([
+      ...signatories.slice(0, signatories.length - key),
+      ...signatories.slice(signatories.length - key + 1),
+    ]);
+  };
+
   return (
     <Tabs defaultValue="fields">
       <div className="flex flex-row items-center gap-2 pt-2">
@@ -853,12 +869,22 @@ const Sidebar = ({
           />
           <div className="flex flex-col gap-2">
             {subscribers.map((subscriber, i) => (
-              <ContactEditor
-                key={subscriber.id}
-                initialContactDetails={subscriber}
-                updateContact={editSubscriber(subscribers.length - i)}
-                fieldRegistry={fieldRegistry?.fields.filter((f) => f.type === "signature") ?? []}
-              />
+              <div className="flex flex-row gap-2">
+                <ContactEditor
+                  key={subscriber.id}
+                  initialContactDetails={subscriber}
+                  updateContact={editSubscriber(subscribers.length - i)}
+                  fieldRegistry={fieldRegistry?.fields.filter((f) => f.type === "signature") ?? []}
+                />
+                <Button
+                  className="h-7 w-7"
+                  scheme="destructive"
+                  variant="outline"
+                  onClick={() => removeSubscriber(subscribers.length - i)}
+                >
+                  <X></X>
+                </Button>
+              </div>
             ))}
           </div>
         </TabsContent>
@@ -882,12 +908,22 @@ const Sidebar = ({
           />
           <div className="flex flex-col gap-2">
             {signatories.map((signatory, i) => (
-              <ContactEditor
-                key={signatory.id}
-                initialContactDetails={signatory}
-                updateContact={editSignatory(signatories.length - i)}
-                fieldRegistry={fieldRegistry?.fields.filter((f) => f.type === "signature") ?? []}
-              />
+              <div className="flex flex-row gap-2">
+                <ContactEditor
+                  key={signatory.id}
+                  initialContactDetails={signatory}
+                  updateContact={editSignatory(signatories.length - i)}
+                  fieldRegistry={fieldRegistry?.fields.filter((f) => f.type === "signature") ?? []}
+                />
+                <Button
+                  className="h-7 w-7"
+                  scheme="destructive"
+                  variant="outline"
+                  onClick={() => removeSignatory(signatories.length - i)}
+                >
+                  <X></X>
+                </Button>
+              </div>
             ))}
           </div>
         </TabsContent>
