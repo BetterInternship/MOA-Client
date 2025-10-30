@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-30 14:36:30
+ * @ Modified time: 2025-10-30 20:56:43
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -836,17 +836,19 @@ const Sidebar = ({
             onChange={handleFileSelect}
           />
           <div className="flex flex-col gap-2">
-            {sortedDocumentFields.map((field) => (
-              <FieldEditor
-                key={field.id}
-                index={keyedDocumentFields.indexOf(field)}
-                selected={field?.id === selectedFieldKey}
-                updateField={editDocumentField(keyedDocumentFields.indexOf(field))}
-                fieldRegistry={fieldRegistry?.fields ?? []}
-                initialFieldDetails={field}
-                removeField={removeDocumentField}
-              />
-            ))}
+            {sortedDocumentFields
+              .filter((f) => !!f)
+              .map((field) => (
+                <FieldEditor
+                  key={field.id}
+                  index={keyedDocumentFields.indexOf(field)}
+                  selected={field?.id === selectedFieldKey}
+                  updateField={editDocumentField(keyedDocumentFields.indexOf(field))}
+                  fieldRegistry={fieldRegistry?.fields ?? []}
+                  initialFieldDetails={field}
+                  removeField={removeDocumentField}
+                />
+              ))}
           </div>
         </TabsContent>
         <TabsContent value="subscribers">
