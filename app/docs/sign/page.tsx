@@ -115,16 +115,10 @@ function PageContent() {
     href?: string;
   } | null>(null);
 
-  // Section titles per audience
-  const sectionTitleMap = {
-    entity: "Entity Information",
-    university: "University Information",
-    student: "Student Information",
-    "student-guardian": "Guardian Information",
-    internship: "Internship Information",
+  const setField = (key: string, value: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    setValues({ ...values, [key]: value?.toString() ?? "" });
   };
-
-  const setField = () => {};
 
   const handleSubmit = () => {
     // Validate fields before allowing to proceed
