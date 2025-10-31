@@ -38,7 +38,7 @@ export default function DocsDashboardPage() {
       <div className="mb-6 space-y-2 sm:mb-8">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
-          <HeaderText>Signed Documents</HeaderText>
+          <HeaderText>My Signed Forms</HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
           All internship forms you’ve successfully signed and completed.

@@ -813,3 +813,216 @@ export function useDocsControllerGetStudentMoaSuspense<
 
   return query;
 }
+
+export const docsControllerGetEntityForms = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<string[]>({
+    url: `/api/docs/entity-forms`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getDocsControllerGetEntityFormsQueryKey = () => {
+  return [`/api/docs/entity-forms`] as const;
+};
+
+export const getDocsControllerGetEntityFormsQueryOptions = <
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetEntityForms>>, TError, TData>
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getDocsControllerGetEntityFormsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof docsControllerGetEntityForms>>> = ({
+    signal,
+  }) => docsControllerGetEntityForms(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type DocsControllerGetEntityFormsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof docsControllerGetEntityForms>>
+>;
+export type DocsControllerGetEntityFormsQueryError = ErrorResponse;
+
+export function useDocsControllerGetEntityForms<
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetEntityForms>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+          TError,
+          Awaited<ReturnType<typeof docsControllerGetEntityForms>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDocsControllerGetEntityForms<
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetEntityForms>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+          TError,
+          Awaited<ReturnType<typeof docsControllerGetEntityForms>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDocsControllerGetEntityForms<
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetEntityForms>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useDocsControllerGetEntityForms<
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof docsControllerGetEntityForms>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getDocsControllerGetEntityFormsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getDocsControllerGetEntityFormsSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseSuspenseQueryOptions<Awaited<ReturnType<typeof docsControllerGetEntityForms>>, TError, TData>
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getDocsControllerGetEntityFormsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof docsControllerGetEntityForms>>> = ({
+    signal,
+  }) => docsControllerGetEntityForms(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type DocsControllerGetEntityFormsSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof docsControllerGetEntityForms>>
+>;
+export type DocsControllerGetEntityFormsSuspenseQueryError = ErrorResponse;
+
+export function useDocsControllerGetEntityFormsSuspense<
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDocsControllerGetEntityFormsSuspense<
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDocsControllerGetEntityFormsSuspense<
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useDocsControllerGetEntityFormsSuspense<
+  TData = Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof docsControllerGetEntityForms>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getDocsControllerGetEntityFormsSuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}

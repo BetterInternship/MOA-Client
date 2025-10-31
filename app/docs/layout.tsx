@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { ModalProvider } from "../providers/modal-provider";
-import { Button } from "@/components/ui/button";
+import Header from "@/components/docs/Header";
 
 export const metadata: Metadata = {
   title: "Document Verification | BetterInternship × DLSU",
@@ -12,43 +10,28 @@ export const metadata: Metadata = {
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={cn(
-          "min-h-screen bg-gradient-to-b from-white to-emerald-50/30",
-          "w-[100vw]",
-          "overflow-x-hidden"
-        )}
-      >
-        {/* Topbar */}
+      <body className="min-h-screen w-[100vw] overflow-x-hidden bg-gradient-to-b from-white to-emerald-50/30">
         <header className="bg-background/70 border-b backdrop-blur">
-          <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-2">
+          <div className="mx-auto flex h-16 max-w-screen-xl items-center gap-2">
             <div className="flex items-center gap-2">
-              <img src="/betterinternship-logo.png" alt="Logo" width={28} height={28} />
+              <img
+                src="/betterinternship-logo.png"
+                alt="Logo"
+                width={28}
+                height={28}
+                className="flex-none"
+              />
               <div className="flex items-center gap-2 font-semibold">BetterInternship</div>
             </div>
-            <Link href="/login">
-              <Button variant="outline">Login</Button>
-            </Link>
+            <div className="flex flex-1 justify-end gap-2">
+              <Header />
+            </div>
           </div>
         </header>
 
         <ModalProvider>
           <main className="mx-auto">{children}</main>
         </ModalProvider>
-
-        <footer className="text-muted-foreground text-x mx-auto flex max-w-screen-sm justify-center px-4 pt-6 pb-10 text-center">
-          <p className="text-muted-foreground mt-8 text-left text-sm leading-relaxed">
-            By continuing, you agree to the{" "}
-            <Link href="/terms" className="hover:text-primary underline underline-offset-4">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="hover:text-primary underline underline-offset-4">
-              Privacy Policy
-            </Link>
-            .
-          </p>
-        </footer>
       </body>
     </html>
   );
