@@ -62,7 +62,7 @@ const FieldRegistryPage = () => {
         return name.includes(searchTerm);
       }) ?? []
     );
-  }, [searchTerm]);
+  }, [fieldRegistry.data?.fields, searchTerm]);
 
   return (
     <div className="mx-auto mt-4 max-w-5xl">
