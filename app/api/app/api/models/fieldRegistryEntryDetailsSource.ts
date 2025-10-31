@@ -16,4 +16,5 @@ export const FieldRegistryEntryDetailsSource = {
   student: "student",
   "student-guardian": "student-guardian",
   auto: "auto",
+  prefill: "prefill",
 } as const;
