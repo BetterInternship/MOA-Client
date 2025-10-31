@@ -60,7 +60,7 @@ const FieldRegistryPage = () => {
       fieldRegistry.data?.fields?.filter((field) => {
         const name = `${field.name}:${field.preset}`;
         const terms = searchTerm.split(" ").map((s) => s.trim());
-        return terms.some((term) => name.includes(term));
+        return terms.every((term) => name.includes(term));
       }) ?? []
     );
   }, [fieldRegistry.data?.fields, searchTerm]);
