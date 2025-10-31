@@ -56,12 +56,3 @@ export const getAllSignedForms = async () => {
     return { signedDocuments: null, isLoading: false, error };
   }
 };
-
-// Helpers
-const deriveSection = (fieldName: string | undefined): string => {
-  if (!fieldName) return "";
-  const first = fieldName.split(".")[0];
-  if (first === "parent" || first === "guardian") return "parent-guardian";
-  if (first === "student" || first === "internship" || first === "entity") return first;
-  return first; // fallback to the first segment if needed
-};

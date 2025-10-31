@@ -16,11 +16,15 @@ import {
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { getFormFields } from "@/app/api/forms.api";
 import { getViewableForms } from "@/app/api/docs.api";
+import { FormMetadata } from "@betterinternship/core/forms";
+import z from "zod";
 
 type FormItem = { name: string };
 
 export default function DocsFormsPage() {
   const [previewName, setPreviewName] = useState<string | null>(null);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
 
   const { data: rows = [] } = useQuery<FormItem[]>({
@@ -37,12 +41,46 @@ export default function DocsFormsPage() {
   const previewQuery = useQuery({
     queryKey: ["form-fields", previewName],
     queryFn: async () => {
-      if (!previewName) return null;
-      const res = await getFormFields(previewName);
-      return res?.formFields ?? null;
+      return await getFormFields(previewName);
     },
     enabled: !!previewName && open,
   });
+
+  const formMetadata = previewQuery.data?.formMetadata
+    ? new FormMetadata(previewQuery.data?.formMetadata)
+    : null;
+  const fields = formMetadata?.getFieldsForClient() ?? [];
+
+  const setField = (key: string, value: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    setValues({ ...values, [key]: value?.toString() ?? "" });
+  };
+
+  const handleSubmit = () => {
+    // Validate fields before allowing to proceed
+    const errors: Record<string, string> = {};
+    for (const field of fields) {
+      if (field.source !== "student") continue;
+
+      // Check if missing
+
+      const value = values[field.field];
+
+      // Check validator error
+      const coerced = field.coerce(value);
+      const result = field.validator?.safeParse(coerced);
+      if (result?.error) {
+        const errorString = z
+          .treeifyError(result.error)
+          .errors.map((e) => e.split(" ").slice(0).join(" "))
+          .join("\n");
+        errors[field.field] = `${field.label}: ${errorString}`;
+        continue;
+      }
+    }
+
+    setErrors(errors);
+  };
 
   const onPreview = (name: string) => {
     setPreviewName(name);
@@ -106,8 +144,8 @@ export default function DocsFormsPage() {
                       values={values}
                       onChange={setField}
                       errors={errors}
-                      showErrors={submitted}
-                      formName={""}
+                      showErrors={true}
+                      formName={previewName ?? ""}
                       autofillValues={{}}
                       setValues={(newValues) => setValues({ ...values, ...newValues })}
                     />
@@ -120,7 +158,10 @@ export default function DocsFormsPage() {
               <div className="text-sm">No preview available.</div>
             )}
           </DialogDescription>
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex justify-end gap-2">
+            <Button type="button" onClick={handleSubmit}>
+              Test Validation
+            </Button>
             <DialogClose>
               <Button>Close</Button>
             </DialogClose>
