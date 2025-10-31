@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-31 12:02:33
+ * @ Modified time: 2025-10-31 13:48:55
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -439,6 +439,7 @@ const FieldEditor = ({
       <div className="grid grid-cols-2 grid-rows-2 gap-2">
         <Badge>Display Label</Badge>
         <Input
+          value={fieldDetails.label}
           placeholder="Field Display Label"
           className="h-7 py-1 text-xs"
           defaultValue={fieldDetails.label}
