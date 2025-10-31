@@ -59,7 +59,8 @@ const FieldRegistryPage = () => {
     setFields(
       fieldRegistry.data?.fields?.filter((field) => {
         const name = `${field.name}:${field.preset}`;
-        return name.includes(searchTerm);
+        const terms = searchTerm.split(" ").map((s) => s.trim());
+        return terms.some((term) => name.includes(term));
       }) ?? []
     );
   }, [fieldRegistry.data?.fields, searchTerm]);
