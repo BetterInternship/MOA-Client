@@ -128,7 +128,7 @@ export default function DocsFormsPage() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[75vh] w-full overflow-auto sm:max-w-4xl">
           <DialogTitle>Preview: {previewName}</DialogTitle>
           <DialogDescription>
             {previewQuery.isLoading ? (
