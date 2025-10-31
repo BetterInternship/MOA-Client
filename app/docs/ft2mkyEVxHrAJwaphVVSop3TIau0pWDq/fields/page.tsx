@@ -14,7 +14,7 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { formsControllerUpdateField } from "../../../api/app/api/endpoints/forms/forms";
 import { Loader } from "@/components/ui/loader";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Autocomplete } from "@/components/ui/autocomplete";
 
 // ! Store this elsewhere soon
@@ -23,7 +23,7 @@ interface FieldRegistryEntry {
   preset: string;
   type: "text" | "signature";
   label: string;
-  source: "student" | "university" | "entity" | "student-guardian" | "auto";
+  source: "student" | "university" | "entity" | "student-guardian" | "auto" | "prefill";
   tooltip_label: string;
   validator: string;
   prefiller: string;
@@ -191,7 +191,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
   }, [data]);
 
   return (
-    <div className="max-h-[600px] overflow-y-auto">
+    <div className="max-h-[720px] min-h-[600px] overflow-y-auto">
       <div className="flex min-w-xl flex-col gap-2">
         {isLoading || isFetching ? (
           <Loader>Loading field...</Loader>
@@ -240,6 +240,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
                 { id: "student-guardian", name: "student-guardian" },
                 { id: "university", name: "university" },
                 { id: "auto", name: "auto" },
+                { id: "prefill", name: "prefill" },
               ]}
               setter={(id) => id && handleChangeFactory("source")(id)}
             />
@@ -369,6 +370,7 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
               { id: "student-guardian", name: "student-guardian" },
               { id: "university", name: "university" },
               { id: "auto", name: "auto" },
+              { id: "prefill", name: "prefill" },
             ]}
             setter={(id) => id && handleChangeFactory("source")(id)}
           />

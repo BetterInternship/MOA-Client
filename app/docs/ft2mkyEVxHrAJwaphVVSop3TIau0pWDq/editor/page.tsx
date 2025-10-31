@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-31 11:50:10
+ * @ Modified time: 2025-10-31 12:02:33
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -455,6 +455,7 @@ const FieldEditor = ({
             { id: "student-guardian", name: "student-guardian" },
             { id: "university", name: "university" },
             { id: "auto", name: "auto" },
+            { id: "prefill", name: "prefill" },
           ]}
           setter={(id) => id && handleChangeFactory("source")(id)}
         />
