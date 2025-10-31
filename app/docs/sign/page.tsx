@@ -19,7 +19,6 @@ import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { useQuery } from "@tanstack/react-query";
 import { getPendingInformation } from "@/app/api/forms.api";
 import { useRouter } from "next/navigation";
-import { approveSignatory } from "@/app/api/forms.api";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 
@@ -59,8 +58,6 @@ function PageContent() {
 
   const formName = (params.get("form") || "").trim();
   const pendingDocumentId = (params.get("pending") || "").trim();
-  const signatoryName = (params.get("name") || "").trim();
-  const signatoryTitle = (params.get("title") || "").trim();
 
   // Optional header bits
   const studentName = params.get("student") || "The student";

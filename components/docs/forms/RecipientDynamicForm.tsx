@@ -17,7 +17,7 @@ export function DynamicForm({
   showErrors = false,
 }: {
   formName: string;
-  source?: "entity" | "student-guardian" | "university";
+  source?: "entity" | "student-guardian" | "university" | "student";
   fields: ClientField<[]>[];
   values: Record<string, any>;
   autofillValues: Record<string, string>;
