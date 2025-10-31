@@ -16,43 +16,7 @@ export const getPendingInformation = async (pendingDocumentId: string) => {
 };
 
 export const getFormFields = async (name: string) => {
-  try {
-    const res = await formsControllerGetLatestFormDocumentAndMetadata({ name });
-
-    if (!res) {
-      return {
-        formFields: null,
-        isLoading: false,
-        error: new Error("Form not found or empty response"),
-      };
-    }
-
-    const rawAny = res;
-    const meta = rawAny.formMetadata;
-
-    if (meta && typeof meta === "object") {
-      const fm = new FormMetadata(meta as IFormMetadata);
-      const clientFields = fm.getFieldsForClient();
-
-      // add section field derived from the field name (first word before the first '.')
-      const clientFieldsWithSection = (clientFields as IFormField[]).map((f) => ({
-        ...f,
-        section: deriveSection(f.field),
-      }));
-
-      const molded = {
-        name: fm.name,
-        formMetadata: {
-          schema: clientFieldsWithSection,
-        },
-      };
-
-      console.log("Molded form fields:", molded);
-      return { formFields: molded, isLoading: false, error: null };
-    }
-  } catch (error) {
-    return { formFields: null, isLoading: false, error };
-  }
+  return await formsControllerGetLatestFormDocumentAndMetadata({ name });
 };
 
 export type ApproveSignatoryRequest = {
@@ -77,7 +41,7 @@ export const approveSignatory = async (payload: ApproveSignatoryRequest) => {
     ) => Promise<ApproveSignatoryResponse>;
 
     const res = await approveFn(payload);
-    return { approval: res as ApproveSignatoryResponse, isLoading: false, error: null };
+    return { approval: res, isLoading: false, error: null };
   } catch (error) {
     return { approval: null, isLoading: false, error };
   }

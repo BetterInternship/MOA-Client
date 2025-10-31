@@ -1,144 +1,223 @@
-"use client";
+import { cn, coerceAnyDate } from "@/lib/utils";
+import { ClientField } from "@betterinternship/core/forms";
+import { Info } from "lucide-react";
+import { useEffect } from "react";
+import { Tooltip } from "react-tooltip";
+import { FieldRenderer } from "./FieldRenderer";
 
-import { memo, useMemo } from "react";
-import type { z } from "zod";
-import {
-  FieldRenderer,
-  type FieldDef as RendererFieldDef,
-} from "@/components/docs/forms/FieldRenderer";
-
-export type RecipientFieldDef = {
-  id: string | number;
-  key: string;
-  label: string;
-  type: string;
-  placeholder?: string;
-  helper?: string;
-  maxLength?: number;
-  options?: Array<{ id: string | number; name: string }>;
-  validators?: z.ZodTypeAny[];
-  section?: string;
-  params?: Record<string, any>;
-};
-
-export function RecipientDynamicForm({
-  formKey,
+export function DynamicForm({
+  formName,
+  source,
   fields,
   values,
+  setValues,
+  autofillValues,
   onChange,
   errors = {},
   showErrors = false,
-  sectionTitleMap,
-  emptyHint = "No fields to complete.",
 }: {
-  formKey: string;
-  fields: RecipientFieldDef[];
+  formName: string;
+  source?: "entity" | "student-guardian" | "university";
+  fields: ClientField<[]>[];
   values: Record<string, any>;
-  onChange: (key: string, value: any) => void;
+  autofillValues: Record<string, string>;
   errors?: Record<string, string>;
   showErrors?: boolean;
-  // rename or hide section labels (set value to null to hide header)
-  sectionTitleMap?: Record<string, string | null>;
-  emptyHint?: string;
+  setValues: (values: Record<string, string>) => void;
+  onChange: (key: string, value: any) => void;
 }) {
-  const grouped = useMemo(() => {
-    const by: Record<string, RendererFieldDef[]> = {};
-    for (const f of fields) {
-      const sec = f.section ?? "details";
-      (by[sec] ||= []).push({
-        id: f.id,
-        key: f.key,
-        label: f.label,
-        type: f.type as any,
-        placeholder: f.placeholder,
-        helper: f.helper,
-        maxLength: f.maxLength,
-        options: f.options as any,
-        validators: f.validators ?? [],
-        params: f.params,
-        section: sec,
-      });
+  const filteredFields = fields.filter((field) => field.source === source);
+
+  // Group by section
+  const entitySectionFields: ClientField<[]>[] = filteredFields.filter(
+    (d) => d.section === "entity"
+  );
+  const studentSectionFields: ClientField<[]>[] = filteredFields.filter(
+    (d) => d.section === "student"
+  );
+  const internshipSectionFields: ClientField<[]>[] = filteredFields.filter(
+    (d) => d.section === "internship"
+  );
+  const universitySectionFields: ClientField<[]>[] = filteredFields.filter(
+    (d) => d.section === "university"
+  );
+
+  // Seed from saved autofill
+  useEffect(() => {
+    if (!autofillValues) return;
+
+    const newValues = { ...values };
+    for (const field of filteredFields) {
+      const autofillValue = autofillValues[field.field];
+
+      // Don't autofill if not empty or if nothing to autofill
+      if (autofillValue === undefined) continue;
+      if (!isEmptyFor(field, values[field.field])) continue;
+
+      // Coerce autofill before putting it in
+      const coercedAutofillValue = coerceForField(field, autofillValue);
+      if (coercedAutofillValue !== undefined)
+        newValues[field.field] = coercedAutofillValue.toString();
     }
-    return by;
-  }, [fields]);
 
-  const order = ["internship", "student-guardian", "entity", "student", "university", "details"];
-  const orderedKeys = useMemo(() => {
-    const keys = Object.keys(grouped);
-    const known = order.filter((k) => keys.includes(k));
-    const unknown = keys.filter((k) => !order.includes(k)).sort();
-    return [...known, ...unknown];
-  }, [grouped]);
-
-  if (!fields?.length) {
-    return <p className="text-muted-foreground text-sm">{emptyHint}</p>;
-  }
+    setValues(newValues);
+  }, []);
 
   return (
     <div className="space-y-4">
-      {orderedKeys.map((sec) => {
-        const defs = grouped[sec] ?? [];
-        if (!defs.length) return null;
-        const title =
-          sectionTitleMap && Object.prototype.hasOwnProperty.call(sectionTitleMap, sec)
-            ? sectionTitleMap[sec]
-            : sec.replace(/\b\w/g, (c) => c.toUpperCase());
-        return (
-          <Section
-            key={sec}
-            showTitle={title !== null}
-            title={title ?? ""}
-            formKey={formKey}
-            defs={defs}
-            values={values}
-            onChange={onChange}
-            errors={errors}
-            showErrors={showErrors}
-          />
-        );
-      })}
+      <FormSection
+        formKey={formName}
+        title="Entity Information"
+        fields={entitySectionFields}
+        values={values}
+        onChange={onChange}
+        errors={errors}
+        showErrors={showErrors}
+      />
+
+      <FormSection
+        formKey={formName}
+        title="Internship Information"
+        fields={internshipSectionFields}
+        values={values}
+        onChange={onChange}
+        errors={errors}
+        showErrors={showErrors}
+      />
+
+      <FormSection
+        formKey={formName}
+        title="University Information"
+        fields={universitySectionFields}
+        values={values}
+        onChange={onChange}
+        errors={errors}
+        showErrors={showErrors}
+      />
+
+      <FormSection
+        formKey={formName}
+        title="Student Information"
+        fields={studentSectionFields}
+        values={values}
+        onChange={onChange}
+        errors={errors}
+        showErrors={showErrors}
+      />
     </div>
   );
 }
 
-const Section = memo(function Section({
-  showTitle,
-  title,
+const FormSection = function FormSection({
   formKey,
-  defs,
+  title,
+  fields,
   values,
   onChange,
   errors,
   showErrors,
 }: {
-  showTitle: boolean;
-  title: string;
   formKey: string;
-  defs: RendererFieldDef[];
-  values: Record<string, any>;
+  title: string;
+  fields: ClientField<[]>[];
+  values: Record<string, string>;
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
   showErrors: boolean;
 }) {
+  if (!fields.length) return null;
+  const reducedFields = fields.reduce(
+    (acc, cur) => (acc.map((f) => f.field).includes(cur.field) ? acc : [...acc, cur]),
+    [] as ClientField<[]>[]
+  );
+
   return (
     <div className="space-y-3">
-      {showTitle && (
-        <div className="pt-2 pb-1">
-          <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
-        </div>
-      )}
+      <div className="pt-2 pb-1">
+        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
+      </div>
 
-      {defs.map((def) => (
-        <div key={`${formKey}:${def.section}:${String(def.id)}`}>
-          <FieldRenderer
-            def={def}
-            value={values[def.key]}
-            onChange={(v) => onChange(def.key, v)}
-            error={errors[def.key]}
-            showError={showErrors}
-          />
+      {reducedFields.map((field) => (
+        <div
+          className="space-between flex flex-row"
+          key={`${formKey}:${field.section}:${field.field}`}
+        >
+          <div>
+            <div className="opacity-50 hover:cursor-help">
+              <Info
+                data-tooltip-id={`${formKey}:${field.section}:${field.field}-tooltip`}
+                data-tooltip-content={field.tooltip_label}
+                data-tooltip-place="bottom"
+                className={cn(
+                  "text-primary h-9 w-9 translate-x-[-10px] translate-y-[-10px] p-3",
+                  field.tooltip_label.trim() ? "" : "invisible"
+                )}
+              ></Info>
+            </div>
+            <Tooltip
+              className="z-[99] !max-w-[80vw] p-[0.05em] !text-[10px]"
+              id={`${formKey}:${field.section}:${field.field}-tooltip`}
+            />
+          </div>
+          <div className="flex-1">
+            <FieldRenderer
+              field={field}
+              value={values[field.field]}
+              onChange={(v) => onChange(field.field, v)}
+              error={errors[field.field]}
+              showError={showErrors}
+              allValues={values}
+            />
+          </div>
         </div>
       ))}
     </div>
   );
-});
+};
+
+/**
+ * Checks if field is empty, based on field type.
+ *
+ * @param field
+ * @param value
+ * @returns
+ */
+function isEmptyFor(field: ClientField<[]>, value: unknown) {
+  switch (field.type) {
+    case "date":
+      return !(typeof value === "number" && value > 0); // 0/undefined = empty
+    case "signature":
+      return value !== true;
+    case "number":
+      return value === undefined || value === "";
+    default:
+      return value === undefined || value === "";
+  }
+}
+
+/**
+ * Coerces the value into the type needed by the field.
+ * Useful, used outside zod schemas.
+ *
+ * @param field
+ * @param value
+ * @returns
+ */
+const coerceForField = (field: ClientField<[]>, value: unknown) => {
+  switch (field.type) {
+    case "number":
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      return value == null ? "" : String(value);
+    case "date":
+      return coerceAnyDate(value);
+    case "time":
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      return value == null ? "" : String(value);
+    case "signature":
+      return value === true;
+    case "text":
+    default:
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      return value == null ? "" : String(value);
+  }
+};

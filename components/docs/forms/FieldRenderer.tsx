@@ -1,3 +1,12 @@
+/**
+ * @ Author: BetterInternship
+ * @ Create Time: 2025-10-16 22:43:51
+ * @ Modified time: 2025-10-31 18:19:21
+ * @ Description:
+ *
+ * The field renderer 3000 automatically renders the correct field for the situation!
+ */
+
 "use client";
 
 import {
@@ -6,272 +15,357 @@ import {
   TimeInputNative,
   FormInput,
   FormCheckbox,
-} from "@/components/shared/EditForm";
-import z from "zod";
-
-type FieldType = "text" | "number" | "select" | "date" | "time" | "signature" | "reference";
-export type Section = "student" | "entity" | "university" | "internship" | "student-guardian";
-
-type Option = { value: string; label: string };
-
-export type FieldDef = {
-  id: string;
-  key: string; // db key (used to store in formData)
-  label: string;
-  type: FieldType;
-  required?: boolean;
-  placeholder?: string;
-  helper?: string;
-  maxLength?: number;
-  options?: Option[]; // for select
-  validators: z.ZodTypeAny[];
-  section?: Section;
-  value?: string;
-  params?: Record<string, any>;
-};
+  FormTextarea,
+} from "./EditForm";
+import { AutocompleteTreeMulti, TreeOption } from "./autocomplete";
+import { ClientField } from "@betterinternship/core/forms";
 
 export function FieldRenderer({
-  def,
-  value = def.value ?? "",
+  field,
+  value = "",
   onChange,
   error,
   showError,
-  allValues,
 }: {
-  def: FieldDef;
+  field: ClientField<[]>;
   value: string;
   onChange: (v: any) => void;
   error?: string;
   showError?: boolean;
-  allValues?: Record<string, any>;
+  allValues?: Record<string, string>;
 }) {
-  // placeholder and error
-  const Note = () => {
-    if (showError && !!error) {
-      return <p className="mt-1 text-xs text-rose-600">{error}</p>;
-    }
-    if (def.helper) {
-      return <p className="text-muted-foreground mt-1 text-xs">{def.helper}</p>;
-    }
-    return null;
+  // Placeholder or error
+  const TooltipLabel = () => {
+    if (showError && !!error) return <p className="text-destructive mt-1 text-xs">{error}</p>;
+    return <></>;
   };
 
-  // dropdown
-  if (def.type === "select") {
-    const options = (def.options ?? []).map((o) => ({
-      id: o.value,
-      name: o.label,
-    }));
+  // Dropdown
+  if (field.type === "dropdown") {
     return (
-      <div className="space-y-1.5">
-        <FormDropdown
-          label={def.label}
-          required
-          value={value}
-          options={options}
-          setter={(v) => onChange(String(v ?? ""))}
-          className="w-full"
-        />
-        <Note />
-      </div>
+      <FieldRendererDropdown
+        field={field}
+        value={value}
+        TooltipContent={TooltipLabel}
+        onChange={onChange}
+      />
     );
   }
 
-  // date
-  if (def.type === "date") {
-    // Normalize keys (your DB sometimes uses dashes; code often uses underscores)
-    const key = String(def.key);
-    const isStart = key === "internship-start-date" || key === "internship_start_date";
-    const isEnd = key === "internship-end-date" || key === "internship_end_date";
-
-    // ——— Params you can set in DB ———
-    // params example (any subset is fine):
-    // {
-    //   "minOffsetDays": 7,             // earliest = today + 7
-    //   "maxOffsetDays": 180,           // latest  = today + 180
-    //   "minDateISO": "2026-01-05",     // absolute earliest
-    //   "maxDateISO": "2026-04-11",     // absolute latest
-    //   "notBeforeField": "internship-start-date" // end >= start
-    // }
-    const p = def.params ?? {};
-
-    // Defaults: if you don't set anything, start/end both default to +7 days
-    const defaultMinOffset = isStart || isEnd ? 7 : undefined;
-
-    // Build min/max from params
-    const today = new Date();
-    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-    const minFromOffset =
-      (Number.isFinite(p.minOffsetDays) ? p.minOffsetDays : defaultMinOffset) != null
-        ? addDays(todayMid, (p.minOffsetDays ?? defaultMinOffset) as number)
-        : undefined;
-
-    const maxFromOffset = Number.isFinite(p.maxOffsetDays)
-      ? addDays(todayMid, p.maxOffsetDays)
-      : undefined;
-
-    const minFromISO = coerceISO(p.minDateISO);
-    const maxFromISO = coerceISO(p.maxDateISO);
-
-    // Cross-field: notBeforeField (e.g., end >= start)
-    const notBeforeKey: string | undefined =
-      p.notBeforeField ?? (isEnd ? "internship-start-date" : undefined); // sensible default for end-date
-    const otherValMs =
-      notBeforeKey && allValues
-        ? coerceAnyDate(allValues[notBeforeKey] ?? allValues[notBeforeKey.replace(/-/g, "_")])
-        : undefined;
-    const minFromOther = otherValMs ? new Date(otherValMs) : undefined;
-
-    // Final min/max (take the most restrictive min and most restrictive max)
-    const minDate = [minFromOffset, minFromISO, minFromOther]
-      .filter(Boolean)
-      .sort((a: Date, b: Date) => a.getTime() - b.getTime())[0] as Date | undefined;
-
-    const maxDate = [maxFromOffset, maxFromISO]
-      .filter(Boolean)
-      .sort((a: Date, b: Date) => b.getTime() - a.getTime())[0] as Date | undefined;
-
-    // Build disabledDays for your FormDatePicker
-    const disabledDays: Array<{ before?: Date; after?: Date }> = [];
-    if (minDate || maxDate) {
-      disabledDays.push({ before: minDate, after: maxDate });
-    }
-
-    const dateMs =
-      typeof value === "number"
-        ? value
-        : typeof value === "string"
-          ? coerceAnyDate(value)
-          : undefined;
-
-    // Optional: clamp bad seeded values (keeps UX clean if saved value violates new rules)
-    const clampedMs = dateMs != null ? clampDateMs(dateMs, minDate, maxDate) : undefined;
-
-    const displayMs = clampedMs ?? dateMs;
-
+  // Date
+  if (field.type === "date") {
     return (
-      <div className="space-y-1.5">
-        <FormDatePicker
-          label={def.label}
-          required
-          date={displayMs}
-          setter={(nextMs) => onChange(nextMs ?? 0)}
-          className="w-full"
-          contentClassName="z-[1100]"
-          placeholder="Select date"
-          autoClose
-          disabledDays={disabledDays}
-          format={(d) =>
-            d.toLocaleDateString(undefined, {
-              year: "numeric",
-              month: "short",
-              day: "2-digit",
-            })
-          }
-        />
-        <Note />
-      </div>
+      <FieldRendererDate
+        field={field}
+        value={value}
+        TooltipContent={TooltipLabel}
+        onChange={onChange}
+      />
     );
   }
 
-  // time
-  if (def.type === "time") {
+  // Time
+  if (field.type === "time") {
     return (
-      <div className="space-y-1.5">
-        <TimeInputNative
-          label={def.label}
-          value={value} // "HH:MM"
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
-          onChange={(v) => onChange(v?.toString() ?? "")}
-          required
-          helper={def.helper}
-        />
-        <Note />
-      </div>
+      <FieldRendererTime
+        field={field}
+        value={value}
+        TooltipContent={TooltipLabel}
+        onChange={onChange}
+      />
     );
   }
 
-  // signature (checkbox)
-  const asBool = (v: any) => v === true;
-
-  if (def.type === "signature" || def.type === "checkbox") {
-    const checked = asBool(value);
+  if (field.type === "textarea") {
     return (
-      <div className="space-y-1.5">
-        <FormCheckbox
-          label={def.label}
-          checked={checked}
-          setter={(c) => onChange(Boolean(c))}
-          sentence={def.helper}
-          required
-        />
-      </div>
+      <FieldRendererTextarea
+        field={field}
+        value={value}
+        TooltipContent={TooltipLabel}
+        onChange={onChange}
+      />
     );
   }
 
-  // input
-  const inputMode = def.type === "number" ? "numeric" : undefined;
-  const sanitizeNumber = (s: string) =>
-    s
-      .replace(/[^\d.]/g, "") // keep digits and dot
-      .replace(/(\..*)\./g, "$1"); // single dot only
+  if (field.type === "multiselect") {
+    return (
+      <FieldRendererMultiselect
+        field={field}
+        values={value.split("\n")}
+        TooltipContent={TooltipLabel}
+        onChange={(s) => onChange(s.join("\n"))}
+        options={
+          field.options?.map((o) => ({
+            name: o as string,
+            value: o as string,
+          })) ?? []
+        }
+      />
+    );
+  }
+
+  // Signatures or checkboxes
+  if (field.type === "signature" || field.type === "checkbox") {
+    return (
+      <FieldRendererCheckbox
+        field={field}
+        value={value}
+        TooltipContent={TooltipLabel}
+        onChange={onChange}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-1.5">
-      <FormInput
-        label={def.label}
-        required
-        value={value ?? ""}
-        setter={(v) => {
-          if (def.type === "number") {
-            const next = sanitizeNumber(String(v ?? ""));
-            onChange(next);
-          } else {
-            onChange(String(v ?? ""));
-          }
-        }}
-        type="text"
-        inputMode={inputMode}
-        placeholder={def.placeholder}
-        maxLength={def.maxLength}
-        className="w-full"
-      />
-      <Note />
-    </div>
+    <FieldRendererInput
+      field={field}
+      value={value}
+      TooltipContent={TooltipLabel}
+      onChange={onChange}
+    />
   );
 }
 
-// helpers
-function coerceAnyDate(raw: unknown): number | undefined {
-  if (typeof raw === "number") return raw > 0 ? raw : undefined;
-  if (typeof raw !== "string") return undefined;
-  const s = raw.trim();
-  if (!s) return undefined;
-
-  // numeric string (ms epoch)
-  if (/^\d{6,}$/.test(s)) {
-    const n = Number(s);
-    return Number.isFinite(n) && n > 0 ? n : undefined;
-  }
-
-  // ISO/date-like string
-  const ms = Date.parse(s);
-  return Number.isFinite(ms) && ms > 0 ? ms : undefined;
+// ! Probably migrate this in the future
+interface Option {
+  id: string;
+  name: string;
 }
 
-function addDays(d: Date, n: number) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-function coerceISO(s?: string) {
-  if (!s) return undefined;
-  const ms = Date.parse(s);
-  return Number.isFinite(ms) ? new Date(ms) : undefined;
-}
-function clampDateMs(ms: number, min?: Date, max?: Date) {
-  if (min && ms < min.getTime()) return min.getTime();
-  if (max && ms > max.getTime()) return max.getTime();
-  return ms;
-}
+/**
+ * Dropdown
+ *
+ * @component
+ */
+const FieldRendererDropdown = ({
+  field,
+  value,
+  TooltipContent,
+  onChange,
+}: {
+  field: ClientField<[]>;
+  value: string;
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: string | number) => void;
+}) => {
+  const options: Option[] = (field.options ?? []).map((o) => ({
+    id: o as string,
+    name: o as string,
+  }));
+
+  return (
+    <div className="space-y-1.5">
+      <FormDropdown
+        required={false}
+        label={field.label}
+        value={value}
+        options={options}
+        setter={(v) => onChange(v)}
+        className="w-full"
+      />
+      <TooltipContent />
+    </div>
+  );
+};
+
+/**
+ * Date input
+ *
+ * @component
+ */
+const FieldRendererDate = ({
+  field,
+  value,
+  TooltipContent,
+  onChange,
+}: {
+  field: ClientField<[]>;
+  value: string;
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: number) => void;
+}) => {
+  // Try to parse it first
+  const numericalValue = isNaN(parseInt(value)) ? 0 : parseInt(value);
+
+  // By default the unix timestamp is 0 if it's not a number
+  return (
+    <div className="space-y-1.5">
+      <FormDatePicker
+        required={false}
+        label={field.label}
+        date={numericalValue}
+        setter={(v) => onChange(v ?? 0)}
+        className="w-full"
+        contentClassName="z-[1100]"
+        placeholder="Select date"
+        autoClose
+        disabledDays={[]}
+        format={(d) =>
+          d.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+          })
+        }
+      />
+      <TooltipContent />
+    </div>
+  );
+};
+
+/**
+ * Time input
+ *
+ * @component
+ */
+const FieldRendererTime = ({
+  field,
+  value,
+  TooltipContent,
+  onChange,
+}: {
+  field: ClientField<[]>;
+  value: string;
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: string) => void;
+}) => {
+  return (
+    <div className="space-y-1.5">
+      <TimeInputNative
+        required={false}
+        label={field.label}
+        value={value}
+        onChange={(v) => onChange(v ?? "")}
+      />
+      <TooltipContent />
+    </div>
+  );
+};
+
+/**
+ * Time input
+ *
+ * @component
+ */
+const FieldRendererCheckbox = ({
+  field,
+  value,
+  TooltipContent,
+  onChange,
+}: {
+  field: ClientField<[]>;
+  value: string;
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: boolean) => void;
+}) => {
+  return (
+    <div className="space-y-1.5">
+      <FormCheckbox
+        required={false}
+        label={field.label}
+        checked={!!value}
+        setter={(c) => onChange(c)}
+      />
+      <TooltipContent />
+    </div>
+  );
+};
+
+/**
+ * Generic input
+ *
+ * @component
+ */
+const FieldRendererInput = ({
+  field,
+  value,
+  TooltipContent,
+  onChange,
+}: {
+  field: ClientField<[]>;
+  value: string;
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: string | number) => void;
+}) => {
+  const inputMode = field.type === "number" ? "numeric" : undefined;
+  return (
+    <div className="space-y-1.5">
+      <FormInput
+        required={false}
+        label={field.label}
+        value={value ?? ""}
+        setter={(v) => {
+          if (inputMode !== "numeric") return onChange(v);
+          const next = v.trim() === "" ? 0 : parseInt(v);
+          if (!isNaN(next)) onChange(next);
+        }}
+        inputMode={inputMode}
+        className="w-full"
+      />
+      <TooltipContent />
+    </div>
+  );
+};
+
+/**
+ * Textarea input
+ *
+ * @component
+ */
+const FieldRendererTextarea = ({
+  field,
+  value,
+  TooltipContent,
+  onChange,
+}: {
+  field: ClientField<[]>;
+  value: string;
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: string | number) => void;
+}) => {
+  return (
+    <div className="space-y-1.5">
+      <FormTextarea
+        required={false}
+        label={field.label}
+        value={value ?? ""}
+        setter={onChange}
+        className="w-full"
+      />
+      <TooltipContent />
+    </div>
+  );
+};
+
+/**
+ * Textarea input
+ *
+ * @component
+ */
+const FieldRendererMultiselect = ({
+  field,
+  values,
+  options,
+  TooltipContent,
+  onChange,
+}: {
+  field: ClientField<[]>;
+  values: string[];
+  options: TreeOption[];
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: string[]) => void;
+}) => {
+  return (
+    <div className="space-y-1.5">
+      <AutocompleteTreeMulti
+        required={false}
+        label={field.label}
+        value={values ?? []}
+        setter={onChange}
+        className="w-full"
+        tree={options}
+      />
+      <TooltipContent />
+    </div>
+  );
+};

@@ -1,9 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { z, ZodTypeAny } from "zod";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,14 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { getFormFields } from "@/app/api/forms.api";
-import {
-  RecipientDynamicForm,
-  type RecipientFieldDef,
-} from "@/components/docs/forms/RecipientDynamicForm";
+import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { useQuery } from "@tanstack/react-query";
 import { getPendingInformation } from "@/app/api/forms.api";
 import { useRouter } from "next/navigation";
 import { approveSignatory } from "@/app/api/forms.api";
+import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
+import z from "zod";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university";
@@ -57,7 +55,7 @@ function PageContent() {
 
   // URL params
   const audienceParam = (params.get("for") || "entity").trim() as Audience;
-  const { role, party } = mapAudienceToRoleAndParty(audienceParam);
+  const { party } = mapAudienceToRoleAndParty(audienceParam);
 
   const formName = (params.get("form") || "").trim();
   const pendingDocumentId = (params.get("pending") || "").trim();
@@ -81,7 +79,7 @@ function PageContent() {
   });
 
   const pendingInfo = pendingRes?.pendingInformation;
-  // @ts-ignore: API returns latest_document_url but the generated type does not include it
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
   const pendingUrl = (pendingInfo as any)?.latest_document_url;
   console.log("pendingInfo", pendingInfo);
 
@@ -97,96 +95,14 @@ function PageContent() {
     staleTime: 60_000,
   });
 
-  console.log("formRes", formRes);
-
-  // Map returned schema into RecipientFieldDef[] and filter by source matching audienceParam.
-  const fields: RecipientFieldDef[] = useMemo(() => {
-    const rawSchema = (formRes as any)?.formFields?.formMetadata?.schema ?? [];
-    if (!Array.isArray(rawSchema)) return [];
-
-    return rawSchema
-      .filter((s: any) => {
-        // Normalize source info; accept string or array of strings
-        const rawSource = s.source;
-        if (!rawSource) {
-          // If the field has no source defined, include it.
-          return true;
-        }
-        const sources = Array.isArray(rawSource)
-          ? rawSource.map((x: any) => String(x).trim())
-          : String(rawSource)
-              .split(",")
-              .map((x) => x.trim());
-        return sources.includes(audienceParam);
-      })
-      .map((s: any) => {
-        const rawField = s.field ?? "";
-        const key = rawField;
-        const id = s.id;
-        const label = s.label;
-        const type = s.type ?? "text";
-
-        const validators: ZodTypeAny[] = [];
-
-        // If API returns a validator string like "z.string()" attempt to evaluate it.
-        // This is intentionally conservative: we only provide z as the context.
-        try {
-          const validatorRaw = s.validator ?? null;
-          if (typeof validatorRaw === "string" && validatorRaw.trim()) {
-            const fn = new Function("z", `return (${validatorRaw})`);
-            const zschema = fn(z);
-            if (zschema && typeof zschema.safeParse === "function") {
-              validators.push(zschema as ZodTypeAny);
-            }
-          } else if (Array.isArray(validatorRaw)) {
-            for (const v of validatorRaw) {
-              if (typeof v === "string") {
-                try {
-                  const fn2 = new Function("z", `return (${v})`);
-                  const zschema2 = fn2(z);
-                  if (zschema2 && typeof zschema2.safeParse === "function") {
-                    validators.push(zschema2 as ZodTypeAny);
-                  }
-                } catch (e) {
-                  console.warn("Failed to parse validator array item", v, e);
-                }
-              } else if (v && typeof v.safeParse === "function") {
-                validators.push(v as ZodTypeAny);
-              }
-            }
-          } else if (validatorRaw && typeof validatorRaw.safeParse === "function") {
-            validators.push(validatorRaw as ZodTypeAny);
-          }
-        } catch (e) {
-          console.warn("Failed to evaluate validator for field", key, e);
-        }
-
-        const options =
-          Array.isArray(s.options) && s.options.length
-            ? s.options.map((o: any) => ({
-                value: o?.value ?? o,
-                label: o?.label ?? o,
-              }))
-            : undefined;
-
-        return {
-          id,
-          key,
-          label,
-          type,
-          section: s.section ?? null,
-          placeholder: s.placeholder ?? undefined,
-          helper: s.helper ?? undefined,
-          maxLength: s.maxLength ?? undefined,
-          options,
-          validators,
-          params: s.params ?? undefined,
-        } as RecipientFieldDef;
-      });
-  }, [formRes, audienceParam]);
+  // Fields
+  const formMetadata: FormMetadata<any> | null = formRes?.formMetadata
+    ? new FormMetadata(formRes?.formMetadata as unknown as IFormMetadata)
+    : null;
+  const fields = formMetadata?.getFieldsForClient() ?? [];
 
   // local form state
-  const [values, setValues] = useState<Record<string, any>>({});
+  const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -199,16 +115,6 @@ function PageContent() {
     href?: string;
   } | null>(null);
 
-  const setField = (k: string, v: any) => setValues((p) => ({ ...p, [k]: v }));
-
-  const validatorFns = useMemo(() => compileValidators(fields), [fields]);
-
-  const validateNow = () => {
-    const next = validateAll(fields, values, validatorFns);
-    setErrors(next);
-    return Object.values(next).every((m) => !m);
-  };
-
   // Section titles per audience
   const sectionTitleMap = {
     entity: "Entity Information",
@@ -218,58 +124,30 @@ function PageContent() {
     internship: "Internship Information",
   };
 
-  async function handleSubmit() {
-    setSubmitted(true);
+  const setField = () => {};
 
-    if (!formName || !pendingDocumentId) return;
-    if (!validateNow()) return;
+  const handleSubmit = () => {
+    // Validate fields before allowing to proceed
+    const errors: Record<string, string> = {};
+    for (const field of fields) {
+      if (field.source !== "student") continue;
 
-    // Flatten the fields present on this page
-    const flatValues: Record<string, string> = {};
-    for (const f of fields) {
-      const v = values[f.key];
-      if (v === undefined || v === null) continue;
-      const s = typeof v === "string" ? v : String(v);
-      if (s !== "undefined") flatValues[f.key] = s;
-    }
+      // Check if missing
+      const value = values[field.field];
 
-    try {
-      setBusy(true);
-      const res = await approveSignatory({
-        pendingDocumentId,
-        signatoryName,
-        signatoryTitle,
-        party,
-        values: flatValues,
-      });
-
-      const data = res?.data;
-
-      if (data?.signedDocumentUrl) {
-        setSuccess({
-          title: "Submitted & Signed",
-          body: "This document is now fully signed. You can download the signed copy below.",
-          href: data.signedDocumentUrl,
-        });
-      } else {
-        setSuccess({
-          title: "Details Submitted",
-          body:
-            data?.message ??
-            "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
-        });
+      // Check validator error
+      const coerced = field.coerce(value);
+      const result = field.validator?.safeParse(coerced);
+      if (result?.error) {
+        const errorString = z
+          .treeifyError(result.error)
+          .errors.map((e) => e.split(" ").slice(0).join(" "))
+          .join("\n");
+        errors[field.field] = `${field.label}: ${errorString}`;
+        continue;
       }
-      setSuccessOpen(true);
-    } catch (e: any) {
-      setSuccess({
-        title: "Submission Failed",
-        body: e?.message ?? "Something went wrong while submitting your details.",
-      });
-      setSuccessOpen(true);
-    } finally {
-      setBusy(false);
     }
-  }
+  };
 
   const goHome = () => router.push("/");
   const onDialogOpenChange = (open: boolean) => {
@@ -359,15 +237,16 @@ function PageContent() {
           <Card className="p-6 text-sm text-gray-500">No fields available for this request.</Card>
         ) : (
           <Card className="space-y-4 p-4 sm:p-5">
-            <RecipientDynamicForm
-              formKey={`recipient:${audienceParam}:${formName || "unknown"}`}
+            <DynamicForm
+              source={party}
               fields={fields}
               values={values}
               onChange={setField}
               errors={errors}
               showErrors={submitted}
-              sectionTitleMap={sectionTitleMap}
-              emptyHint="All required fields for you have been completed."
+              formName={""}
+              autofillValues={{}}
+              setValues={(newValues) => setValues({ ...values, ...newValues })}
             />
 
             <div className="flex justify-end pt-2">
@@ -422,82 +301,6 @@ function PageContent() {
       </Dialog>
     </div>
   );
-}
-
-/* ───────── helpers ───────── */
-
-function compileValidators(defs: RecipientFieldDef[]) {
-  const isEmpty = (v: any) =>
-    v === undefined ||
-    v === null ||
-    (typeof v === "string" && v.trim() === "") ||
-    (Array.isArray(v) && v.length === 0);
-
-  const requiredCheckFor = (d: RecipientFieldDef) => {
-    switch ((d.type || "text").toLowerCase()) {
-      case "signature":
-      case "checkbox":
-        return (v: any) => (v === true ? null : "This field is required.");
-      case "number":
-        return (v: any) => {
-          const s = v == null ? "" : String(v).trim();
-          if (s === "") return "This field is required.";
-          const n = Number(s);
-          return Number.isFinite(n) ? null : "Enter a valid number.";
-        };
-      case "date":
-        return (v: any) => (typeof v === "number" && v > 0 ? null : "Please select a date.");
-      case "time":
-        return (v: any) => {
-          const s = v == null ? "" : String(v).trim();
-          return s ? null : "Please select a time.";
-        };
-      case "select":
-      case "reference":
-        return (v: any) => {
-          const s = v == null ? "" : String(v).trim();
-          return s ? null : "Please choose an option.";
-        };
-      default:
-        return (v: any) => (!isEmpty(v) ? null : "This field is required.");
-    }
-  };
-
-  const map: Record<string, ((v: any) => string | null)[]> = {};
-
-  for (const d of defs) {
-    const fns: ((v: any) => string | null)[] = [];
-    fns.push(requiredCheckFor(d));
-
-    for (const schema of d.validators ?? []) {
-      const zschema = schema;
-      fns.push((value: any) => {
-        const res = zschema.safeParse(value);
-        if (res.success) return null;
-        const issues = (res.error as any)?.issues as { message: string }[] | undefined;
-        return issues?.map((i) => i.message).join("\n") ?? res.error.message;
-      });
-    }
-
-    map[d.key] = fns;
-  }
-
-  return map;
-}
-
-function validateAll(
-  defs: RecipientFieldDef[],
-  values: Record<string, any>,
-  validatorFns: Record<string, ((v: any) => string | null)[]>
-) {
-  const next: Record<string, string> = {};
-  for (const d of defs) {
-    const fns = validatorFns[d.key] ?? [];
-    const val = values[d.key];
-    const firstErr = fns.map((fn) => fn(val)).find(Boolean) ?? "";
-    next[d.key] = firstErr || "";
-  }
-  return next;
 }
 
 export default Page;
