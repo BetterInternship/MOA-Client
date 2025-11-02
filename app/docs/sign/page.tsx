@@ -14,7 +14,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
-import { getFormFields } from "@/app/api/forms.api";
+import { getFormFields, approveSignatory } from "@/app/api/forms.api";
+import type { ApproveSignatoryResponse } from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { useQuery } from "@tanstack/react-query";
 import { getPendingInformation } from "@/app/api/forms.api";
@@ -58,6 +59,8 @@ function PageContent() {
 
   const formName = (params.get("form") || "").trim();
   const pendingDocumentId = (params.get("pending") || "").trim();
+  const signatoryName = (params.get("name") || "").trim();
+  const signatoryTitle = (params.get("title") || "").trim();
 
   // Optional header bits
   const studentName = params.get("student") || "The student";
@@ -77,7 +80,7 @@ function PageContent() {
 
   const pendingInfo = pendingRes?.pendingInformation;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-  const pendingUrl = (pendingInfo as any)?.latest_document_url;
+  const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url;
   console.log("pendingInfo", pendingInfo);
 
   // Fetch form fields schema from API
@@ -117,14 +120,22 @@ function PageContent() {
     setValues({ ...values, [key]: value?.toString() ?? "" });
   };
 
-  const handleSubmit = () => {
-    // Validate fields before allowing to proceed
-    const errors: Record<string, string> = {};
-    for (const field of fields) {
-      if (field.source !== "student") continue;
+  const handleSubmit = async () => {
+    setSubmitted(true);
 
-      // Check if missing
+    // Validate fields before allowing to proceed
+    const nextErrors: Record<string, string> = {};
+    const flatValues: Record<string, string> = {};
+
+    for (const field of fields) {
+      if (field.source !== audienceParam) continue;
+
       const value = values[field.field];
+
+      // collect value if present
+      if (value !== undefined && value !== null && String(value).trim() !== "") {
+        flatValues[field.field] = String(value);
+      }
 
       // Check validator error
       const coerced = field.coerce(value);
@@ -134,9 +145,55 @@ function PageContent() {
           .treeifyError(result.error)
           .errors.map((e) => e.split(" ").slice(0).join(" "))
           .join("\n");
-        errors[field.field] = `${field.label}: ${errorString}`;
-        continue;
+        nextErrors[field.field] = `${field.label}: ${errorString}`;
       }
+    }
+
+    setErrors(nextErrors);
+    console.log("nextErrors", nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) return;
+
+    if (!formName || !pendingDocumentId) return;
+
+    try {
+      setBusy(true);
+      const payload = {
+        pendingDocumentId,
+        signatoryName,
+        signatoryTitle,
+        party,
+        values: flatValues,
+      };
+
+      console.log("approveSignatory payload", payload);
+      const res = await approveSignatory(payload);
+      console.log("approveSignatory res", res);
+
+      if (res?.signedDocumentUrl || res?.signedDocumentId) {
+        setSuccess({
+          title: "Submitted & Signed",
+          body: "This document is now fully signed. You can download the signed copy below.",
+          href: res.signedDocumentUrl,
+        });
+      } else {
+        setSuccess({
+          title: "Details Submitted",
+          body:
+            res?.message ??
+            "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
+        });
+      }
+
+      setSuccessOpen(true);
+    } catch (e: any) {
+      setSuccess({
+        title: "Submission Failed",
+        body: e?.message ?? "Something went wrong while submitting your details.",
+      });
+      setSuccessOpen(true);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -183,7 +240,8 @@ function PageContent() {
             ) : (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="truncate text-sm">
-                  Form name: <span className="font-semibold">{pendingInfo.form_name}</span>
+                  Form name:{" "}
+                  <span className="font-semibold">{pendingInfo.pendingInfo?.form_name}</span>
                 </div>
 
                 {pendingUrl ? (
