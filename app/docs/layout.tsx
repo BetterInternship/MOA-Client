@@ -3,8 +3,8 @@ import { ModalProvider } from "../providers/modal-provider";
 import Header from "@/components/docs/Header";
 
 export const metadata: Metadata = {
-  title: "Document Verification | BetterInternship × DLSU",
-  description: "Public verification portal for DLSU MOA documents.",
+  title: "Document Verification | BetterInternship",
+  description: "Public verification portal for BetterInternship documents.",
 };
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
