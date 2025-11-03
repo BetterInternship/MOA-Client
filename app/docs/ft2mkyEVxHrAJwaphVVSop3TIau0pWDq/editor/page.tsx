@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-10-31 18:24:35
+ * @ Modified time: 2025-11-03 12:45:07
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -50,7 +50,7 @@ import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FieldRegistryEntry } from "@/app/api";
+import { FieldRegistryEntry, RegisterFormSchemaDto } from "@/app/api";
 
 // ? Update this when migrating
 const SCHEMA_VERSION = 0;
@@ -192,6 +192,7 @@ const FormEditorPageContent = () => {
           removeDocumentField={removeField}
           initialSubscribers={formMetadata?.subscribers ?? []}
           initialSignatories={formMetadata?.signatories ?? []}
+          initialDocumentLabel={formMetadata?.label ?? null}
         />
         {documentUrl && (
           <FormRenderer
@@ -551,6 +552,7 @@ const Sidebar = ({
   fieldTransform,
   documentFields,
   initialDocumentName,
+  initialDocumentLabel,
   initialSubscribers,
   initialSignatories,
   setDocumentUrl,
@@ -562,6 +564,7 @@ const Sidebar = ({
   fieldTransform: { x: number; y: number; w: number; h: number; page: number };
   documentFields: IFormField[];
   initialDocumentName: string | null;
+  initialDocumentLabel: string | null;
   initialSubscribers: IFormSubscriber[];
   initialSignatories: IFormSignatory[];
   setDocumentUrl: (documentUrl: string) => void;
@@ -574,6 +577,7 @@ const Sidebar = ({
   const { data: fieldRegistry } = useFormsControllerGetFieldRegistry();
   const { openModal, closeModal } = useModal();
   const [documentName, setDocumentName] = useState<string>(initialDocumentName ?? "Select file");
+  const [documentLabel, setDocumentLabel] = useState<string>(initialDocumentLabel ?? "Form");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
   const [subscribers, setSubscribers] = useState<(IFormSubscriber & { id: string })[]>([]);
@@ -687,6 +691,7 @@ const Sidebar = ({
           const { id: _id, ...rest } = f;
           return rest;
         })}
+        documentLabelPlaceholder={documentLabel}
         documentNamePlaceholder={documentName}
         documentFile={documentFile}
         close={() => closeModal()}
@@ -946,6 +951,7 @@ const Sidebar = ({
  */
 const RegisterFileModal = ({
   documentNamePlaceholder,
+  documentLabelPlaceholder,
   documentFields,
   documentFile,
   subscribers,
@@ -953,6 +959,7 @@ const RegisterFileModal = ({
   close,
 }: {
   documentNamePlaceholder: string;
+  documentLabelPlaceholder: string;
   documentFields: IFormField[];
   documentFile: File;
   subscribers: IFormSubscriber[];
@@ -960,6 +967,7 @@ const RegisterFileModal = ({
   close: () => void;
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
+  const [documentLabel, setDocumentLabel] = useState(documentLabelPlaceholder);
   const [requiredParties, setRequiredParties] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -986,20 +994,29 @@ const RegisterFileModal = ({
       required_parties: requiredPartiesArray,
       schema_version: SCHEMA_VERSION,
       name: documentName,
-      label: "",
+      label: documentLabel,
       base_document: documentFile,
       schema: resizedFields,
       signatories: signatories,
       subscribers: subscribers,
     };
-  }, [documentName, documentFile, documentFields, requiredParties, subscribers, signatories]);
+  }, [
+    documentName,
+    documentLabel,
+    documentFile,
+    documentFields,
+    requiredParties,
+    subscribers,
+    signatories,
+  ]);
 
   // Handle submitting form to registry
   const handleSubmit = async () => {
     if (!documentFile) return;
+    if (!documentLabel) return alert("Please specify a label for the form.");
 
     setSubmitting(true);
-    await formsControllerRegisterForm(formMetadataDraft);
+    await formsControllerRegisterForm(formMetadataDraft as RegisterFormSchemaDto);
 
     setSubmitting(false);
     close();
@@ -1020,6 +1037,14 @@ const RegisterFileModal = ({
           value={documentName}
           placeholder="Enter form name..."
           onChange={(e) => setDocumentName(e.target.value)}
+        />
+        <Badge className="max-w-prose min-w-[200px]">Form Label</Badge>
+        <Input
+          type="text"
+          className="h-7 py-1 text-xs"
+          value={documentLabel}
+          placeholder="Enter form label..."
+          onChange={(e) => setDocumentLabel(e.target.value)}
         />
       </div>
       <div className="flex flex-row gap-2">
