@@ -15,4 +15,6 @@ export const FormFieldSource = {
   student: "student",
   "student-guardian": "student-guardian",
   auto: "auto",
+  prefill: "prefill",
+  derived: "derived",
 } as const;

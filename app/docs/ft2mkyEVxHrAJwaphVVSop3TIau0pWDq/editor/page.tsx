@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-03 12:45:07
+ * @ Modified time: 2025-11-03 15:29:04
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -30,6 +30,8 @@ import {
   IFormMetadata,
   IFormSignatory,
   IFormSubscriber,
+  PARTIES,
+  SOURCES,
 } from "@betterinternship/core/forms";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
@@ -451,14 +453,7 @@ const FieldEditor = ({
           value={fieldDetails.source}
           inputClassName="h-7 py-1 text-xs"
           placeholder="Select Field Source"
-          options={[
-            { id: "entity", name: "entity" },
-            { id: "student", name: "student" },
-            { id: "student-guardian", name: "student-guardian" },
-            { id: "university", name: "university" },
-            { id: "auto", name: "auto" },
-            { id: "prefill", name: "prefill" },
-          ]}
+          options={SOURCES.map((s) => ({ id: s, name: s }))}
           setter={(id) => id && handleChangeFactory("source")(id)}
         />
         <Badge>Postion X</Badge>
@@ -977,11 +972,7 @@ const RegisterFileModal = ({
 
     // Make sure required parties are unique and valid
     const requiredPartiesArray = Array.from(
-      new Set(
-        requiredPartiesRaw.filter((rp) =>
-          ["student", "student-guardian", "entity", "university"].includes(rp)
-        )
-      )
+      new Set(requiredPartiesRaw.filter((rp) => PARTIES.includes(rp)))
     ) as ("student" | "student-guardian" | "entity" | "university")[];
 
     // Make signatures bigger

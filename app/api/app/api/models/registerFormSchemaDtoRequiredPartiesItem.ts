@@ -11,8 +11,8 @@ export type RegisterFormSchemaDtoRequiredPartiesItem =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RegisterFormSchemaDtoRequiredPartiesItem = {
-  university: "university",
-  entity: "entity",
   student: "student",
   "student-guardian": "student-guardian",
+  university: "university",
+  entity: "entity",
 } as const;

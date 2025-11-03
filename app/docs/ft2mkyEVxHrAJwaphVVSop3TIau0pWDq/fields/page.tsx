@@ -1,7 +1,6 @@
 "use client";
 
 import { useModal } from "@/app/providers/modal-provider";
-import { Button } from "@/components/ui/button";
 import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   useFormsControllerGetFieldRegistry,
@@ -16,6 +15,8 @@ import { formsControllerUpdateField } from "../../../api/app/api/endpoints/forms
 import { Loader } from "@/components/ui/loader";
 import { Plus } from "lucide-react";
 import { Autocomplete } from "@/components/ui/autocomplete";
+import { SOURCES } from "@betterinternship/core/forms";
+import { Button } from "@/components/ui/button";
 
 // ! Store this elsewhere soon
 interface FieldRegistryEntry {
@@ -23,7 +24,7 @@ interface FieldRegistryEntry {
   preset: string;
   type: "text" | "signature";
   label: string;
-  source: "student" | "university" | "entity" | "student-guardian" | "auto" | "prefill";
+  source: "student" | "university" | "entity" | "student-guardian" | "auto" | "prefill" | "derived";
   tooltip_label: string;
   validator: string;
   prefiller: string;
@@ -235,14 +236,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
               value={field?.source}
               inputClassName="h-7 py-1 text-xs"
               placeholder="entity, student, student-guardian, university"
-              options={[
-                { id: "entity", name: "entity" },
-                { id: "student", name: "student" },
-                { id: "student-guardian", name: "student-guardian" },
-                { id: "university", name: "university" },
-                { id: "auto", name: "auto" },
-                { id: "prefill", name: "prefill" },
-              ]}
+              options={SOURCES.map((s) => ({ id: s, name: s }))}
               setter={(id) => id && handleChangeFactory("source")(id)}
             />
             <Badge>Tooltip Label (optional)</Badge>
@@ -365,14 +359,7 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
             value={field?.source}
             inputClassName="h-7 py-1 text-xs"
             placeholder="entity, student, student-guardian, university"
-            options={[
-              { id: "entity", name: "entity" },
-              { id: "student", name: "student" },
-              { id: "student-guardian", name: "student-guardian" },
-              { id: "university", name: "university" },
-              { id: "auto", name: "auto" },
-              { id: "prefill", name: "prefill" },
-            ]}
+            options={SOURCES.map((s) => ({ id: s, name: s }))}
             setter={(id) => id && handleChangeFactory("source")(id)}
           />
           <Badge>Tooltip Label (optional)</Badge>

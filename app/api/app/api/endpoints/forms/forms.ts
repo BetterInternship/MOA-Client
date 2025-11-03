@@ -24,10 +24,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  ApproveSignatoryDto,
   BaseResponse,
-  CreatePendingFormDto,
-  CreatePrefilledFormDto,
-  CreateSignedFormDto,
   ErrorResponse,
   FieldRegistryResponse,
   FieldRequestResponse,
@@ -41,6 +39,7 @@ import type {
   FormsControllerGetPendingParams,
   FormsControllerGetRegistryFormDocumentParams,
   FormsControllerGetRegistryFormMetadataParams,
+  GenerateFormDto,
   RegisterFieldDto,
   RegisterFormSchemaDto,
   SignedDocumentsResponse,
@@ -2201,84 +2200,15 @@ export function useFormsControllerGetPendingSuspense<
   return query;
 }
 
-export const formsControllerCreatePending = (
-  createPendingFormDto: CreatePendingFormDto,
+export const formsControllerApproveSignatory = (
+  approveSignatoryDto: ApproveSignatoryDto,
   signal?: AbortSignal
 ) => {
   return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/pending`,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: createPendingFormDto,
-    signal,
-  });
-};
-
-export const getFormsControllerCreatePendingMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerCreatePending>>,
-    TError,
-    { data: CreatePendingFormDto },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerCreatePending>>,
-  TError,
-  { data: CreatePendingFormDto },
-  TContext
-> => {
-  const mutationKey = ["formsControllerCreatePending"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerCreatePending>>,
-    { data: CreatePendingFormDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return formsControllerCreatePending(data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FormsControllerCreatePendingMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerCreatePending>>
->;
-export type FormsControllerCreatePendingMutationBody = CreatePendingFormDto;
-export type FormsControllerCreatePendingMutationError = ErrorResponse;
-
-export const useFormsControllerCreatePending = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerCreatePending>>,
-      TError,
-      { data: CreatePendingFormDto },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerCreatePending>>,
-  TError,
-  { data: CreatePendingFormDto },
-  TContext
-> => {
-  const mutationOptions = getFormsControllerCreatePendingMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-export const formsControllerApproveSignatory = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/forms/approve`,
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: approveSignatoryDto,
     signal,
   });
 };
@@ -2290,13 +2220,13 @@ export const getFormsControllerApproveSignatoryMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
     TError,
-    void,
+    { data: ApproveSignatoryDto },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
   TError,
-  void,
+  { data: ApproveSignatoryDto },
   TContext
 > => {
   const mutationKey = ["formsControllerApproveSignatory"];
@@ -2308,9 +2238,11 @@ export const getFormsControllerApproveSignatoryMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
-    void
-  > = () => {
-    return formsControllerApproveSignatory();
+    { data: ApproveSignatoryDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerApproveSignatory(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2319,7 +2251,7 @@ export const getFormsControllerApproveSignatoryMutationOptions = <
 export type FormsControllerApproveSignatoryMutationResult = NonNullable<
   Awaited<ReturnType<typeof formsControllerApproveSignatory>>
 >;
-
+export type FormsControllerApproveSignatoryMutationBody = ApproveSignatoryDto;
 export type FormsControllerApproveSignatoryMutationError = ErrorResponse;
 
 export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TContext = unknown>(
@@ -2327,7 +2259,7 @@ export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TCont
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
       TError,
-      void,
+      { data: ApproveSignatoryDto },
       TContext
     >;
   },
@@ -2335,43 +2267,43 @@ export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TCont
 ): UseMutationResult<
   Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
   TError,
-  void,
+  { data: ApproveSignatoryDto },
   TContext
 > => {
   const mutationOptions = getFormsControllerApproveSignatoryMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
-export const formsControllerCreatePrefilled = (
-  createPrefilledFormDto: CreatePrefilledFormDto,
+export const formsControllerGenerateForm = (
+  generateFormDto: GenerateFormDto,
   signal?: AbortSignal
 ) => {
   return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/prefill`,
+    url: `/api/forms/generate`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    data: createPrefilledFormDto,
+    data: generateFormDto,
     signal,
   });
 };
 
-export const getFormsControllerCreatePrefilledMutationOptions = <
+export const getFormsControllerGenerateFormMutationOptions = <
   TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+    Awaited<ReturnType<typeof formsControllerGenerateForm>>,
     TError,
-    { data: CreatePrefilledFormDto },
+    { data: GenerateFormDto },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+  Awaited<ReturnType<typeof formsControllerGenerateForm>>,
   TError,
-  { data: CreatePrefilledFormDto },
+  { data: GenerateFormDto },
   TContext
 > => {
-  const mutationKey = ["formsControllerCreatePrefilled"];
+  const mutationKey = ["formsControllerGenerateForm"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -2379,114 +2311,40 @@ export const getFormsControllerCreatePrefilledMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
-    { data: CreatePrefilledFormDto }
+    Awaited<ReturnType<typeof formsControllerGenerateForm>>,
+    { data: GenerateFormDto }
   > = (props) => {
     const { data } = props ?? {};
 
-    return formsControllerCreatePrefilled(data);
+    return formsControllerGenerateForm(data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type FormsControllerCreatePrefilledMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>
+export type FormsControllerGenerateFormMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGenerateForm>>
 >;
-export type FormsControllerCreatePrefilledMutationBody = CreatePrefilledFormDto;
-export type FormsControllerCreatePrefilledMutationError = ErrorResponse;
+export type FormsControllerGenerateFormMutationBody = GenerateFormDto;
+export type FormsControllerGenerateFormMutationError = ErrorResponse;
 
-export const useFormsControllerCreatePrefilled = <TError = ErrorResponse, TContext = unknown>(
+export const useFormsControllerGenerateForm = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+      Awaited<ReturnType<typeof formsControllerGenerateForm>>,
       TError,
-      { data: CreatePrefilledFormDto },
+      { data: GenerateFormDto },
       TContext
     >;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerCreatePrefilled>>,
+  Awaited<ReturnType<typeof formsControllerGenerateForm>>,
   TError,
-  { data: CreatePrefilledFormDto },
+  { data: GenerateFormDto },
   TContext
 > => {
-  const mutationOptions = getFormsControllerCreatePrefilledMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-export const formsControllerCreateSigned = (
-  createSignedFormDto: CreateSignedFormDto,
-  signal?: AbortSignal
-) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/signed`,
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: createSignedFormDto,
-    signal,
-  });
-};
-
-export const getFormsControllerCreateSignedMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-    TError,
-    { data: CreateSignedFormDto },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-  TError,
-  { data: CreateSignedFormDto },
-  TContext
-> => {
-  const mutationKey = ["formsControllerCreateSigned"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-    { data: CreateSignedFormDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return formsControllerCreateSigned(data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FormsControllerCreateSignedMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerCreateSigned>>
->;
-export type FormsControllerCreateSignedMutationBody = CreateSignedFormDto;
-export type FormsControllerCreateSignedMutationError = ErrorResponse;
-
-export const useFormsControllerCreateSigned = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-      TError,
-      { data: CreateSignedFormDto },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerCreateSigned>>,
-  TError,
-  { data: CreateSignedFormDto },
-  TContext
-> => {
-  const mutationOptions = getFormsControllerCreateSignedMutationOptions(options);
+  const mutationOptions = getFormsControllerGenerateFormMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

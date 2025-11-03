@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type FormMetadataRequiredPartiesItem =
-  (typeof FormMetadataRequiredPartiesItem)[keyof typeof FormMetadataRequiredPartiesItem];
+export type ApproveSignatoryDtoParty =
+  (typeof ApproveSignatoryDtoParty)[keyof typeof ApproveSignatoryDtoParty];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const FormMetadataRequiredPartiesItem = {
+export const ApproveSignatoryDtoParty = {
   student: "student",
   "student-guardian": "student-guardian",
   university: "university",
