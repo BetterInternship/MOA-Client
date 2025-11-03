@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
+export * from "./approveSignatoryDto";
+export * from "./approveSignatoryDtoParty";
+export * from "./approveSignatoryDtoValues";
 export * from "./baseResponse";
 export * from "./contactDto";
 export * from "./countResponse";
@@ -71,6 +74,9 @@ export * from "./formsControllerGetLatestFormDocumentAndMetadataParams";
 export * from "./formsControllerGetPendingParams";
 export * from "./formsControllerGetRegistryFormDocumentParams";
 export * from "./formsControllerGetRegistryFormMetadataParams";
+export * from "./generateFormDto";
+export * from "./generateFormDtoParties";
+export * from "./generateFormDtoValues";
 export * from "./getMyEntityForSchoolParams";
 export * from "./getSelfForSchoolParams";
 export * from "./loginEntityDto";
@@ -151,9 +157,3 @@ export * from "./updateFieldDtoPrefiller";
 export * from "./updateFieldDtoSource";
 export * from "./updateFieldDtoTooltipLabel";
 export * from "./updateFieldDtoValidator";
-export * from "./approveSignatoryDto";
-export * from "./approveSignatoryDtoParty";
-export * from "./approveSignatoryDtoValues";
-export * from "./generateFormDto";
-export * from "./generateFormDtoParties";
-export * from "./generateFormDtoValues";

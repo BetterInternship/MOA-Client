@@ -25,7 +25,6 @@ import type {
 
 import type {
   ApproveSignatoryDto,
-  ApproveSignatoryDto,
   BaseResponse,
   ErrorResponse,
   FieldRegistryResponse,
@@ -2222,13 +2221,11 @@ export const getFormsControllerApproveSignatoryMutationOptions = <
     Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
     TError,
     { data: ApproveSignatoryDto },
-    { data: ApproveSignatoryDto },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
   TError,
-  { data: ApproveSignatoryDto },
   { data: ApproveSignatoryDto },
   TContext
 > => {
@@ -2246,11 +2243,6 @@ export const getFormsControllerApproveSignatoryMutationOptions = <
     const { data } = props ?? {};
 
     return formsControllerApproveSignatory(data);
-    { data: ApproveSignatoryDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return formsControllerApproveSignatory(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2260,7 +2252,6 @@ export type FormsControllerApproveSignatoryMutationResult = NonNullable<
   Awaited<ReturnType<typeof formsControllerApproveSignatory>>
 >;
 export type FormsControllerApproveSignatoryMutationBody = ApproveSignatoryDto;
-export type FormsControllerApproveSignatoryMutationBody = ApproveSignatoryDto;
 export type FormsControllerApproveSignatoryMutationError = ErrorResponse;
 
 export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TContext = unknown>(
@@ -2269,7 +2260,6 @@ export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TCont
       Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
       TError,
       { data: ApproveSignatoryDto },
-      { data: ApproveSignatoryDto },
       TContext
     >;
   },
@@ -2277,7 +2267,6 @@ export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TCont
 ): UseMutationResult<
   Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
   TError,
-  { data: ApproveSignatoryDto },
   { data: ApproveSignatoryDto },
   TContext
 > => {
