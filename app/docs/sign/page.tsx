@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { getFormFields, approveSignatory } from "@/app/api/forms.api";
-import type { ApproveSignatoryResponse } from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { useQuery } from "@tanstack/react-query";
 import { getPendingInformation } from "@/app/api/forms.api";
@@ -170,11 +169,11 @@ function PageContent() {
       const res = await approveSignatory(payload);
       console.log("approveSignatory res", res);
 
-      if (res?.signedDocumentUrl || res?.signedDocumentId) {
+      if (res?.approval?.signedDocumentUrl || res?.approval?.signedDocumentId) {
         setSuccess({
           title: "Submitted & Signed",
           body: "This document is now fully signed. You can download the signed copy below.",
-          href: res.signedDocumentUrl,
+          href: res.approval.signedDocumentUrl,
         });
       } else {
         setSuccess({

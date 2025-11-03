@@ -9,5 +9,6 @@ import type { CreatePrefilledFormDtoValues } from "./createPrefilledFormDtoValue
 
 export interface CreatePrefilledFormDto {
   formName: string;
+  formVersion: number;
   values: CreatePrefilledFormDtoValues;
 }

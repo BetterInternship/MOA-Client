@@ -19,11 +19,13 @@ export const getFormFields = async (name: string) => {
   return await formsControllerGetLatestFormDocumentAndMetadata({ name });
 };
 
+export type Party = "student" | "entity" | "student-guardian" | "university";
+
 export type ApproveSignatoryRequest = {
   pendingDocumentId: string;
   signatoryName: string;
   signatoryTitle: string;
-  party: "student" | "entity" | "student-guardian" | "university";
+  party: Party;
   values?: Record<string, string>;
 };
 
@@ -34,14 +36,11 @@ export type ApproveSignatoryResponse = {
   [k: string]: any;
 };
 
-export const approveSignatory = async (payload: ApproveSignatoryRequest) => {
+export const approveSignatory = async (data: ApproveSignatoryRequest) => {
   try {
-    const approveFn = formsControllerApproveSignatory as unknown as (
-      data: ApproveSignatoryRequest
-    ) => Promise<ApproveSignatoryResponse>;
-
-    const res = await approveFn(payload);
-    return { approval: res, isLoading: false, error: null };
+    const res = await formsControllerApproveSignatory(data);
+    const approval: ApproveSignatoryResponse | null = res ?? null;
+    return { approval, isLoading: false, error: null };
   } catch (error) {
     return { approval: null, isLoading: false, error };
   }
