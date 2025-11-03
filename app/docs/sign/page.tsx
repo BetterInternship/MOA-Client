@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,12 +14,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
-import { getFormFields, approveSignatory } from "@/app/api/forms.api";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle2, Loader2, ShieldCheck, ChevronDown } from "lucide-react";
+import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
-import { useQuery } from "@tanstack/react-query";
-import { getPendingInformation } from "@/app/api/forms.api";
-import { useRouter } from "next/navigation";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 
@@ -26,10 +25,7 @@ type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university";
 type Role = "entity" | "student-guardian" | "university";
 
-function mapAudienceToRoleAndParty(aud: Audience): {
-  role: Role;
-  party: Party;
-} {
+function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } {
   switch (aud) {
     case "entity":
       return { role: "entity", party: "entity" };
@@ -38,6 +34,62 @@ function mapAudienceToRoleAndParty(aud: Audience): {
     case "university":
       return { role: "university", party: "university" };
   }
+}
+
+function getClientSigningInfo() {
+  if (typeof window === "undefined") return {};
+  const nav = typeof navigator !== "undefined" ? navigator : ({} as any);
+  const scr = typeof screen !== "undefined" ? screen : ({} as any);
+
+  // Optional: try to get WebGL vendor/renderer (not critical—safe to skip if blocked)
+  let webglVendor: string | undefined;
+  let webglRenderer: string | undefined;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl") || (canvas.getContext("experimental-webgl") as any);
+    if (gl) {
+      const dbgInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      if (dbgInfo) {
+        webglVendor = gl.getParameter((dbgInfo as any).UNMASKED_VENDOR_WEBGL);
+        webglRenderer = gl.getParameter((dbgInfo as any).UNMASKED_RENDERER_WEBGL);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const info = {
+    timestamp: new Date().toISOString(),
+    timezone: tz,
+    tzOffsetMinutes: new Date().getTimezoneOffset(),
+    languages: (nav.languages || []).slice(0, 5),
+    userAgent: nav.userAgent,
+    platform: nav.platform,
+    vendor: (nav as any).vendor,
+    deviceMemory: (nav as any).deviceMemory ?? null,
+    hardwareConcurrency: (nav as any).hardwareConcurrency ?? null,
+    doNotTrack: (nav as any).doNotTrack ?? null,
+    referrer: document.referrer || null,
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio || 1,
+    },
+    screen: {
+      width: scr.width,
+      height: scr.height,
+      availWidth: scr.availWidth,
+      availHeight: scr.availHeight,
+      colorDepth: scr.colorDepth,
+    },
+    webgl: {
+      vendor: webglVendor ?? null,
+      renderer: webglRenderer ?? null,
+    },
+    // ipAddress: intentionally omitted on client — let the server add it from the request
+  };
+  return info;
 }
 
 const Page = () => {
@@ -78,9 +130,7 @@ function PageContent() {
   });
 
   const pendingInfo = pendingRes?.pendingInformation;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
   const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url;
-  console.log("pendingInfo", pendingInfo);
 
   // Fetch form fields schema from API
   const {
@@ -106,23 +156,22 @@ function PageContent() {
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // success modal state (forms-style)
+  // success modal
   const [successOpen, setSuccessOpen] = useState(false);
-  const [success, setSuccess] = useState<{
-    title: string;
-    body: string;
-    href?: string;
-  } | null>(null);
+  const [success, setSuccess] = useState<{ title: string; body: string; href?: string } | null>(
+    null
+  );
+
+  // consent modal
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [showWhatWeCollect, setShowWhatWeCollect] = useState(false);
 
   const setField = (key: string, value: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    setValues({ ...values, [key]: value?.toString() ?? "" });
+    setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
   };
 
-  const handleSubmit = async () => {
-    setSubmitted(true);
-
-    // Validate fields before allowing to proceed
+  const validateAndCollect = () => {
     const nextErrors: Record<string, string> = {};
     const flatValues: Record<string, string> = {};
 
@@ -131,12 +180,10 @@ function PageContent() {
 
       const value = values[field.field];
 
-      // collect value if present
       if (value !== undefined && value !== null && String(value).trim() !== "") {
         flatValues[field.field] = String(value);
       }
 
-      // Check validator error
       const coerced = field.coerce(value);
       const result = field.validator?.safeParse(coerced);
       if (result?.error) {
@@ -149,25 +196,29 @@ function PageContent() {
     }
 
     setErrors(nextErrors);
-    console.log("nextErrors", nextErrors);
+    return { nextErrors, flatValues };
+  };
 
+  async function submitWithConsent() {
+    setSubmitted(true);
+
+    const { nextErrors, flatValues } = validateAndCollect();
     if (Object.keys(nextErrors).length > 0) return;
-
     if (!formName || !pendingDocumentId) return;
 
     try {
       setBusy(true);
+      const clientSigningInfo = getClientSigningInfo();
+
       const payload = {
         pendingDocumentId,
         signatoryName,
         signatoryTitle,
         party,
         values: flatValues,
+        clientSigningInfo,
       };
-
-      console.log("approveSignatory payload", payload);
       const res = await approveSignatory(payload);
-      console.log("approveSignatory res", res);
 
       if (res?.approval?.signedDocumentUrl || res?.approval?.signedDocumentId) {
         setSuccess({
@@ -194,6 +245,19 @@ function PageContent() {
     } finally {
       setBusy(false);
     }
+  }
+
+  const onClickSubmitRequest = () => {
+    // open consent first
+    setConsentChecked(false);
+    setShowWhatWeCollect(false);
+    setConsentOpen(true);
+  };
+
+  const onConfirmConsent = async () => {
+    if (!consentChecked) return;
+    setConsentOpen(false);
+    await submitWithConsent();
   };
 
   const goHome = () => router.push("/");
@@ -201,6 +265,21 @@ function PageContent() {
     setSuccessOpen(open);
     if (!open) goHome();
   };
+
+  // A tiny preview (non-sensitive) of client info for the consent dialog
+  const infoPreview = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const c = getClientSigningInfo();
+      return {
+        timezone: c.timezone,
+        userAgent: c.userAgent?.slice(0, 80) + (c.userAgent?.length > 80 ? "…" : ""),
+        languages: (c.languages || []).join(", "),
+      };
+    } catch {
+      return null;
+    }
+  }, [consentOpen]); // refresh when opening
 
   return (
     <div className="container mx-auto max-w-3xl px-4 pt-8 sm:px-10 sm:pt-16">
@@ -294,11 +373,11 @@ function PageContent() {
               showErrors={submitted}
               formName={""}
               autofillValues={{}}
-              setValues={(newValues) => setValues({ ...values, ...newValues })}
+              setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
             />
 
             <div className="flex justify-end pt-2">
-              <Button onClick={handleSubmit} disabled={busy} aria-busy={busy}>
+              <Button onClick={onClickSubmitRequest} disabled={busy} aria-busy={busy}>
                 {busy ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -318,6 +397,7 @@ function PageContent() {
         </div>
       </div>
 
+      {/* Success Dialog */}
       <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader className="items-center text-center">
@@ -343,6 +423,85 @@ function PageContent() {
               onClick={() => onDialogOpenChange(false)}
             >
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Consent Dialog */}
+      <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Consent to Sign & Data Collection</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p className="text-justify text-gray-700">
+                  By continuing, you consent to electronically sign this form and to the collection
+                  of limited technical information from your browser to meet signing requirements
+                  (e.g., audit trail, anti-fraud, and compliance). Below is a preview of your data
+                </p>
+
+                {/* Tiny preview */}
+                {infoPreview && (
+                  <Card className="p-3 text-xs text-gray-600">
+                    <div>Timezone: {infoPreview.timezone || "—"}</div>
+                    <div>Languages: {infoPreview.languages || "—"}</div>
+                    <div>User Agent: {infoPreview.userAgent || "—"}</div>
+                  </Card>
+                )}
+
+                {/* What we collect (expandable) */}
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800"
+                  onClick={() => setShowWhatWeCollect((s) => !s)}
+                >
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${showWhatWeCollect ? "rotate-180" : ""}`}
+                  />
+                  What we’ll collect
+                </button>
+                {showWhatWeCollect && (
+                  <ul className="list-disc space-y-1 pl-5 text-xs text-gray-600">
+                    <li>Timezone</li>
+                    <li>Browser user agent, platform, languages</li>
+                    <li>Viewport & screen size, color depth, pixel ratio</li>
+                    <li>Device memory & hardware concurrency (where available)</li>
+                    <li>Do-Not-Track preference</li>
+                    <li>Referrer URL (if any)</li>
+                    <li>Your IP address is added by our server from the incoming request.</li>
+                  </ul>
+                )}
+
+                <div className="flex items-start gap-2 rounded-md border p-3">
+                  <Checkbox
+                    id="consent"
+                    checked={consentChecked}
+                    onCheckedChange={(v) => setConsentChecked(Boolean(v))}
+                  />
+                  <label htmlFor="consent" className="text-xs leading-relaxed text-gray-700">
+                    I consent to electronically sign this form and for my browser information to be
+                    collected for the signing audit trail and security. I understand this is used
+                    only for internship documentation and compliance.
+                  </label>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setConsentOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={onConfirmConsent} disabled={!consentChecked || busy}>
+              {busy ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processing…
+                </span>
+              ) : (
+                "Agree & Continue"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
