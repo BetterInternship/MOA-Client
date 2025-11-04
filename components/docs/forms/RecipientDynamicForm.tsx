@@ -7,7 +7,7 @@ import { FieldRenderer } from "./FieldRenderer";
 
 export function DynamicForm({
   formName,
-  source,
+  party,
   fields,
   values,
   setValues,
@@ -17,7 +17,7 @@ export function DynamicForm({
   showErrors = false,
 }: {
   formName: string;
-  source?: "entity" | "student-guardian" | "university" | "student";
+  party?: "entity" | "student-guardian" | "university" | "student";
   fields: ClientField<[]>[];
   values: Record<string, any>;
   autofillValues: Record<string, string>;
@@ -27,9 +27,9 @@ export function DynamicForm({
   onChange: (key: string, value: any) => void;
 }) {
   console.log("DynamicForm rendering with fields", fields, "and values", values);
-  const filteredFields = fields.filter((field) => field.source === source);
+  const filteredFields = fields.filter((field) => field.party === party);
 
-  console.log("Filtered fields for source", source, filteredFields);
+  console.log("Filtered fields for source", party, filteredFields);
 
   // Group by section
   const entitySectionFields: ClientField<[]>[] = filteredFields.filter(

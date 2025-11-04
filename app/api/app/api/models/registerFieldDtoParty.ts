@@ -6,12 +6,13 @@
  * OpenAPI spec version: 1.0
  */
 
-export type UpdateFieldDtoSource = (typeof UpdateFieldDtoSource)[keyof typeof UpdateFieldDtoSource];
+export type RegisterFieldDtoParty =
+  (typeof RegisterFieldDtoParty)[keyof typeof RegisterFieldDtoParty];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const UpdateFieldDtoSource = {
-  auto: "auto",
-  prefill: "prefill",
-  derived: "derived",
-  manual: "manual",
+export const RegisterFieldDtoParty = {
+  student: "student",
+  "student-guardian": "student-guardian",
+  university: "university",
+  entity: "entity",
 } as const;

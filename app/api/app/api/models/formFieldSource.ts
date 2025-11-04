@@ -10,11 +10,8 @@ export type FormFieldSource = (typeof FormFieldSource)[keyof typeof FormFieldSou
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const FormFieldSource = {
-  university: "university",
-  entity: "entity",
-  student: "student",
-  "student-guardian": "student-guardian",
   auto: "auto",
   prefill: "prefill",
   derived: "derived",
+  manual: "manual",
 } as const;

@@ -5,12 +5,14 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { FormFieldParty } from "./formFieldParty";
 import type { FormFieldSource } from "./formFieldSource";
 import type { FormFieldType } from "./formFieldType";
 
 export interface FormField {
   field: string;
   label: string;
+  party: FormFieldParty;
   source: FormFieldSource;
   type: FormFieldType;
   tooltip_label: string;

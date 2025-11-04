@@ -60,7 +60,7 @@ export default function DocsFormsPage() {
     // Validate fields before allowing to proceed
     const errors: Record<string, string> = {};
     for (const field of fields) {
-      if (field.source !== "student") continue;
+      if (field.party !== "student") continue;
 
       // Check if missing
 
@@ -139,7 +139,7 @@ export default function DocsFormsPage() {
                 {(previewQuery.data?.formMetadata?.schema ?? []).length ? (
                   <div className="mt-2">
                     <DynamicForm
-                      source={"student"}
+                      party={"student"}
                       fields={fields}
                       values={values}
                       onChange={setField}

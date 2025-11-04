@@ -15,7 +15,7 @@ import { formsControllerUpdateField } from "../../../api/app/api/endpoints/forms
 import { Loader } from "@/components/ui/loader";
 import { Plus } from "lucide-react";
 import { Autocomplete } from "@/components/ui/autocomplete";
-import { SOURCES } from "@betterinternship/core/forms";
+import { PARTIES, SOURCES } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
 
 // ! Store this elsewhere soon
@@ -24,7 +24,8 @@ interface FieldRegistryEntry {
   preset: string;
   type: "text" | "signature";
   label: string;
-  source: "student" | "university" | "entity" | "student-guardian" | "auto" | "prefill" | "derived";
+  party: "student" | "university" | "entity" | "student-guardian";
+  source: "auto" | "prefill" | "derived" | "manual";
   tooltip_label: string;
   validator: string;
   prefiller: string;
@@ -38,7 +39,13 @@ interface FieldRegistryEntry {
 const FieldRegistryPage = () => {
   const fieldRegistry = useFormsControllerGetFieldRegistry();
 
-  const sortFields = (list: Array<any> | undefined) =>
+  type FieldRegistryMinimalEntry = {
+    id: string;
+    name: string;
+    preset: string;
+    type: "text" | "signature";
+  };
+  const sortFields = (list: FieldRegistryMinimalEntry[]) =>
     (list ?? []).slice().sort((a, b) => {
       const nameA = (a?.name ?? "").toLowerCase();
       const nameB = (b?.name ?? "").toLowerCase();
@@ -50,7 +57,9 @@ const FieldRegistryPage = () => {
       return nameA.localeCompare(nameB);
     });
 
-  const [fields, setFields] = useState(() => sortFields(fieldRegistry.data?.fields));
+  const [fields, setFields] = useState(() =>
+    sortFields(fieldRegistry.data?.fields as FieldRegistryMinimalEntry[])
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const { openModal, closeModal } = useModal();
 
@@ -104,7 +113,12 @@ const FieldRegistryPage = () => {
           <TableHead>Field Preset</TableHead>
         </TableHeader>
         {fields.map((field) => (
-          <FieldRegistryEntry key={field.id} id={field.id} name={field.name} preset={field.preset} />
+          <FieldRegistryEntry
+            key={field.id}
+            id={field.id}
+            name={field.name}
+            preset={field.preset}
+          />
         ))}
       </Table>
     </div>
@@ -200,6 +214,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
         tooltip_label: data.field.tooltip_label ?? "",
         validator: data.field.validator ?? "",
         prefiller: data.field.prefiller ?? "",
+        party: data.field.party ?? "",
       });
     } else {
       setFieldId(null);
@@ -249,9 +264,17 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
             <Autocomplete
               value={field?.source}
               inputClassName="h-7 py-1 text-xs"
-              placeholder="entity, student, student-guardian, university"
+              placeholder={SOURCES.join(", ")}
               options={SOURCES.map((s) => ({ id: s, name: s }))}
               setter={(id) => id && handleChangeFactory("source")(id)}
+            />
+            <Badge>Field Party</Badge>
+            <Autocomplete
+              value={field?.party}
+              inputClassName="h-7 py-1 text-xs"
+              placeholder={PARTIES.join(", ")}
+              options={PARTIES.map((s) => ({ id: s, name: s }))}
+              setter={(id) => id && handleChangeFactory("party")(id)}
             />
             <Badge>Tooltip Label (optional)</Badge>
             <Input
@@ -300,7 +323,8 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
     name: "",
     label: "",
     type: "text",
-    source: "student",
+    source: "manual",
+    party: "student",
   });
   const [registering, setRegistering] = useState(false);
 
@@ -321,6 +345,7 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
       prefiller: field.prefiller ?? null,
       type: field.type,
       source: field.source,
+      party: field.party ?? "student",
     });
     setRegistering(false);
     close();
@@ -372,9 +397,17 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
           <Autocomplete
             value={field?.source}
             inputClassName="h-7 py-1 text-xs"
-            placeholder="entity, student, student-guardian, university"
+            placeholder={SOURCES.join(", ")}
             options={SOURCES.map((s) => ({ id: s, name: s }))}
             setter={(id) => id && handleChangeFactory("source")(id)}
+          />
+          <Badge>Field Party</Badge>
+          <Autocomplete
+            value={field?.party}
+            inputClassName="h-7 py-1 text-xs"
+            placeholder={PARTIES.join(", ")}
+            options={PARTIES.map((s) => ({ id: s, name: s }))}
+            setter={(id) => id && handleChangeFactory("party")(id)}
           />
           <Badge>Tooltip Label (optional)</Badge>
           <Input

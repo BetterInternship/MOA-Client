@@ -11,11 +11,8 @@ export type RegisterFieldDtoSource =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RegisterFieldDtoSource = {
-  university: "university",
-  entity: "entity",
-  student: "student",
-  "student-guardian": "student-guardian",
   auto: "auto",
   prefill: "prefill",
   derived: "derived",
+  manual: "manual",
 } as const;

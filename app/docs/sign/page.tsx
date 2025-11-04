@@ -50,8 +50,8 @@ function getClientSigningInfo() {
     if (gl) {
       const dbgInfo = gl.getExtension("WEBGL_debug_renderer_info");
       if (dbgInfo) {
-        webglVendor = gl.getParameter((dbgInfo as any).UNMASKED_VENDOR_WEBGL);
-        webglRenderer = gl.getParameter((dbgInfo as any).UNMASKED_RENDERER_WEBGL);
+        webglVendor = gl.getParameter(dbgInfo.UNMASKED_VENDOR_WEBGL);
+        webglRenderer = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
       }
     }
   } catch {
@@ -66,10 +66,10 @@ function getClientSigningInfo() {
     languages: (nav.languages || []).slice(0, 5),
     userAgent: nav.userAgent,
     platform: nav.platform,
-    vendor: (nav as any).vendor,
-    deviceMemory: (nav as any).deviceMemory ?? null,
-    hardwareConcurrency: (nav as any).hardwareConcurrency ?? null,
-    doNotTrack: (nav as any).doNotTrack ?? null,
+    vendor: nav.vendor,
+    deviceMemory: nav.deviceMemory ?? null,
+    hardwareConcurrency: nav.hardwareConcurrency ?? null,
+    doNotTrack: nav.doNotTrack ?? null,
     referrer: document.referrer || null,
     viewport: {
       width: window.innerWidth,
@@ -178,7 +178,7 @@ function PageContent() {
     const flatValues: Record<string, string> = {};
 
     for (const field of fields) {
-      if (field.source !== audienceParam) continue;
+      if (field.party !== audienceParam) continue;
 
       const value = values[field.field];
 
@@ -374,7 +374,7 @@ function PageContent() {
         ) : (
           <Card className="space-y-4 p-4 sm:p-5">
             <DynamicForm
-              source={party}
+              party={party}
               fields={fields}
               values={values}
               onChange={setField}

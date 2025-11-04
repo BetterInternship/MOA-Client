@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-03 15:29:04
+ * @ Modified time: 2025-11-04 16:27:37
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -604,7 +604,8 @@ const Sidebar = ({
       prefiller: "",
       tooltip_label: "",
       label: "",
-      source: "student",
+      source: "manual",
+      party: "student",
     });
   }, [addDocumentField]);
 
@@ -647,6 +648,7 @@ const Sidebar = ({
       if (!fieldFullNameList.includes(field.field))
         return alert(`${field.field} is not a valid field.`);
       if (!field.source) return alert(`${field.field} is missing its source.`);
+      if (!field.party) return alert(`${field.field} is missing its party.`);
       if (!field.type) return alert(`${field.field} is missing its type.`);
       if (!field.label) return alert(`${field.field} is missing its label.`);
     }
