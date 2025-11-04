@@ -5,6 +5,7 @@ import { Input } from "./input";
 import { useDetectClickOutside } from "react-detect-click-outside";
 import { cn } from "@/lib/utils";
 import { PlusCircleIcon } from "lucide-react";
+import { LabelWithTooltip } from "@/components/docs/forms/EditForm";
 
 export interface IAutocompleteOption<ID extends number | string> {
   id: ID;
@@ -300,6 +301,7 @@ export function AutocompleteTreeMulti({
   placeholder,
   className,
   label,
+  tooltip,
 }: {
   required?: boolean;
   tree: TreeOption[];
@@ -308,6 +310,7 @@ export function AutocompleteTreeMulti({
   placeholder?: string;
   className?: string;
   label?: React.ReactNode;
+  tooltip?: string;
 }) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -414,11 +417,7 @@ export function AutocompleteTreeMulti({
 
   return (
     <div className={cn("relative w-full", className)} ref={ref}>
-      {label ? (
-        <label htmlFor={inputId} className="mb-1 block text-xs text-gray-600">
-          {label} {required && <span className="text-red-500">*</span>}
-        </label>
-      ) : null}
+      {label ? <LabelWithTooltip label={label} required={required} tooltip={tooltip} /> : null}
 
       {/* input + chips (same look/feel as AutocompleteMulti) */}
       <div

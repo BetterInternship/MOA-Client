@@ -26,7 +26,10 @@ export function DynamicForm({
   setValues: (values: Record<string, string>) => void;
   onChange: (key: string, value: any) => void;
 }) {
+  console.log("DynamicForm rendering with fields", fields, "and values", values);
   const filteredFields = fields.filter((field) => field.source === source);
+
+  console.log("Filtered fields for source", source, filteredFields);
 
   // Group by section
   const entitySectionFields: ClientField<[]>[] = filteredFields.filter(
@@ -142,23 +145,6 @@ const FormSection = function FormSection({
           className="space-between flex flex-row"
           key={`${formKey}:${field.section}:${field.field}`}
         >
-          <div>
-            <div className="opacity-50 hover:cursor-help">
-              <Info
-                data-tooltip-id={`${formKey}:${field.section}:${field.field}-tooltip`}
-                data-tooltip-content={field.tooltip_label}
-                data-tooltip-place="bottom"
-                className={cn(
-                  "text-primary h-9 w-9 translate-x-[-10px] translate-y-[-10px] p-3",
-                  field.tooltip_label.trim() ? "" : "invisible"
-                )}
-              ></Info>
-            </div>
-            <Tooltip
-              className="z-[99] !max-w-[80vw] p-[0.05em] !text-[10px]"
-              id={`${formKey}:${field.section}:${field.field}-tooltip`}
-            />
-          </div>
           <div className="flex-1">
             <FieldRenderer
               field={field}

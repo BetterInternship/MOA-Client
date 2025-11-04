@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-16 22:43:51
- * @ Modified time: 2025-10-31 18:19:21
+ * @ Modified time: 2025-10-31 16:18:44
  * @ Description:
  *
  * The field renderer 3000 automatically renders the correct field for the situation!
@@ -162,6 +162,7 @@ const FieldRendererDropdown = ({
         options={options}
         setter={(v) => onChange(v)}
         className="w-full"
+        tooltip={field.tooltip_label}
       />
       <TooltipContent />
     </div>
@@ -200,6 +201,7 @@ const FieldRendererDate = ({
         placeholder="Select date"
         autoClose
         disabledDays={[]}
+        tooltip={field.tooltip_label}
         format={(d) =>
           d.toLocaleDateString(undefined, {
             year: "numeric",
@@ -235,6 +237,7 @@ const FieldRendererTime = ({
         required={false}
         label={field.label}
         value={value}
+        tooltip={field.tooltip_label}
         onChange={(v) => onChange(v ?? "")}
       />
       <TooltipContent />
@@ -264,6 +267,7 @@ const FieldRendererCheckbox = ({
         required={false}
         label={field.label}
         checked={!!value}
+        tooltip={field.tooltip_label}
         setter={(c) => onChange(c)}
       />
       <TooltipContent />
@@ -300,6 +304,7 @@ const FieldRendererInput = ({
           if (!isNaN(next)) onChange(next);
         }}
         inputMode={inputMode}
+        tooltip={field.tooltip_label}
         className="w-full"
       />
       <TooltipContent />
@@ -330,6 +335,7 @@ const FieldRendererTextarea = ({
         label={field.label}
         value={value ?? ""}
         setter={onChange}
+        tooltip={field.tooltip_label}
         className="w-full"
       />
       <TooltipContent />
@@ -363,6 +369,7 @@ const FieldRendererMultiselect = ({
         value={values ?? []}
         setter={onChange}
         className="w-full"
+        tooltip={field.tooltip_label}
         tree={options}
       />
       <TooltipContent />
