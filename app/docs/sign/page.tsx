@@ -117,6 +117,8 @@ function PageContent() {
   const studentName = params.get("student") || "The student";
   const templateHref = params.get("template") || "";
 
+  const [lastValidValues, setLastValidValues] = useState<Record<string, string> | null>(null);
+
   // Pending document preview
   const {
     data: pendingRes,
@@ -200,12 +202,9 @@ function PageContent() {
   };
 
   async function submitWithConsent() {
-    setSubmitted(true);
-
-    const { nextErrors, flatValues } = validateAndCollect();
-    if (Object.keys(nextErrors).length > 0) return;
     if (!formName || !pendingDocumentId) return;
 
+    const flatValues = lastValidValues ?? {};
     try {
       setBusy(true);
       const clientSigningInfo = getClientSigningInfo();
@@ -218,6 +217,7 @@ function PageContent() {
         values: flatValues,
         clientSigningInfo,
       };
+
       const res = await approveSignatory(payload);
 
       if (res?.approval?.signedDocumentUrl || res?.approval?.signedDocumentId) {
@@ -248,7 +248,16 @@ function PageContent() {
   }
 
   const onClickSubmitRequest = () => {
-    // open consent first
+    setSubmitted(true);
+
+    const { nextErrors, flatValues } = validateAndCollect();
+    if (Object.keys(nextErrors).length > 0) {
+      setConsentOpen(false);
+      setLastValidValues(null);
+      return;
+    }
+
+    setLastValidValues(flatValues);
     setConsentChecked(false);
     setShowWhatWeCollect(false);
     setConsentOpen(true);
