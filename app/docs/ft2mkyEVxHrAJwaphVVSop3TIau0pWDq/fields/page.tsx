@@ -37,7 +37,20 @@ interface FieldRegistryEntry {
  */
 const FieldRegistryPage = () => {
   const fieldRegistry = useFormsControllerGetFieldRegistry();
-  const [fields, setFields] = useState(fieldRegistry.data?.fields ?? []);
+
+  const sortFields = (list: Array<any> | undefined) =>
+    (list ?? []).slice().sort((a, b) => {
+      const nameA = (a?.name ?? "").toLowerCase();
+      const nameB = (b?.name ?? "").toLowerCase();
+      if (nameA === nameB) {
+        const presetA = (a?.preset ?? "").toLowerCase();
+        const presetB = (b?.preset ?? "").toLowerCase();
+        return presetA.localeCompare(presetB);
+      }
+      return nameA.localeCompare(nameB);
+    });
+
+  const [fields, setFields] = useState(() => sortFields(fieldRegistry.data?.fields));
   const [searchTerm, setSearchTerm] = useState("");
   const { openModal, closeModal } = useModal();
 
@@ -57,13 +70,14 @@ const FieldRegistryPage = () => {
 
   // Filter fields here
   useEffect(() => {
-    setFields(
+    const filtered =
       fieldRegistry.data?.fields?.filter((field) => {
         const name = `${field.name}:${field.preset}`;
         const terms = searchTerm.split(" ").map((s) => s.trim());
         return terms.every((term) => name.includes(term));
-      }) ?? []
-    );
+      }) ?? [];
+
+    setFields(sortFields(filtered));
   }, [fieldRegistry.data?.fields, searchTerm]);
 
   return (
@@ -90,7 +104,7 @@ const FieldRegistryPage = () => {
           <TableHead>Field Preset</TableHead>
         </TableHeader>
         {fields.map((field) => (
-          <FieldRegistryEntry id={field.id} name={field.name} preset={field.preset} />
+          <FieldRegistryEntry key={field.id} id={field.id} name={field.name} preset={field.preset} />
         ))}
       </Table>
     </div>
