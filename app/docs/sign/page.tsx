@@ -440,9 +440,8 @@ function PageContent() {
             <DialogDescription asChild>
               <div className="space-y-4 text-sm">
                 <p className="text-justify text-gray-700">
-                  I authorize saving my provided information to securely auto-fill and auto-sign
-                  future school-issued documents on my behalf. A copy of each signed document will
-                  be sent to my email.
+                  I authorize auto-fill and auto-sign of future school-issued templated documents on
+                  my behalf. A copy of each signed document will be emailed to me.
                 </p>
 
                 <div className="flex w-full items-center gap-2">
