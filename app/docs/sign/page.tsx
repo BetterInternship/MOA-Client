@@ -321,7 +321,7 @@ function PageContent() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="truncate text-sm">
                   Form name:{" "}
-                  <span className="font-semibold">{pendingInfo.pendingInfo?.form_name}</span>
+                  <span className="font-semibold">{pendingInfo.pendingInfo?.form_label}</span>
                 </div>
 
                 {pendingUrl ? (
