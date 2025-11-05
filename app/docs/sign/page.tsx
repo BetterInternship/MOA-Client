@@ -20,6 +20,13 @@ import { getFormFields, approveSignatory, getPendingInformation } from "@/app/ap
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { FormMetadata, IFormMetadata, IFormSignatory } from "@betterinternship/core/forms";
 import z from "zod";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university";
@@ -115,6 +122,7 @@ function PageContent() {
   const templateHref = params.get("template") || "";
 
   const [lastValidValues, setLastValidValues] = useState<Record<string, string> | null>(null);
+  const [authorizeChoice, setAuthorizeChoice] = useState<"yes" | "no">("yes");
 
   // Pending document preview
   const {
@@ -322,18 +330,6 @@ function PageContent() {
           </h1>
         </div>
 
-        {/* Onboarding notice (non-blocking) */}
-        {showOnboarding && (
-          <Card className="flex items-start gap-3 p-4 text-sm">
-            <ShieldCheck className="mt-0.5 h-4 w-4" />
-            <div className="flex-1 text-gray-700">
-              These forms collect limited technical information to support e-signing requirements
-              (e.g., audit trail and security). This does not include your form inputs being shown
-              here.
-            </div>
-          </Card>
-        )}
-
         {/* pending document preview */}
         {pendingDocumentId && (
           <Card className="p-4 text-sm">
@@ -422,10 +418,10 @@ function PageContent() {
           </Card>
         )}
 
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <Info className="size-4" />
-          You’ll be asked if you want to save your details for faster completion next time
-          (optional).
+        <div className="flex gap-2 text-xs text-gray-500">
+          <Info className="size-8 lg:size-4" />
+          These forms collect limited technical information to support e-signing requirements (e.g.,
+          audit trail and security). This does not include your form inputs being shown here.
         </div>
       </div>
 
@@ -464,24 +460,28 @@ function PageContent() {
       <Dialog open={authOpen} onOpenChange={setAuthOpen}>
         <DialogContent className="sm:max-w-lg sm:p-8">
           <DialogHeader>
-            <DialogTitle>Save your details for future documents? (Optional)</DialogTitle>
+            <DialogTitle className="mt-3">Permission to Auto-Fill & Auto-Sign</DialogTitle>
             <DialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p className="text-justify text-gray-700">
-                  You can authorize us to securely save the information you entered so future
-                  internship documents are faster to complete. This is optional and not required to
-                  submit and sign today.
+                  I authorize saving my provided information to securely auto-fill and auto-sign
+                  future school-issued documents on my behalf. A copy of each signed document will
+                  be sent to my email.
                 </p>
-                <div className="flex items-start gap-2 rounded-md border p-3">
-                  <Checkbox
-                    id="authorizeSave"
-                    checked={authorizeSaveChecked}
-                    onCheckedChange={(v) => setAuthorizeSaveChecked(Boolean(v))}
-                  />
-                  <label htmlFor="authorizeSave" className="text-xs leading-relaxed text-gray-700">
-                    I authorize BetterInternship to save my information for use in future internship
-                    documents. I understand I can withdraw this authorization later.
-                  </label>
+
+                <div className="flex w-full items-center gap-2">
+                  <Select
+                    value={authorizeChoice}
+                    onValueChange={(v: "yes" | "no") => setAuthorizeChoice(v)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes, auto-fill & auto-sign</SelectItem>
+                      <SelectItem value="no">No, I’ll sign manually for now</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </DialogDescription>
