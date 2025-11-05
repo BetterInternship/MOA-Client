@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, Loader2, ShieldCheck, ChevronDown } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldCheck, Info } from "lucide-react";
 import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
@@ -40,23 +40,6 @@ function getClientSigningInfo() {
   if (typeof window === "undefined") return {};
   const nav = typeof navigator !== "undefined" ? navigator : ({} as any);
   const scr = typeof screen !== "undefined" ? screen : ({} as any);
-
-  // Optional: try to get WebGL vendor/renderer (not critical—safe to skip if blocked)
-  let webglVendor: string | undefined;
-  let webglRenderer: string | undefined;
-  try {
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl") || (canvas.getContext("experimental-webgl") as any);
-    if (gl) {
-      const dbgInfo = gl.getExtension("WEBGL_debug_renderer_info");
-      if (dbgInfo) {
-        webglVendor = gl.getParameter(dbgInfo.UNMASKED_VENDOR_WEBGL);
-        webglRenderer = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
-      }
-    }
-  } catch {
-    // ignore
-  }
 
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const info = {
@@ -83,11 +66,7 @@ function getClientSigningInfo() {
       availHeight: scr.availHeight,
       colorDepth: scr.colorDepth,
     },
-    webgl: {
-      vendor: webglVendor ?? null,
-      renderer: webglRenderer ?? null,
-    },
-    // ipAddress: intentionally omitted on client — let the server add it from the request
+    // ipAddress: added server-side
   };
   return info;
 }
@@ -164,10 +143,21 @@ function PageContent() {
     null
   );
 
-  // consent modal
-  const [consentOpen, setConsentOpen] = useState(false);
-  const [consentChecked, setConsentChecked] = useState(false);
-  const [showWhatWeCollect, setShowWhatWeCollect] = useState(false);
+  // Optional "Save for future" authorization modal (replaces previous consent)
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authorizeSaveChecked, setAuthorizeSaveChecked] = useState(false);
+
+  // Dismissible onboarding banner
+  const [showOnboarding, setShowOnboarding] = useState(true);
+  useEffect(() => {
+    // If you want persistence, uncomment:
+    // const seen = localStorage.getItem("bi-onboarding-signing");
+    // if (seen === "1") setShowOnboarding(false);
+  }, []);
+  const dismissOnboarding = () => {
+    setShowOnboarding(false);
+    // localStorage.setItem("bi-onboarding-signing", "1");
+  };
 
   const setField = (key: string, value: any) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
@@ -201,7 +191,7 @@ function PageContent() {
     return { nextErrors, flatValues };
   };
 
-  async function submitWithConsent() {
+  async function submitWithAuthorization() {
     if (!formName || !pendingDocumentId) return;
 
     const flatValues = lastValidValues ?? {};
@@ -216,6 +206,7 @@ function PageContent() {
         party,
         values: flatValues,
         clientSigningInfo,
+        authorizeProfileSave: Boolean(authorizeSaveChecked), // <— NEW FLAG
       };
 
       const res = await approveSignatory(payload);
@@ -252,21 +243,21 @@ function PageContent() {
 
     const { nextErrors, flatValues } = validateAndCollect();
     if (Object.keys(nextErrors).length > 0) {
-      setConsentOpen(false);
+      setAuthOpen(false);
       setLastValidValues(null);
       return;
     }
 
     setLastValidValues(flatValues);
-    setConsentChecked(false);
-    setShowWhatWeCollect(false);
-    setConsentOpen(true);
+    // Open the optional authorization modal (not blocking)
+    setAuthorizeSaveChecked(false);
+    setAuthOpen(true);
   };
 
-  const onConfirmConsent = async () => {
-    if (!consentChecked) return;
-    setConsentOpen(false);
-    await submitWithConsent();
+  const onConfirmAuthorization = async () => {
+    // Not blocking: regardless of checked/unchecked, proceed to submit
+    setAuthOpen(false);
+    await submitWithAuthorization();
   };
 
   const goHome = () => router.push("/");
@@ -274,21 +265,6 @@ function PageContent() {
     setSuccessOpen(open);
     if (!open) goHome();
   };
-
-  // A tiny preview (non-sensitive) of client info for the consent dialog
-  const infoPreview = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const c = getClientSigningInfo();
-      return {
-        timezone: c.timezone,
-        userAgent: c.userAgent?.slice(0, 80) + (c.userAgent?.length > 80 ? "…" : ""),
-        languages: (c.languages || []).join(", "),
-      };
-    } catch {
-      return null;
-    }
-  }, [consentOpen]); // refresh when opening
 
   return (
     <div className="container mx-auto max-w-3xl px-4 pt-8 sm:px-10 sm:pt-16">
@@ -311,6 +287,18 @@ function PageContent() {
             .
           </h1>
         </div>
+
+        {/* Onboarding notice (non-blocking) */}
+        {showOnboarding && (
+          <Card className="flex items-start gap-3 p-4 text-sm">
+            <ShieldCheck className="mt-0.5 h-4 w-4" />
+            <div className="flex-1 text-gray-700">
+              These forms collect limited technical information to support e-signing requirements
+              (e.g., audit trail and security). This does not include your form inputs being shown
+              here.
+            </div>
+          </Card>
+        )}
 
         {/* pending document preview */}
         {pendingDocumentId && (
@@ -401,8 +389,9 @@ function PageContent() {
         )}
 
         <div className="flex items-center gap-2 text-xs text-gray-500">
-          <ShieldCheck className="size-4" />
-          Your information is used only for internship documentation.
+          <Info className="size-4" />
+          You’ll be asked if you want to save your details for faster completion next time
+          (optional).
         </div>
       </div>
 
@@ -437,61 +426,27 @@ function PageContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Consent Dialog */}
-      <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
-        <DialogContent className="sm:max-w-lg">
+      {/* Optional Authorization Dialog (non-blocking) */}
+      <Dialog open={authOpen} onOpenChange={setAuthOpen}>
+        <DialogContent className="sm:max-w-lg sm:p-8">
           <DialogHeader>
-            <DialogTitle>Consent to Sign & Data Collection</DialogTitle>
+            <DialogTitle>Save your details for future documents? (Optional)</DialogTitle>
             <DialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p className="text-justify text-gray-700">
-                  By continuing, you consent to electronically sign this form and to the collection
-                  of limited technical information from your browser to meet signing requirements
-                  (e.g., audit trail, anti-fraud, and compliance). Below is a preview of your data
+                  You can authorize us to securely save the information you entered so future
+                  internship documents are faster to complete. This is optional and not required to
+                  submit and sign today.
                 </p>
-
-                {/* Tiny preview */}
-                {infoPreview && (
-                  <Card className="p-3 text-xs text-gray-600">
-                    <div>Timezone: {infoPreview.timezone || "—"}</div>
-                    <div>Languages: {infoPreview.languages || "—"}</div>
-                    <div>User Agent: {infoPreview.userAgent || "—"}</div>
-                  </Card>
-                )}
-
-                {/* What we collect (expandable) */}
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800"
-                  onClick={() => setShowWhatWeCollect((s) => !s)}
-                >
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${showWhatWeCollect ? "rotate-180" : ""}`}
-                  />
-                  What we’ll collect
-                </button>
-                {showWhatWeCollect && (
-                  <ul className="list-disc space-y-1 pl-5 text-xs text-gray-600">
-                    <li>Timezone</li>
-                    <li>Browser user agent, platform, languages</li>
-                    <li>Viewport & screen size, color depth, pixel ratio</li>
-                    <li>Device memory & hardware concurrency (where available)</li>
-                    <li>Do-Not-Track preference</li>
-                    <li>Referrer URL (if any)</li>
-                    <li>Your IP address is added by our server from the incoming request.</li>
-                  </ul>
-                )}
-
                 <div className="flex items-start gap-2 rounded-md border p-3">
                   <Checkbox
-                    id="consent"
-                    checked={consentChecked}
-                    onCheckedChange={(v) => setConsentChecked(Boolean(v))}
+                    id="authorizeSave"
+                    checked={authorizeSaveChecked}
+                    onCheckedChange={(v) => setAuthorizeSaveChecked(Boolean(v))}
                   />
-                  <label htmlFor="consent" className="text-xs leading-relaxed text-gray-700">
-                    I consent to electronically sign this form and for my browser information to be
-                    collected for the signing audit trail and security. I understand this is used
-                    only for internship documentation and compliance.
+                  <label htmlFor="authorizeSave" className="text-xs leading-relaxed text-gray-700">
+                    I authorize BetterInternship to save my information for use in future internship
+                    documents. I understand I can withdraw this authorization later.
                   </label>
                 </div>
               </div>
@@ -499,17 +454,17 @@ function PageContent() {
           </DialogHeader>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setConsentOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setAuthOpen(false)}>
+              Go back
             </Button>
-            <Button onClick={onConfirmConsent} disabled={!consentChecked || busy}>
+            <Button onClick={onConfirmAuthorization} disabled={busy}>
               {busy ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Processing…
                 </span>
               ) : (
-                "Agree & Continue"
+                "Continue to Submit & Sign"
               )}
             </Button>
           </DialogFooter>
