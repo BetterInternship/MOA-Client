@@ -173,17 +173,6 @@ function PageContent() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authorizeSaveChecked, setAuthorizeSaveChecked] = useState(false);
 
-  // Dismissible onboarding banner
-  const [showOnboarding, setShowOnboarding] = useState(true);
-  useEffect(() => {
-    // If you want persistence, uncomment:
-    // const seen = localStorage.getItem("bi-onboarding-signing");
-    // if (seen === "1") setShowOnboarding(false);
-  }, []);
-  const dismissOnboarding = () => {
-    setShowOnboarding(false);
-    // localStorage.setItem("bi-onboarding-signing", "1");
-  };
 
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
@@ -264,7 +253,9 @@ function PageContent() {
       } else {
         setSuccess({
           title: "Details Submitted",
-          body: "Thanks! Your details were submitted. We'll notify you when the document is ready.",
+          body:
+            res?.message ??
+            "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
         });
       }
 
@@ -272,7 +263,7 @@ function PageContent() {
     } catch (e: any) {
       setSuccess({
         title: "Submission Failed",
-        body: "Something went wrong while submitting your details.",
+        body: e?.message ?? "Something went wrong while submitting your details.",
       });
       setSuccessOpen(true);
     } finally {
@@ -419,9 +410,10 @@ function PageContent() {
         )}
 
         <div className="flex gap-2 text-xs text-gray-500">
-          <Info className="size-8 lg:size-4" />
-          These forms collect limited technical information to support e-signing requirements (e.g.,
-          audit trail and security). This does not include your form inputs being shown here.
+          <Info className="size-8 lg:size-5" />
+          By selecting Submit & Sign, I agree that the signature and initials will be the electronic
+          representation of my signature and initials for all purposes when I (or my agent) use them
+          on documents, including legally binding contracts
         </div>
       </div>
 
