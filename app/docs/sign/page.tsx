@@ -173,7 +173,6 @@ function PageContent() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authorizeSaveChecked, setAuthorizeSaveChecked] = useState(false);
 
-
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
   };
@@ -253,9 +252,7 @@ function PageContent() {
       } else {
         setSuccess({
           title: "Details Submitted",
-          body:
-            res?.message ??
-            "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
+          body: "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
         });
       }
 
@@ -263,7 +260,7 @@ function PageContent() {
     } catch (e: any) {
       setSuccess({
         title: "Submission Failed",
-        body: e?.message ?? "Something went wrong while submitting your details.",
+        body: "Something went wrong while submitting your details.",
       });
       setSuccessOpen(true);
     } finally {
