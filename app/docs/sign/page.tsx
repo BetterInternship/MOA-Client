@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState, useEffect } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -12,13 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, Loader2, ShieldCheck, Info } from "lucide-react";
+import { CheckCircle2, Loader2, Info } from "lucide-react";
 import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
-import { FormMetadata, IFormMetadata, IFormSignatory } from "@betterinternship/core/forms";
+import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 
 type Audience = "entity" | "student-guardian" | "university";
@@ -41,7 +39,7 @@ function getClientSigningInfo() {
   const nav = typeof navigator !== "undefined" ? navigator : ({} as Navigator);
   const scr = typeof screen !== "undefined" ? screen : ({} as Screen);
 
-  // Optional: try to get WebGL vendor/renderer (not critical—safe to skip if blocked)
+  // Optional: try to get WebGL vendor/renderer (best-effort)
   let webglVendor: string | undefined;
   let webglRenderer: string | undefined;
   try {
@@ -70,9 +68,9 @@ function getClientSigningInfo() {
     userAgent: nav.userAgent,
     platform: nav.platform,
     vendor: nav.vendor,
-    deviceMemory: nav.deviceMemory ?? null,
+    deviceMemory: (nav as any).deviceMemory ?? null,
     hardwareConcurrency: nav.hardwareConcurrency ?? null,
-    doNotTrack: nav.doNotTrack ?? null,
+    doNotTrack: (nav as any).doNotTrack ?? null,
     referrer: document.referrer || null,
     viewport: {
       width: window.innerWidth,
@@ -87,6 +85,7 @@ function getClientSigningInfo() {
       colorDepth: scr.colorDepth,
     },
     // ipAddress: added server-side
+    webgl: webglVendor || webglRenderer ? { vendor: webglVendor, renderer: webglRenderer } : null,
   };
   return info;
 }
@@ -115,6 +114,7 @@ function PageContent() {
   const templateHref = params.get("template") || "";
 
   const [lastValidValues, setLastValidValues] = useState<Record<string, string> | null>(null);
+  const [authorizeChoice, setAuthorizeChoice] = useState<"yes" | "no">("yes");
 
   // Pending document preview
   const {
@@ -161,21 +161,8 @@ function PageContent() {
     null
   );
 
-  // Optional "Save for future" authorization modal (replaces previous consent)
+  // Authorization modal
   const [authOpen, setAuthOpen] = useState(false);
-  const [authorizeSaveChecked, setAuthorizeSaveChecked] = useState(false);
-
-  // Dismissible onboarding banner
-  const [showOnboarding, setShowOnboarding] = useState(true);
-  useEffect(() => {
-    // If you want persistence, uncomment:
-    // const seen = localStorage.getItem("bi-onboarding-signing");
-    // if (seen === "1") setShowOnboarding(false);
-  }, []);
-  const dismissOnboarding = () => {
-    setShowOnboarding(false);
-    // localStorage.setItem("bi-onboarding-signing", "1");
-  };
 
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
@@ -209,7 +196,7 @@ function PageContent() {
     return { nextErrors, flatValues };
   };
 
-  async function submitWithAuthorization() {
+  async function submitWithAuthorization(choice: "yes" | "no") {
     if (!formName || !pendingDocumentId) return;
 
     const flatValues = lastValidValues ?? {};
@@ -242,7 +229,7 @@ function PageContent() {
         party,
         values: flatValues,
         clientSigningInfo,
-        authorizeProfileSave: Boolean(authorizeSaveChecked), // <— NEW FLAG
+        // authorizeProfileSave: choice === "yes",
       };
 
       const res = await approveSignatory(payload);
@@ -256,7 +243,7 @@ function PageContent() {
       } else {
         setSuccess({
           title: "Details Submitted",
-          body: "Thanks! Your details were submitted. We'll notify you when the document is ready.",
+          body: "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
         });
       }
 
@@ -274,24 +261,20 @@ function PageContent() {
 
   const onClickSubmitRequest = () => {
     setSubmitted(true);
-
     const { nextErrors, flatValues } = validateAndCollect();
     if (Object.keys(nextErrors).length > 0) {
       setAuthOpen(false);
       setLastValidValues(null);
       return;
     }
-
     setLastValidValues(flatValues);
-    // Open the optional authorization modal (not blocking)
-    setAuthorizeSaveChecked(false);
     setAuthOpen(true);
   };
 
-  const onConfirmAuthorization = async () => {
-    // Not blocking: regardless of checked/unchecked, proceed to submit
+  const handleAuthorizeChoice = async (choice: "yes" | "no") => {
+    setAuthorizeChoice(choice);
     setAuthOpen(false);
-    await submitWithAuthorization();
+    await submitWithAuthorization(choice);
   };
 
   const goHome = () => router.push("/");
@@ -322,18 +305,6 @@ function PageContent() {
           </h1>
         </div>
 
-        {/* Onboarding notice (non-blocking) */}
-        {showOnboarding && (
-          <Card className="flex items-start gap-3 p-4 text-sm">
-            <ShieldCheck className="mt-0.5 h-4 w-4" />
-            <div className="flex-1 text-gray-700">
-              These forms collect limited technical information to support e-signing requirements
-              (e.g., audit trail and security). This does not include your form inputs being shown
-              here.
-            </div>
-          </Card>
-        )}
-
         {/* pending document preview */}
         {pendingDocumentId && (
           <Card className="p-4 text-sm">
@@ -350,7 +321,7 @@ function PageContent() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="truncate text-sm">
                   Form name:{" "}
-                  <span className="font-semibold">{pendingInfo.pendingInfo?.form_name}</span>
+                  <span className="font-semibold">{pendingInfo.pendingInfo?.form_label}</span>
                 </div>
 
                 {pendingUrl ? (
@@ -422,10 +393,11 @@ function PageContent() {
           </Card>
         )}
 
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <Info className="size-4" />
-          You’ll be asked if you want to save your details for faster completion next time
-          (optional).
+        <div className="flex gap-2 text-xs text-gray-500">
+          <Info className="size-8 lg:size-5" />
+          By selecting Submit & Sign, I agree that the signature and initials will be the electronic
+          representation of my signature and initials for all purposes when I (or my agent) use them
+          on documents, including legally binding contracts
         </div>
       </div>
 
@@ -442,7 +414,7 @@ function PageContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter className="flex w-full gap-2 sm:justify-center">
+          <div className="flex w-full justify-center gap-2 pt-1 pb-2">
             {success?.href && (
               <Button asChild>
                 <Link href={success.href} target="_blank" rel="noopener noreferrer">
@@ -456,52 +428,45 @@ function PageContent() {
             >
               Close
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Optional Authorization Dialog (non-blocking) */}
+      {/* Authorization Dialog with explicit buttons; clicking either submits */}
       <Dialog open={authOpen} onOpenChange={setAuthOpen}>
         <DialogContent className="sm:max-w-lg sm:p-8">
           <DialogHeader>
-            <DialogTitle>Save your details for future documents? (Optional)</DialogTitle>
+            <DialogTitle className="mt-3">Permission to Auto-Fill & Auto-Sign</DialogTitle>
             <DialogDescription asChild>
-              <div className="space-y-3 text-sm">
+              <div className="space-y-4 text-sm">
                 <p className="text-justify text-gray-700">
-                  You can authorize us to securely save the information you entered so future
-                  internship documents are faster to complete. This is optional and not required to
-                  submit and sign today.
+                  I authorize auto-fill and auto-sign of future school-issued templated documents on
+                  my behalf. A copy of each signed document will be emailed to me.
                 </p>
-                <div className="flex items-start gap-2 rounded-md border p-3">
-                  <Checkbox
-                    id="authorizeSave"
-                    checked={authorizeSaveChecked}
-                    onCheckedChange={(v) => setAuthorizeSaveChecked(Boolean(v))}
-                  />
-                  <label htmlFor="authorizeSave" className="text-xs leading-relaxed text-gray-700">
-                    I authorize BetterInternship to save my information for use in future internship
-                    documents. I understand I can withdraw this authorization later.
-                  </label>
+
+                <div className="flex w-full items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleAuthorizeChoice("no")}
+                    aria-pressed={authorizeChoice === "no"}
+                    className="w-1/2"
+                  >
+                    No, I’ll sign manually for now
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => handleAuthorizeChoice("yes")}
+                    aria-pressed={authorizeChoice === "yes"}
+                    className="w-1/2"
+                  >
+                    Yes, auto-fill & auto-sign
+                  </Button>
                 </div>
               </div>
             </DialogDescription>
           </DialogHeader>
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setAuthOpen(false)}>
-              Go back
-            </Button>
-            <Button onClick={onConfirmAuthorization} disabled={busy}>
-              {busy ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Processing…
-                </span>
-              ) : (
-                "Continue to Submit & Sign"
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
