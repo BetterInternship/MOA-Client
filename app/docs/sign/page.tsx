@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, Loader2, ShieldCheck, Info } from "lucide-react";
 import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
-import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
+import { FormMetadata, IFormMetadata, IFormSignatory } from "@betterinternship/core/forms";
 import z from "zod";
 
 type Audience = "entity" | "student-guardian" | "university";
@@ -38,8 +38,28 @@ function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } 
 
 function getClientSigningInfo() {
   if (typeof window === "undefined") return {};
-  const nav = typeof navigator !== "undefined" ? navigator : ({} as any);
-  const scr = typeof screen !== "undefined" ? screen : ({} as any);
+  const nav = typeof navigator !== "undefined" ? navigator : ({} as Navigator);
+  const scr = typeof screen !== "undefined" ? screen : ({} as Screen);
+
+  // Optional: try to get WebGL vendor/renderer (not critical—safe to skip if blocked)
+  let webglVendor: string | undefined;
+  let webglRenderer: string | undefined;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (gl) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const dbgInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      if (dbgInfo) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        webglVendor = gl.getParameter(dbgInfo.UNMASKED_VENDOR_WEBGL);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        webglRenderer = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
+      }
+    }
+  } catch {
+    // ignore
+  }
 
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const info = {
@@ -89,8 +109,6 @@ function PageContent() {
 
   const formName = (params.get("form") || "").trim();
   const pendingDocumentId = (params.get("pending") || "").trim();
-  const signatoryName = (params.get("name") || "").trim();
-  const signatoryTitle = (params.get("title") || "").trim();
 
   // Optional header bits
   const studentName = params.get("student") || "The student";
@@ -159,7 +177,7 @@ function PageContent() {
     // localStorage.setItem("bi-onboarding-signing", "1");
   };
 
-  const setField = (key: string, value: any) => {
+  const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
   };
 
@@ -199,10 +217,28 @@ function PageContent() {
       setBusy(true);
       const clientSigningInfo = getClientSigningInfo();
 
+      const signatories: Record<string, { name: string; title: string }[]> = {
+        entity: [
+          {
+            name: flatValues["entity.representative-full-name:default"],
+            title: flatValues["entity.representative-title:default"],
+          },
+          {
+            name: flatValues["entity.supervisor-full-name:default"],
+            title: "HTE Internship Supervisor",
+          },
+        ],
+        "student-guardian": [
+          {
+            name: flatValues["student.guardian-full-name:default"],
+            title: "Student Guardian",
+          },
+        ],
+      };
+
       const payload = {
         pendingDocumentId,
-        signatoryName,
-        signatoryTitle,
+        signatories: signatories[audienceParam],
         party,
         values: flatValues,
         clientSigningInfo,
@@ -220,9 +256,7 @@ function PageContent() {
       } else {
         setSuccess({
           title: "Details Submitted",
-          body:
-            res?.message ??
-            "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
+          body: "Thanks! Your details were submitted. We'll notify you when the document is ready.",
         });
       }
 
@@ -230,7 +264,7 @@ function PageContent() {
     } catch (e: any) {
       setSuccess({
         title: "Submission Failed",
-        body: e?.message ?? "Something went wrong while submitting your details.",
+        body: "Something went wrong while submitting your details.",
       });
       setSuccessOpen(true);
     } finally {

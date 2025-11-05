@@ -23,8 +23,7 @@ export type Party = "student" | "entity" | "student-guardian" | "university";
 
 export type ApproveSignatoryRequest = {
   pendingDocumentId: string;
-  signatoryName: string;
-  signatoryTitle: string;
+  signatories: { name: string; title: string }[];
   party: Party;
   values?: Record<string, string>;
 };
