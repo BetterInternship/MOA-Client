@@ -17,6 +17,7 @@ import { Plus } from "lucide-react";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { PARTIES, SOURCES } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
+import { FormDropdown } from "@/components/docs/forms/EditForm";
 
 // ! Store this elsewhere soon
 interface FieldRegistryEntry {
@@ -26,6 +27,7 @@ interface FieldRegistryEntry {
   label: string;
   party: "student" | "university" | "entity" | "student-guardian";
   source: "auto" | "prefill" | "derived" | "manual";
+  shared: boolean;
   tooltip_label: string;
   validator: string;
   prefiller: string;
@@ -211,6 +213,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
       setFieldId(data.field.id);
       setField({
         ...data.field,
+        shared: data.field.shared.toString() === "true" ? true : false,
         tooltip_label: data.field.tooltip_label ?? "",
         validator: data.field.validator ?? "",
         prefiller: data.field.prefiller ?? "",
@@ -275,6 +278,15 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
               placeholder={PARTIES.join(", ")}
               options={PARTIES.map((s) => ({ id: s, name: s }))}
               setter={(id) => id && handleChangeFactory("party")(id)}
+            />
+            <Badge>Shared Field?</Badge>
+            <FormDropdown
+              value={field?.shared?.toString() ?? "true"}
+              options={[
+                { id: "true", name: "true" },
+                { id: "false", name: "false" },
+              ]}
+              setter={(e) => handleChangeFactory("shared")(e.toString())}
             />
             <Badge>Tooltip Label (optional)</Badge>
             <Input
@@ -346,6 +358,7 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
       type: field.type,
       source: field.source,
       party: field.party ?? "student",
+      shared: field.shared ?? true,
     });
     setRegistering(false);
     close();

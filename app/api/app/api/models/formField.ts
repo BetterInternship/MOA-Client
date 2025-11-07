@@ -13,6 +13,7 @@ export interface FormField {
   field: string;
   label: string;
   party: FormFieldParty;
+  shared: boolean;
   source: FormFieldSource;
   type: FormFieldType;
   tooltip_label: string;

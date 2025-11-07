@@ -13,6 +13,7 @@ export interface UpdateFieldDto {
   name: string;
   label: string;
   type: string;
+  shared: boolean;
   party: UpdateFieldDtoParty;
   source: UpdateFieldDtoSource;
   /** @nullable */

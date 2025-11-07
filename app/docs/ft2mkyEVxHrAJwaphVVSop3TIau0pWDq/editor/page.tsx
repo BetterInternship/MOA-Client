@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-07 13:35:10
+ * @ Modified time: 2025-11-07 14:10:13
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -1069,7 +1069,7 @@ const RegisterFileModal = ({
     if (!documentLabel) return alert("Please specify a label for the form.");
 
     setSubmitting(true);
-    await formsControllerRegisterForm(formMetadataDraft as RegisterFormSchemaDto);
+    await formsControllerRegisterForm(formMetadataDraft as unknown as RegisterFormSchemaDto);
 
     setSubmitting(false);
     close();
