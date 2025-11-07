@@ -1036,7 +1036,7 @@ const RegisterFileModal = ({
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
   const [documentLabel, setDocumentLabel] = useState(documentLabelPlaceholder);
-  const [requiredParties, setRequiredParties] = useState<string>(initialRequiredParties.join(","));
+  const [requiredParties, setRequiredParties] = useState<string>(initialRequiredParties.join(", "));
   const [submitting, setSubmitting] = useState(false);
 
   // Constructs the latest metadata given the state
