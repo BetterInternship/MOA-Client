@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-04 16:27:37
+ * @ Modified time: 2025-11-07 13:35:10
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -24,7 +24,7 @@ import {
 import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Download, PlusCircle, Upload, X } from "lucide-react";
+import { CheckCircle, Download, PlusCircle, Redo2Icon, Upload, X } from "lucide-react";
 import {
   IFormField,
   IFormMetadata,
@@ -78,11 +78,13 @@ const FormEditorPage = () => {
  */
 const FormEditorPageContent = () => {
   const searchParams = useSearchParams();
+  const { data: fieldRegistry } = useFormsControllerGetFieldRegistry();
 
   // The current highlight and its transform; only need one for coordinates
   const [loading, setLoading] = useState(true);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [documentName, setDocumentName] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [highlight, setHighlight] = useState<IHighlight | null>(null);
   const [fields, setFields] = useState<IFormField[]>([]);
   const [formMetadata, setFormMetadata] = useState<IFormMetadata>();
@@ -93,6 +95,41 @@ const FormEditorPageContent = () => {
     h: number;
     page: number;
   }>({ x: 0, y: 0, w: 0, h: 0, page: 1 });
+
+  // Refreshes the fields so we don't have to do it one by one
+  const handleFieldsRefresh = async () => {
+    setRefreshing(true);
+
+    // Util for refreshing field
+    const fieldRefresher = async (oldField: IFormField) => {
+      const fieldId = fieldRegistry?.fields.find(
+        (f) => `${f.name}:${f.preset}` === oldField.field
+      )?.id;
+      if (!fieldId) return;
+
+      const { field } = await formsControllerGetFieldFromRegistry({ id: fieldId });
+      const { id: _id, name: _name, preset: _preset, ...rest } = field;
+      const fieldFullName = `${field.name}:${field.preset}`;
+      const newField = {
+        ...oldField,
+        ...rest,
+        field: fieldFullName,
+        validator: field.validator ?? "",
+        prefiller: field.prefiller ?? "",
+        tooltip_label: field.tooltip_label ?? "",
+        h: 10,
+      };
+
+      return newField;
+    };
+
+    // Refresh all fields
+    const newFields = await Promise.all(fields.map(fieldRefresher)).then((fs) =>
+      fs.filter((f) => f !== undefined)
+    );
+    setFields(newFields);
+    setRefreshing(false);
+  };
 
   // Executes when user is done dragging highlight
   const onHighlightFinished = (position: ScaledPosition, content: Content) => {
@@ -195,6 +232,8 @@ const FormEditorPageContent = () => {
           initialSubscribers={formMetadata?.subscribers ?? []}
           initialSignatories={formMetadata?.signatories ?? []}
           initialDocumentLabel={formMetadata?.label ?? null}
+          handleFieldsRefresh={() => void handleFieldsRefresh()}
+          refreshing={refreshing}
         />
         {documentUrl && (
           <FormRenderer
@@ -349,21 +388,20 @@ const ContactEditor = ({
  * @component
  */
 const FieldEditor = ({
-  initialFieldDetails,
+  fieldDetails,
   fieldRegistry,
   selected,
   updateField,
   removeField,
   index,
 }: {
-  initialFieldDetails: IFormField;
+  fieldDetails: IFormField;
   fieldRegistry: { id: string; name: string; preset: string }[];
   selected: boolean;
   updateField: (field: Partial<IFormField>) => void;
   removeField: (key: number) => void;
   index: number;
 }) => {
-  const [fieldDetails, setFieldDetails] = useState<IFormField>(initialFieldDetails);
   const [fieldId, setFieldId] = useState<string | null>();
 
   // Select a field and update details so we can use those
@@ -381,7 +419,6 @@ const FieldEditor = ({
       h: 10,
     };
 
-    setFieldDetails(newField);
     updateField(newField);
   };
 
@@ -398,7 +435,6 @@ const FieldEditor = ({
       [property]: value,
     };
 
-    setFieldDetails(newField);
     updateField(newField);
   };
 
@@ -458,6 +494,7 @@ const FieldEditor = ({
         />
         <Badge>Postion X</Badge>
         <Input
+          value={fieldDetails.x}
           type="number"
           className="h-7 py-1 text-xs"
           defaultValue={fieldDetails.x}
@@ -465,6 +502,7 @@ const FieldEditor = ({
         />
         <Badge>Position Y</Badge>
         <Input
+          value={fieldDetails.y}
           type="number"
           className="h-7 py-1 text-xs"
           defaultValue={fieldDetails.y}
@@ -472,6 +510,7 @@ const FieldEditor = ({
         />
         <Badge>Width</Badge>
         <Input
+          value={fieldDetails.w}
           type="number"
           className="h-7 py-1 text-xs"
           defaultValue={fieldDetails.w}
@@ -479,6 +518,7 @@ const FieldEditor = ({
         />
         <Badge>Page</Badge>
         <Input
+          value={fieldDetails.page}
           type="number"
           className="h-7 py-1 text-xs"
           defaultValue={fieldDetails.page}
@@ -554,6 +594,8 @@ const Sidebar = ({
   addDocumentField,
   editDocumentField,
   removeDocumentField,
+  handleFieldsRefresh,
+  refreshing,
 }: {
   documentUrl: string | null;
   fieldTransform: { x: number; y: number; w: number; h: number; page: number };
@@ -566,6 +608,8 @@ const Sidebar = ({
   addDocumentField: (field: IFormField) => void;
   editDocumentField: (key: number) => (field: Partial<IFormField>) => void;
   removeDocumentField: (key: number) => void;
+  handleFieldsRefresh: () => void;
+  refreshing: boolean;
 }) => {
   // Allows us to click the input without showing it
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -580,7 +624,7 @@ const Sidebar = ({
   const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
   const keyedDocumentFields = useMemo(
     () => documentFields.map((field) => ({ id: Math.random().toString(), ...field })),
-    [documentFields]
+    [selectedFieldKey, documentFields, fieldRegistry]
   );
 
   // Handle changes in file upload
@@ -709,7 +753,7 @@ const Sidebar = ({
       keyedDocumentFields.find((field) => field.id === selectedFieldKey)!,
       ...keyedDocumentFields.filter((f) => f.id !== selectedFieldKey).toReversed(),
     ];
-  }, [selectedFieldKey, documentFields, fieldRegistry]);
+  }, [selectedFieldKey, keyedDocumentFields, fieldRegistry]);
 
   // Refresh the ui of the fields
   const refreshFieldPreviews = () => {
@@ -751,7 +795,7 @@ const Sidebar = ({
   useEffect(() => {
     refreshFieldPreviews();
     return () => setFieldPreviews([]);
-  }, [selectedFieldKey, documentFields, fieldRegistry]);
+  }, [selectedFieldKey, keyedDocumentFields, fieldRegistry]);
 
   // Make sure to set the file when it's specified in the parent
   useEffect(() => {
@@ -812,9 +856,25 @@ const Sidebar = ({
           Select File
         </Button>
         {documentFile && (
-          <Button variant="outline" scheme="supportive" onClick={handleFileRegister}>
+          <Button
+            variant="outline"
+            scheme="supportive"
+            onClick={handleFileRegister}
+            disabled={refreshing}
+          >
             <CheckCircle />
             Register File
+          </Button>
+        )}
+        {documentFile && (
+          <Button
+            variant="outline"
+            scheme="supportive"
+            onClick={() => handleFieldsRefresh()}
+            disabled={refreshing}
+          >
+            <Redo2Icon />
+            {refreshing ? "Refreshing..." : "Refresh Fields"}
           </Button>
         )}
       </div>
@@ -850,7 +910,7 @@ const Sidebar = ({
                   selected={field?.id === selectedFieldKey}
                   updateField={editDocumentField(keyedDocumentFields.indexOf(field))}
                   fieldRegistry={fieldRegistry?.fields ?? []}
-                  initialFieldDetails={field}
+                  fieldDetails={field}
                   removeField={removeDocumentField}
                 />
               ))}
