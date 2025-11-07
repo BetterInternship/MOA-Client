@@ -1,7 +1,11 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
+<<<<<<< HEAD
+ * @ Modified time: 2025-11-07 15:30:02
+=======
  * @ Modified time: 2025-11-07 14:10:13
+>>>>>>> develop
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -234,6 +238,7 @@ const FormEditorPageContent = () => {
           initialDocumentLabel={formMetadata?.label ?? null}
           handleFieldsRefresh={() => void handleFieldsRefresh()}
           refreshing={refreshing}
+          initialRequiredParties={formMetadata?.required_parties ?? []}
         />
         {documentUrl && (
           <FormRenderer
@@ -590,6 +595,7 @@ const Sidebar = ({
   initialDocumentLabel,
   initialSubscribers,
   initialSignatories,
+  initialRequiredParties,
   setDocumentUrl,
   addDocumentField,
   editDocumentField,
@@ -604,6 +610,7 @@ const Sidebar = ({
   initialDocumentLabel: string | null;
   initialSubscribers: IFormSubscriber[];
   initialSignatories: IFormSignatory[];
+  initialRequiredParties: string[];
   setDocumentUrl: (documentUrl: string) => void;
   addDocumentField: (field: IFormField) => void;
   editDocumentField: (key: number) => (field: Partial<IFormField>) => void;
@@ -650,6 +657,7 @@ const Sidebar = ({
       label: "",
       source: "manual",
       party: "student",
+      shared: true,
     });
   }, [addDocumentField]);
 
@@ -736,6 +744,7 @@ const Sidebar = ({
         documentNamePlaceholder={documentName}
         documentFile={documentFile}
         close={() => closeModal()}
+        initialRequiredParties={initialRequiredParties}
       />,
       {
         title: "Register Form into DB?",
@@ -1013,6 +1022,7 @@ const RegisterFileModal = ({
   documentFile,
   subscribers,
   signatories,
+  initialRequiredParties,
   close,
 }: {
   documentNamePlaceholder: string;
@@ -1021,11 +1031,12 @@ const RegisterFileModal = ({
   documentFile: File;
   subscribers: IFormSubscriber[];
   signatories: IFormSignatory[];
+  initialRequiredParties: string[];
   close: () => void;
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
   const [documentLabel, setDocumentLabel] = useState(documentLabelPlaceholder);
-  const [requiredParties, setRequiredParties] = useState<string>("");
+  const [requiredParties, setRequiredParties] = useState<string>(initialRequiredParties.join(", "));
   const [submitting, setSubmitting] = useState(false);
 
   // Constructs the latest metadata given the state
@@ -1035,7 +1046,7 @@ const RegisterFileModal = ({
     // Make sure required parties are unique and valid
     const requiredPartiesArray = Array.from(
       new Set(requiredPartiesRaw.filter((rp) => PARTIES.includes(rp)))
-    ) as ("student" | "student-guardian" | "entity" | "university")[];
+    );
 
     // Make signatures bigger
     const resizedFields = documentFields.map((field) => ({
@@ -1044,7 +1055,12 @@ const RegisterFileModal = ({
     }));
 
     return {
-      required_parties: requiredPartiesArray,
+      required_parties: requiredPartiesArray as (
+        | "student"
+        | "student-guardian"
+        | "entity"
+        | "university"
+      )[],
       schema_version: SCHEMA_VERSION,
       name: documentName,
       label: documentLabel,
