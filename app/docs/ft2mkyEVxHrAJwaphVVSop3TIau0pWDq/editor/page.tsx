@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
 <<<<<<< HEAD
- * @ Modified time: 2025-11-07 15:30:02
+ * @ Modified time: 2025-11-07 20:05:49
 =======
  * @ Modified time: 2025-11-07 14:10:13
 >>>>>>> develop
@@ -1036,7 +1036,12 @@ const RegisterFileModal = ({
 }) => {
   const [documentName, setDocumentName] = useState(documentNamePlaceholder);
   const [documentLabel, setDocumentLabel] = useState(documentLabelPlaceholder);
-  const [requiredParties, setRequiredParties] = useState<string>(initialRequiredParties.join(", "));
+  const [requiredParties, setRequiredParties] = useState<string>(
+    // ! remove this after fix
+    typeof initialRequiredParties === "string"
+      ? initialRequiredParties
+      : (initialRequiredParties.join(", ") ?? "")
+  );
   const [submitting, setSubmitting] = useState(false);
 
   // Constructs the latest metadata given the state
