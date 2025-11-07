@@ -19,6 +19,7 @@ import { Divider } from "@/components/ui/divider";
 const FormRegistryPage = () => {
   const formRegistry = useFormsControllerGetRegistry();
   const forms = formRegistry.data?.registry ?? [];
+  const formSorted = forms.sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="mx-auto mt-4 max-w-5xl">
@@ -28,7 +29,7 @@ const FormRegistryPage = () => {
           <TableHead>Form Identifier</TableHead>
           <TableHead>Current Revision Number</TableHead>
         </TableHeader>
-        {forms.map((form) => (
+        {formSorted.map((form) => (
           <FormRegistryEntry name={form.name} version={form.version} />
         ))}
       </Table>
