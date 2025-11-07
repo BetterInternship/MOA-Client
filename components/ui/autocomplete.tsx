@@ -13,12 +13,14 @@ export const Autocomplete = <ID extends number | string>({
   setter,
   placeholder,
   className,
+  inputClassName,
   value,
 }: {
   options: IAutocompleteOption<ID>[];
   setter: (value?: ID | null) => void;
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
   value?: ID | null;
 }) => {
   const [query, setQuery] = useState("");
@@ -52,7 +54,7 @@ export const Autocomplete = <ID extends number | string>({
     <div className={cn("relative w-full", className)} ref={ref}>
       <Input
         value={selected?.name ?? undefined}
-        className="border-gray-300"
+        className={cn("border-gray-300", inputClassName)}
         placeholder={placeholder}
         onChange={(e) => {
           setter(e.target.value as ID);

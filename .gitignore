@@ -42,3 +42,6 @@ next-env.d.ts
 
 # workspace settings
 /.vscode/
+
+# Testing stuff
+lorem-ipsum.pdf
