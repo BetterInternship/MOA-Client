@@ -13,6 +13,7 @@ export interface RegisterFieldDto {
   label: string;
   type: string;
   party: RegisterFieldDtoParty;
+  shared: boolean;
   source: RegisterFieldDtoSource;
   /** @nullable */
   prefiller: string | null;

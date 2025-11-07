@@ -16,6 +16,7 @@ export interface FieldRegistryEntryDetails {
   type: FieldRegistryEntryDetailsType;
   party: FieldRegistryEntryDetailsParty;
   source: FieldRegistryEntryDetailsSource;
+  shared: boolean;
   preset: string;
   /** @nullable */
   prefiller: string | null;
