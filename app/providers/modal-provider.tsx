@@ -230,14 +230,14 @@ const ModalWrapper = ({
         {(options.title || options.hasClose !== false) && (
           <div
             className={cn(
-              "flex items-center justify-between gap-3 px-4 py-3",
+              "flex items-start justify-between gap-3 px-4 py-3",
               options.showHeaderDivider ? "border-b" : "",
               options.headerClassName ?? ""
             )}
           >
             {options.title ? (
               typeof options.title === "string" ? (
-                <h2 className="truncate text-2xl font-bold tracking-tight">{options.title}</h2>
+                <h2 className="text-2xl leading-snug font-bold tracking-tight">{options.title}</h2>
               ) : (
                 <div className="min-w-0 flex-1">{options.title}</div>
               )
