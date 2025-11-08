@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 06:35:53
+ * @ Modified time: 2025-11-09 06:38:30
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -631,8 +631,8 @@ const Sidebar = ({
 
     if (selectedFieldKey === null) return initialOrder;
     return [
-      keyedDocumentFields.find((field) => field.id === selectedFieldKey)!,
-      ...keyedDocumentFields.filter((f) => f.id !== selectedFieldKey).toReversed(),
+      initialOrder.find((field) => field.id === selectedFieldKey)!,
+      ...initialOrder.filter((f) => f.id !== selectedFieldKey),
     ];
   }, [selectedFieldKey, keyedDocumentFields, registry]);
 
