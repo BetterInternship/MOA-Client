@@ -6,22 +6,16 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { CheckCircle2, Loader2, Info } from "lucide-react";
 import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
+import { useModal } from "@/app/providers/modal-provider";
 
 type Audience = "entity" | "student-guardian" | "university";
-type Party = "entity" | "student-guardian" | "university";
-type Role = "entity" | "student-guardian" | "university";
+type Party = "entity" | "student-guardian" | "university" | "";
+type Role = "entity" | "student-guardian" | "university" | "";
 
 function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } {
   switch (aud) {
@@ -31,6 +25,8 @@ function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } 
       return { role: "student-guardian", party: "student-guardian" };
     case "university":
       return { role: "university", party: "university" };
+    default:
+      return { role: "", party: "" };
   }
 }
 
@@ -101,6 +97,7 @@ const Page = () => {
 function PageContent() {
   const params = useSearchParams();
   const router = useRouter();
+  const { openModal, closeModal } = useModal();
 
   // URL params
   const audienceParam = (params.get("for") || "entity").trim() as Audience;
@@ -131,6 +128,10 @@ function PageContent() {
   const pendingInfo = pendingRes?.pendingInformation;
   const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url;
 
+  const audienceFromPending: string[] = (pendingInfo?.pendingInfo?.pending_parties ??
+    []) as string[];
+  const audienceAllowed = audienceFromPending.includes(audienceParam);
+
   // Fetch form fields schema from API
   const {
     data: formRes,
@@ -154,15 +155,6 @@ function PageContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  // success modal
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [success, setSuccess] = useState<{ title: string; body: string; href?: string } | null>(
-    null
-  );
-
-  // Authorization modal
-  const [authOpen, setAuthOpen] = useState(false);
 
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
@@ -234,26 +226,61 @@ function PageContent() {
 
       const res = await approveSignatory(payload);
 
-      if (res?.approval?.signedDocumentUrl || res?.approval?.signedDocumentId) {
-        setSuccess({
-          title: "Submitted & Signed",
-          body: "This document is now fully signed. You can download the signed copy below.",
-          href: res.approval.signedDocumentUrl,
-        });
-      } else {
-        setSuccess({
-          title: "Details Submitted",
-          body: "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
-        });
-      }
+      const succ =
+        res?.approval?.signedDocumentUrl || res?.approval?.signedDocumentId
+          ? {
+              title: "Submitted & Signed",
+              body: "This document is now fully signed. You can download the signed copy below.",
+              href: res.approval.signedDocumentUrl,
+            }
+          : {
+              title: "Details Submitted",
+              body: "Thanks! Your details were submitted. We’ll notify you when the document is ready.",
+            };
 
-      setSuccessOpen(true);
+      openModal(
+        "sign-success",
+        <div className="text-center p-2">
+          <div className="mb-2">
+            <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
+          </div>
+          <div className="text-sm">{succ.body}</div>
+          <div className="flex w-full justify-center gap-2 pt-4">
+            <Button
+              variant={succ.href ? "outline" : "default"}
+              onClick={() => closeModal("sign-success")}
+              className="w-full"
+            >
+              Close
+            </Button>
+          </div>
+        </div>,
+        {
+          panelClassName: "sm:max-w-md",
+          onClose: goHome,
+          hasClose: false,
+          allowBackdropClick: false,
+          closeOnEsc: false,
+        }
+      );
     } catch (e: any) {
-      setSuccess({
+      const fail = {
         title: "Submission Failed",
         body: "Something went wrong while submitting your details.",
-      });
-      setSuccessOpen(true);
+      };
+      openModal(
+        "sign-success",
+        <div className="text-center">
+          <div className="mb-2">
+            <CheckCircle2 className="mx-auto h-16 w-16 text-rose-500" />
+          </div>
+          <div className="text-sm">{fail.body}</div>
+          <div className="flex w-full justify-center gap-2 pt-4">
+            <Button onClick={() => closeModal("sign-success")}>Close</Button>
+          </div>
+        </div>,
+        { panelClassName: "sm:max-w-md", onClose: goHome }
+      );
     } finally {
       setBusy(false);
     }
@@ -263,25 +290,50 @@ function PageContent() {
     setSubmitted(true);
     const { nextErrors, flatValues } = validateAndCollect();
     if (Object.keys(nextErrors).length > 0) {
-      setAuthOpen(false);
       setLastValidValues(null);
       return;
     }
     setLastValidValues(flatValues);
-    setAuthOpen(true);
+    openModal(
+      "sign-auth",
+      <div className="space-y-4 text-sm">
+        <p className="text-justify text-gray-700">
+          I authorize auto-fill and auto-sign of future school-issued templated documents on my
+          behalf. A copy of each signed document will be emailed to me.
+        </p>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleAuthorizeChoice("no")}
+            aria-pressed={authorizeChoice === "no"}
+            className="w-full"
+          >
+            No, I’ll sign manually for now
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => handleAuthorizeChoice("yes")}
+            aria-pressed={authorizeChoice === "yes"}
+            className="w-full"
+          >
+            Yes, auto-fill & auto-sign
+          </Button>
+        </div>
+      </div>,
+      { title: "Permission to Auto-Fill & Auto-Sign" }
+    );
   };
 
   const handleAuthorizeChoice = async (choice: "yes" | "no") => {
     setAuthorizeChoice(choice);
-    setAuthOpen(false);
+    closeModal("sign-auth");
     await submitWithAuthorization(choice);
   };
 
   const goHome = () => router.push("/");
-  const onDialogOpenChange = (open: boolean) => {
-    setSuccessOpen(open);
-    if (!open) goHome();
-  };
 
   return (
     <div className="container mx-auto max-w-3xl px-4 pt-8 sm:px-10 sm:pt-16">
@@ -315,7 +367,7 @@ function PageContent() {
               </div>
             ) : pendingErr ? (
               <div className="text-rose-600">Failed to load pending document.</div>
-            ) : !pendingInfo ? (
+            ) : !pendingInfo || !audienceAllowed ? (
               <div className="text-gray-600">No pending document data found.</div>
             ) : (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -327,7 +379,7 @@ function PageContent() {
                 {pendingUrl ? (
                   <Button
                     className="w-full sm:w-auto"
-                    onClick={() => window.open(pendingUrl, "_blank")}
+                    onClick={() => pendingUrl && window.open(pendingUrl, "_blank")}
                     aria-label="Open pending document"
                   >
                     Preview document
@@ -361,9 +413,13 @@ function PageContent() {
             </span>
           </Card>
         ) : formErr ? (
-          <Card className="p-6 text-sm text-rose-600">Failed to load fields.</Card>
+          <Card className="p-4 text-sm text-rose-600">Failed to load fields.</Card>
+        ) : !audienceAllowed ? (
+          <Card className="p-4 text-sm text-gray-600">
+            This form is not available. If you believe this is an error, please contact support.
+          </Card>
         ) : fields.length === 0 ? (
-          <Card className="p-6 text-sm text-gray-500">No fields available for this request.</Card>
+          <Card className="p-4 text-sm text-gray-500">No fields available for this request.</Card>
         ) : (
           <Card className="space-y-4 p-4 sm:p-5">
             <DynamicForm
@@ -400,75 +456,6 @@ function PageContent() {
           on documents, including legally binding contracts
         </div>
       </div>
-
-      {/* Success Dialog */}
-      <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="items-center text-center">
-            <div className="mb-2">
-              <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
-            </div>
-            <DialogTitle className="text-lg">{success?.title ?? "Success"}</DialogTitle>
-            <DialogDescription className="text-sm">
-              {success?.body ?? "Your submission was successful."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex w-full justify-center gap-2 pt-1 pb-2">
-            {success?.href && (
-              <Button asChild>
-                <Link href={success.href} target="_blank" rel="noopener noreferrer">
-                  Open signed document
-                </Link>
-              </Button>
-            )}
-            <Button
-              variant={success?.href ? "outline" : "default"}
-              onClick={() => onDialogOpenChange(false)}
-            >
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Authorization Dialog with explicit buttons; clicking either submits */}
-      <Dialog open={authOpen} onOpenChange={setAuthOpen}>
-        <DialogContent className="sm:max-w-lg sm:p-8">
-          <DialogHeader>
-            <DialogTitle className="mt-3">Permission to Auto-Fill & Auto-Sign</DialogTitle>
-            <DialogDescription asChild>
-              <div className="space-y-4 text-sm">
-                <p className="text-justify text-gray-700">
-                  I authorize auto-fill and auto-sign of future school-issued templated documents on
-                  my behalf. A copy of each signed document will be emailed to me.
-                </p>
-
-                <div className="flex w-full items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleAuthorizeChoice("no")}
-                    aria-pressed={authorizeChoice === "no"}
-                    className="w-1/2"
-                  >
-                    No, I’ll sign manually for now
-                  </Button>
-
-                  <Button
-                    type="button"
-                    onClick={() => handleAuthorizeChoice("yes")}
-                    aria-pressed={authorizeChoice === "yes"}
-                    className="w-1/2"
-                  >
-                    Yes, auto-fill & auto-sign
-                  </Button>
-                </div>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
