@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 05:23:11
+ * @ Modified time: 2025-11-09 06:35:53
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -24,7 +24,16 @@ import {
 import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Download, PlusCircle, Redo2Icon, Upload, X } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  PlusCircle,
+  Redo2Icon,
+  Upload,
+  X,
+} from "lucide-react";
 import {
   IFormField,
   IFormMetadata,
@@ -122,7 +131,7 @@ const FormEditorPageContent = () => {
   if (form.loading) return <Loader>Loading form editor...</Loader>;
 
   return (
-    <div className="relative mx-auto h-[70vh] max-w-7xl">
+    <div className="relative mx-auto mt-16 h-[70vh] max-w-7xl">
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
         <Sidebar fieldTransform={fieldTransform} />
         {form.document.url && (
@@ -289,6 +298,7 @@ const FieldEditor = ({
   const form = useFormContext();
   const { registry } = useFieldTemplateContext();
   const [fieldId, setFieldId] = useState<string | null>();
+  const [isOpen, setIsOpen] = useState(false);
 
   // Select a field and update details so we can use those
   const handleSelectField = async (id: string) => {
@@ -340,77 +350,93 @@ const FieldEditor = ({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-[0.25em] border p-2",
+        "flex flex-col gap-2 border-t bg-white p-2 px-4 transition-all duration-300 hover:cursor-pointer hover:bg-gray-100",
         selected ? "border-supportive bg-supportive/10" : "border-gray-300"
       )}
     >
-      <div className="flex flex-row items-center gap-2">
-        <Autocomplete
-          value={fieldId}
-          inputClassName="h-7 py-1 text-xs"
-          placeholder="Select field..."
-          options={registry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
-          setter={(id) => id && void handleSelectField(id)}
-        />
-        <Button
-          className="h-7 w-6!"
-          scheme="destructive"
-          variant="outline"
-          onClick={handleRemoveField}
-        >
-          <X></X>
-        </Button>
+      <div
+        className="flex flex-row items-center justify-between gap-2"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        ({fieldDetails.page}) {fieldDetails.field}
+        <div className="flex-1"></div>
+        {isOpen ? (
+          <ChevronDown className="h-4 w-4"></ChevronDown>
+        ) : (
+          <ChevronRight className="h-4 w-4"></ChevronRight>
+        )}
       </div>
-      <div className="grid grid-cols-2 grid-rows-2 gap-2">
-        <Badge>Display Label</Badge>
-        <Input
-          value={fieldDetails.label}
-          placeholder="Field Display Label"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.label}
-          onChange={handleChangeFactory("label")}
-        />
-        <Badge>Source</Badge>
-        <Autocomplete
-          value={fieldDetails.source}
-          inputClassName="h-7 py-1 text-xs"
-          placeholder="Select Field Source"
-          options={SOURCES.map((s) => ({ id: s, name: s }))}
-          setter={(id) => id && handleChangeFactory("source")(id)}
-        />
-        <Badge>Postion X</Badge>
-        <Input
-          value={fieldDetails.x}
-          type="number"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.x}
-          onChange={handleChangeFactory("x")}
-        />
-        <Badge>Position Y</Badge>
-        <Input
-          value={fieldDetails.y}
-          type="number"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.y}
-          onChange={handleChangeFactory("y")}
-        />
-        <Badge>Width</Badge>
-        <Input
-          value={fieldDetails.w}
-          type="number"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.w}
-          onChange={handleChangeFactory("w")}
-        />
-        <Badge>Page</Badge>
-        <Input
-          value={fieldDetails.page}
-          type="number"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.page}
-          onChange={handleChangeFactory("page")}
-        />
-      </div>
+      {isOpen && (
+        <>
+          <div className="flex flex-row items-center gap-2">
+            <Autocomplete
+              value={fieldId}
+              inputClassName="h-7 py-1 text-xs"
+              placeholder="Select field..."
+              options={registry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
+              setter={(id) => id && void handleSelectField(id)}
+            />
+            <Button
+              className="h-7 w-6!"
+              scheme="destructive"
+              variant="outline"
+              onClick={handleRemoveField}
+            >
+              <X></X>
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 grid-rows-2 gap-2">
+            <Badge>Display Label</Badge>
+            <Input
+              value={fieldDetails.label}
+              placeholder="Field Display Label"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.label}
+              onChange={handleChangeFactory("label")}
+            />
+            <Badge>Source</Badge>
+            <Autocomplete
+              value={fieldDetails.source}
+              inputClassName="h-7 py-1 text-xs"
+              placeholder="Select Field Source"
+              options={SOURCES.map((s) => ({ id: s, name: s }))}
+              setter={(id) => id && handleChangeFactory("source")(id)}
+            />
+            <Badge>Postion X</Badge>
+            <Input
+              value={fieldDetails.x}
+              type="number"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.x}
+              onChange={handleChangeFactory("x")}
+            />
+            <Badge>Position Y</Badge>
+            <Input
+              value={fieldDetails.y}
+              type="number"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.y}
+              onChange={handleChangeFactory("y")}
+            />
+            <Badge>Width</Badge>
+            <Input
+              value={fieldDetails.w}
+              type="number"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.w}
+              onChange={handleChangeFactory("w")}
+            />
+            <Badge>Page</Badge>
+            <Input
+              value={fieldDetails.page}
+              type="number"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.page}
+              onChange={handleChangeFactory("page")}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -600,7 +626,10 @@ const Sidebar = ({
 
   // Makes sure that the selected field is always shown at the top
   const sortedDocumentFields = useMemo(() => {
-    if (selectedFieldKey === null) return keyedDocumentFields.toReversed();
+    const initialOrder = keyedDocumentFields.toReversed();
+    initialOrder.sort((a, b) => a.page - b.page || a.field.localeCompare(b.field));
+
+    if (selectedFieldKey === null) return initialOrder;
     return [
       keyedDocumentFields.find((field) => field.id === selectedFieldKey)!,
       ...keyedDocumentFields.filter((f) => f.id !== selectedFieldKey).toReversed(),
@@ -697,68 +726,33 @@ const Sidebar = ({
 
   return (
     <Tabs defaultValue="fields">
-      <div className="flex flex-row items-center gap-2 pt-2">
-        <TabsList className="rounded-[0.33em]">
-          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
-            Fields
-          </TabsTrigger>
-          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="subscribers">
-            Subscribers
-          </TabsTrigger>
-          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="signatories">
-            Signatories
-          </TabsTrigger>
-        </TabsList>
-        <Button onClick={() => fileInputRef.current?.click()}>
-          <Upload />
-          Select File
-        </Button>
-        {form.document.file && (
-          <Button
-            variant="outline"
-            scheme="supportive"
-            onClick={handleFileRegister}
-            disabled={form.refreshing}
-          >
-            <CheckCircle />
-            Register File
-          </Button>
-        )}
-        {form.document.file && (
-          <Button
-            variant="outline"
-            scheme="supportive"
-            onClick={() => void form.refreshFields()}
-            disabled={form.refreshing}
-          >
-            <Redo2Icon />
-            {form.refreshing ? "Refreshing..." : "Refresh Fields"}
-          </Button>
-        )}
-      </div>
-      <div className="sidebar w-[30vw] p-4">
+      <h1 className="my-2 text-lg font-bold tracking-tighter text-ellipsis">
+        {form.document.name || "No Name Specified"}
+      </h1>
+      <TabsList>
+        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
+          Fields
+        </TabsTrigger>
+        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="subscribers">
+          Subscribers
+        </TabsTrigger>
+        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="signatories">
+          Signatories
+        </TabsTrigger>
+      </TabsList>
+      <div className="sidebar h-full w-[30vw]">
         <TabsContent value="fields">
-          <h1 className="my-2 text-lg font-bold">"{form.document.name}" - Schema</h1>
-          <pre className="my-2">
-            x: {fieldTransform.x}, y: {fieldTransform.y}, w: {fieldTransform.w}, h:{" "}
-            {fieldTransform.h}, page: {fieldTransform.page}
-          </pre>
-          <div className="mb-2 flex flex-row gap-2">
-            {form.document.file && (
-              <Button variant="outline" onClick={handleFieldAdd}>
-                <PlusCircle />
-                Add Field
-              </Button>
-            )}
+          <div className="p-4">
+            <div className="mb-2 flex flex-row gap-2">
+              {form.document.file && (
+                <Button variant="outline" onClick={handleFieldAdd}>
+                  <PlusCircle />
+                  Add Field
+                </Button>
+              )}
+            </div>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {sortedDocumentFields
               .filter((f) => !!f)
               .map((field) => (
@@ -772,23 +766,17 @@ const Sidebar = ({
           </div>
         </TabsContent>
         <TabsContent value="subscribers">
-          <h1 className="my-2 text-lg font-bold">"{form.document.name}" - Subscribers</h1>
-          <pre className="my-2">{subscribers.length} subscribers</pre>
-          <div className="mb-2 flex flex-row gap-2">
-            {form.document.file && (
-              <Button variant="outline" onClick={handleSubscriberAdd}>
-                <PlusCircle />
-                Add Subscriber
-              </Button>
-            )}
+          <div className="p-4">
+            <pre className="my-2">{subscribers.length} subscribers</pre>
+            <div className="mb-2 flex flex-row gap-2">
+              {form.document.file && (
+                <Button variant="outline" onClick={handleSubscriberAdd}>
+                  <PlusCircle />
+                  Add Subscriber
+                </Button>
+              )}
+            </div>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
           <div className="flex flex-col gap-2">
             {subscribers.map((subscriber, i) => (
               <div className="flex flex-row gap-2">
@@ -810,23 +798,17 @@ const Sidebar = ({
           </div>
         </TabsContent>
         <TabsContent value="signatories">
-          <h1 className="my-2 text-lg font-bold">"{form.document.name}" - Signatories</h1>
-          <pre className="my-2">{signatories.length} signatories</pre>
-          <div className="mb-2 flex flex-row gap-2">
-            {form.document.file && (
-              <Button variant="outline" onClick={handleSignatoryAdd}>
-                <PlusCircle />
-                Add Signatory
-              </Button>
-            )}
+          <div className="p-4">
+            <pre className="my-2">{signatories.length} signatories</pre>
+            <div className="mb-2 flex flex-row gap-2">
+              {form.document.file && (
+                <Button variant="outline" onClick={handleSignatoryAdd}>
+                  <PlusCircle />
+                  Add Signatory
+                </Button>
+              )}
+            </div>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
           <div className="flex flex-col gap-2">
             {signatories.map((signatory, i) => (
               <div className="flex flex-row gap-2">
@@ -847,6 +829,43 @@ const Sidebar = ({
             ))}
           </div>
         </TabsContent>
+      </div>
+      <div className="flex flex-col justify-between gap-2 pt-2">
+        <div className="flex flex-row items-center justify-center gap-2 border border-gray-400 p-4">
+          <Button scheme="secondary" onClick={() => fileInputRef.current?.click()}>
+            <Upload />
+            Select File
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          {form.document.file && (
+            <Button
+              variant="outline"
+              scheme="supportive"
+              onClick={handleFileRegister}
+              disabled={form.refreshing}
+            >
+              <CheckCircle />
+              Register File
+            </Button>
+          )}
+          {form.document.file && (
+            <Button
+              variant="outline"
+              scheme="supportive"
+              onClick={() => void form.refreshFields()}
+              disabled={form.refreshing}
+            >
+              <Redo2Icon />
+              {form.refreshing ? "Refreshing..." : "Refresh Fields"}
+            </Button>
+          )}
+        </div>
       </div>
       {fieldPreviews}
     </Tabs>
