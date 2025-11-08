@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 06:38:30
+ * @ Modified time: 2025-11-09 07:41:57
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -28,7 +28,9 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronRight,
+  ClipboardCopy,
   Download,
+  Edit,
   PlusCircle,
   Redo2Icon,
   Upload,
@@ -131,7 +133,7 @@ const FormEditorPageContent = () => {
   if (form.loading) return <Loader>Loading form editor...</Loader>;
 
   return (
-    <div className="relative mx-auto mt-16 h-[70vh] max-w-7xl">
+    <div className="relative mx-auto mt-8 h-[83vh] max-w-7xl">
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
         <Sidebar fieldTransform={fieldTransform} />
         {form.document.url && (
@@ -297,7 +299,8 @@ const FieldEditor = ({
 }) => {
   const form = useFormContext();
   const { registry } = useFieldTemplateContext();
-  const [fieldId, setFieldId] = useState<string | null>();
+  const [fieldTemplateId, setFieldTemplateId] = useState<string | null>();
+  const [isUsingTemplate, setIsUsingTemplate] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   // Select a field and update details so we can use those
@@ -344,18 +347,23 @@ const FieldEditor = ({
     const fieldFullNameList =
       registry?.map((f) => ({ id: f.id, name: `${f.name}:${f.preset}` })) ?? [];
     const fieldId = fieldFullNameList.find((f) => f.name === fieldDetails.field)?.id;
-    setFieldId(fieldId);
+    setFieldTemplateId(fieldId);
   }, [fieldDetails, registry]);
+
+  // Check if field is in template registry
+  useEffect(() => {
+    if (fieldTemplateId?.trim()) setIsUsingTemplate(true);
+  }, [fieldTemplateId]);
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 border-t bg-white p-2 px-4 transition-all duration-300 hover:cursor-pointer hover:bg-gray-100",
+        "flex flex-col gap-2 border-t bg-white transition-all duration-300 hover:cursor-pointer hover:bg-gray-100",
         selected ? "border-supportive bg-supportive/10" : "border-gray-300"
       )}
     >
       <div
-        className="flex flex-row items-center justify-between gap-2"
+        className="flex flex-row items-center justify-between gap-2 p-2 px-4"
         onClick={() => setIsOpen(!isOpen)}
       >
         ({fieldDetails.page}) {fieldDetails.field}
@@ -367,25 +375,60 @@ const FieldEditor = ({
         )}
       </div>
       {isOpen && (
-        <>
-          <div className="flex flex-row items-center gap-2">
-            <Autocomplete
-              value={fieldId}
-              inputClassName="h-7 py-1 text-xs"
-              placeholder="Select field..."
-              options={registry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
-              setter={(id) => id && void handleSelectField(id)}
-            />
+        <div className="bg-gray-100 p-4">
+          <div className="mb-4 flex flex-row justify-between gap-2">
+            <div className="mb-4 flex flex-row overflow-hidden rounded-[0.33em]">
+              <Button
+                className="h-7 rounded-none"
+                scheme="secondary"
+                onClick={() => setIsUsingTemplate(false)}
+              >
+                Define from scratch
+                <Edit></Edit>
+              </Button>
+              <Button
+                className="h-7 rounded-none"
+                scheme="supportive"
+                onClick={() => setIsUsingTemplate(true)}
+              >
+                Use a template
+                <ClipboardCopy></ClipboardCopy>
+              </Button>
+            </div>
             <Button
-              className="h-7 w-6!"
+              className="h-7"
               scheme="destructive"
               variant="outline"
               onClick={handleRemoveField}
             >
+              Remove
               <X></X>
             </Button>
           </div>
           <div className="grid grid-cols-2 grid-rows-2 gap-2">
+            {isUsingTemplate ? (
+              <>
+                <Badge className="bg-supportive border-none text-white">Template Name</Badge>
+                <Autocomplete
+                  value={fieldTemplateId}
+                  inputClassName="h-7 py-1 text-xs text-supportive border-supportive"
+                  placeholder="Choose template..."
+                  options={registry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
+                  setter={(id) => id && void handleSelectField(id)}
+                />
+              </>
+            ) : (
+              <>
+                <Badge className="border-none bg-black text-white">Field Identifier</Badge>
+                <Input
+                  value={fieldDetails.field}
+                  placeholder="Field Identifier"
+                  className="h-7 py-1 text-xs"
+                  defaultValue={fieldDetails.field}
+                  onChange={handleChangeFactory("field")}
+                />
+              </>
+            )}
             <Badge>Display Label</Badge>
             <Input
               value={fieldDetails.label}
@@ -393,14 +436,6 @@ const FieldEditor = ({
               className="h-7 py-1 text-xs"
               defaultValue={fieldDetails.label}
               onChange={handleChangeFactory("label")}
-            />
-            <Badge>Source</Badge>
-            <Autocomplete
-              value={fieldDetails.source}
-              inputClassName="h-7 py-1 text-xs"
-              placeholder="Select Field Source"
-              options={SOURCES.map((s) => ({ id: s, name: s }))}
-              setter={(id) => id && handleChangeFactory("source")(id)}
             />
             <Badge>Postion X</Badge>
             <Input
@@ -434,8 +469,42 @@ const FieldEditor = ({
               defaultValue={fieldDetails.page}
               onChange={handleChangeFactory("page")}
             />
+            {!isUsingTemplate && (
+              <>
+                <Badge>Source</Badge>
+                <Autocomplete
+                  value={fieldDetails.source}
+                  inputClassName="h-7 py-1 text-xs"
+                  placeholder="Select Field Source"
+                  options={SOURCES.map((s) => ({ id: s, name: s }))}
+                  setter={(id) => id && handleChangeFactory("source")(id)}
+                />
+                <Badge>Party</Badge>
+                <Autocomplete
+                  value={fieldDetails.party}
+                  inputClassName="h-7 py-1 text-xs"
+                  placeholder="Select Field Party"
+                  options={PARTIES.map((s) => ({ id: s, name: s }))}
+                  setter={(id) => id && handleChangeFactory("party")(id)}
+                />
+                <Badge>Validator</Badge>
+                <Input
+                  value={fieldDetails.validator}
+                  className="h-7 py-1 text-xs"
+                  defaultValue={fieldDetails.validator}
+                  onChange={handleChangeFactory("validator")}
+                />
+                <Badge>Prefiller</Badge>
+                <Input
+                  value={fieldDetails.prefiller}
+                  className="h-7 py-1 text-xs"
+                  defaultValue={fieldDetails.prefiller}
+                  onChange={handleChangeFactory("prefiller")}
+                />
+              </>
+            )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -572,10 +641,8 @@ const Sidebar = ({
     if (!form.document.file) return;
 
     // Check if all fields are valid
-    const fieldFullNameList = registry.map((f) => `${f.name}:${f.preset}`) ?? [];
     for (const field of form.fields) {
-      if (!fieldFullNameList.includes(field.field))
-        return alert(`${field.field} is not a valid field.`);
+      if (!field.field.trim()) return alert(`${field.field} has an empty field identifier.`);
       if (!field.source) return alert(`${field.field} is missing its source.`);
       if (!field.party) return alert(`${field.field} is missing its party.`);
       if (!field.type) return alert(`${field.field} is missing its type.`);
@@ -905,10 +972,15 @@ const RegisterFileModal = ({
     );
 
     // Make signatures bigger
-    const resizedFields = form.fields.map((field) => ({
-      ...field,
-      h: field.type === "text" ? 10 : 25,
-    }));
+    const resizedFields = form.fields.map((field) => {
+      const { id: _id, ...f } = {
+        ...field,
+        h: field.type === "text" ? 10 : 25,
+        id: null, // TS is being a bitch, don't remove this line lol some type error is slipping thru
+      };
+
+      return f;
+    });
 
     return {
       required_parties: requiredPartiesArray as (
