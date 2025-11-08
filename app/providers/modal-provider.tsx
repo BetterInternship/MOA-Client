@@ -257,8 +257,14 @@ const ModalWrapper = ({
         )}
 
         {/* Content area */}
-        <div className="">
-          <div className="max-h-[calc(var(--vh,1vh)*100-4rem)] overflow-auto px-4 pb-4 sm:max-h-[calc(90vh-4rem)]">
+        <div className={!options.hasClose ? "pt-3" : ""}>
+          <div
+            className={
+              options.panelClassName
+                ? ""
+                : "max-h-[calc(var(--vh,1vh)*100-4rem)] overflow-auto px-4 pb-4 sm:max-h-[calc(90vh-4rem)]"
+            }
+          >
             {children}
           </div>
         </div>
