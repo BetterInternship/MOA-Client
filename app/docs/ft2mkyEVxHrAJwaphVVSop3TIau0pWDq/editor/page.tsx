@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 20:58:44
+ * @ Modified time: 2025-11-09 21:03:15
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -291,11 +291,15 @@ const ContactEditor = ({
 const FieldEditor = ({
   fieldDetails,
   selected,
-  index,
+  setSelected,
+  fieldIndex,
+  fieldKey,
 }: {
   fieldDetails: IFormField;
   selected: boolean;
-  index: number;
+  setSelected: (fieldId: string) => void;
+  fieldIndex: number;
+  fieldKey: string;
 }) => {
   const form = useFormContext();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -324,7 +328,7 @@ const FieldEditor = ({
       h: 10,
     };
 
-    form.updateField(index, newField);
+    form.updateField(fieldIndex, newField);
   };
 
   // Handle change for any of the props of the field
@@ -341,13 +345,13 @@ const FieldEditor = ({
     };
 
     // Update field
-    form.updateField(index, newField);
+    form.updateField(fieldIndex, newField);
     scrollIntoView();
   };
 
   // Removes field from the drafted schema
   const handleRemoveField = () => {
-    form.removeField(index);
+    form.removeField(fieldIndex);
   };
 
   // Update field id from db
@@ -378,7 +382,7 @@ const FieldEditor = ({
     >
       <div
         className="flex flex-row items-center justify-between gap-2 p-2 px-4"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => (setIsOpen(!isOpen), setSelected(fieldKey))}
       >
         ({fieldDetails.page}) {fieldDetails.field}
         <div className="flex-1"></div>
@@ -583,7 +587,7 @@ const FieldPreview = ({
         "absolute top-0 left-0 border-0!",
         selected ? "bg-supportive/50!" : "bg-warning/50!"
       )}
-      onClick={() => (onClick(), console.log("clicked field"))}
+      onClick={() => onClick()}
       onMouseDown={onClick}
       style={{
         userSelect: "auto",
@@ -597,7 +601,7 @@ const FieldPreview = ({
         flexShrink: "0",
       }}
     >
-      {field}
+      {"xxx"}
     </div>
   );
 };
@@ -868,8 +872,10 @@ const Sidebar = ({
               .map((field) => (
                 <FieldEditor
                   key={field.id}
-                  index={keyedDocumentFields.indexOf(field)}
+                  fieldKey={field.id}
+                  fieldIndex={keyedDocumentFields.indexOf(field)}
                   selected={field?.id === selectedFieldKey}
+                  setSelected={setSelectedFieldKey}
                   fieldDetails={field}
                 />
               ))}
