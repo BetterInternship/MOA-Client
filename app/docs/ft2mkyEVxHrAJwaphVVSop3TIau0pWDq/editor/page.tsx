@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 07:41:57
+ * @ Modified time: 2025-11-09 08:06:02
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -298,6 +298,7 @@ const FieldEditor = ({
   index: number;
 }) => {
   const form = useFormContext();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { registry } = useFieldTemplateContext();
   const [fieldTemplateId, setFieldTemplateId] = useState<string | null>();
   const [isUsingTemplate, setIsUsingTemplate] = useState(false);
@@ -334,7 +335,11 @@ const FieldEditor = ({
       [property]: value,
     };
 
+    // Update field
     form.updateField(index, newField);
+
+    // When updating the field, we also want to scroll to where it gets placed after sorting
+    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   // Removes field from the drafted schema
@@ -357,6 +362,7 @@ const FieldEditor = ({
 
   return (
     <div
+      ref={scrollRef}
       className={cn(
         "flex flex-col gap-2 border-t bg-white transition-all duration-300 hover:cursor-pointer hover:bg-gray-100",
         selected ? "border-supportive bg-supportive/10" : "border-gray-300"
