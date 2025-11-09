@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 08:56:41
+ * @ Modified time: 2025-11-09 09:09:21
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -86,7 +86,6 @@ const FormEditorPageContent = () => {
   const form = useFormContext();
 
   // The current highlight and its transform; only need one for coordinates
-  const [documentUrl, setDocumentUrl] = useState<string>();
   const [highlight, setHighlight] = useState<IHighlight | null>(null);
   const [fieldTransform, setFieldTransform] = useState<{
     x: number;
@@ -131,11 +130,6 @@ const FormEditorPageContent = () => {
     form.updateFormVersion(formVersionNumber);
   }, [searchParams]);
 
-  // Work?
-  useEffect(() => {
-    setDocumentUrl(form.document.url);
-  }, [form.document.url]);
-
   if (form.loading) return <Loader>Loading form editor...</Loader>;
 
   return (
@@ -144,7 +138,7 @@ const FormEditorPageContent = () => {
         <Sidebar fieldTransform={fieldTransform} />
         {form.document.url && (
           <FormRenderer
-            documentUrl={documentUrl ?? ""}
+            documentUrl={form.document.url}
             highlight={highlight}
             onHighlightFinished={onHighlightFinished}
           />
