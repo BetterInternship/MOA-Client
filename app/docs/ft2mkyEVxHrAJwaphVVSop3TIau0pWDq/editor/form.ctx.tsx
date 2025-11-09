@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-09 11:56:41
+ * @ Modified time: 2025-11-09 21:12:22
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -110,7 +110,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     // Util for refreshing field
     const fieldRefresher = async (oldField: IFormField) => {
       const fieldId = registry.find((f) => `${f.name}:${f.preset}` === oldField.field)?.id;
-      if (!fieldId) return;
+      if (!fieldId) return oldField;
 
       const { field } = await formsControllerGetFieldFromRegistry({ id: fieldId });
       const { id: _id, name: _name, preset: _preset, ...rest } = field;
