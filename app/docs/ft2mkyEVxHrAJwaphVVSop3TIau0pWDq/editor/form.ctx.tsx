@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-09 08:51:05
+ * @ Modified time: 2025-11-09 09:01:21
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -167,6 +167,18 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
         setLoading(false);
       });
   }, [formName, formVersion]);
+
+  useEffect(() => {
+    console.log(
+      "document was updated",
+      "file",
+      document.file,
+      "name",
+      document.name,
+      "url",
+      document.url
+    );
+  }, [document]);
 
   // The form context
   const formContext: IFormContext = {
