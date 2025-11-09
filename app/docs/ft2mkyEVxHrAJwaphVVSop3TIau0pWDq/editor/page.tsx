@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 21:03:15
+ * @ Modified time: 2025-11-09 23:37:00
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -53,7 +53,7 @@ import path from "path";
 import { Divider } from "@/components/ui/divider";
 import { downloadJSON, loadPdfAsFile } from "@/lib/files";
 import { formsControllerRegisterForm } from "../../../api/app/api/endpoints/forms/forms";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
@@ -1004,6 +1004,7 @@ const RegisterFileModal = ({
   close: () => void;
 }) => {
   const form = useFormContext();
+  const router = useRouter();
   const [documentName, setDocumentName] = useState(form.formMetadata.name ?? "");
   const [documentLabel, setDocumentLabel] = useState(form.formMetadata.label ?? "");
   const [requiredParties, setRequiredParties] = useState<string>(
@@ -1064,11 +1065,12 @@ const RegisterFileModal = ({
     if (!form.document.file) return;
     if (!documentLabel) return alert("Please specify a label for the form.");
 
+    // After submitting, redirect to new version
     setSubmitting(true);
     await formsControllerRegisterForm(formMetadataDraft as unknown as RegisterFormSchemaDto);
-
-    setSubmitting(false);
-    close();
+    router.push(
+      `/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor?name=${form.formName}&version=${form.formVersion + 1}`
+    );
   };
 
   // Handle exporting current draft metadata
