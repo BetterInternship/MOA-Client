@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 08:06:02
+ * @ Modified time: 2025-11-09 08:32:35
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -492,6 +492,13 @@ const FieldEditor = ({
                   placeholder="Select Field Party"
                   options={PARTIES.map((s) => ({ id: s, name: s }))}
                   setter={(id) => id && handleChangeFactory("party")(id)}
+                />
+                <Badge>Tooltip Label</Badge>
+                <Input
+                  value={fieldDetails.tooltip_label}
+                  className="h-7 py-1 text-xs"
+                  defaultValue={fieldDetails.tooltip_label}
+                  onChange={handleChangeFactory("tooltip_label")}
                 />
                 <Badge>Validator</Badge>
                 <Input
