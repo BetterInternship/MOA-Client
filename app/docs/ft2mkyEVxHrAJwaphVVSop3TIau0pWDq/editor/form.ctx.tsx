@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-09 09:01:21
+ * @ Modified time: 2025-11-09 09:07:12
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -61,14 +61,12 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   const { registry } = useFieldTemplateContext();
 
   // Define state here
+  const [documentName, setDocumentName] = useState<string>("");
+  const [documentUrl, setDocumentUrl] = useState<string>("");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [formName, setFormName] = useState<string>("");
   const [formVersion, setFormVersion] = useState<number>(0);
   const [fields, setFields] = useState<IFormField[]>([]);
-  const [document, setDocument] = useState<IDocument>({
-    name: "",
-    url: "",
-    file: null,
-  });
 
   // Default form metadata
   const [formMetadata, setFormMetadata] = useState<IFormMetadata>({
@@ -149,13 +147,13 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
       // Promise for pulling metadata
       formsControllerGetRegistryFormMetadata(payload).then(({ formMetadata }) => {
         setFields(formMetadata.schema);
-        setDocument({ ...document, name: formMetadata.name });
+        setDocumentName(formMetadata.name);
         setFormMetadata(formMetadata);
       }),
 
       // Promise for retrieving the document
       formsControllerGetRegistryFormDocument(payload).then(({ formDocument }) => {
-        setDocument({ ...document, url: formDocument });
+        setDocumentUrl(formDocument);
       }),
     ];
 
@@ -168,27 +166,15 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
       });
   }, [formName, formVersion]);
 
-  useEffect(() => {
-    console.log(
-      "document was updated",
-      "file",
-      document.file,
-      "name",
-      document.name,
-      "url",
-      document.url
-    );
-  }, [document]);
-
   // The form context
   const formContext: IFormContext = {
     formName,
     formVersion,
     formMetadata,
-    document,
     fields,
     loading,
     refreshing,
+    document: { name: documentName, url: documentUrl, file: documentFile },
 
     updateField,
     removeField,
@@ -198,8 +184,11 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
 
     updateFormName: (newFormName: string) => setFormName(newFormName),
     updateFormVersion: (newFormVersion: number) => setFormVersion(newFormVersion),
-    updateDocument: (newDocument: Partial<IDocument>) =>
-      setDocument({ ...document, ...newDocument }),
+    updateDocument: (newDocument: Partial<IDocument>) => {
+      if (newDocument.name) setDocumentName(newDocument.name);
+      if (newDocument.url) setDocumentUrl(newDocument.url);
+      if (newDocument.file) setDocumentFile(newDocument.file);
+    },
   };
 
   return <FormContext.Provider value={formContext}>{children}</FormContext.Provider>;
