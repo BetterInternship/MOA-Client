@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-09 11:35:48
+ * @ Modified time: 2025-11-09 11:56:41
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -69,7 +69,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   const [fields, setFields] = useState<IFormField[]>([]);
 
   // Default form metadata
-  const [formMetadata, setFormMetadata] = useState<IFormMetadata>({
+  const initialFormMetadata = {
     name: "",
     label: "",
     schema_version: SCHEMA_VERSION,
@@ -77,7 +77,8 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     subscribers: [],
     signatories: [],
     required_parties: [],
-  });
+  };
+  const [formMetadata, setFormMetadata] = useState<IFormMetadata>(initialFormMetadata);
 
   // Loading states
   const [loading, setLoading] = useState(false);
@@ -153,7 +154,6 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
         setFields(formMetadata.schema);
         setDocumentName(formMetadata.name);
         setFormMetadata(formMetadata);
-        console.log(formMetadata.schema);
       }),
 
       // Promise for retrieving the document
@@ -175,6 +175,13 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   useEffect(() => {
     void refreshFields();
   }, [documentUrl]);
+
+  // Clear fields on refresh?
+  useEffect(() => {
+    setFields([]);
+    setFormMetadata(initialFormMetadata);
+    console.log("Clearing fields...");
+  }, []);
 
   // The form context
   const formContext: IFormContext = {
