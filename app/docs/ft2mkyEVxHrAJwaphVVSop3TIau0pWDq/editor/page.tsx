@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 23:37:00
+ * @ Modified time: 2025-11-10 03:01:48
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -1071,6 +1071,8 @@ const RegisterFileModal = ({
     router.push(
       `/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor?name=${form.formName}&version=${form.formVersion + 1}`
     );
+    setSubmitting(false);
+    close();
   };
 
   // Handle exporting current draft metadata
