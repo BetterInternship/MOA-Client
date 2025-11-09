@@ -109,8 +109,6 @@ function PageContent() {
   // Optional header bits
   const studentName = params.get("student") || "The student";
   const templateHref = params.get("template") || "";
-
-  const [lastValidValues, setLastValidValues] = useState<Record<string, string> | null>(null);
   const [authorizeChoice, setAuthorizeChoice] = useState<"yes" | "no">("yes");
 
   // Pending document preview
@@ -188,10 +186,8 @@ function PageContent() {
     return { nextErrors, flatValues };
   };
 
-  async function submitWithAuthorization(choice: "yes" | "no") {
-    if (!formName || !pendingDocumentId) return;
-
-    const flatValues = lastValidValues ?? {};
+  async function submitWithAuthorization(choice: "yes" | "no", flatValues: Record<string, string>) {
+    if (!formName || !pendingDocumentId || !party) return;
     try {
       setBusy(true);
       const clientSigningInfo = getClientSigningInfo();
@@ -240,7 +236,7 @@ function PageContent() {
 
       openModal(
         "sign-success",
-        <div className="text-center p-2">
+        <div className="p-2 text-center">
           <div className="mb-2">
             <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
           </div>
@@ -264,6 +260,7 @@ function PageContent() {
         }
       );
     } catch (e: any) {
+      console.error(e);
       const fail = {
         title: "Submission Failed",
         body: "Something went wrong while submitting your details.",
@@ -290,10 +287,8 @@ function PageContent() {
     setSubmitted(true);
     const { nextErrors, flatValues } = validateAndCollect();
     if (Object.keys(nextErrors).length > 0) {
-      setLastValidValues(null);
       return;
     }
-    setLastValidValues(flatValues);
     openModal(
       "sign-auth",
       <div className="space-y-4 text-sm">
@@ -306,7 +301,7 @@ function PageContent() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => handleAuthorizeChoice("no")}
+            onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
             aria-pressed={authorizeChoice === "no"}
             className="w-full"
           >
@@ -315,7 +310,7 @@ function PageContent() {
 
           <Button
             type="button"
-            onClick={() => handleAuthorizeChoice("yes")}
+            onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
             aria-pressed={authorizeChoice === "yes"}
             className="w-full"
           >
@@ -327,10 +322,13 @@ function PageContent() {
     );
   };
 
-  const handleAuthorizeChoice = async (choice: "yes" | "no") => {
+  const handleAuthorizeChoice = async (
+    choice: "yes" | "no",
+    flatValues: Record<string, string>
+  ) => {
     setAuthorizeChoice(choice);
     closeModal("sign-auth");
-    await submitWithAuthorization(choice);
+    await submitWithAuthorization(choice, flatValues);
   };
 
   const goHome = () => router.push("/");
