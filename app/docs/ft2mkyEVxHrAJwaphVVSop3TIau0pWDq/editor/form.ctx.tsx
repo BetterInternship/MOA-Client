@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-09 09:07:12
+ * @ Modified time: 2025-11-09 11:01:44
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -129,8 +129,12 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
 
     // Refresh all fields
     const newFields = await Promise.all(fields.map(fieldRefresher)).then((fs) =>
-      fs.filter((f) => f !== undefined)
+      fs
+        .filter((f) => f !== undefined)
+        .map((f) => (!f.align_h ? { ...f, align_h: "center" as const } : f))
+        .map((f) => (!f.align_v ? { ...f, align_v: "bottom" as const } : f))
     );
+
     setFields(newFields);
     setRefreshing(false);
   };
@@ -165,6 +169,11 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
         setLoading(false);
       });
   }, [formName, formVersion]);
+
+  // Refresh fields automatically
+  useEffect(() => {
+    void refreshFields();
+  }, [documentUrl]);
 
   // The form context
   const formContext: IFormContext = {

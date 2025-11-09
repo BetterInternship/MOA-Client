@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 09:09:21
+ * @ Modified time: 2025-11-09 11:00:59
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -475,6 +475,30 @@ const FieldEditor = ({
               defaultValue={fieldDetails.page}
               onChange={handleChangeFactory("page")}
             />
+            <Badge>Horizontal Alignment</Badge>
+            <Autocomplete
+              value={fieldDetails.align_h ?? "center"}
+              inputClassName="h-7 py-1 text-xs"
+              placeholder="Horizontal alignment"
+              options={[
+                { id: "left", name: "left" },
+                { id: "center", name: "center" },
+                { id: "right", name: "right" },
+              ]}
+              setter={(id) => id && void handleChangeFactory("align_h")(id)}
+            />
+            <Badge>Vertical Alignment</Badge>
+            <Autocomplete
+              value={fieldDetails.align_v ?? "bottom"}
+              inputClassName="h-7 py-1 text-xs"
+              placeholder="Vertical alignment"
+              options={[
+                { id: "top", name: "top" },
+                { id: "middle", name: "middle" },
+                { id: "bottom", name: "bottom" },
+              ]}
+              setter={(id) => id && void handleChangeFactory("align_v")(id)}
+            />
             {!isUsingTemplate && (
               <>
                 <Badge>Source</Badge>
@@ -608,6 +632,8 @@ const Sidebar = ({
     form.addField({
       ...fieldTransform,
       h: 12,
+      align_h: "center",
+      align_v: "bottom",
       field: "",
       type: "text",
       validator: "",
@@ -994,6 +1020,8 @@ const RegisterFileModal = ({
 
       return f;
     });
+
+    console.log("fields", form.fields);
 
     return {
       required_parties: requiredPartiesArray as (
