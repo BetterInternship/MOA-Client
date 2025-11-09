@@ -1,11 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
-<<<<<<< HEAD
- * @ Modified time: 2025-11-07 20:05:49
-=======
  * @ Modified time: 2025-11-07 14:10:13
->>>>>>> develop
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -28,7 +24,18 @@ import {
 import "./react-pdf-highlighter.css";
 import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Download, PlusCircle, Redo2Icon, Upload, X } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCopy,
+  Download,
+  Edit,
+  PlusCircle,
+  Redo2Icon,
+  Upload,
+  X,
+} from "lucide-react";
 import {
   IFormField,
   IFormMetadata,
@@ -45,21 +52,15 @@ import JsonView from "@uiw/react-json-view";
 import path from "path";
 import { Divider } from "@/components/ui/divider";
 import { downloadJSON, loadPdfAsFile } from "@/lib/files";
-import {
-  formsControllerRegisterForm,
-  formsControllerGetRegistryFormMetadata,
-  formsControllerGetRegistryFormDocument,
-  useFormsControllerGetFieldRegistry,
-} from "../../../api/app/api/endpoints/forms/forms";
+import { formsControllerRegisterForm } from "../../../api/app/api/endpoints/forms/forms";
 import { useSearchParams } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FieldRegistryEntry, RegisterFormSchemaDto } from "@/app/api";
-
-// ? Update this when migrating
-const SCHEMA_VERSION = 0;
+import { RegisterFormSchemaDto } from "@/app/api";
+import { useFieldTemplateContext } from "./field-template.ctx";
+import { SCHEMA_VERSION, useFormContext } from "./form.ctx";
 
 /**
  * We wrap the page around a suspense boundary to use search params.
@@ -82,16 +83,10 @@ const FormEditorPage = () => {
  */
 const FormEditorPageContent = () => {
   const searchParams = useSearchParams();
-  const { data: fieldRegistry } = useFormsControllerGetFieldRegistry();
+  const form = useFormContext();
 
   // The current highlight and its transform; only need one for coordinates
-  const [loading, setLoading] = useState(true);
-  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
-  const [documentName, setDocumentName] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [highlight, setHighlight] = useState<IHighlight | null>(null);
-  const [fields, setFields] = useState<IFormField[]>([]);
-  const [formMetadata, setFormMetadata] = useState<IFormMetadata>();
   const [fieldTransform, setFieldTransform] = useState<{
     x: number;
     y: number;
@@ -99,41 +94,6 @@ const FormEditorPageContent = () => {
     h: number;
     page: number;
   }>({ x: 0, y: 0, w: 0, h: 0, page: 1 });
-
-  // Refreshes the fields so we don't have to do it one by one
-  const handleFieldsRefresh = async () => {
-    setRefreshing(true);
-
-    // Util for refreshing field
-    const fieldRefresher = async (oldField: IFormField) => {
-      const fieldId = fieldRegistry?.fields.find(
-        (f) => `${f.name}:${f.preset}` === oldField.field
-      )?.id;
-      if (!fieldId) return;
-
-      const { field } = await formsControllerGetFieldFromRegistry({ id: fieldId });
-      const { id: _id, name: _name, preset: _preset, ...rest } = field;
-      const fieldFullName = `${field.name}:${field.preset}`;
-      const newField = {
-        ...oldField,
-        ...rest,
-        field: fieldFullName,
-        validator: field.validator ?? "",
-        prefiller: field.prefiller ?? "",
-        tooltip_label: field.tooltip_label ?? "",
-        h: 10,
-      };
-
-      return newField;
-    };
-
-    // Refresh all fields
-    const newFields = await Promise.all(fields.map(fieldRefresher)).then((fs) =>
-      fs.filter((f) => f !== undefined)
-    );
-    setFields(newFields);
-    setRefreshing(false);
-  };
 
   // Executes when user is done dragging highlight
   const onHighlightFinished = (position: ScaledPosition, content: Content) => {
@@ -160,89 +120,25 @@ const FormEditorPageContent = () => {
     return null;
   };
 
-  // Adds a new field to be displayed
-  const addField = (field: IFormField) => {
-    setHighlight(null);
-    setFields([...fields, field]);
-  };
-
-  // Edit field from the array
-  // This breaks the rules on how to use useState but makes up for it by calling setState() on the updated array LMAO
-  const editField = (key: number) => (newField: Partial<IFormField>) => {
-    setFields([...fields.slice(0, key), { ...fields[key], ...newField }, ...fields.slice(key + 1)]);
-  };
-
-  // Removes a field from the list of fields
-  const removeField = (key: number) => {
-    setHighlight(null);
-    setFields(fields.filter((f, i) => i !== key));
-  };
-
   // Load the specified JSON first, if any
   useEffect(() => {
-    const promises = [];
     const formName = searchParams.get("name");
     const formVersion = searchParams.get("version");
     const formVersionNumber = parseInt(formVersion ?? "nan");
-    if (!formName || !formVersion || isNaN(formVersionNumber)) return setLoading(false);
-
-    // Request the specified form metadata
-    promises.push(
-      formsControllerGetRegistryFormMetadata({
-        name: formName,
-        version: formVersionNumber,
-      }).then(({ formMetadata }) => {
-        // ! change this in the future
-        // ! make sure to use FormMetadata class to mediate all access
-        setFields(formMetadata.schema);
-        setDocumentName(formMetadata.name);
-        setFormMetadata(formMetadata);
-      })
-    );
-
-    // Request the specified form url
-    promises.push(
-      formsControllerGetRegistryFormDocument({
-        name: formName,
-        version: formVersionNumber,
-      }).then(({ formDocument }) => {
-        setDocumentUrl(formDocument);
-      })
-    );
-
-    // Remove loading when done processing, including fail
-    void Promise.all(promises)
-      .then(() => setLoading(false))
-      .catch((e) => {
-        alert(e);
-        setLoading(false);
-      });
+    if (!formName || !formVersion || isNaN(formVersionNumber)) return;
+    form.updateFormName(formName);
+    form.updateFormVersion(formVersionNumber);
   }, [searchParams]);
 
-  if (loading) return <Loader>Loading form editor...</Loader>;
+  if (form.loading) return <Loader>Loading form editor...</Loader>;
 
   return (
-    <div className="relative mx-auto h-[70vh] max-w-7xl">
+    <div className="relative mx-auto mt-8 h-[83vh] max-w-7xl">
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
-        <Sidebar
-          documentUrl={documentUrl}
-          fieldTransform={fieldTransform}
-          documentFields={fields}
-          initialDocumentName={documentName}
-          setDocumentUrl={setDocumentUrl}
-          addDocumentField={addField}
-          editDocumentField={editField}
-          removeDocumentField={removeField}
-          initialSubscribers={formMetadata?.subscribers ?? []}
-          initialSignatories={formMetadata?.signatories ?? []}
-          initialDocumentLabel={formMetadata?.label ?? null}
-          handleFieldsRefresh={() => void handleFieldsRefresh()}
-          refreshing={refreshing}
-          initialRequiredParties={formMetadata?.required_parties ?? []}
-        />
-        {documentUrl && (
+        <Sidebar fieldTransform={fieldTransform} />
+        {form.document.url && (
           <FormRenderer
-            documentUrl={documentUrl}
+            documentUrl={form.document.url}
             highlight={highlight}
             onHighlightFinished={onHighlightFinished}
           />
@@ -300,13 +196,13 @@ const FormRenderer = ({
  */
 const ContactEditor = ({
   initialContactDetails,
-  fieldRegistry,
   updateContact,
 }: {
   initialContactDetails: IFormSubscriber | IFormSignatory;
-  fieldRegistry: FieldRegistryEntry[];
   updateContact: (field: Partial<IFormSubscriber> | Partial<IFormSignatory>) => void;
 }) => {
+  const { registry: _registry } = useFieldTemplateContext();
+  const registry = _registry.filter((f) => f.type === "signature");
   const [fieldFullName, setFieldFullName] = useState<string>();
   const [contactDetails, setContactDetails] = useState<IFormSubscriber | IFormSignatory>(
     initialContactDetails
@@ -345,7 +241,7 @@ const ContactEditor = ({
               value={fieldFullName}
               inputClassName="h-7 py-1 text-xs"
               placeholder="Select field..."
-              options={fieldRegistry.map((f) => ({
+              options={registry.map((f) => ({
                 id: `${f.name}:${f.preset}`,
                 name: `${f.name}:${f.preset}`,
               }))}
@@ -394,20 +290,19 @@ const ContactEditor = ({
  */
 const FieldEditor = ({
   fieldDetails,
-  fieldRegistry,
   selected,
-  updateField,
-  removeField,
   index,
 }: {
   fieldDetails: IFormField;
-  fieldRegistry: { id: string; name: string; preset: string }[];
   selected: boolean;
-  updateField: (field: Partial<IFormField>) => void;
-  removeField: (key: number) => void;
   index: number;
 }) => {
-  const [fieldId, setFieldId] = useState<string | null>();
+  const form = useFormContext();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { registry } = useFieldTemplateContext();
+  const [fieldTemplateId, setFieldTemplateId] = useState<string | null>();
+  const [isUsingTemplate, setIsUsingTemplate] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Select a field and update details so we can use those
   const handleSelectField = async (id: string) => {
@@ -424,7 +319,7 @@ const FieldEditor = ({
       h: 10,
     };
 
-    updateField(newField);
+    form.updateField(index, newField);
   };
 
   // Handle change for any of the props of the field
@@ -440,96 +335,190 @@ const FieldEditor = ({
       [property]: value,
     };
 
-    updateField(newField);
+    // Update field
+    form.updateField(index, newField);
+
+    // When updating the field, we also want to scroll to where it gets placed after sorting
+    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   // Removes field from the drafted schema
   const handleRemoveField = () => {
-    removeField(index);
+    form.removeField(index);
   };
 
   // Update field id from db
   useEffect(() => {
     const fieldFullNameList =
-      fieldRegistry?.map((f) => ({ id: f.id, name: `${f.name}:${f.preset}` })) ?? [];
+      registry?.map((f) => ({ id: f.id, name: `${f.name}:${f.preset}` })) ?? [];
     const fieldId = fieldFullNameList.find((f) => f.name === fieldDetails.field)?.id;
-    setFieldId(fieldId);
-  }, [fieldDetails, fieldRegistry]);
+    setFieldTemplateId(fieldId);
+  }, [fieldDetails, registry]);
+
+  // Check if field is in template registry
+  useEffect(() => {
+    if (fieldTemplateId?.trim()) setIsUsingTemplate(true);
+  }, [fieldTemplateId]);
 
   return (
     <div
+      ref={scrollRef}
       className={cn(
-        "flex flex-col gap-2 rounded-[0.25em] border p-2",
+        "flex flex-col gap-2 border-t bg-white transition-all duration-300 hover:cursor-pointer hover:bg-gray-100",
         selected ? "border-supportive bg-supportive/10" : "border-gray-300"
       )}
     >
-      <div className="flex flex-row items-center gap-2">
-        <Autocomplete
-          value={fieldId}
-          inputClassName="h-7 py-1 text-xs"
-          placeholder="Select field..."
-          options={fieldRegistry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
-          setter={(id) => id && void handleSelectField(id)}
-        />
-        <Button
-          className="h-7 w-6!"
-          scheme="destructive"
-          variant="outline"
-          onClick={handleRemoveField}
-        >
-          <X></X>
-        </Button>
+      <div
+        className="flex flex-row items-center justify-between gap-2 p-2 px-4"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        ({fieldDetails.page}) {fieldDetails.field}
+        <div className="flex-1"></div>
+        {isOpen ? (
+          <ChevronDown className="h-4 w-4"></ChevronDown>
+        ) : (
+          <ChevronRight className="h-4 w-4"></ChevronRight>
+        )}
       </div>
-      <div className="grid grid-cols-2 grid-rows-2 gap-2">
-        <Badge>Display Label</Badge>
-        <Input
-          value={fieldDetails.label}
-          placeholder="Field Display Label"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.label}
-          onChange={handleChangeFactory("label")}
-        />
-        <Badge>Source</Badge>
-        <Autocomplete
-          value={fieldDetails.source}
-          inputClassName="h-7 py-1 text-xs"
-          placeholder="Select Field Source"
-          options={SOURCES.map((s) => ({ id: s, name: s }))}
-          setter={(id) => id && handleChangeFactory("source")(id)}
-        />
-        <Badge>Postion X</Badge>
-        <Input
-          value={fieldDetails.x}
-          type="number"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.x}
-          onChange={handleChangeFactory("x")}
-        />
-        <Badge>Position Y</Badge>
-        <Input
-          value={fieldDetails.y}
-          type="number"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.y}
-          onChange={handleChangeFactory("y")}
-        />
-        <Badge>Width</Badge>
-        <Input
-          value={fieldDetails.w}
-          type="number"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.w}
-          onChange={handleChangeFactory("w")}
-        />
-        <Badge>Page</Badge>
-        <Input
-          value={fieldDetails.page}
-          type="number"
-          className="h-7 py-1 text-xs"
-          defaultValue={fieldDetails.page}
-          onChange={handleChangeFactory("page")}
-        />
-      </div>
+      {isOpen && (
+        <div className="bg-gray-100 p-4">
+          <div className="mb-4 flex flex-row justify-between gap-2">
+            <div className="mb-4 flex flex-row overflow-hidden rounded-[0.33em]">
+              <Button
+                className="h-7 rounded-none"
+                scheme="secondary"
+                onClick={() => setIsUsingTemplate(false)}
+              >
+                Define from scratch
+                <Edit></Edit>
+              </Button>
+              <Button
+                className="h-7 rounded-none"
+                scheme="supportive"
+                onClick={() => setIsUsingTemplate(true)}
+              >
+                Use a template
+                <ClipboardCopy></ClipboardCopy>
+              </Button>
+            </div>
+            <Button
+              className="h-7"
+              scheme="destructive"
+              variant="outline"
+              onClick={handleRemoveField}
+            >
+              Remove
+              <X></X>
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 grid-rows-2 gap-2">
+            {isUsingTemplate ? (
+              <>
+                <Badge className="bg-supportive border-none text-white">Template Name</Badge>
+                <Autocomplete
+                  value={fieldTemplateId}
+                  inputClassName="h-7 py-1 text-xs text-supportive border-supportive"
+                  placeholder="Choose template..."
+                  options={registry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
+                  setter={(id) => id && void handleSelectField(id)}
+                />
+              </>
+            ) : (
+              <>
+                <Badge className="border-none bg-black text-white">Field Identifier</Badge>
+                <Input
+                  value={fieldDetails.field}
+                  placeholder="Field Identifier"
+                  className="h-7 py-1 text-xs"
+                  defaultValue={fieldDetails.field}
+                  onChange={handleChangeFactory("field")}
+                />
+              </>
+            )}
+            <Badge>Display Label</Badge>
+            <Input
+              value={fieldDetails.label}
+              placeholder="Field Display Label"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.label}
+              onChange={handleChangeFactory("label")}
+            />
+            <Badge>Postion X</Badge>
+            <Input
+              value={fieldDetails.x}
+              type="number"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.x}
+              onChange={handleChangeFactory("x")}
+            />
+            <Badge>Position Y</Badge>
+            <Input
+              value={fieldDetails.y}
+              type="number"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.y}
+              onChange={handleChangeFactory("y")}
+            />
+            <Badge>Width</Badge>
+            <Input
+              value={fieldDetails.w}
+              type="number"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.w}
+              onChange={handleChangeFactory("w")}
+            />
+            <Badge>Page</Badge>
+            <Input
+              value={fieldDetails.page}
+              type="number"
+              className="h-7 py-1 text-xs"
+              defaultValue={fieldDetails.page}
+              onChange={handleChangeFactory("page")}
+            />
+            {!isUsingTemplate && (
+              <>
+                <Badge>Source</Badge>
+                <Autocomplete
+                  value={fieldDetails.source}
+                  inputClassName="h-7 py-1 text-xs"
+                  placeholder="Select Field Source"
+                  options={SOURCES.map((s) => ({ id: s, name: s }))}
+                  setter={(id) => id && handleChangeFactory("source")(id)}
+                />
+                <Badge>Party</Badge>
+                <Autocomplete
+                  value={fieldDetails.party}
+                  inputClassName="h-7 py-1 text-xs"
+                  placeholder="Select Field Party"
+                  options={PARTIES.map((s) => ({ id: s, name: s }))}
+                  setter={(id) => id && handleChangeFactory("party")(id)}
+                />
+                <Badge>Tooltip Label</Badge>
+                <Input
+                  value={fieldDetails.tooltip_label}
+                  className="h-7 py-1 text-xs"
+                  defaultValue={fieldDetails.tooltip_label}
+                  onChange={handleChangeFactory("tooltip_label")}
+                />
+                <Badge>Validator</Badge>
+                <Input
+                  value={fieldDetails.validator}
+                  className="h-7 py-1 text-xs"
+                  defaultValue={fieldDetails.validator}
+                  onChange={handleChangeFactory("validator")}
+                />
+                <Badge>Prefiller</Badge>
+                <Input
+                  value={fieldDetails.prefiller}
+                  className="h-7 py-1 text-xs"
+                  defaultValue={fieldDetails.prefiller}
+                  onChange={handleChangeFactory("prefiller")}
+                />
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -588,50 +577,22 @@ const FieldPreview = ({
  * @component
  */
 const Sidebar = ({
-  documentUrl,
   fieldTransform,
-  documentFields,
-  initialDocumentName,
-  initialDocumentLabel,
-  initialSubscribers,
-  initialSignatories,
-  initialRequiredParties,
-  setDocumentUrl,
-  addDocumentField,
-  editDocumentField,
-  removeDocumentField,
-  handleFieldsRefresh,
-  refreshing,
 }: {
-  documentUrl: string | null;
   fieldTransform: { x: number; y: number; w: number; h: number; page: number };
-  documentFields: IFormField[];
-  initialDocumentName: string | null;
-  initialDocumentLabel: string | null;
-  initialSubscribers: IFormSubscriber[];
-  initialSignatories: IFormSignatory[];
-  initialRequiredParties: string[];
-  setDocumentUrl: (documentUrl: string) => void;
-  addDocumentField: (field: IFormField) => void;
-  editDocumentField: (key: number) => (field: Partial<IFormField>) => void;
-  removeDocumentField: (key: number) => void;
-  handleFieldsRefresh: () => void;
-  refreshing: boolean;
 }) => {
   // Allows us to click the input without showing it
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: fieldRegistry } = useFormsControllerGetFieldRegistry();
+  const form = useFormContext();
+  const { registry } = useFieldTemplateContext();
   const { openModal, closeModal } = useModal();
-  const [documentName, setDocumentName] = useState<string>(initialDocumentName ?? "Select file");
-  const [documentLabel, setDocumentLabel] = useState<string>(initialDocumentLabel ?? "Form");
-  const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
   const [subscribers, setSubscribers] = useState<(IFormSubscriber & { id: string })[]>([]);
   const [signatories, setSignatories] = useState<(IFormSignatory & { id: string })[]>([]);
   const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
   const keyedDocumentFields = useMemo(
-    () => documentFields.map((field) => ({ id: Math.random().toString(), ...field })),
-    [selectedFieldKey, documentFields, fieldRegistry]
+    () => form.fields.map((field) => ({ id: Math.random().toString(), ...field })),
+    [selectedFieldKey, form.fields, registry]
   );
 
   // Handle changes in file upload
@@ -639,14 +600,12 @@ const Sidebar = ({
     const file = e.target.files?.[0];
     if (!file || file.type !== "application/pdf") return;
     const url = URL.createObjectURL(file);
-    setDocumentUrl(url);
-    setDocumentName(path.parse(file.name).name);
-    setDocumentFile(file);
+    form.updateDocument({ name: path.parse(file.name).name, url, file });
   };
 
   // Handle when a field is added by user
-  const handleFieldAdd = useCallback(() => {
-    return addDocumentField({
+  const handleFieldAdd = () => {
+    form.addField({
       ...fieldTransform,
       h: 12,
       field: "",
@@ -659,7 +618,7 @@ const Sidebar = ({
       party: "student",
       shared: true,
     });
-  }, [addDocumentField]);
+  };
 
   // Adds a new subscriber to the schema
   const handleSubscriberAdd = () => {
@@ -692,13 +651,11 @@ const Sidebar = ({
 
   // Handles when a file is registered to the db
   const handleFileRegister = useCallback(() => {
-    if (!documentFile) return;
+    if (!form.document.file) return;
 
     // Check if all fields are valid
-    const fieldFullNameList = fieldRegistry?.fields.map((f) => `${f.name}:${f.preset}`) ?? [];
-    for (const field of documentFields) {
-      if (!fieldFullNameList.includes(field.field))
-        return alert(`${field.field} is not a valid field.`);
+    for (const field of form.fields) {
+      if (!field.field.trim()) return alert(`${field.field} has an empty field identifier.`);
       if (!field.source) return alert(`${field.field} is missing its source.`);
       if (!field.party) return alert(`${field.field} is missing its party.`);
       if (!field.type) return alert(`${field.field} is missing its type.`);
@@ -736,15 +693,7 @@ const Sidebar = ({
           const { id: _id, ...rest } = s;
           return rest;
         })}
-        documentFields={keyedDocumentFields.map((f) => {
-          const { id: _id, ...rest } = f;
-          return rest;
-        })}
-        documentLabelPlaceholder={documentLabel}
-        documentNamePlaceholder={documentName}
-        documentFile={documentFile}
         close={() => closeModal()}
-        initialRequiredParties={initialRequiredParties}
       />,
       {
         title: "Register Form into DB?",
@@ -753,16 +702,19 @@ const Sidebar = ({
         closeOnEsc: false,
       }
     );
-  }, [documentFile, documentUrl, documentFields, fieldRegistry?.fields, subscribers, signatories]);
+  }, [form.document.file, form.document.url, form.fields, registry, subscribers, signatories]);
 
   // Makes sure that the selected field is always shown at the top
   const sortedDocumentFields = useMemo(() => {
-    if (selectedFieldKey === null) return keyedDocumentFields.toReversed();
+    const initialOrder = keyedDocumentFields.toReversed();
+    initialOrder.sort((a, b) => a.page - b.page || a.field.localeCompare(b.field));
+
+    if (selectedFieldKey === null) return initialOrder;
     return [
-      keyedDocumentFields.find((field) => field.id === selectedFieldKey)!,
-      ...keyedDocumentFields.filter((f) => f.id !== selectedFieldKey).toReversed(),
+      initialOrder.find((field) => field.id === selectedFieldKey)!,
+      ...initialOrder.filter((f) => f.id !== selectedFieldKey),
     ];
-  }, [selectedFieldKey, keyedDocumentFields, fieldRegistry]);
+  }, [selectedFieldKey, keyedDocumentFields, registry]);
 
   // Refresh the ui of the fields
   const refreshFieldPreviews = () => {
@@ -795,8 +747,12 @@ const Sidebar = ({
 
   // Give them ids hopefully
   useEffect(() => {
-    setSubscribers(initialSubscribers.map((s) => ({ id: Math.random().toString(), ...s })));
-    setSignatories(initialSignatories.map((s) => ({ id: Math.random().toString(), ...s })));
+    setSubscribers(
+      form.formMetadata.subscribers.map((s) => ({ id: Math.random().toString(), ...s }))
+    );
+    setSignatories(
+      form.formMetadata.signatories.map((s) => ({ id: Math.random().toString(), ...s }))
+    );
   }, []);
 
   // Updates the field previews
@@ -804,13 +760,15 @@ const Sidebar = ({
   useEffect(() => {
     refreshFieldPreviews();
     return () => setFieldPreviews([]);
-  }, [selectedFieldKey, keyedDocumentFields, fieldRegistry]);
+  }, [selectedFieldKey, keyedDocumentFields, registry]);
 
   // Make sure to set the file when it's specified in the parent
   useEffect(() => {
-    if (!documentUrl) return;
-    void loadPdfAsFile(documentUrl, documentName).then((file) => setDocumentFile(file));
-  }, [documentUrl]);
+    if (!form.document.url) return;
+    void loadPdfAsFile(form.document.url, form.document.name).then((file) =>
+      form.updateDocument({ file })
+    );
+  }, [form.document.url]);
 
   // Handle editing subs and sigs
   const editSubscriber = (key: number) => (newSubscriber: Partial<IFormSubscriber>) => {
@@ -848,68 +806,33 @@ const Sidebar = ({
 
   return (
     <Tabs defaultValue="fields">
-      <div className="flex flex-row items-center gap-2 pt-2">
-        <TabsList className="rounded-[0.33em]">
-          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
-            Fields
-          </TabsTrigger>
-          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="subscribers">
-            Subscribers
-          </TabsTrigger>
-          <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="signatories">
-            Signatories
-          </TabsTrigger>
-        </TabsList>
-        <Button onClick={() => fileInputRef.current?.click()}>
-          <Upload />
-          Select File
-        </Button>
-        {documentFile && (
-          <Button
-            variant="outline"
-            scheme="supportive"
-            onClick={handleFileRegister}
-            disabled={refreshing}
-          >
-            <CheckCircle />
-            Register File
-          </Button>
-        )}
-        {documentFile && (
-          <Button
-            variant="outline"
-            scheme="supportive"
-            onClick={() => handleFieldsRefresh()}
-            disabled={refreshing}
-          >
-            <Redo2Icon />
-            {refreshing ? "Refreshing..." : "Refresh Fields"}
-          </Button>
-        )}
-      </div>
-      <div className="sidebar w-[30vw] p-4">
+      <h1 className="my-2 text-lg font-bold tracking-tighter text-ellipsis">
+        {form.document.name || "No Name Specified"}
+      </h1>
+      <TabsList>
+        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
+          Fields
+        </TabsTrigger>
+        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="subscribers">
+          Subscribers
+        </TabsTrigger>
+        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="signatories">
+          Signatories
+        </TabsTrigger>
+      </TabsList>
+      <div className="sidebar h-full w-[30vw]">
         <TabsContent value="fields">
-          <h1 className="my-2 text-lg font-bold">"{documentName}" - Schema</h1>
-          <pre className="my-2">
-            x: {fieldTransform.x}, y: {fieldTransform.y}, w: {fieldTransform.w}, h:{" "}
-            {fieldTransform.h}, page: {fieldTransform.page}
-          </pre>
-          <div className="mb-2 flex flex-row gap-2">
-            {documentFile && (
-              <Button variant="outline" onClick={handleFieldAdd}>
-                <PlusCircle />
-                Add Field
-              </Button>
-            )}
+          <div className="p-4">
+            <div className="mb-2 flex flex-row gap-2">
+              {form.document.file && (
+                <Button variant="outline" onClick={handleFieldAdd}>
+                  <PlusCircle />
+                  Add Field
+                </Button>
+              )}
+            </div>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {sortedDocumentFields
               .filter((f) => !!f)
               .map((field) => (
@@ -917,32 +840,23 @@ const Sidebar = ({
                   key={field.id}
                   index={keyedDocumentFields.indexOf(field)}
                   selected={field?.id === selectedFieldKey}
-                  updateField={editDocumentField(keyedDocumentFields.indexOf(field))}
-                  fieldRegistry={fieldRegistry?.fields ?? []}
                   fieldDetails={field}
-                  removeField={removeDocumentField}
                 />
               ))}
           </div>
         </TabsContent>
         <TabsContent value="subscribers">
-          <h1 className="my-2 text-lg font-bold">"{documentName}" - Subscribers</h1>
-          <pre className="my-2">{subscribers.length} subscribers</pre>
-          <div className="mb-2 flex flex-row gap-2">
-            {documentFile && (
-              <Button variant="outline" onClick={handleSubscriberAdd}>
-                <PlusCircle />
-                Add Subscriber
-              </Button>
-            )}
+          <div className="p-4">
+            <pre className="my-2">{subscribers.length} subscribers</pre>
+            <div className="mb-2 flex flex-row gap-2">
+              {form.document.file && (
+                <Button variant="outline" onClick={handleSubscriberAdd}>
+                  <PlusCircle />
+                  Add Subscriber
+                </Button>
+              )}
+            </div>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
           <div className="flex flex-col gap-2">
             {subscribers.map((subscriber, i) => (
               <div className="flex flex-row gap-2">
@@ -950,7 +864,6 @@ const Sidebar = ({
                   key={subscriber.id}
                   initialContactDetails={subscriber}
                   updateContact={editSubscriber(subscribers.length - i)}
-                  fieldRegistry={fieldRegistry?.fields.filter((f) => f.type === "signature") ?? []}
                 />
                 <Button
                   className="h-7 w-7"
@@ -965,23 +878,17 @@ const Sidebar = ({
           </div>
         </TabsContent>
         <TabsContent value="signatories">
-          <h1 className="my-2 text-lg font-bold">"{documentName}" - Signatories</h1>
-          <pre className="my-2">{signatories.length} signatories</pre>
-          <div className="mb-2 flex flex-row gap-2">
-            {documentFile && (
-              <Button variant="outline" onClick={handleSignatoryAdd}>
-                <PlusCircle />
-                Add Signatory
-              </Button>
-            )}
+          <div className="p-4">
+            <pre className="my-2">{signatories.length} signatories</pre>
+            <div className="mb-2 flex flex-row gap-2">
+              {form.document.file && (
+                <Button variant="outline" onClick={handleSignatoryAdd}>
+                  <PlusCircle />
+                  Add Signatory
+                </Button>
+              )}
+            </div>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
           <div className="flex flex-col gap-2">
             {signatories.map((signatory, i) => (
               <div className="flex flex-row gap-2">
@@ -989,7 +896,6 @@ const Sidebar = ({
                   key={signatory.id}
                   initialContactDetails={signatory}
                   updateContact={editSignatory(signatories.length - i)}
-                  fieldRegistry={fieldRegistry?.fields.filter((f) => f.type === "signature") ?? []}
                 />
                 <Button
                   className="h-7 w-7"
@@ -1004,6 +910,43 @@ const Sidebar = ({
           </div>
         </TabsContent>
       </div>
+      <div className="flex flex-col justify-between gap-2 pt-2">
+        <div className="flex flex-row items-center justify-center gap-2 border border-gray-400 p-4">
+          <Button scheme="secondary" onClick={() => fileInputRef.current?.click()}>
+            <Upload />
+            Select File
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          {form.document.file && (
+            <Button
+              variant="outline"
+              scheme="supportive"
+              onClick={handleFileRegister}
+              disabled={form.refreshing}
+            >
+              <CheckCircle />
+              Register File
+            </Button>
+          )}
+          {form.document.file && (
+            <Button
+              variant="outline"
+              scheme="supportive"
+              onClick={() => void form.refreshFields()}
+              disabled={form.refreshing}
+            >
+              <Redo2Icon />
+              {form.refreshing ? "Refreshing..." : "Refresh Fields"}
+            </Button>
+          )}
+        </div>
+      </div>
       {fieldPreviews}
     </Tabs>
   );
@@ -1016,31 +959,19 @@ const Sidebar = ({
  * @component
  */
 const RegisterFileModal = ({
-  documentNamePlaceholder,
-  documentLabelPlaceholder,
-  documentFields,
-  documentFile,
   subscribers,
   signatories,
-  initialRequiredParties,
   close,
 }: {
-  documentNamePlaceholder: string;
-  documentLabelPlaceholder: string;
-  documentFields: IFormField[];
-  documentFile: File;
   subscribers: IFormSubscriber[];
   signatories: IFormSignatory[];
-  initialRequiredParties: string[];
   close: () => void;
 }) => {
-  const [documentName, setDocumentName] = useState(documentNamePlaceholder);
-  const [documentLabel, setDocumentLabel] = useState(documentLabelPlaceholder);
+  const form = useFormContext();
+  const [documentName, setDocumentName] = useState(form.formMetadata.name ?? "");
+  const [documentLabel, setDocumentLabel] = useState(form.formMetadata.label ?? "");
   const [requiredParties, setRequiredParties] = useState<string>(
-    // ! remove this after fix
-    typeof initialRequiredParties === "string"
-      ? initialRequiredParties
-      : (initialRequiredParties.join(", ") ?? "")
+    form.formMetadata.required_parties?.join(", ") ?? ""
   );
   const [submitting, setSubmitting] = useState(false);
 
@@ -1054,10 +985,15 @@ const RegisterFileModal = ({
     );
 
     // Make signatures bigger
-    const resizedFields = documentFields.map((field) => ({
-      ...field,
-      h: field.type === "text" ? 10 : 25,
-    }));
+    const resizedFields = form.fields.map((field) => {
+      const { id: _id, ...f } = {
+        ...field,
+        h: field.type === "text" ? 10 : 25,
+        id: null, // TS is being a bitch, don't remove this line lol some type error is slipping thru
+      };
+
+      return f;
+    });
 
     return {
       required_parties: requiredPartiesArray as (
@@ -1069,7 +1005,7 @@ const RegisterFileModal = ({
       schema_version: SCHEMA_VERSION,
       name: documentName,
       label: documentLabel,
-      base_document: documentFile,
+      base_document: form.document.file!,
       schema: resizedFields,
       signatories: signatories,
       subscribers: subscribers,
@@ -1077,16 +1013,17 @@ const RegisterFileModal = ({
   }, [
     documentName,
     documentLabel,
-    documentFile,
-    documentFields,
     requiredParties,
+    form.document,
+    form.fields,
+    form.formMetadata,
     subscribers,
     signatories,
   ]);
 
   // Handle submitting form to registry
   const handleSubmit = async () => {
-    if (!documentFile) return;
+    if (!form.document.file) return;
     if (!documentLabel) return alert("Please specify a label for the form.");
 
     setSubmitting(true);
@@ -1148,7 +1085,7 @@ const RegisterFileModal = ({
         </Button>
         <div className="flex-1" />
         <Button
-          disabled={!documentName.trim() || submitting || !documentFile}
+          disabled={!documentName.trim() || submitting || !form.document.file}
           onClick={() => void handleSubmit()}
         >
           {submitting ? "Submitting..." : "Submit"}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { ModalProvider } from "../providers/modal-provider";
 import Header from "@/components/docs/Header";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Document Verification | BetterInternship",
@@ -29,9 +29,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        <ModalProvider>
+        <Providers>
           <main className="mx-auto">{children}</main>
-        </ModalProvider>
+        </Providers>
       </body>
     </html>
   );
