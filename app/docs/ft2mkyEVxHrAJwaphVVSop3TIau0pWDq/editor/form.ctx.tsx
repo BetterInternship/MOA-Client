@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-09 11:01:44
+ * @ Modified time: 2025-11-09 11:35:48
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -153,6 +153,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
         setFields(formMetadata.schema);
         setDocumentName(formMetadata.name);
         setFormMetadata(formMetadata);
+        console.log(formMetadata.schema);
       }),
 
       // Promise for retrieving the document
