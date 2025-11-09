@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-09 11:00:59
+ * @ Modified time: 2025-11-09 20:58:44
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -304,6 +304,11 @@ const FieldEditor = ({
   const [isUsingTemplate, setIsUsingTemplate] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
+  // Scrolls the field into view on the sidebar
+  const scrollIntoView = () => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   // Select a field and update details so we can use those
   const handleSelectField = async (id: string) => {
     const { field } = await formsControllerGetFieldFromRegistry({ id });
@@ -337,9 +342,7 @@ const FieldEditor = ({
 
     // Update field
     form.updateField(index, newField);
-
-    // When updating the field, we also want to scroll to where it gets placed after sorting
-    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    scrollIntoView();
   };
 
   // Removes field from the drafted schema
@@ -359,6 +362,11 @@ const FieldEditor = ({
   useEffect(() => {
     if (fieldTemplateId?.trim()) setIsUsingTemplate(true);
   }, [fieldTemplateId]);
+
+  // Scroll to field when selected
+  useEffect(() => {
+    if (selected) scrollIntoView();
+  }, [selected]);
 
   return (
     <div
@@ -616,7 +624,7 @@ const Sidebar = ({
   const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
   const keyedDocumentFields = useMemo(
     () => form.fields.map((field) => ({ id: Math.random().toString(), ...field })),
-    [selectedFieldKey, form.fields, registry]
+    [form.fields, registry]
   );
 
   // Handle changes in file upload
@@ -734,12 +742,7 @@ const Sidebar = ({
   const sortedDocumentFields = useMemo(() => {
     const initialOrder = keyedDocumentFields.toReversed();
     initialOrder.sort((a, b) => a.page - b.page || a.field.localeCompare(b.field));
-
-    if (selectedFieldKey === null) return initialOrder;
-    return [
-      initialOrder.find((field) => field.id === selectedFieldKey)!,
-      ...initialOrder.filter((f) => f.id !== selectedFieldKey),
-    ];
+    return initialOrder;
   }, [selectedFieldKey, keyedDocumentFields, registry]);
 
   // Refresh the ui of the fields
@@ -752,6 +755,7 @@ const Sidebar = ({
       const field = keyedDocumentFields[i];
       const fieldPreviewContainer = fieldPreviewContainers[field.page - 1];
       if (!fieldPreviewContainer) continue;
+      console.log("field id", field.id);
       fieldPreviews.push(
         createPortal(
           <FieldPreview
@@ -761,7 +765,7 @@ const Sidebar = ({
             w={field.w}
             h={field.h}
             selected={field.id === selectedFieldKey}
-            onClick={() => setSelectedFieldKey(field.id)}
+            onClick={() => (setSelectedFieldKey(field.id), console.log(field.id))}
           />,
           fieldPreviewContainer
         )
