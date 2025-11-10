@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-10 15:13:53
+ * @ Modified time: 2025-11-10 17:01:42
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -14,7 +14,7 @@ import {
   formsControllerGetRegistryFormMetadata,
 } from "@/app/api";
 import { IFormField, IFormMetadata } from "@betterinternship/core/forms";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useFieldTemplateContext } from "./field-template.ctx";
 
 // ? Current schema version, update if needed; tells us if out of date
@@ -104,7 +104,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   };
 
   // Refresh field references to template table
-  const refreshFields = useCallback(async () => {
+  const refreshFields = async () => {
     setRefreshing(true);
 
     // Util for refreshing field
@@ -138,7 +138,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
 
     setFields(newFields);
     setRefreshing(false);
-  }, [formName, formVersion]);
+  };
 
   // When form name and version are updated, pull latest
   useEffect(() => {
