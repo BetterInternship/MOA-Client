@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-09 21:12:22
+ * @ Modified time: 2025-11-10 14:43:02
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -143,6 +143,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   // When form name and version are updated, pull latest
   useEffect(() => {
     if (!formName || (!formVersion && formVersion !== 0)) return;
+    const controller = new AbortController();
     const payload = {
       name: formName,
       version: formVersion,
@@ -150,16 +151,20 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
 
     const promises = [
       // Promise for pulling metadata
-      formsControllerGetRegistryFormMetadata(payload).then(({ formMetadata }) => {
-        setFields(formMetadata.schema);
-        setDocumentName(formMetadata.name);
-        setFormMetadata(formMetadata);
-      }),
+      formsControllerGetRegistryFormMetadata(payload, controller.signal).then(
+        ({ formMetadata }) => {
+          setFields(formMetadata.schema);
+          setDocumentName(formMetadata.name);
+          setFormMetadata(formMetadata);
+        }
+      ),
 
       // Promise for retrieving the document
-      formsControllerGetRegistryFormDocument(payload).then(({ formDocument }) => {
-        setDocumentUrl(formDocument);
-      }),
+      formsControllerGetRegistryFormDocument(payload, controller.signal).then(
+        ({ formDocument }) => {
+          setDocumentUrl(formDocument);
+        }
+      ),
     ];
 
     setLoading(true);
@@ -169,6 +174,8 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
         alert(e);
         setLoading(false);
       });
+
+    return () => controller.abort();
   }, [formName, formVersion]);
 
   // Refresh fields automatically
@@ -180,8 +187,8 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   useEffect(() => {
     setFields([]);
     setFormMetadata(initialFormMetadata);
-    console.log("Clearing fields...");
-  }, []);
+    console.log("Clearing fields and metadata...");
+  }, [documentUrl, documentFile, documentName]);
 
   // The form context
   const formContext: IFormContext = {
