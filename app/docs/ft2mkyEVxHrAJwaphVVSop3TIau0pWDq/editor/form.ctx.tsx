@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-10 14:43:02
+ * @ Modified time: 2025-11-10 15:13:53
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -14,7 +14,7 @@ import {
   formsControllerGetRegistryFormMetadata,
 } from "@/app/api";
 import { IFormField, IFormMetadata } from "@betterinternship/core/forms";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useFieldTemplateContext } from "./field-template.ctx";
 
 // ? Current schema version, update if needed; tells us if out of date
@@ -104,7 +104,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   };
 
   // Refresh field references to template table
-  const refreshFields = async () => {
+  const refreshFields = useCallback(async () => {
     setRefreshing(true);
 
     // Util for refreshing field
@@ -138,7 +138,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
 
     setFields(newFields);
     setRefreshing(false);
-  };
+  }, [formName, formVersion]);
 
   // When form name and version are updated, pull latest
   useEffect(() => {
@@ -153,12 +153,12 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
       // Promise for pulling metadata
       formsControllerGetRegistryFormMetadata(payload, controller.signal).then(
         ({ formMetadata }) => {
+          console.log("Request for ", payload, formMetadata);
           setFields(formMetadata.schema);
           setDocumentName(formMetadata.name);
           setFormMetadata(formMetadata);
         }
       ),
-
       // Promise for retrieving the document
       formsControllerGetRegistryFormDocument(payload, controller.signal).then(
         ({ formDocument }) => {
@@ -168,27 +168,33 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     ];
 
     setLoading(true);
-    void Promise.all(promises)
+    let rejector: (reason?: any) => void;
+    void new Promise((resolve, reject) => {
+      rejector = reject;
+      void Promise.all(promises).then(resolve);
+    })
       .then(() => setLoading(false))
       .catch((e) => {
         alert(e);
         setLoading(false);
       });
 
-    return () => controller.abort();
-  }, [formName, formVersion]);
+    console.log("CHANGING FORM");
+    console.log(fields);
 
-  // Refresh fields automatically
-  useEffect(() => {
-    void refreshFields();
-  }, [documentUrl]);
+    return () => (
+      controller.abort(),
+      rejector?.("Rejecting request."),
+      console.warn("Cancelling request.")
+    );
+  }, [formName, formVersion]);
 
   // Clear fields on refresh?
   useEffect(() => {
     setFields([]);
     setFormMetadata(initialFormMetadata);
     console.log("Clearing fields and metadata...");
-  }, [documentUrl, documentFile, documentName]);
+  }, []);
 
   // The form context
   const formContext: IFormContext = {
