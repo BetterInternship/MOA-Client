@@ -7,15 +7,6 @@ import { Card } from "@/components/ui/card";
 import FormCard from "@/components/docs/dashboard/FormCard";
 import { getAllSignedForms } from "@/app/api/forms.api";
 
-// Minimal shape for signed documents we expect from the API. Keep optional to be
-// resilient to backend shape differences and keep the UI lean.
-type SignedDoc = {
-  id?: string;
-  form_name?: string;
-  date_made?: string; // ISO
-  url?: string;
-};
-
 export default function DocsDashboardPage() {
   const {
     data: rows = [],
@@ -30,7 +21,12 @@ export default function DocsDashboardPage() {
     staleTime: 60_000,
   });
 
-  console.log("Signed documents:", rows);
+  // Sort rows by date_made descending
+  rows.sort((a, b) => {
+    const ta = Date.parse(a?.date_made ?? "") || 0;
+    const tb = Date.parse(b?.date_made ?? "") || 0;
+    return tb - ta;
+  });
 
   return (
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
@@ -61,7 +57,7 @@ export default function DocsDashboardPage() {
             {rows.map((row) => (
               <FormCard
                 key={row.id ?? `${row.form_name ?? "row"}-${Math.random()}`}
-                title={row.form_name ?? "Form"}
+                title={row.form_label ?? "Form"}
                 requestedAt={row.date_made}
                 downloadUrl={row.url}
               />
