@@ -26,10 +26,7 @@ export function DynamicForm({
   setValues: (values: Record<string, string>) => void;
   onChange: (key: string, value: any) => void;
 }) {
-  console.log("DynamicForm rendering with fields", fields, "and values", values);
   const filteredFields = fields.filter((field) => field.party === party);
-
-  console.log("Filtered fields for source", party, filteredFields);
 
   // Group by section
   const entitySectionFields: ClientField<[]>[] = filteredFields.filter(

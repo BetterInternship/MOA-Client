@@ -147,7 +147,14 @@ export function LabelWithTooltip({
           className={cn("text-primary h-4 w-4 p-0.5", tooltip?.trim() ? "" : "invisible")}
         />
       </div>
-      {tooltip && <Tooltip className="z-[99] !max-w-[80vw] p-[0.05em] !text-[10px]" id={id} />}
+      {tooltip && (
+        <Tooltip
+          id={id}
+          positionStrategy="fixed"
+          className="!max-w-[80vw] p-[0.05em] !text-[10px]"
+          style={{ zIndex: 1400 }}
+        />
+      )}
     </div>
   );
 }
@@ -566,18 +573,24 @@ export const FormDatePicker = ({
           align={align}
           side={side}
           sideOffset={sideOffset}
-          className={cn("w-auto overflow-hidden p-0", contentClassName)}
+          className={cn(
+            "pointer-events-auto z-[9999] w-auto overflow-hidden p-0", // <-- ensure it blocks clicks
+            contentClassName
+          )}
+          asChild
         >
-          <Calendar
-            mode="single"
-            selected={selected}
-            captionLayout={captionLayout}
-            disabled={disabledDays as Matcher[]}
-            onSelect={(d) => {
-              setter?.(d ? d.getTime() : undefined);
-              if (autoClose) setOpen(false);
-            }}
-          />
+          <div className="absolute">
+            <Calendar
+              mode="single"
+              selected={selected}
+              captionLayout={captionLayout}
+              disabled={disabledDays as Matcher[]}
+              onSelect={(d) => {
+                setter?.(d ? d.getTime() : undefined);
+                if (autoClose) setOpen(false);
+              }}
+            />
+          </div>
         </PopoverContent>
       </Popover>
     </div>
