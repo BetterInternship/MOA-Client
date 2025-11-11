@@ -82,8 +82,9 @@ export default function DocsFormsPage() {
     setValues((prev) => ({ ...prev, [party]: { ...(prev[party] ?? {}), ...newValues } }));
   };
 
+  const [allValid, setAllValid] = useState(false);
+
   const handleSubmit = () => {
-    // Validate only the fields that are currently shown (selectedParty)
     const newErrors: Record<string, string> = { ...(errors ?? {}) };
 
     // Clear previous errors for fields in this party
@@ -115,9 +116,11 @@ export default function DocsFormsPage() {
 
     setErrors(newErrors);
 
-    // If no errors for this party, validation passed
+    // Determine if all fields are valid for this party
     const partyFieldKeys = fieldsForParty(selectedParty).map((f) => f.field);
     const hasPartyErrors = partyFieldKeys.some((k) => !!newErrors[k]);
+    setAllValid(!hasPartyErrors);
+
     if (!hasPartyErrors) {
       console.log("Validation passed for party:", selectedParty);
     } else {
@@ -184,6 +187,7 @@ export default function DocsFormsPage() {
                       key={p}
                       onClick={() => {
                         setSelectedParty(p);
+                        setAllValid(false);
                       }}
                       className={`rounded-full border px-3 py-1 text-sm whitespace-nowrap transition ${
                         selectedParty === p
@@ -221,6 +225,12 @@ export default function DocsFormsPage() {
                         autofillValues={{}}
                         setValues={(newVals) => setValuesForParty(selectedParty, newVals)}
                       />
+
+                      {allValid && fieldsForParty(selectedParty).length > 0 && (
+                        <div className="mt-2 flex items-center gap-1 text-sm font-medium text-green-600">
+                          All fields are valid ✅
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -234,9 +244,6 @@ export default function DocsFormsPage() {
             <Button type="button" onClick={handleSubmit}>
               Test Validation
             </Button>
-            <DialogClose>
-              <Button>Close</Button>
-            </DialogClose>
           </div>
         </DialogContent>
       </Dialog>
