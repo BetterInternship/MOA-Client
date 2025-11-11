@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper } from "lucide-react";
@@ -23,9 +23,10 @@ type FormItem = { name: string };
 
 export default function DocsFormsPage() {
   const [previewName, setPreviewName] = useState<string | null>(null);
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, Record<string, string>>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
+  const [selectedParty, setSelectedParty] = useState<string>("student");
 
   const { data: rows = [] } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
@@ -49,43 +50,86 @@ export default function DocsFormsPage() {
   const formMetadata = previewQuery.data?.formMetadata
     ? new FormMetadata(previewQuery.data?.formMetadata)
     : null;
+
+  // all fields for client
   const fields = formMetadata?.getFieldsForClient() ?? [];
 
-  const setField = (key: string, value: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    setValues({ ...values, [key]: value?.toString() ?? "" });
+  const showableFields = fields.filter((f) => f.source === "manual");
+
+  const parties = useMemo(() => {
+    const required = formMetadata?.getRequiredParties?.() ?? [];
+    const uniq = new Set<string>(["student", ...(Array.isArray(required) ? required : [])]);
+    return Array.from(uniq);
+  }, [formMetadata]);
+
+  // ensure selectedParty is reset to student when opening a new preview
+  const onPreview = (name: string) => {
+    setPreviewName(name);
+    setSelectedParty("student");
+    setOpen(true);
   };
 
+  // helper to set a single field under a party
+  const setField = (party: string, key: string, value: any) => {
+    setValues((prev) => {
+      const partyVals = { ...(prev[party] ?? {}) };
+      partyVals[key] = value?.toString() ?? "";
+      return { ...prev, [party]: partyVals };
+    });
+  };
+
+  const setValuesForParty = (party: string, newValues: Record<string, string>) => {
+    setValues((prev) => ({ ...prev, [party]: { ...(prev[party] ?? {}), ...newValues } }));
+  };
+
+  const [allValid, setAllValid] = useState(false);
+
   const handleSubmit = () => {
-    // Validate fields before allowing to proceed
-    const errors: Record<string, string> = {};
-    for (const field of fields) {
-      if (field.party !== "student") continue;
+    const newErrors: Record<string, string> = { ...(errors ?? {}) };
 
-      // Check if missing
+    // Clear previous errors for fields in this party
+    for (const f of fieldsForParty(selectedParty)) {
+      if (newErrors[f.field]) delete newErrors[f.field];
+    }
 
-      const value = values[field.field];
+    // Validate visible fields
+    for (const field of fieldsForParty(selectedParty)) {
+      const partyValues = values[field.party] ?? {};
+      const value = partyValues[field.field];
 
-      // Check validator error
-      const coerced = field.coerce(value);
-      const result = field.validator?.safeParse(coerced);
-      if (result?.error) {
-        const errorString = z
-          .treeifyError(result.error)
-          .errors.map((e) => e.split(" ").slice(0).join(" "))
-          .join("\n");
-        errors[field.field] = `${field.label}: ${errorString}`;
-        continue;
+      try {
+        const coerced = field.coerce ? field.coerce(value) : value;
+        const result = field.validator?.safeParse(coerced);
+        if (result?.error) {
+          const errorString = z
+            .treeifyError(result.error)
+            .errors.map((e) => e.split(" ").slice(0).join(" "))
+            .join("\n");
+          newErrors[field.field] = `${field.label}: ${errorString}`;
+          continue;
+        }
+      } catch (err) {
+        console.debug(err);
+        newErrors[field.field] = `${field.label}: invalid value`;
       }
     }
 
-    setErrors(errors);
+    setErrors(newErrors);
+
+    // Determine if all fields are valid for this party
+    const partyFieldKeys = fieldsForParty(selectedParty).map((f) => f.field);
+    const hasPartyErrors = partyFieldKeys.some((k) => !!newErrors[k]);
+    setAllValid(!hasPartyErrors);
+
+    if (!hasPartyErrors) {
+      console.log("Validation passed for party:", selectedParty);
+    } else {
+      console.log("Validation failed for party:", selectedParty, newErrors);
+    }
   };
 
-  const onPreview = (name: string) => {
-    setPreviewName(name);
-    setOpen(true);
-  };
+  // UI helpers: fields per party
+  const fieldsForParty = (party: string) => showableFields.filter((f) => f.party === party);
 
   return (
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
@@ -95,7 +139,8 @@ export default function DocsFormsPage() {
           <HeaderText>Forms Preview</HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
-          Preview form templates used in the system.
+          Preview form templates used in the system. Switch parties to preview each party's portion
+          of the form.
         </p>
       </div>
 
@@ -134,37 +179,71 @@ export default function DocsFormsPage() {
             {previewQuery.isLoading ? (
               <div className="text-sm">Loading…</div>
             ) : previewQuery.data ? (
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Preview</div>
-                {(previewQuery.data?.formMetadata?.schema ?? []).length ? (
-                  <div className="mt-2">
-                    <DynamicForm
-                      party={"student"}
-                      fields={fields}
-                      values={values}
-                      onChange={setField}
-                      errors={errors}
-                      showErrors={true}
-                      formName={previewName ?? ""}
-                      autofillValues={{}}
-                      setValues={(newValues) => setValues({ ...values, ...newValues })}
-                    />
-                  </div>
-                ) : (
+              <div className="space-y-3">
+                {/* Party tabs */}
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {parties.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => {
+                        setSelectedParty(p);
+                        setAllValid(false);
+                      }}
+                      className={`rounded-full border px-3 py-1 text-sm whitespace-nowrap transition ${
+                        selectedParty === p
+                          ? "bg-primary border-primary text-white"
+                          : "bg-transparent"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+
+                {/* No schema */}
+                {(previewQuery.data?.formMetadata?.schema ?? []).length === 0 ? (
                   <div className="text-sm">No preview available.</div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="rounded-md border p-3">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="text-sm font-semibold">{selectedParty}</div>
+                        <div className="text-muted-foreground text-xs">
+                          {fieldsForParty(selectedParty).length} field
+                          {fieldsForParty(selectedParty).length !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+
+                      <DynamicForm
+                        party={selectedParty}
+                        fields={fieldsForParty(selectedParty)}
+                        values={values[selectedParty] ?? {}}
+                        onChange={(field, value) => setField(selectedParty, field, value)}
+                        errors={errors}
+                        showErrors={true}
+                        formName={previewName ?? ""}
+                        autofillValues={{}}
+                        setValues={(newVals) => setValuesForParty(selectedParty, newVals)}
+                      />
+
+                      {allValid && fieldsForParty(selectedParty).length > 0 && (
+                        <div className="mt-2 flex items-center gap-1 text-sm font-medium text-green-600">
+                          All fields are valid ✅
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (
               <div className="text-sm">No preview available.</div>
             )}
           </DialogDescription>
+
           <div className="mt-4 flex justify-end gap-2">
             <Button type="button" onClick={handleSubmit}>
               Test Validation
             </Button>
-            <DialogClose>
-              <Button>Close</Button>
-            </DialogClose>
           </div>
         </DialogContent>
       </Dialog>
