@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export interface FormCardProps {
   title: string;
@@ -16,21 +17,13 @@ export default function FormCard({ title, requestedAt, downloadUrl, className }:
       : new Date(typeof requestedAt === "string" ? requestedAt : Number(requestedAt));
 
   return (
-    <div
-      className={[
-        "group bg-background/60 relative rounded-[0.33em] border backdrop-blur-sm",
-        "transition-all duration-200 hover:shadow-sm",
-        "border-gray-200 dark:border-gray-800",
-        className || "",
-      ].join(" ")}
-      role="article"
-    >
-      <div className="flex items-center justify-between p-3.5">
+    <Card className={className}>
+      <div className="flex items-center justify-between px-3">
         {/* Top: icon + name + status pill */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex flex-col">
             <div className="line-clamp-1 text-sm leading-tight font-medium">{title}</div>
-            <div className="text-muted-foreground text-[11px]">{requested.toLocaleString()}</div>
+            <div className="text-muted-foreground text-xs">{requested.toLocaleString()}</div>
           </div>
         </div>
 
@@ -47,6 +40,6 @@ export default function FormCard({ title, requestedAt, downloadUrl, className }:
           )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
