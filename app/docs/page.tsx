@@ -145,7 +145,6 @@ function VerifyDocsPageContent() {
             {/* Right: PDF viewer */}
             <div className="sticky top-24 self-start">
               <PdfViewerPanel
-                // @ts-expect-error -- not type casted yet
                 title={result.form_label ?? "Signed Document"}
                 viewUrl={result.url}
                 downloadUrl={result.url}
