@@ -49,7 +49,8 @@ export function VerificationDetailsCard({ signedDocument }: { signedDocument: Si
           <MetaRow
             icon={<FileText className="h-4 w-4" />}
             label="Title"
-            value={"Memorandum of Agreement"}
+            // @ts-expect-error -- not type casted yet
+            value={signedDocument.form_label ?? "Signed Document"}
           />
           <MetaRow
             icon={<Clock className="h-4 w-4" />}
