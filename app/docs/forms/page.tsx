@@ -150,23 +150,17 @@ export default function DocsFormsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {rows.map((f) => (
-              <div
-                key={f.name}
-                className="group bg-background/60 relative rounded-[0.33em] border border-gray-200 backdrop-blur-sm transition-all duration-200 hover:shadow-sm dark:border-gray-800"
-                role="article"
-              >
-                <div className="flex items-center justify-between p-3.5">
-                  <div className="flex flex-col">
-                    <div className="line-clamp-1 text-sm leading-tight font-medium">{f.name}</div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" onClick={() => onPreview(f.name)} className="h-8 px-3">
-                      Preview
-                    </Button>
-                  </div>
+              <Card key={f.name} className="flex-row items-center justify-between px-3">
+                <div className="flex flex-col">
+                  <div className="line-clamp-1 text-sm leading-tight font-medium">{f.name}</div>
                 </div>
-              </div>
+
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={() => onPreview(f.name)} className="h-8 px-3">
+                    Preview
+                  </Button>
+                </div>
+              </Card>
             ))}
           </div>
         )}
