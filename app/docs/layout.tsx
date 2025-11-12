@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/docs/Header";
 import { Providers } from "./providers";
+import { Footer } from "@/components/shared/Footer";
 
 export const metadata: Metadata = {
   title: "Document Verification | BetterInternship",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen w-[100vw] overflow-x-hidden bg-gradient-to-b from-white to-emerald-50/30">
+      <body className="flex min-h-[100svh] w-[100vw] flex-col overflow-x-hidden bg-gradient-to-b from-white to-emerald-50/30">
         <header className="bg-background/70 border-b backdrop-blur">
           <div className="mx-auto flex h-16 max-w-screen-xl items-center gap-2">
             <div className="flex items-center gap-2">
@@ -30,8 +31,10 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         </header>
 
         <Providers>
-          <main className="mx-auto">{children}</main>
+          <main className="mx-auto w-full flex-1">{children}</main>
         </Providers>
+
+        <Footer />
       </body>
     </html>
   );
