@@ -34,7 +34,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           <main className="mx-auto w-full flex-1">{children}</main>
         </Providers>
 
-        <Footer />
+        {/* <Footer /> */}
       </body>
     </html>
   );
