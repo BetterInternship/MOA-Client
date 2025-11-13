@@ -947,7 +947,7 @@ const Sidebar = ({
         </TabsContent>
       </div>
       <div className="flex flex-col justify-between gap-2 pt-2">
-        <div className="flex flex-row items-center justify-center gap-2 border border-gray-400 p-4">
+        <div className="flex flex-row gap-2">
           <Button scheme="secondary" onClick={() => fileInputRef.current?.click()}>
             <Upload />
             Select File
@@ -963,22 +963,22 @@ const Sidebar = ({
             <Button
               variant="outline"
               scheme="supportive"
-              onClick={handleFileRegister}
-              disabled={form.refreshing}
-            >
-              <CheckCircle />
-              Register File
-            </Button>
-          )}
-          {form.document.file && (
-            <Button
-              variant="outline"
-              scheme="supportive"
               onClick={() => void form.refreshFields()}
               disabled={form.refreshing}
             >
               <Redo2Icon />
               {form.refreshing ? "Refreshing..." : "Refresh Fields"}
+            </Button>
+          )}
+          {form.document.file && (
+            <Button
+              variant="primary"
+              scheme="supportive"
+              onClick={handleFileRegister}
+              disabled={form.refreshing}
+            >
+              <CheckCircle />
+              Register File
             </Button>
           )}
         </div>
