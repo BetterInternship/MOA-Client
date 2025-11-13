@@ -1128,14 +1128,15 @@ const RegisterFileModal = ({
           Export JSON
         </Button>
         <div className="flex-1" />
+
+        <Button disabled={submitting} scheme="destructive" variant="outline" onClick={close}>
+          Cancel
+        </Button>
         <Button
           disabled={!documentName.trim() || submitting || !form.document.file}
           onClick={() => void handleSubmit()}
         >
           {submitting ? "Submitting..." : "Submit"}
-        </Button>
-        <Button disabled={submitting} scheme="destructive" variant="outline" onClick={close}>
-          Cancel
         </Button>
       </div>
     </div>
