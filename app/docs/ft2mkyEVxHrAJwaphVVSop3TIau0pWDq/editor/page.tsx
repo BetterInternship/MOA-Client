@@ -1083,7 +1083,7 @@ const RegisterFileModal = ({
   return (
     <div className="flex min-w-xl flex-col gap-2">
       <div className="flex flex-row gap-2">
-        <Badge className="max-w-prose min-w-[200px]">Form Name</Badge>
+        <Badge className="w-fit max-w-prose">Form Name</Badge>
         <Input
           type="text"
           className="h-7 py-1 text-xs"
@@ -1091,7 +1091,9 @@ const RegisterFileModal = ({
           placeholder="Enter form name..."
           onChange={(e) => setDocumentName(e.target.value)}
         />
-        <Badge className="max-w-prose min-w-[200px]">Form Label</Badge>
+      </div>
+      <div className="flex flex-row gap-2">
+        <Badge className="w-fit max-w-prose">Form Label</Badge>
         <Input
           type="text"
           className="h-7 py-1 text-xs"
@@ -1101,7 +1103,7 @@ const RegisterFileModal = ({
         />
       </div>
       <div className="flex flex-row gap-2">
-        <Badge className="max-w-prose min-w-[200px]">Who Needs to Sign?</Badge>
+        <Badge className="w-fit max-w-prose">Who Needs to Sign?</Badge>
         <Input
           type="text"
           className="h-7 py-1 text-xs"
