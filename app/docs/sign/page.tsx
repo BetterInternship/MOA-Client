@@ -141,7 +141,7 @@ function PageContent() {
     queryKey: ["form-fields", formName],
     queryFn: () => getFormFields(formName),
     enabled: !!formName,
-    staleTime: 60_000,
+    staleTime: 1000,
   });
 
   // Fields
@@ -339,12 +339,12 @@ function PageContent() {
 
   // Update form data if ever
   useEffect(() => {
-    console.log(formName, formVersion);
+    console.log("FORM", formName, formVersion);
     if (!!formName && (!!formVersion || formVersion === 0)) {
       form.updateFormName(formName);
       form.updateFormVersion(formVersion);
     }
-  }, [formName, formVersion]);
+  }, [formName, formVersion, formRes]);
 
   return (
     <div className="container mx-auto grid grid-cols-2 gap-x-0 px-4 pt-8 sm:px-10 sm:pt-16">
