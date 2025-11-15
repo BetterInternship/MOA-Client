@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-15 20:45:43
+ * @ Modified time: 2025-11-15 22:24:15
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -13,7 +13,13 @@ import {
   formsControllerGetRegistryFormDocument,
   formsControllerGetRegistryFormMetadata,
 } from "@/app/api";
-import { FormMetadata, IFormField, IFormMetadata, IFormParams } from "@betterinternship/core/forms";
+import {
+  FormMetadata,
+  IFormField,
+  IFormMetadata,
+  IFormParams,
+  IFormPhantomField,
+} from "@betterinternship/core/forms";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useFieldTemplateContext } from "./field-template.ctx";
 import { cn } from "@/lib/utils";
@@ -28,8 +34,10 @@ export interface IFormContext {
   formMetadata: IFormMetadata;
   document: IDocument;
   fields: IFormField[];
+  phantomFields: IFormPhantomField[];
   params: IFormParams;
   keyedFields: (IFormField & { _id: string })[];
+  keyedPhantomFields: (IFormPhantomField & { _id: string })[];
   previews: Record<number, React.ReactNode[]>;
   loading: boolean;
   refreshing: boolean;
@@ -39,9 +47,12 @@ export interface IFormContext {
   updateFormVersion: (newFormVersion: number) => void;
   updateDocument: (newDocument: Partial<IDocument>) => void;
   updateField: (fieldIndex: number, newField: Partial<IFormField>) => void;
-  removeField: (fieldIndex: number) => void;
-  setFields: (newFields: IFormField[]) => void;
   addField: (newField: IFormField) => void;
+  removeField: (fieldIndex: number) => void;
+  updatePhantomField: (fieldIndex: number, newField: Partial<IFormPhantomField>) => void;
+  addPhantomField: (newField: IFormPhantomField) => void;
+  removePhantomField: (fieldIndex: number) => void;
+  setFields: (newFields: IFormField[]) => void;
   updateParam: (key: string, value: string) => void;
   removeParam: (key: string) => void;
   refreshFields: () => Promise<void>;
@@ -73,6 +84,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   const [formName, setFormName] = useState<string>("");
   const [formVersion, setFormVersion] = useState<number>(0);
   const [fields, setFields] = useState<IFormField[]>([]);
+  const [phantomFields, setPhantomFields] = useState<IFormPhantomField[]>([]);
   const [params, setParams] = useState<IFormParams>({});
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
   const [selectedPreviewId, setSelectedPreviewId] = useState<string>("");
@@ -81,6 +93,12 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   const keyedFields = useMemo(
     () => fields.map((field) => ({ _id: Math.random().toString(), ...field })),
     [fields, registry]
+  );
+
+  // Used in the ui for selecting / distinguishing phantom fields
+  const keyedPhantomFields = useMemo(
+    () => phantomFields.map((field) => ({ _id: Math.random().toString(), ...field })),
+    [phantomFields, registry]
   );
 
   // Default form metadata
@@ -120,6 +138,25 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     setFields(fields.filter((f, i) => i !== fieldIndex));
   };
 
+  // Updates a field, given its index
+  const updatePhantomField = (fieldIndex: number, newField: Partial<IFormPhantomField>) => {
+    setPhantomFields([
+      ...phantomFields.slice(0, fieldIndex),
+      { ...phantomFields[fieldIndex], ...newField },
+      ...phantomFields.slice(fieldIndex + 1),
+    ]);
+  };
+
+  // Add new field
+  const addPhantomField = (field: IFormPhantomField) => {
+    setPhantomFields([...phantomFields, field]);
+  };
+
+  // Updates a field, given its index
+  const removePhantomField = (fieldIndex: number) => {
+    setPhantomFields(phantomFields.filter((f, i) => i !== fieldIndex));
+  };
+
   // Adds a new param
   const updateParam = (key: string, value: string) => {
     setParams({
@@ -154,7 +191,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     setRefreshing(true);
 
     // Util for refreshing field
-    const fieldRefresher = async (oldField: IFormField) => {
+    const fieldRefresher = async (oldField: IFormField | IFormPhantomField) => {
       const fieldId = registry.find((f) => `${f.name}:${f.preset}` === oldField.field)?.id;
       if (!fieldId) return oldField;
 
@@ -178,11 +215,18 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     const newFields = await Promise.all(fields.map(fieldRefresher)).then((fs) =>
       fs
         .filter((f) => f !== undefined)
+        .map((f) => f as IFormField)
         .map((f) => (!f.align_h ? { ...f, align_h: "center" as const } : f))
         .map((f) => (!f.align_v ? { ...f, align_v: "bottom" as const } : f))
     );
 
+    // Refresh phantom fields too
+    const newPhantomFields = await Promise.all(phantomFields.map(fieldRefresher)).then((fs) =>
+      fs.filter((f) => f !== undefined).map((f) => f as IFormPhantomField)
+    );
+
     setFields(newFields);
+    setPhantomFields(newPhantomFields);
     refreshParams(newFields);
     setRefreshing(false);
   };
@@ -225,6 +269,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
         ({ formMetadata }) => {
           const fm = new FormMetadata(formMetadata);
           setFields(formMetadata.schema);
+          setPhantomFields(formMetadata.schema_phantoms ?? []);
           setDocumentName(formMetadata.name);
           setFormMetadata(formMetadata);
           setParams({
@@ -262,6 +307,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   // Clear fields on refresh?
   useEffect(() => {
     setFields([]);
+    setPhantomFields([]);
     setParams({});
     setFormMetadata(initialFormMetadata);
     console.log("Clearing fields and metadata...");
@@ -279,19 +325,16 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     return () => setPreviews({});
   }, [selectedPreviewId, keyedFields, registry]);
 
-  // ! remove
-  useEffect(() => {
-    console.log(params);
-  }, [params]);
-
   // The form context
   const formContext: IFormContext = {
     formName,
     formVersion,
     formMetadata,
     fields,
+    phantomFields,
     params,
     keyedFields,
+    keyedPhantomFields,
     previews,
     loading,
     refreshing,
@@ -300,6 +343,9 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     updateField,
     removeField,
     addField,
+    updatePhantomField,
+    addPhantomField,
+    removePhantomField,
     setFields,
     updateParam,
     removeParam,

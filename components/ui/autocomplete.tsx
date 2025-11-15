@@ -53,7 +53,7 @@ export const Autocomplete = <ID extends number | string>({
   return (
     <div className={cn("relative w-full", className)} ref={ref}>
       <Input
-        value={selected?.name ?? undefined}
+        value={selected?.name || query || ""}
         className={cn("border-gray-300", inputClassName)}
         placeholder={placeholder}
         onChange={(e) => {

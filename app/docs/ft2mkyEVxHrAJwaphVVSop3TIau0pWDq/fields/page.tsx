@@ -23,7 +23,7 @@ import { FormDropdown } from "@/components/docs/forms/EditForm";
 interface FieldRegistryEntry {
   name: string;
   preset: string;
-  type: "text" | "signature";
+  type: "" | "text" | "signature" | "email" | "param";
   label: string;
   party: "student" | "university" | "entity" | "student-guardian";
   source: "auto" | "prefill" | "derived" | "manual";
@@ -31,6 +31,7 @@ interface FieldRegistryEntry {
   tooltip_label: string;
   validator: string;
   prefiller: string;
+  is_phantom?: boolean;
 }
 
 /**
@@ -192,10 +193,11 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
     setEditing(true);
     await formsControllerUpdateField({
       ...field,
-      tooltip_label: field.tooltip_label ?? null,
-      validator: field.validator ?? null,
-      prefiller: field.prefiller ?? null,
+      tooltip_label: field?.tooltip_label ?? null,
+      validator: field?.validator ?? null,
+      prefiller: field?.prefiller ?? null,
       id: fieldId,
+      is_phantom: field?.is_phantom ?? false,
     });
     setEditing(false);
     close();
@@ -218,6 +220,7 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
         validator: data.field.validator ?? "",
         prefiller: data.field.prefiller ?? "",
         party: data.field.party ?? "",
+        is_phantom: data.field.is_phantom,
       });
     } else {
       setFieldId(null);
@@ -256,11 +259,18 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
             <Autocomplete
               value={field?.type}
               inputClassName="h-7 py-1 text-xs"
-              placeholder="text, signature"
-              options={[
-                { id: "text", name: "text" },
-                { id: "signature", name: "signature" },
-              ]}
+              placeholder={field?.is_phantom ? "email, param" : "text, signature"}
+              options={
+                !field?.is_phantom || field?.is_phantom.toString() === "false"
+                  ? [
+                      { id: "text", name: "text" },
+                      { id: "signature", name: "signature" },
+                    ]
+                  : [
+                      { id: "email", name: "email" },
+                      { id: "param", name: "param" },
+                    ]
+              }
               setter={(id) => id && handleChangeFactory("type")(id)}
             />
             <Badge>Field Source</Badge>
@@ -308,6 +318,21 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
               placeholder={"none"}
               value={field?.prefiller}
               onChange={handleChangeFactory("prefiller")}
+            />
+            <Badge>Phantom field? (Doesn't show up on form)</Badge>
+            <FormDropdown
+              value={field?.is_phantom?.toString() ?? "true"}
+              options={[
+                { id: "true", name: "true" },
+                { id: "false", name: "false" },
+              ]}
+              setter={(e) =>
+                setField({
+                  ...(field as FieldRegistryEntry),
+                  type: "",
+                  is_phantom: JSON.parse(e.toString()) as boolean,
+                })
+              }
             />
           </div>
         )}
@@ -359,6 +384,7 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
       source: field.source,
       party: field.party ?? "student",
       shared: field.shared ?? true,
+      is_phantom: false,
     });
     setRegistering(false);
     close();
@@ -399,11 +425,18 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
           <Autocomplete
             value={field.type}
             inputClassName="h-7 py-1 text-xs"
-            placeholder="text, signature"
-            options={[
-              { id: "text", name: "text" },
-              { id: "signature", name: "signature" },
-            ]}
+            placeholder={field.is_phantom ? "email, param" : "text, signature"}
+            options={
+              !field.is_phantom || field.is_phantom.toString() === "false"
+                ? [
+                    { id: "text", name: "text" },
+                    { id: "signature", name: "signature" },
+                  ]
+                : [
+                    { id: "email", name: "email" },
+                    { id: "param", name: "param" },
+                  ]
+            }
             setter={(id) => id && handleChangeFactory("type")(id)}
           />
           <Badge>Field Source</Badge>
@@ -442,6 +475,21 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
             placeholder={"none"}
             value={field?.prefiller}
             onChange={handleChangeFactory("prefiller")}
+          />
+          <Badge>Phantom field? (Doesn't show up on form)</Badge>
+          <FormDropdown
+            value={field?.is_phantom?.toString() ?? "true"}
+            options={[
+              { id: "true", name: "true" },
+              { id: "false", name: "false" },
+            ]}
+            setter={(e) =>
+              setField({
+                ...(field as FieldRegistryEntry),
+                type: "",
+                is_phantom: JSON.parse(e.toString()) as boolean,
+              })
+            }
           />
         </div>
         <div className="flex flex-row justify-between gap-1">

@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-15 21:04:23
+ * @ Modified time: 2025-11-15 22:55:28
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -28,6 +28,7 @@ import {
 import {
   IFormField,
   IFormMetadata,
+  IFormPhantomField,
   IFormSignatory,
   IFormSubscriber,
   PARTIES,
@@ -288,12 +289,14 @@ const FieldEditor = ({
   setSelected,
   fieldIndex,
   fieldKey,
+  isPhantom,
 }: {
-  fieldDetails: IFormField;
+  fieldDetails: IFormField | IFormPhantomField;
   selected: boolean;
   setSelected: (fieldId: string) => void;
   fieldIndex: number;
   fieldKey: string;
+  isPhantom?: boolean;
 }) => {
   const form = useFormContext();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -319,10 +322,10 @@ const FieldEditor = ({
       validator: field.validator ?? "",
       prefiller: field.prefiller ?? "",
       tooltip_label: field.tooltip_label ?? "",
-      h: 10,
     };
 
-    form.updateField(fieldIndex, newField);
+    if (isPhantom) form.updatePhantomField(fieldIndex, newField as unknown as IFormPhantomField);
+    else form.updateField(fieldIndex, { ...newField, h: 10 } as IFormField);
   };
 
   // Handle change for any of the props of the field
@@ -339,7 +342,9 @@ const FieldEditor = ({
     };
 
     // Update field
-    form.updateField(fieldIndex, newField);
+    if (isPhantom) form.updatePhantomField(fieldIndex, newField as IFormPhantomField);
+    else form.updateField(fieldIndex, newField as IFormField);
+
     scrollIntoView();
   };
 
@@ -378,7 +383,7 @@ const FieldEditor = ({
         className="flex flex-row items-center justify-between gap-2 p-2 px-4"
         onClick={() => (setIsOpen(!isOpen), setSelected(fieldKey))}
       >
-        ({fieldDetails.page}) {fieldDetails.field}
+        {"page" in fieldDetails && <>({fieldDetails.page})</>} {fieldDetails.field || "no-name"}
         <div className="flex-1"></div>
         {isOpen ? (
           <ChevronDown className="h-4 w-4"></ChevronDown>
@@ -425,7 +430,9 @@ const FieldEditor = ({
                   value={fieldTemplateId}
                   inputClassName="h-7 py-1 text-xs text-supportive border-supportive"
                   placeholder="Choose template..."
-                  options={registry.map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
+                  options={registry
+                    .filter((f) => f.is_phantom === !!isPhantom)
+                    .map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
                   setter={(id) => id && void handleSelectField(id)}
                 />
               </>
@@ -449,62 +456,66 @@ const FieldEditor = ({
               defaultValue={fieldDetails.label}
               onChange={handleChangeFactory("label")}
             />
-            <Badge>Postion X</Badge>
-            <Input
-              value={fieldDetails.x}
-              type="number"
-              className="h-7 py-1 text-xs"
-              defaultValue={fieldDetails.x}
-              onChange={handleChangeFactory("x")}
-            />
-            <Badge>Position Y</Badge>
-            <Input
-              value={fieldDetails.y}
-              type="number"
-              className="h-7 py-1 text-xs"
-              defaultValue={fieldDetails.y}
-              onChange={handleChangeFactory("y")}
-            />
-            <Badge>Width</Badge>
-            <Input
-              value={fieldDetails.w}
-              type="number"
-              className="h-7 py-1 text-xs"
-              defaultValue={fieldDetails.w}
-              onChange={handleChangeFactory("w")}
-            />
-            <Badge>Page</Badge>
-            <Input
-              value={fieldDetails.page}
-              type="number"
-              className="h-7 py-1 text-xs"
-              defaultValue={fieldDetails.page}
-              onChange={handleChangeFactory("page")}
-            />
-            <Badge>Horizontal Alignment</Badge>
-            <Autocomplete
-              value={fieldDetails.align_h ?? "center"}
-              inputClassName="h-7 py-1 text-xs"
-              placeholder="Horizontal alignment"
-              options={[
-                { id: "left", name: "left" },
-                { id: "center", name: "center" },
-                { id: "right", name: "right" },
-              ]}
-              setter={(id) => id && void handleChangeFactory("align_h")(id)}
-            />
-            <Badge>Vertical Alignment</Badge>
-            <Autocomplete
-              value={fieldDetails.align_v ?? "bottom"}
-              inputClassName="h-7 py-1 text-xs"
-              placeholder="Vertical alignment"
-              options={[
-                { id: "top", name: "top" },
-                { id: "middle", name: "middle" },
-                { id: "bottom", name: "bottom" },
-              ]}
-              setter={(id) => id && void handleChangeFactory("align_v")(id)}
-            />
+            {!isPhantom && (
+              <>
+                <Badge>Postion X</Badge>
+                <Input
+                  value={(fieldDetails as IFormField).x}
+                  type="number"
+                  className="h-7 py-1 text-xs"
+                  defaultValue={(fieldDetails as IFormField).x}
+                  onChange={handleChangeFactory("x")}
+                />
+                <Badge>Position Y</Badge>
+                <Input
+                  value={(fieldDetails as IFormField).y}
+                  type="number"
+                  className="h-7 py-1 text-xs"
+                  defaultValue={(fieldDetails as IFormField).y}
+                  onChange={handleChangeFactory("y")}
+                />
+                <Badge>Width</Badge>
+                <Input
+                  value={(fieldDetails as IFormField).w}
+                  type="number"
+                  className="h-7 py-1 text-xs"
+                  defaultValue={(fieldDetails as IFormField).w}
+                  onChange={handleChangeFactory("w")}
+                />
+                <Badge>Page</Badge>
+                <Input
+                  value={(fieldDetails as IFormField).page}
+                  type="number"
+                  className="h-7 py-1 text-xs"
+                  defaultValue={(fieldDetails as IFormField).page}
+                  onChange={handleChangeFactory("page")}
+                />
+                <Badge>Horizontal Alignment</Badge>
+                <Autocomplete
+                  value={(fieldDetails as IFormField).align_h ?? "center"}
+                  inputClassName="h-7 py-1 text-xs"
+                  placeholder="Horizontal alignment"
+                  options={[
+                    { id: "left", name: "left" },
+                    { id: "center", name: "center" },
+                    { id: "right", name: "right" },
+                  ]}
+                  setter={(id) => id && void handleChangeFactory("align_h")(id)}
+                />
+                <Badge>Vertical Alignment</Badge>
+                <Autocomplete
+                  value={(fieldDetails as IFormField).align_v ?? "bottom"}
+                  inputClassName="h-7 py-1 text-xs"
+                  placeholder="Vertical alignment"
+                  options={[
+                    { id: "top", name: "top" },
+                    { id: "middle", name: "middle" },
+                    { id: "bottom", name: "bottom" },
+                  ]}
+                  setter={(id) => id && void handleChangeFactory("align_v")(id)}
+                />
+              </>
+            )}
             {!isUsingTemplate && (
               <>
                 <Badge>Source</Badge>
@@ -600,6 +611,21 @@ const Sidebar = ({
     });
   };
 
+  // Handle when a field is added by user
+  const handlePhantomFieldAdd = () => {
+    form.addPhantomField({
+      field: "",
+      type: "email",
+      validator: "",
+      prefiller: "",
+      tooltip_label: "",
+      label: "",
+      source: "manual",
+      party: "student",
+      shared: true,
+    });
+  };
+
   // Adds a new subscriber to the schema
   const handleSubscriberAdd = () => {
     setSubscribers([
@@ -634,11 +660,10 @@ const Sidebar = ({
     if (!form.document.file) return;
 
     // Check if all fields are valid
-    for (const field of form.fields) {
+    for (const field of [...form.fields, ...form.phantomFields]) {
       if (!field.field.trim()) return alert(`${field.field} has an empty field identifier.`);
       if (!field.source) return alert(`${field.field} is missing its source.`);
       if (!field.party) return alert(`${field.field} is missing its party.`);
-      if (!field.type) return alert(`${field.field} is missing its type.`);
       if (!field.label) return alert(`${field.field} is missing its label.`);
     }
 
@@ -850,14 +875,28 @@ const Sidebar = ({
               <pre className="my-2">Inputs here don't get rendered on the form itself.</pre>
               <div className="mb-2 flex flex-row gap-2">
                 {form.document.file && (
-                  <Button variant="outline" onClick={() => {}}>
+                  <Button variant="outline" onClick={handlePhantomFieldAdd}>
                     <PlusCircle />
                     Add Non-Rendered Field
                   </Button>
                 )}
               </div>
             </div>
-            <div className="flex max-h-[450px] flex-col overflow-auto">TODO</div>
+            <div className="flex max-h-[450px] flex-col overflow-auto">
+              {form.keyedPhantomFields
+                .filter((f) => !!f)
+                .map((field) => (
+                  <FieldEditor
+                    key={field._id}
+                    fieldKey={field._id}
+                    fieldIndex={form.keyedPhantomFields.indexOf(field)}
+                    selected={false}
+                    setSelected={() => {}}
+                    fieldDetails={field}
+                    isPhantom={true}
+                  />
+                ))}
+            </div>
           </TabsContent>
           <TabsContent value="params">
             <div className="p-4">
@@ -987,12 +1026,31 @@ const RegisterFileModal = ({
 
     // Make signatures bigger
     const resizedFields = form.fields.map((field) => {
-      const { id: _id, ...f } = {
+      const {
+        _id,
+        is_phantom: _is_phantom,
+        ...f
+      } = {
         ...field,
         h: field.type === "text" ? 10 : 25,
-        id: null, // TS is being a bitch, don't remove this line lol some type error is slipping thru
+        _id: null, // TS is being a bitch, don't remove this line lol some type error is slipping thru
+        is_phantom: null, // We hide this from the db
       };
 
+      return f;
+    });
+
+    // Remove ids lol
+    const fixedPhantomFields = form.phantomFields.map((field) => {
+      const {
+        _id,
+        is_phantom: _is_phantom,
+        ...f
+      } = {
+        ...field,
+        _id: null, // TS is being a bitch, don't remove this line lol some type error is slipping thru
+        is_phantom: null, // We hide this from the db
+      };
       return f;
     });
 
@@ -1008,7 +1066,7 @@ const RegisterFileModal = ({
       label: documentLabel,
       base_document: form.document.file!,
       schema: resizedFields,
-      schema_phantoms: [],
+      schema_phantoms: fixedPhantomFields,
       signatories: signatories,
       subscribers: subscribers,
       params: form.params,

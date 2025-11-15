@@ -24,4 +24,5 @@ export interface FieldRegistryEntryDetails {
   tooltip_label: string | null;
   /** @nullable */
   validator: string | null;
+  is_phantom: boolean;
 }

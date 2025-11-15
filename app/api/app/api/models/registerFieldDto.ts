@@ -22,4 +22,5 @@ export interface RegisterFieldDto {
   tooltip_label: string | null;
   /** @nullable */
   validator: string | null;
+  is_phantom: boolean;
 }

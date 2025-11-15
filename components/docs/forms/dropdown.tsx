@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-06-14 23:30:09
- * @ Modified time: 2025-10-31 18:13:07
+ * @ Modified time: 2025-11-15 23:49:19
  * @ Description:
  *
  * Stateful dropdown group component.
@@ -191,7 +191,7 @@ export const GroupableRadioDropdown = <ID extends number | string>({
     (e: React.MouseEvent) => {
       e.stopPropagation();
       setIsOpen(!isOpen);
-      setActiveDropdown(name);
+      setActiveDropdown?.(name);
     },
     [isOpen, name, setActiveDropdown]
   );
