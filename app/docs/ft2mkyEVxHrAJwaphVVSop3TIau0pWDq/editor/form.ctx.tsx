@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-10 17:01:42
+ * @ Modified time: 2025-11-15 14:58:53
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -14,8 +14,9 @@ import {
   formsControllerGetRegistryFormMetadata,
 } from "@/app/api";
 import { IFormField, IFormMetadata } from "@betterinternship/core/forms";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useFieldTemplateContext } from "./field-template.ctx";
+import { cn } from "@/lib/utils";
 
 // ? Current schema version, update if needed; tells us if out of date
 export const SCHEMA_VERSION = 0;
@@ -27,6 +28,8 @@ export interface IFormContext {
   formMetadata: IFormMetadata;
   document: IDocument;
   fields: IFormField[];
+  keyedFields: (IFormField & { _id: string })[];
+  previews: Record<number, React.ReactNode[]>;
   loading: boolean;
   refreshing: boolean;
 
@@ -67,6 +70,14 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   const [formName, setFormName] = useState<string>("");
   const [formVersion, setFormVersion] = useState<number>(0);
   const [fields, setFields] = useState<IFormField[]>([]);
+  const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
+  const [selectedPreviewId, setSelectedPreviewId] = useState<string>("");
+
+  // Used in the ui for selecting / distinguishing fields
+  const keyedFields = useMemo(
+    () => fields.map((field) => ({ _id: Math.random().toString(), ...field })),
+    [fields, registry]
+  );
 
   // Default form metadata
   const initialFormMetadata = {
@@ -140,6 +151,29 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     setRefreshing(false);
   };
 
+  // Refresh previews of the different fields
+  const refreshPreviews = () => {
+    const newPreviews: Record<number, React.ReactNode[]> = {};
+
+    // Push new previews here
+    keyedFields.forEach((field) => {
+      if (!newPreviews[field.page]) newPreviews[field.page] = [];
+      newPreviews[field.page].push(
+        <FieldPreview
+          field={field.field}
+          x={field.x}
+          y={field.y}
+          w={field.w}
+          h={field.h}
+          selected={field._id === selectedPreviewId}
+          onClick={() => setSelectedPreviewId(field._id)}
+        />
+      );
+    });
+
+    setPreviews(newPreviews);
+  };
+
   // When form name and version are updated, pull latest
   useEffect(() => {
     if (!formName || (!formVersion && formVersion !== 0)) return;
@@ -179,14 +213,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
         setLoading(false);
       });
 
-    console.log("CHANGING FORM");
-    console.log(fields);
-
-    return () => (
-      controller.abort(),
-      rejector?.("Rejecting request."),
-      console.warn("Cancelling request.")
-    );
+    return () => (controller.abort(), rejector?.("Rejecting request."));
   }, [formName, formVersion]);
 
   // Clear fields on refresh?
@@ -196,12 +223,21 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     console.log("Clearing fields and metadata...");
   }, []);
 
+  // Updates the field previews
+  // (we have to touch the DOM directly for this to go under the hoods of the lib we're using)
+  useEffect(() => {
+    refreshPreviews();
+    return () => setPreviews({});
+  }, [selectedPreviewId, keyedFields, registry]);
+
   // The form context
   const formContext: IFormContext = {
     formName,
     formVersion,
     formMetadata,
     fields,
+    keyedFields,
+    previews,
     loading,
     refreshing,
     document: { name: documentName, url: documentUrl, file: documentFile },
@@ -222,4 +258,50 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   };
 
   return <FormContext.Provider value={formContext}>{children}</FormContext.Provider>;
+};
+
+/**
+ * A preview of what the field will look like on the document.
+ *
+ * @component
+ */
+const FieldPreview = ({
+  x,
+  y,
+  w,
+  h,
+  selected,
+  onClick,
+}: {
+  field: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  selected: boolean;
+  onClick: () => void;
+}) => {
+  return (
+    <div
+      className={cn(
+        "absolute top-0 left-0 border-0!",
+        selected ? "bg-supportive/50!" : "bg-warning/50!"
+      )}
+      onClick={() => onClick()}
+      onMouseDown={onClick}
+      style={{
+        userSelect: "auto",
+        display: "inline-block",
+        width: `round(var(--scale-factor) * ${w}px, 1px)`,
+        height: `round(var(--scale-factor) * ${h}px, 1px)`,
+        fontSize: "12px",
+        transform: `translate(round(var(--scale-factor) * ${x}px, 1px), round(var(--scale-factor) * ${y}px, 1px))`,
+        boxSizing: "border-box",
+        cursor: "pointer",
+        flexShrink: "0",
+      }}
+    >
+      {"xxx"}
+    </div>
+  );
 };

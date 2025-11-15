@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-15 14:04:08
+ * @ Modified time: 2025-11-15 14:58:14
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -11,18 +11,6 @@
 
 import { Loader } from "@/components/ui/loader";
 import { ChangeEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AreaHighlight,
-  Comment,
-  Content,
-  IHighlight,
-  PdfHighlighter,
-  PdfLoader,
-  Popup,
-  ViewportHighlight,
-} from "react-pdf-highlighter";
-import "./react-pdf-highlighter.css";
-import { ScaledPosition } from "react-pdf-highlighter";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle,
@@ -46,7 +34,6 @@ import {
 } from "@betterinternship/core/forms";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
-import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import JsonView from "@uiw/react-json-view";
 import path from "path";
@@ -61,6 +48,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RegisterFormSchemaDto } from "@/app/api";
 import { useFieldTemplateContext } from "./field-template.ctx";
 import { SCHEMA_VERSION, useFormContext } from "./form.ctx";
+import {
+  DocumentHighlight,
+  DocumentObjectTransform,
+  DocumentRenderer,
+} from "@/components/docs/forms/previewer";
 
 /**
  * We wrap the page around a suspense boundary to use search params.
@@ -84,9 +76,10 @@ const FormEditorPage = () => {
 const FormEditorPageContent = () => {
   const searchParams = useSearchParams();
   const form = useFormContext();
+  const { registry } = useFieldTemplateContext();
 
   // The current highlight and its transform; only need one for coordinates
-  const [highlight, setHighlight] = useState<IHighlight | null>(null);
+  const [highlight, setHighlight] = useState<DocumentHighlight | null>(null);
   const [fieldTransform, setFieldTransform] = useState<{
     x: number;
     y: number;
@@ -96,28 +89,12 @@ const FormEditorPageContent = () => {
   }>({ x: 0, y: 0, w: 0, h: 0, page: 1 });
 
   // Executes when user is done dragging highlight
-  const onHighlightFinished = (position: ScaledPosition, content: Content) => {
-    // Create new highlight
-    setHighlight({
-      id: "highlight",
-      content: content,
-      position: position,
-      comment: { text: "", emoji: "" } as unknown as Comment,
-    });
-
-    // Set bounding rect to display
-    const boundingRect = position.boundingRect;
-    setFieldTransform({
-      x: ~~boundingRect.x1,
-      y: ~~boundingRect.y1,
-      w: ~~boundingRect.x2 - ~~boundingRect.x1,
-      h: ~~boundingRect.y2 - ~~boundingRect.y1,
-      page: position.pageNumber,
-    });
-
-    // Maybe in the future you want to return a component to render per highlight
-    // Do it here
-    return null;
+  const onHighlightFinished = (
+    highlight: DocumentHighlight,
+    transform: DocumentObjectTransform
+  ) => {
+    setHighlight(highlight);
+    setFieldTransform(transform);
   };
 
   // Load the specified JSON first, if any
@@ -137,55 +114,15 @@ const FormEditorPageContent = () => {
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
         <Sidebar fieldTransform={fieldTransform} />
         {form.document.url && (
-          <FormRenderer
+          <DocumentRenderer
             documentUrl={form.document.url}
-            highlight={highlight}
+            highlights={highlight ? [highlight] : []}
+            previews={form.previews}
             onHighlightFinished={onHighlightFinished}
-          />
+          ></DocumentRenderer>
         )}
       </div>
     </div>
-  );
-};
-
-/**
- * A component that just renders the document itself.
- *
- * @component
- */
-const FormRenderer = ({
-  documentUrl,
-  highlight,
-  onHighlightFinished,
-}: {
-  documentUrl: string;
-  highlight: IHighlight | null;
-  onHighlightFinished: (position: ScaledPosition, content: Content) => void;
-}) => {
-  // Renders a highlight object into a component
-  const highlightRenderer = (highlight: ViewportHighlight, index: number) => (
-    <Popup popupContent={<></>} onMouseOver={() => {}} onMouseOut={() => {}} key={index}>
-      <AreaHighlight highlight={highlight} onChange={() => {}} isScrolledTo={false} />
-    </Popup>
-  );
-
-  // No document to show
-  if (!documentUrl) return <></>;
-
-  return (
-    <PdfLoader url={documentUrl} beforeLoad={<Loader />}>
-      {(pdfDocument) => (
-        <PdfHighlighter
-          pdfDocument={pdfDocument}
-          enableAreaSelection={(event) => true}
-          onScrollChange={() => {}}
-          scrollRef={() => {}}
-          highlightTransform={highlightRenderer}
-          highlights={highlight ? [highlight] : []}
-          onSelectionFinished={onHighlightFinished}
-        />
-      )}
-    </PdfLoader>
   );
 };
 
@@ -560,53 +497,6 @@ const FieldEditor = ({
 };
 
 /**
- * A preview of what the field will look like on the document.
- *
- * @component
- */
-const FieldPreview = ({
-  field,
-  x,
-  y,
-  w,
-  h,
-  selected,
-  onClick,
-}: {
-  field: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  selected: boolean;
-  onClick: () => void;
-}) => {
-  return (
-    <div
-      className={cn(
-        "absolute top-0 left-0 border-0!",
-        selected ? "bg-supportive/50!" : "bg-warning/50!"
-      )}
-      onClick={() => onClick()}
-      onMouseDown={onClick}
-      style={{
-        userSelect: "auto",
-        display: "inline-block",
-        width: `round(var(--scale-factor) * ${w}px, 1px)`,
-        height: `round(var(--scale-factor) * ${h}px, 1px)`,
-        fontSize: "12px",
-        transform: `translate(round(var(--scale-factor) * ${x}px, 1px), round(var(--scale-factor) * ${y}px, 1px))`,
-        boxSizing: "border-box",
-        cursor: "pointer",
-        flexShrink: "0",
-      }}
-    >
-      {"xxx"}
-    </div>
-  );
-};
-
-/**
  * The sidebar shows metadata about the pdf.
  * This is where Sherwin can add new fields and stuff.
  *
@@ -622,14 +512,9 @@ const Sidebar = ({
   const form = useFormContext();
   const { registry } = useFieldTemplateContext();
   const { openModal, closeModal } = useModal();
-  const [fieldPreviews, setFieldPreviews] = useState<React.ReactNode[]>([]);
   const [subscribers, setSubscribers] = useState<(IFormSubscriber & { id: string })[]>([]);
   const [signatories, setSignatories] = useState<(IFormSignatory & { id: string })[]>([]);
   const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
-  const keyedDocumentFields = useMemo(
-    () => form.fields.map((field) => ({ id: Math.random().toString(), ...field })),
-    [form.fields, registry]
-  );
 
   // Handle changes in file upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -744,40 +629,10 @@ const Sidebar = ({
 
   // Makes sure that the selected field is always shown at the top
   const sortedDocumentFields = useMemo(() => {
-    const initialOrder = keyedDocumentFields.toReversed();
+    const initialOrder = form.keyedFields.toReversed();
     initialOrder.sort((a, b) => a.page - b.page || a.field.localeCompare(b.field));
     return initialOrder;
-  }, [selectedFieldKey, keyedDocumentFields, registry]);
-
-  // Refresh the ui of the fields
-  const refreshFieldPreviews = () => {
-    const fieldPreviews = [];
-    const fieldPreviewContainers =
-      document.querySelectorAll(".PdfHighlighter__highlight-layer") ?? [];
-
-    for (let i = 0; i < keyedDocumentFields.length; i++) {
-      const field = keyedDocumentFields[i];
-      const fieldPreviewContainer = fieldPreviewContainers[field.page - 1];
-      if (!fieldPreviewContainer) continue;
-      console.log("field id", field.id);
-      fieldPreviews.push(
-        createPortal(
-          <FieldPreview
-            field={field.field}
-            x={field.x}
-            y={field.y}
-            w={field.w}
-            h={field.h}
-            selected={field.id === selectedFieldKey}
-            onClick={() => (setSelectedFieldKey(field.id), console.log(field.id))}
-          />,
-          fieldPreviewContainer
-        )
-      );
-    }
-
-    setFieldPreviews(fieldPreviews);
-  };
+  }, [selectedFieldKey, form.keyedFields, registry]);
 
   // Give them ids hopefully
   useEffect(() => {
@@ -788,13 +643,6 @@ const Sidebar = ({
       form.formMetadata.signatories.map((s) => ({ id: Math.random().toString(), ...s }))
     );
   }, []);
-
-  // Updates the field previews
-  // (we have to touch the DOM directly for this to go under the hoods of the lib we're using)
-  useEffect(() => {
-    refreshFieldPreviews();
-    return () => setFieldPreviews([]);
-  }, [selectedFieldKey, keyedDocumentFields, registry]);
 
   // Make sure to set the file when it's specified in the parent
   useEffect(() => {
@@ -871,10 +719,10 @@ const Sidebar = ({
               .filter((f) => !!f)
               .map((field) => (
                 <FieldEditor
-                  key={field.id}
-                  fieldKey={field.id}
-                  fieldIndex={keyedDocumentFields.indexOf(field)}
-                  selected={field?.id === selectedFieldKey}
+                  key={field._id}
+                  fieldKey={field._id}
+                  fieldIndex={form.keyedFields.indexOf(field)}
+                  selected={field?._id === selectedFieldKey}
                   setSelected={setSelectedFieldKey}
                   fieldDetails={field}
                 />
@@ -972,7 +820,7 @@ const Sidebar = ({
           )}
           {form.document.file && (
             <Button
-              variant="primary"
+              variant="default"
               scheme="supportive"
               onClick={handleFileRegister}
               disabled={form.refreshing}
@@ -983,7 +831,6 @@ const Sidebar = ({
           )}
         </div>
       </div>
-      {fieldPreviews}
     </Tabs>
   );
 };
