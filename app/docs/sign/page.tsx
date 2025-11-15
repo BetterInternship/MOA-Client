@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import Link from "next/link";
+import React, { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -13,6 +12,8 @@ import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
 import { DocumentRenderer } from "@/components/docs/forms/previewer";
+import { useFormContext } from "../ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.ctx";
+import { cn } from "@/lib/utils";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university" | "";
@@ -98,6 +99,7 @@ const Page = () => {
 function PageContent() {
   const params = useSearchParams();
   const router = useRouter();
+  const form = useFormContext();
   const { openModal, closeModal } = useModal();
 
   // URL params
@@ -143,12 +145,14 @@ function PageContent() {
   });
 
   // Fields
+  const formVersion: number | undefined = formRes?.formVersion;
   const formMetadata: FormMetadata<any> | null = formRes?.formMetadata
     ? new FormMetadata(formRes?.formMetadata as unknown as IFormMetadata)
     : null;
   const fields = formMetadata?.getFieldsForClient() ?? [];
 
   // local form state
+  const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -333,6 +337,14 @@ function PageContent() {
 
   const goHome = () => router.push("/");
 
+  // Update form data if ever
+  useEffect(() => {
+    if (!!formName && (!!formVersion || formVersion === 0)) {
+      form.updateFormName(formName);
+      form.updateFormVersion(formVersion);
+    }
+  }, [formName, formVersion]);
+
   return (
     <div className="container mx-auto grid grid-cols-2 gap-x-0 px-4 pt-8 sm:px-10 sm:pt-16">
       <div className="ml-auto max-w-xl space-y-6">
@@ -392,6 +404,7 @@ function PageContent() {
               formName={""}
               autofillValues={{}}
               setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
+              setPreviews={setPreviews}
             />
 
             <div className="flex justify-end pt-2">
@@ -419,12 +432,14 @@ function PageContent() {
 
       <div className="relative mx-auto h-full w-full overflow-hidden">
         <div className="absolute flex h-full w-full flex-row justify-center gap-2">
-          {!!pendingUrl && (
+          {(!!pendingUrl || !!form.document.url) && (
             <DocumentRenderer
               documentName={(pendingInfo?.pendingInfo?.form_label as string) ?? "Unnamed Form"}
-              documentUrl={"https://pdfobject.com/pdf/sample.pdf"}
+              documentUrl={pendingUrl || form.document.url}
+              // ! for testing locally
+              // documentUrl={"https://pdfobject.com/pdf/sample.pdf"}
               highlights={[]}
-              previews={[]}
+              previews={previews}
               onHighlightFinished={() => {}}
             />
           )}

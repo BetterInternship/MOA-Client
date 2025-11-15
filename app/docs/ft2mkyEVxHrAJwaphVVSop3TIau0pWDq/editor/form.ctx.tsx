@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-15 22:24:15
+ * @ Modified time: 2025-11-16 05:11:08
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -279,6 +279,8 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
             }, {} as IFormParams),
             ...formMetadata.params,
           });
+
+          console.log("GOTTEM", formMetadata);
         }
       ),
       // Promise for retrieving the document

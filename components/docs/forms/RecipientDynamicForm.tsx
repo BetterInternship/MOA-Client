@@ -1,9 +1,8 @@
 import { cn, coerceAnyDate } from "@/lib/utils";
 import { ClientField } from "@betterinternship/core/forms";
-import { Info } from "lucide-react";
-import { useEffect } from "react";
-import { Tooltip } from "react-tooltip";
+import { useEffect, useRef, useState } from "react";
 import { FieldRenderer } from "./FieldRenderer";
+import { useFormContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.ctx";
 
 export function DynamicForm({
   formName,
@@ -15,6 +14,7 @@ export function DynamicForm({
   onChange,
   errors = {},
   showErrors = false,
+  setPreviews,
 }: {
   formName: string;
   party?: "entity" | "student-guardian" | "university" | "student";
@@ -25,8 +25,11 @@ export function DynamicForm({
   showErrors?: boolean;
   setValues: (values: Record<string, string>) => void;
   onChange: (key: string, value: any) => void;
+  setPreviews?: (previews: Record<number, React.ReactNode[]>) => void;
 }) {
+  const form = useFormContext();
   const filteredFields = fields.filter((field) => field.party === party);
+  const [selectedField, setSelectedField] = useState<string>("");
 
   // Group by section
   const entitySectionFields: ClientField<[]>[] = filteredFields.filter(
@@ -63,6 +66,33 @@ export function DynamicForm({
     setValues(newValues);
   }, []);
 
+  const refreshPreviews = () => {
+    const newPreviews: Record<number, React.ReactNode[]> = {};
+    // Push new previews here
+    form.keyedFields
+      .filter((kf) => filteredFields.find((f) => f.field === kf.field))
+      .forEach((field) => {
+        if (!newPreviews[field.page]) newPreviews[field.page] = [];
+        newPreviews[field.page].push(
+          <FieldPreview
+            value={values[field.field] as string}
+            x={field.x}
+            y={field.y}
+            w={field.w}
+            h={field.h}
+            selected={field.field === selectedField}
+          />
+        );
+      });
+
+    setPreviews?.(newPreviews);
+  };
+
+  // Refresh previews when fields change
+  useEffect(() => {
+    refreshPreviews();
+  }, [form.keyedFields, values]);
+
   return (
     <div className="space-y-4">
       <FormSection
@@ -73,6 +103,7 @@ export function DynamicForm({
         onChange={onChange}
         errors={errors}
         showErrors={showErrors}
+        setSelected={setSelectedField}
       />
 
       <FormSection
@@ -83,6 +114,7 @@ export function DynamicForm({
         onChange={onChange}
         errors={errors}
         showErrors={showErrors}
+        setSelected={setSelectedField}
       />
 
       <FormSection
@@ -93,6 +125,7 @@ export function DynamicForm({
         onChange={onChange}
         errors={errors}
         showErrors={showErrors}
+        setSelected={setSelectedField}
       />
 
       <FormSection
@@ -103,6 +136,7 @@ export function DynamicForm({
         onChange={onChange}
         errors={errors}
         showErrors={showErrors}
+        setSelected={setSelectedField}
       />
     </div>
   );
@@ -116,6 +150,7 @@ const FormSection = function FormSection({
   onChange,
   errors,
   showErrors,
+  setSelected,
 }: {
   formKey: string;
   title: string;
@@ -124,6 +159,7 @@ const FormSection = function FormSection({
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
   showErrors: boolean;
+  setSelected: (selected: string) => void;
 }) {
   if (!fields.length) return null;
   const reducedFields = fields.reduce(
@@ -142,7 +178,7 @@ const FormSection = function FormSection({
           className="space-between flex flex-row"
           key={`${formKey}:${field.section}:${field.field}`}
         >
-          <div className="flex-1">
+          <div className="flex-1" onFocus={() => setSelected(field.field)}>
             <FieldRenderer
               field={field}
               value={values[field.field]}
@@ -203,4 +239,60 @@ const coerceForField = (field: ClientField<[]>, value: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       return value == null ? "" : String(value);
   }
+};
+
+/**
+ * A preview of what the field will look like on the document.
+ *
+ * @component
+ */
+const FieldPreview = ({
+  value,
+  x,
+  y,
+  w,
+  h,
+  selected,
+}: {
+  value: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  selected?: boolean;
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollIntoView = () => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  // Scroll into view when selected
+  useEffect(() => {
+    if (selected) scrollIntoView();
+    console.log("selected!");
+  }, [selected]);
+
+  return (
+    <div
+      ref={scrollRef}
+      className={cn(
+        "absolute top-0 left-0 border-0!",
+        selected ? "bg-supportive/25" : "bg-primary/20"
+      )}
+      style={{
+        userSelect: "auto",
+        display: "inline-block",
+        width: `round(var(--scale-factor) * ${w}px, 1px)`,
+        height: `round(var(--scale-factor) * ${h}px, 1px)`,
+        fontSize: "12px",
+        transform: `translate(round(var(--scale-factor) * ${x}px, 1px), round(var(--scale-factor) * ${y}px, 1px))`,
+        boxSizing: "border-box",
+        cursor: "pointer",
+        flexShrink: "0",
+      }}
+      onClick={() => scrollIntoView()}
+    >
+      {value}
+    </div>
+  );
 };

@@ -12,4 +12,5 @@ export interface FormLatestResponse {
   message: string;
   formMetadata: FormMetadata;
   formDocument: string;
+  formVersion: number;
 }
