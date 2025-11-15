@@ -339,7 +339,6 @@ function PageContent() {
 
   // Update form data if ever
   useEffect(() => {
-    console.log("FORM", formName, formVersion);
     if (!!formName && (!!formVersion || formVersion === 0)) {
       form.updateFormName(formName);
       form.updateFormVersion(formVersion);

@@ -88,15 +88,6 @@ export function DynamicForm({
       });
 
     setPreviews?.(newPreviews);
-    console.log("---------------------------------------------------------------------");
-    console.log("filtered fields", filteredFields);
-    console.log("keyed fields", form.keyedFields);
-    console.log(
-      "filtered keyed fields",
-      form.keyedFields.filter((kf) => filteredFields.find((f) => f.field === kf.field))
-    );
-    console.log("values", values);
-    console.log("resetting previews", newPreviews);
   };
 
   // Refresh previews when fields change

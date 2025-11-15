@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-16 06:53:24
+ * @ Modified time: 2025-11-16 07:12:11
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -256,8 +256,6 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
 
   // When form name and version are updated, pull latest
   useEffect(() => {
-    console.log("que???", formName, formVersion);
-
     if (!formName || (!formVersion && formVersion !== 0)) return;
     const controller = new AbortController();
     const payload = {
@@ -281,8 +279,6 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
             }, {} as IFormParams),
             ...formMetadata.params,
           });
-
-          console.log("GOTTEM", formMetadata);
         }
       ),
       // Promise for retrieving the document
