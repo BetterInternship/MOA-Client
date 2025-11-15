@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-15 14:10:43
- * @ Modified time: 2025-11-15 16:07:10
+ * @ Modified time: 2025-11-15 16:25:45
  * @ Description:
  *
  * Allows previewing a form and some fields on that form.
@@ -135,6 +135,11 @@ export const DocumentRenderer = ({
   );
 };
 
+/**
+ * Makes the pdf look better.
+ *
+ * @component
+ */
 const PdfDecorator = ({ title, children }: { title: string; children: React.ReactNode }) => {
   return (
     <div className="flex h-full flex-col gap-0">

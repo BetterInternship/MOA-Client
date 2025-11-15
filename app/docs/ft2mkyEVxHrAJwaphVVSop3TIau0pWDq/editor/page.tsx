@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-15 16:20:01
+ * @ Modified time: 2025-11-15 18:57:19
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -45,7 +45,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  VerticalTabs,
+  VerticalTabsList,
+  VerticalTabsTrigger,
+} from "@/components/ui/tabs";
 import { RegisterFormSchemaDto } from "@/app/api";
 import { useFieldTemplateContext } from "./field-template.ctx";
 import { SCHEMA_VERSION, useFormContext } from "./form.ctx";
@@ -692,7 +700,7 @@ const Sidebar = ({
   };
 
   return (
-    <Tabs className="gap-0" defaultValue="fields">
+    <div className="relative flex h-full w-full flex-col">
       <div className="flex h-20 flex-col justify-center gap-2">
         <div className="flex flex-row items-center gap-2">
           <Button scheme="secondary" onClick={() => fileInputRef.current?.click()}>
@@ -730,111 +738,152 @@ const Sidebar = ({
           )}
         </div>
       </div>
-      <TabsList className="h-10 rounded-b-none border-b-0">
-        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
-          Fields
-        </TabsTrigger>
-        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="subscribers">
-          Subscribers
-        </TabsTrigger>
-        <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="signatories">
-          Signatories
-        </TabsTrigger>
-      </TabsList>
-      <div className="h-full max-h-full border border-t-0 border-gray-300 p-8">
-        <TabsContent value="fields">
-          <div className="p-4">
-            <div className="mb-2 flex flex-row gap-2">
-              {form.document.file && (
-                <Button variant="outline" onClick={handleFieldAdd}>
-                  <PlusCircle />
-                  Add Field
-                </Button>
-              )}
+      <VerticalTabs className="h-full max-h-full w-full gap-0" defaultValue="fields">
+        <VerticalTabsList className="rounded-r-none border-r-0">
+          <VerticalTabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
+            Fields
+          </VerticalTabsTrigger>
+          <VerticalTabsTrigger
+            className="rounded-[0.33em] hover:cursor-pointer"
+            value="other-inputs"
+          >
+            Non-Rendered Fields
+          </VerticalTabsTrigger>
+          <VerticalTabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="params">
+            Form Parameters
+          </VerticalTabsTrigger>
+          <VerticalTabsTrigger
+            className="rounded-[0.33em] hover:cursor-pointer"
+            value="subscribers"
+          >
+            Subscribers
+          </VerticalTabsTrigger>
+          <VerticalTabsTrigger
+            className="rounded-[0.33em] hover:cursor-pointer"
+            value="signatories"
+          >
+            Signatories
+          </VerticalTabsTrigger>
+        </VerticalTabsList>
+        <div className="relative h-full w-[600px] max-w-full border border-l-0 border-gray-300 p-8">
+          <TabsContent value="fields">
+            <div className="p-4">
+              <pre className="my-2">Highlight part of the PDF and add a new field.</pre>
+              <div className="mb-2 flex flex-row gap-2">
+                {form.document.file && (
+                  <Button variant="outline" onClick={handleFieldAdd}>
+                    <PlusCircle />
+                    Add Field
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex max-h-[450px] flex-col overflow-auto">
-            {sortedDocumentFields
-              .filter((f) => !!f)
-              .map((field) => (
-                <FieldEditor
-                  key={field._id}
-                  fieldKey={field._id}
-                  fieldIndex={form.keyedFields.indexOf(field)}
-                  selected={field?._id === selectedFieldKey}
-                  setSelected={setSelectedFieldKey}
-                  fieldDetails={field}
-                />
+            <div className="flex max-h-[450px] flex-col overflow-auto">
+              {sortedDocumentFields
+                .filter((f) => !!f)
+                .map((field) => (
+                  <FieldEditor
+                    key={field._id}
+                    fieldKey={field._id}
+                    fieldIndex={form.keyedFields.indexOf(field)}
+                    selected={field?._id === selectedFieldKey}
+                    setSelected={setSelectedFieldKey}
+                    fieldDetails={field}
+                  />
+                ))}
+            </div>
+          </TabsContent>
+          <TabsContent value="other-inputs">
+            <div className="p-4">
+              <pre className="my-2">Inputs here don't get rendered on the form itself.</pre>
+              <div className="mb-2 flex flex-row gap-2">
+                {form.document.file && (
+                  <Button variant="outline" onClick={() => {}}>
+                    <PlusCircle />
+                    Add Non-Rendered Field
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="flex max-h-[450px] flex-col overflow-auto">TODO</div>
+          </TabsContent>
+          <TabsContent value="params">
+            <div className="p-4">
+              <pre className="my-2">
+                This is where you can edit form parameters. Will be autodetected from form.
+              </pre>
+              <div className="mb-2 flex flex-row gap-2">TODO</div>
+            </div>
+            <div className="flex max-h-[450px] flex-col overflow-auto">TODO</div>
+          </TabsContent>
+          <TabsContent value="subscribers">
+            <div className="p-4">
+              <pre className="my-2">{subscribers.length} subscribers</pre>
+              <div className="mb-2 flex flex-row gap-2">
+                {form.document.file && (
+                  <Button variant="outline" onClick={handleSubscriberAdd}>
+                    <PlusCircle />
+                    Add Subscriber
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              {subscribers.map((subscriber, i) => (
+                <div className="flex flex-row gap-2">
+                  <ContactEditor
+                    key={subscriber.id}
+                    initialContactDetails={subscriber}
+                    updateContact={editSubscriber(subscribers.length - i)}
+                  />
+                  <Button
+                    className="h-7 w-7"
+                    scheme="destructive"
+                    variant="outline"
+                    onClick={() => removeSubscriber(subscribers.length - i)}
+                  >
+                    <X></X>
+                  </Button>
+                </div>
               ))}
-          </div>
-        </TabsContent>
-        <TabsContent value="subscribers">
-          <div className="p-4">
-            <pre className="my-2">{subscribers.length} subscribers</pre>
-            <div className="mb-2 flex flex-row gap-2">
-              {form.document.file && (
-                <Button variant="outline" onClick={handleSubscriberAdd}>
-                  <PlusCircle />
-                  Add Subscriber
-                </Button>
-              )}
             </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            {subscribers.map((subscriber, i) => (
-              <div className="flex flex-row gap-2">
-                <ContactEditor
-                  key={subscriber.id}
-                  initialContactDetails={subscriber}
-                  updateContact={editSubscriber(subscribers.length - i)}
-                />
-                <Button
-                  className="h-7 w-7"
-                  scheme="destructive"
-                  variant="outline"
-                  onClick={() => removeSubscriber(subscribers.length - i)}
-                >
-                  <X></X>
-                </Button>
+          </TabsContent>
+          <TabsContent value="signatories">
+            <div className="p-4">
+              <pre className="my-2">{signatories.length} signatories</pre>
+              <div className="mb-2 flex flex-row gap-2">
+                {form.document.file && (
+                  <Button variant="outline" onClick={handleSignatoryAdd}>
+                    <PlusCircle />
+                    Add Signatory
+                  </Button>
+                )}
               </div>
-            ))}
-          </div>
-        </TabsContent>
-        <TabsContent value="signatories">
-          <div className="p-4">
-            <pre className="my-2">{signatories.length} signatories</pre>
-            <div className="mb-2 flex flex-row gap-2">
-              {form.document.file && (
-                <Button variant="outline" onClick={handleSignatoryAdd}>
-                  <PlusCircle />
-                  Add Signatory
-                </Button>
-              )}
             </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            {signatories.map((signatory, i) => (
-              <div className="flex flex-row gap-2">
-                <ContactEditor
-                  key={signatory.id}
-                  initialContactDetails={signatory}
-                  updateContact={editSignatory(signatories.length - i)}
-                />
-                <Button
-                  className="h-7 w-7"
-                  scheme="destructive"
-                  variant="outline"
-                  onClick={() => removeSignatory(signatories.length - i)}
-                >
-                  <X></X>
-                </Button>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-      </div>
+            <div className="flex flex-col gap-2">
+              {signatories.map((signatory, i) => (
+                <div className="flex flex-row gap-2">
+                  <ContactEditor
+                    key={signatory.id}
+                    initialContactDetails={signatory}
+                    updateContact={editSignatory(signatories.length - i)}
+                  />
+                  <Button
+                    className="h-7 w-7"
+                    scheme="destructive"
+                    variant="outline"
+                    onClick={() => removeSignatory(signatories.length - i)}
+                  >
+                    <X></X>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        </div>
+      </VerticalTabs>
       <div className="h-20"></div>
-    </Tabs>
+    </div>
   );
 };
 
@@ -894,6 +943,7 @@ const RegisterFileModal = ({
       label: documentLabel,
       base_document: form.document.file!,
       schema: resizedFields,
+      schema_phantoms: [],
       signatories: signatories,
       subscribers: subscribers,
     };
