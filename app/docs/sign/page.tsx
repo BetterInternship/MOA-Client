@@ -109,7 +109,6 @@ function PageContent() {
 
   // Optional header bits
   const studentName = params.get("student") || "The student";
-  const templateHref = params.get("template") || "";
   const [authorizeChoice, setAuthorizeChoice] = useState<"yes" | "no">("yes");
 
   // Pending document preview
@@ -335,30 +334,21 @@ function PageContent() {
   const goHome = () => router.push("/");
 
   return (
-    <div className="container mx-auto grid max-w-3xl grid-cols-2 px-4 pt-8 sm:px-10 sm:pt-16">
-      <div className="space-y-6">
-        {/* header */}
-        <div className="space-y-2">
-          <h1 className="text-justify text-xl font-semibold sm:text-2xl">
-            {studentName} is requesting the following details for{" "}
-            {templateHref ? (
-              <Link
-                href={templateHref}
-                className="hover:text-primary underline underline-offset-2"
-                target="_blank"
-              >
-                the internship document
-              </Link>
-            ) : (
-              "the internship document"
-            )}
-            .
+    <div className="container mx-auto grid grid-cols-2 gap-x-0 px-4 pt-8 sm:px-10 sm:pt-16">
+      <div className="ml-auto max-w-xl space-y-6">
+        <div className="">
+          <h1 className="text-justify text-2xl font-bold tracking-tight">
+            Internship Document Fill-out Request
           </h1>
+          <div className="text-md text-justify font-semibold tracking-tight">
+            from {studentName}
+            <br />
+          </div>
         </div>
 
         {/* pending document preview */}
         {pendingDocumentId && (
-          <Card className="p-4 text-sm">
+          <>
             {loadingPending ? (
               <div className="inline-flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -369,39 +359,10 @@ function PageContent() {
             ) : !pendingInfo || !audienceAllowed ? (
               <div className="text-gray-600">No pending document data found.</div>
             ) : (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="truncate text-sm">
-                  Form name:{" "}
-                  <span className="font-semibold">{pendingInfo.pendingInfo?.form_label}</span>
-                </div>
-
-                {pendingUrl ? (
-                  <Button
-                    className="w-full sm:w-auto"
-                    onClick={() => pendingUrl && window.open(pendingUrl, "_blank")}
-                    aria-label="Open pending document"
-                  >
-                    Preview document
-                  </Button>
-                ) : (
-                  <div className="text-sm text-gray-500">
-                    A preview link isn’t available for this document.
-                  </div>
-                )}
-              </div>
+              <></>
             )}
-          </Card>
+          </>
         )}
-
-        <p className="text-sm text-gray-600">
-          Please provide the required{" "}
-          {audienceParam === "entity"
-            ? "entity"
-            : audienceParam === "student-guardian"
-              ? "guardian"
-              : "university"}{" "}
-          details below.
-        </p>
 
         {/* loading / error / empty / form */}
         {loadingForm ? (
@@ -448,7 +409,7 @@ function PageContent() {
           </Card>
         )}
 
-        <div className="flex gap-2 text-xs text-gray-500">
+        <div className="mb-4 flex gap-2 text-xs text-gray-500">
           <Info className="size-8 lg:size-5" />
           By selecting Submit & Sign, I agree that the signature and initials will be the electronic
           representation of my signature and initials for all purposes when I (or my agent) use them
@@ -456,16 +417,18 @@ function PageContent() {
         </div>
       </div>
 
-      <div className="">
-        {!!pendingUrl && (
-          <DocumentRenderer
-            documentName={pendingDocumentId}
-            documentUrl={pendingUrl}
-            highlights={[]}
-            previews={[]}
-            onHighlightFinished={() => {}}
-          />
-        )}
+      <div className="relative mx-auto h-full w-full overflow-hidden">
+        <div className="absolute flex h-full w-full flex-row justify-center gap-2">
+          {!!pendingUrl && (
+            <DocumentRenderer
+              documentName={(pendingInfo?.pendingInfo?.form_label as string) ?? "Unnamed Form"}
+              documentUrl={"https://pdfobject.com/pdf/sample.pdf"}
+              highlights={[]}
+              previews={[]}
+              onHighlightFinished={() => {}}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

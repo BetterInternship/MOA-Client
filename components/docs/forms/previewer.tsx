@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-15 14:10:43
- * @ Modified time: 2025-11-15 16:25:45
+ * @ Modified time: 2025-11-16 04:40:46
  * @ Description:
  *
  * Allows previewing a form and some fields on that form.
@@ -143,7 +143,7 @@ export const DocumentRenderer = ({
 const PdfDecorator = ({ title, children }: { title: string; children: React.ReactNode }) => {
   return (
     <div className="flex h-full flex-col gap-0">
-      <div className="flex h-16 flex-col justify-center text-2xl font-bold tracking-tight">
+      <div className="flex h-16 flex-col justify-center text-xl font-semibold tracking-tight">
         {title}
       </div>
       <div className="relative flex-1">{children}</div>
