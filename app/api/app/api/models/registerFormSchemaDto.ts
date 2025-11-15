@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { FormField } from "./formField";
+import type { FormPhantomField } from "./formPhantomField";
+import type { RegisterFormSchemaDtoParams } from "./registerFormSchemaDtoParams";
 import type { FormSubscriber } from "./formSubscriber";
 import type { FormSignatory } from "./formSignatory";
 import type { RegisterFormSchemaDtoRequiredPartiesItem } from "./registerFormSchemaDtoRequiredPartiesItem";
@@ -15,6 +17,8 @@ export interface RegisterFormSchemaDto {
   label: string;
   schema_version: number;
   schema: FormField[];
+  schema_phantoms: FormPhantomField[];
+  params: RegisterFormSchemaDtoParams;
   subscribers: FormSubscriber[];
   signatories: FormSignatory[];
   base_document: Blob;

@@ -1282,6 +1282,10 @@ export const formsControllerRegisterForm = (
   formData.append(`label`, registerFormSchemaDto.label);
   formData.append(`schema_version`, registerFormSchemaDto.schema_version.toString());
   registerFormSchemaDto.schema.forEach((value) => formData.append(`schema`, JSON.stringify(value)));
+  registerFormSchemaDto.schema_phantoms.forEach((value) =>
+    formData.append(`schema_phantoms`, JSON.stringify(value))
+  );
+  formData.append(`params`, JSON.stringify(registerFormSchemaDto.params));
   registerFormSchemaDto.subscribers.forEach((value) =>
     formData.append(`subscribers`, JSON.stringify(value))
   );
