@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-15 14:58:14
+ * @ Modified time: 2025-11-15 16:09:41
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -61,9 +61,13 @@ import {
  */
 const FormEditorPage = () => {
   return (
-    <Suspense>
-      <FormEditorPageContent />
-    </Suspense>
+    <div className="relative h-full">
+      <Suspense>
+        <div className="relative h-full">
+          <FormEditorPageContent />
+        </div>
+      </Suspense>
+    </div>
   );
 };
 
@@ -76,7 +80,6 @@ const FormEditorPage = () => {
 const FormEditorPageContent = () => {
   const searchParams = useSearchParams();
   const form = useFormContext();
-  const { registry } = useFieldTemplateContext();
 
   // The current highlight and its transform; only need one for coordinates
   const [highlight, setHighlight] = useState<DocumentHighlight | null>(null);
@@ -110,11 +113,12 @@ const FormEditorPageContent = () => {
   if (form.loading) return <Loader>Loading form editor...</Loader>;
 
   return (
-    <div className="relative mx-auto mt-8 h-[83vh] max-w-7xl">
+    <div className="relative mx-auto h-full w-[80vw]">
       <div className="absolute flex h-full w-full flex-row justify-center gap-2">
         <Sidebar fieldTransform={fieldTransform} />
         {form.document.url && (
           <DocumentRenderer
+            documentName={form.document.name}
             documentUrl={form.document.url}
             highlights={highlight ? [highlight] : []}
             previews={form.previews}
@@ -687,11 +691,45 @@ const Sidebar = ({
   };
 
   return (
-    <Tabs className="gap-0" defaultValue="fields">
-      <h1 className="my-2 text-lg font-bold tracking-tighter text-ellipsis">
-        {form.document.name || "No Name Specified"}
-      </h1>
-      <TabsList className="rounded-b-none border-b-0">
+    <Tabs className="w-[33vw] gap-0" defaultValue="fields">
+      <div className="flex h-20 flex-col justify-center gap-2">
+        <div className="flex flex-row items-center gap-2">
+          <Button scheme="secondary" onClick={() => fileInputRef.current?.click()}>
+            <Upload />
+            Select File
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          {form.document.file && (
+            <Button
+              variant="outline"
+              scheme="supportive"
+              onClick={() => void form.refreshFields()}
+              disabled={form.refreshing}
+            >
+              <Redo2Icon />
+              {form.refreshing ? "Refreshing..." : "Refresh Fields"}
+            </Button>
+          )}
+          {form.document.file && (
+            <Button
+              variant="default"
+              scheme="supportive"
+              onClick={handleFileRegister}
+              disabled={form.refreshing}
+            >
+              <CheckCircle />
+              Register File
+            </Button>
+          )}
+        </div>
+      </div>
+      <TabsList className="h-10 rounded-b-none border-b-0">
         <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
           Fields
         </TabsTrigger>
@@ -702,7 +740,7 @@ const Sidebar = ({
           Signatories
         </TabsTrigger>
       </TabsList>
-      <div className="sidebar h-full w-[30vw] border border-t-0 border-gray-300 bg-white p-8">
+      <div className="h-full border border-t-0 border-gray-300 bg-white p-8">
         <TabsContent value="fields">
           <div className="p-4">
             <div className="mb-2 flex flex-row gap-2">
@@ -794,43 +832,7 @@ const Sidebar = ({
           </div>
         </TabsContent>
       </div>
-      <div className="flex flex-col justify-between gap-2 pt-2">
-        <div className="flex flex-row gap-2">
-          <Button scheme="secondary" onClick={() => fileInputRef.current?.click()}>
-            <Upload />
-            Select File
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-          {form.document.file && (
-            <Button
-              variant="outline"
-              scheme="supportive"
-              onClick={() => void form.refreshFields()}
-              disabled={form.refreshing}
-            >
-              <Redo2Icon />
-              {form.refreshing ? "Refreshing..." : "Refresh Fields"}
-            </Button>
-          )}
-          {form.document.file && (
-            <Button
-              variant="default"
-              scheme="supportive"
-              onClick={handleFileRegister}
-              disabled={form.refreshing}
-            >
-              <CheckCircle />
-              Register File
-            </Button>
-          )}
-        </div>
-      </div>
+      <div className="h-20"></div>
     </Tabs>
   );
 };
@@ -878,8 +880,6 @@ const RegisterFileModal = ({
 
       return f;
     });
-
-    console.log("fields", form.fields);
 
     return {
       required_parties: requiredPartiesArray as (

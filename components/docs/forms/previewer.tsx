@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-15 14:10:43
- * @ Modified time: 2025-11-15 14:57:44
+ * @ Modified time: 2025-11-15 16:07:10
  * @ Description:
  *
  * Allows previewing a form and some fields on that form.
@@ -44,11 +44,13 @@ export type DocumentHighlight = IHighlight;
  * @component
  */
 export const DocumentRenderer = ({
+  documentName,
   documentUrl,
   highlights,
   previews,
   onHighlightFinished,
 }: {
+  documentName?: string;
   documentUrl: string;
   highlights?: IHighlight[];
   previews?: Record<number, React.ReactNode[]>;
@@ -113,20 +115,34 @@ export const DocumentRenderer = ({
 
   return (
     <div>
-      <PdfLoader url={documentUrl} beforeLoad={<Loader />}>
-        {(pdfDocument) => (
-          <PdfHighlighter
-            pdfDocument={pdfDocument}
-            enableAreaSelection={(event) => true}
-            onScrollChange={() => {}}
-            scrollRef={() => {}}
-            highlightTransform={highlightRenderer}
-            highlights={highlights ?? []}
-            onSelectionFinished={onSelectionFinished}
-          />
-        )}
-      </PdfLoader>
+      <PdfDecorator title={documentName ?? "No Name Specified"}>
+        <PdfLoader url={documentUrl} beforeLoad={<Loader />}>
+          {(pdfDocument) => (
+            <PdfHighlighter
+              pdfDocument={pdfDocument}
+              enableAreaSelection={(event) => true}
+              onScrollChange={() => {}}
+              scrollRef={() => {}}
+              highlightTransform={highlightRenderer}
+              highlights={highlights ?? []}
+              onSelectionFinished={onSelectionFinished}
+            />
+          )}
+        </PdfLoader>
+      </PdfDecorator>
       {previews && createPreviews(previews)}
+    </div>
+  );
+};
+
+const PdfDecorator = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  return (
+    <div className="flex h-full flex-col gap-0">
+      <div className="flex h-16 flex-col justify-center text-2xl font-bold tracking-tight">
+        {title}
+      </div>
+      <div className="relative flex-1">{children}</div>
+      <div className="h-16"></div>
     </div>
   );
 };
