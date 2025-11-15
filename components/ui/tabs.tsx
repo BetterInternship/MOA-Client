@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-15 13:23:26
- * @ Modified time: 2025-11-15 18:46:46
+ * @ Modified time: 2025-11-15 21:03:21
  * @ Description:
  *
  * These will be the official tabs we will be using across the site.
@@ -94,7 +94,7 @@ function VerticalTabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "group dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 data-[state=active]:bg-white data-[state=active]:opacity-100 data-[state=active]:hover:opacity-90",
+        "group dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 relative data-[state=active]:bg-white data-[state=active]:opacity-100 data-[state=active]:hover:opacity-90",
         "justify-left inline-flex h-9 flex-1 items-center rounded-none! border border-transparent bg-gray-100 px-2 py-1 text-sm font-medium whitespace-nowrap opacity-70 transition-[color,box-shadow]",
         "transition-all hover:cursor-pointer hover:bg-gray-200 hover:opacity-100 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         "px z-50 max-h-10 w-full",

@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-15 18:57:19
+ * @ Modified time: 2025-11-15 21:04:23
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -46,10 +46,7 @@ import { Autocomplete } from "@/components/ui/autocomplete";
 import { formsControllerGetFieldFromRegistry } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
 import {
-  Tabs,
   TabsContent,
-  TabsList,
-  TabsTrigger,
   VerticalTabs,
   VerticalTabsList,
   VerticalTabsTrigger,
@@ -134,6 +131,53 @@ const FormEditorPageContent = () => {
             onHighlightFinished={onHighlightFinished}
           ></DocumentRenderer>
         )}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Edits params.
+ *
+ * @component
+ */
+const ParamEditor = ({
+  initialParamDetails,
+  updateParam,
+}: {
+  initialParamDetails: { key: string; value: string };
+  updateParam: (key: string, value: string) => void;
+}) => {
+  const ref = useRef<HTMLInputElement>(null);
+  const [paramDetails, setParamDetails] = useState<{ key: string; value: string }>(
+    initialParamDetails
+  );
+
+  return (
+    <div
+      className="grid grid-cols-2 gap-2 p-2 transition-all hover:cursor-pointer hover:bg-gray-100"
+      onClick={() => ref.current?.focus()}
+    >
+      <pre className="relative flex items-center rounded-[0.33em] bg-gray-200 px-3 text-xs opacity-85 hover:cursor-pointer">
+        {paramDetails.key}
+        {!paramDetails.value.trim() && (
+          <pre className="bg-warning text-warning-foreground text-bold absolute top-[-4] right-[-4] flex h-4 w-4 justify-center rounded-[100%] text-xs">
+            !
+          </pre>
+        )}
+      </pre>
+      <div className="flex flex-row gap-2">
+        <pre>=</pre>
+        <Input
+          ref={ref}
+          placeholder="Enter value..."
+          className="focus:bg-primary/20 h-7 border-gray-400 py-1 text-xs transition-all"
+          defaultValue={paramDetails.value}
+          onChange={(e) => (
+            updateParam(paramDetails.key, e.target.value),
+            setParamDetails({ ...paramDetails, value: e.target.value })
+          )}
+        />
       </div>
     </div>
   );
@@ -699,6 +743,9 @@ const Sidebar = ({
     ]);
   };
 
+  // Param entries
+  const paramEntries = Object.entries(form.params);
+
   return (
     <div className="relative flex h-full w-full flex-col">
       <div className="flex h-20 flex-col justify-center gap-2">
@@ -751,6 +798,11 @@ const Sidebar = ({
           </VerticalTabsTrigger>
           <VerticalTabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="params">
             Form Parameters
+            {Object.values(form.params).some((v) => !v) && (
+              <pre className="bg-warning text-warning-foreground text-bold absolute right-2 flex h-4 w-4 justify-center rounded-[100%] text-xs">
+                !
+              </pre>
+            )}
           </VerticalTabsTrigger>
           <VerticalTabsTrigger
             className="rounded-[0.33em] hover:cursor-pointer"
@@ -809,12 +861,25 @@ const Sidebar = ({
           </TabsContent>
           <TabsContent value="params">
             <div className="p-4">
-              <pre className="my-2">
-                This is where you can edit form parameters. Will be autodetected from form.
-              </pre>
-              <div className="mb-2 flex flex-row gap-2">TODO</div>
+              <pre className="my-2">Form parameters store per-form data.</pre>
             </div>
-            <div className="flex max-h-[450px] flex-col overflow-auto">TODO</div>
+            <div className="flex max-h-[450px] flex-col overflow-auto">
+              {!paramEntries.length && (
+                <Badge className="w-fit" type="warning">
+                  This form has no parameters.
+                </Badge>
+              )}
+              {!!paramEntries.length &&
+                paramEntries.map(([key, value], i) => (
+                  <ParamEditor
+                    initialParamDetails={{
+                      key,
+                      value: typeof value === "string" ? value : JSON.stringify(value),
+                    }}
+                    updateParam={form.updateParam}
+                  ></ParamEditor>
+                ))}
+            </div>
           </TabsContent>
           <TabsContent value="subscribers">
             <div className="p-4">
@@ -946,6 +1011,7 @@ const RegisterFileModal = ({
       schema_phantoms: [],
       signatories: signatories,
       subscribers: subscribers,
+      params: form.params,
     };
   }, [
     documentName,

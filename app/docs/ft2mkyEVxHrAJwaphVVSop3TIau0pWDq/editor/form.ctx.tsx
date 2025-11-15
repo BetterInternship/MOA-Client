@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-15 14:58:53
+ * @ Modified time: 2025-11-15 20:45:43
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -13,7 +13,7 @@ import {
   formsControllerGetRegistryFormDocument,
   formsControllerGetRegistryFormMetadata,
 } from "@/app/api";
-import { IFormField, IFormMetadata } from "@betterinternship/core/forms";
+import { FormMetadata, IFormField, IFormMetadata, IFormParams } from "@betterinternship/core/forms";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useFieldTemplateContext } from "./field-template.ctx";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ export interface IFormContext {
   formMetadata: IFormMetadata;
   document: IDocument;
   fields: IFormField[];
+  params: IFormParams;
   keyedFields: (IFormField & { _id: string })[];
   previews: Record<number, React.ReactNode[]>;
   loading: boolean;
@@ -41,6 +42,8 @@ export interface IFormContext {
   removeField: (fieldIndex: number) => void;
   setFields: (newFields: IFormField[]) => void;
   addField: (newField: IFormField) => void;
+  updateParam: (key: string, value: string) => void;
+  removeParam: (key: string) => void;
   refreshFields: () => Promise<void>;
 }
 
@@ -70,6 +73,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   const [formName, setFormName] = useState<string>("");
   const [formVersion, setFormVersion] = useState<number>(0);
   const [fields, setFields] = useState<IFormField[]>([]);
+  const [params, setParams] = useState<IFormParams>({});
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
   const [selectedPreviewId, setSelectedPreviewId] = useState<string>("");
 
@@ -80,14 +84,16 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   );
 
   // Default form metadata
-  const initialFormMetadata = {
+  const initialFormMetadata: IFormMetadata = {
     name: "",
     label: "",
     schema_version: SCHEMA_VERSION,
     schema: [],
+    schema_phantoms: [],
     subscribers: [],
     signatories: [],
     required_parties: [],
+    params: {},
   };
   const [formMetadata, setFormMetadata] = useState<IFormMetadata>(initialFormMetadata);
 
@@ -112,6 +118,35 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   // Updates a field, given its index
   const removeField = (fieldIndex: number) => {
     setFields(fields.filter((f, i) => i !== fieldIndex));
+  };
+
+  // Adds a new param
+  const updateParam = (key: string, value: string) => {
+    setParams({
+      ...params,
+      [key]: value,
+    });
+  };
+
+  // Remove the specified param
+  const removeParam = (key: string) => {
+    const newParams = { ...params };
+    delete newParams[key];
+    setParams({
+      ...newParams,
+    });
+  };
+
+  const refreshParams = (fields: IFormField[]) => {
+    const fm = new FormMetadata({ ...initialFormMetadata, schema: fields });
+    setParams({
+      ...fm.inferParams().reduce((acc, cur) => {
+        acc[cur] = "";
+        return acc;
+      }, {} as IFormParams),
+      ...formMetadata.params,
+      ...params,
+    });
   };
 
   // Refresh field references to template table
@@ -148,6 +183,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     );
 
     setFields(newFields);
+    refreshParams(newFields);
     setRefreshing(false);
   };
 
@@ -187,10 +223,17 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
       // Promise for pulling metadata
       formsControllerGetRegistryFormMetadata(payload, controller.signal).then(
         ({ formMetadata }) => {
-          console.log("Request for ", payload, formMetadata);
+          const fm = new FormMetadata(formMetadata);
           setFields(formMetadata.schema);
           setDocumentName(formMetadata.name);
           setFormMetadata(formMetadata);
+          setParams({
+            ...fm.inferParams().reduce((acc, cur) => {
+              acc[cur] = "";
+              return acc;
+            }, {} as IFormParams),
+            ...formMetadata.params,
+          });
         }
       ),
       // Promise for retrieving the document
@@ -219,6 +262,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   // Clear fields on refresh?
   useEffect(() => {
     setFields([]);
+    setParams({});
     setFormMetadata(initialFormMetadata);
     console.log("Clearing fields and metadata...");
   }, []);
@@ -226,9 +270,19 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   // Updates the field previews
   // (we have to touch the DOM directly for this to go under the hoods of the lib we're using)
   useEffect(() => {
+    // Refresh previews
     refreshPreviews();
+
+    // Update parameters as well
+    refreshParams(fields);
+
     return () => setPreviews({});
   }, [selectedPreviewId, keyedFields, registry]);
+
+  // ! remove
+  useEffect(() => {
+    console.log(params);
+  }, [params]);
 
   // The form context
   const formContext: IFormContext = {
@@ -236,6 +290,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     formVersion,
     formMetadata,
     fields,
+    params,
     keyedFields,
     previews,
     loading,
@@ -246,6 +301,8 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     removeField,
     addField,
     setFields,
+    updateParam,
+    removeParam,
     refreshFields,
 
     updateFormName: (newFormName: string) => setFormName(newFormName),
