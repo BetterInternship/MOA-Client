@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-15 22:55:28
+ * @ Modified time: 2025-11-16 00:01:20
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -371,6 +371,8 @@ const FieldEditor = ({
     if (selected) scrollIntoView();
   }, [selected]);
 
+  console.log(registry);
+
   return (
     <div
       ref={scrollRef}
@@ -431,7 +433,7 @@ const FieldEditor = ({
                   inputClassName="h-7 py-1 text-xs text-supportive border-supportive"
                   placeholder="Choose template..."
                   options={registry
-                    .filter((f) => f.is_phantom === !!isPhantom)
+                    .filter((f) => !!f.is_phantom === !!isPhantom)
                     .map((f) => ({ ...f, name: `${f.name}:${f.preset}` }))}
                   setter={(id) => id && void handleSelectField(id)}
                 />
