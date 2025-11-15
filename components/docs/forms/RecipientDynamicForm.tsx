@@ -15,6 +15,7 @@ export function DynamicForm({
   errors = {},
   showErrors = false,
   setPreviews,
+  pendingUrl,
 }: {
   formName: string;
   party?: "entity" | "student-guardian" | "university" | "student";
@@ -23,6 +24,7 @@ export function DynamicForm({
   autofillValues: Record<string, string>;
   errors?: Record<string, string>;
   showErrors?: boolean;
+  pendingUrl: string;
   setValues: (values: Record<string, string>) => void;
   onChange: (key: string, value: any) => void;
   setPreviews?: (previews: Record<number, React.ReactNode[]>) => void;
@@ -86,12 +88,13 @@ export function DynamicForm({
       });
 
     setPreviews?.(newPreviews);
+    console.log("resetting previews", newPreviews);
   };
 
   // Refresh previews when fields change
   useEffect(() => {
     refreshPreviews();
-  }, [form.keyedFields, values]);
+  }, [form.keyedFields, values, pendingUrl]);
 
   return (
     <div className="space-y-4">

@@ -398,6 +398,7 @@ function PageContent() {
               party={party}
               fields={fields}
               values={values}
+              pendingUrl={pendingUrl}
               onChange={setField}
               errors={errors}
               showErrors={submitted}
