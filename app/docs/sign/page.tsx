@@ -436,9 +436,7 @@ function PageContent() {
           {(!!pendingUrl || !!form.document.url) && (
             <DocumentRenderer
               documentName={(pendingInfo?.pendingInfo?.form_label as string) ?? "Unnamed Form"}
-              // documentUrl={pendingUrl || form.document.url}
-              // // ! for testing locally
-              documentUrl={"https://pdfobject.com/pdf/sample.pdf"}
+              documentUrl={pendingUrl || form.document.url}
               highlights={[]}
               previews={previews}
               onHighlightFinished={() => {}}
