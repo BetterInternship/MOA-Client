@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-10 03:01:48
+ * @ Modified time: 2025-11-15 14:04:08
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -839,11 +839,11 @@ const Sidebar = ({
   };
 
   return (
-    <Tabs defaultValue="fields">
+    <Tabs className="gap-0" defaultValue="fields">
       <h1 className="my-2 text-lg font-bold tracking-tighter text-ellipsis">
         {form.document.name || "No Name Specified"}
       </h1>
-      <TabsList>
+      <TabsList className="rounded-b-none border-b-0">
         <TabsTrigger className="rounded-[0.33em] hover:cursor-pointer" value="fields">
           Fields
         </TabsTrigger>
@@ -854,7 +854,7 @@ const Sidebar = ({
           Signatories
         </TabsTrigger>
       </TabsList>
-      <div className="sidebar h-full w-[30vw]">
+      <div className="sidebar h-full w-[30vw] border border-t-0 border-gray-300 bg-white p-8">
         <TabsContent value="fields">
           <div className="p-4">
             <div className="mb-2 flex flex-row gap-2">
