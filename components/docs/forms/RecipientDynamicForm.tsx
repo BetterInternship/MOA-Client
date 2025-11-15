@@ -88,13 +88,20 @@ export function DynamicForm({
       });
 
     setPreviews?.(newPreviews);
+    console.log("---------------------------------------------------------------------");
+    console.log("filtered fields", filteredFields);
+    console.log(
+      "filtered keyed fields",
+      form.keyedFields.filter((kf) => filteredFields.find((f) => f.field === kf.field))
+    );
+    console.log("values", values);
     console.log("resetting previews", newPreviews);
   };
 
   // Refresh previews when fields change
   useEffect(() => {
     refreshPreviews();
-  }, [form.keyedFields, values, pendingUrl]);
+  }, [form.keyedFields, filteredFields, values, pendingUrl]);
 
   return (
     <div className="space-y-4">
