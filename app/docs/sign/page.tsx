@@ -12,6 +12,7 @@ import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
+import { DocumentRenderer } from "@/components/docs/forms/previewer";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university" | "";
@@ -124,7 +125,7 @@ function PageContent() {
   });
 
   const pendingInfo = pendingRes?.pendingInformation;
-  const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url;
+  const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url as string;
 
   const audienceFromPending: string[] = (pendingInfo?.pendingInfo?.pending_parties ??
     []) as string[];
@@ -334,7 +335,7 @@ function PageContent() {
   const goHome = () => router.push("/");
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 pt-8 sm:px-10 sm:pt-16">
+    <div className="container mx-auto grid max-w-3xl grid-cols-2 px-4 pt-8 sm:px-10 sm:pt-16">
       <div className="space-y-6">
         {/* header */}
         <div className="space-y-2">
@@ -453,6 +454,18 @@ function PageContent() {
           representation of my signature and initials for all purposes when I (or my agent) use them
           on documents, including legally binding contracts
         </div>
+      </div>
+
+      <div className="">
+        {!!pendingUrl && (
+          <DocumentRenderer
+            documentName={pendingDocumentId}
+            documentUrl={pendingUrl}
+            highlights={[]}
+            previews={[]}
+            onHighlightFinished={() => {}}
+          />
+        )}
       </div>
     </div>
   );
