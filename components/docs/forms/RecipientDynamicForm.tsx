@@ -102,7 +102,7 @@ export function DynamicForm({
   // Refresh previews when fields change
   useEffect(() => {
     refreshPreviews();
-  }, [form.keyedFields, fields, values, pendingUrl]);
+  }, [form.keyedFields, values, pendingUrl]);
 
   return (
     <div className="space-y-4">
