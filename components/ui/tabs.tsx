@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-15 13:23:26
- * @ Modified time: 2025-11-15 14:02:30
+ * @ Modified time: 2025-11-15 16:21:02
  * @ Description:
  *
  * These will be the official tabs we will be using across the site.
@@ -52,7 +52,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
       )}
       {...props}
     >
-      <Badge className="group-data-[state=active]:text-primary dark:group-data-[state=active]:text-primary-foreground text-foreground dark:text-muted-foreground text-md rounded-[1em] border-none bg-none px-4 group-data-[state=active]:bg-blue-700/5 hover:cursor-pointer">
+      <Badge className="group-data-[state=active]:text-primary dark:group-data-[state=active]:text-primary-foreground text-foreground dark:text-muted-foreground text-md rounded-[1em] border-none bg-none px-4 py-[0.1em] group-data-[state=active]:bg-blue-700/5 hover:cursor-pointer">
         {props.children}
       </Badge>
     </TabsPrimitive.Trigger>

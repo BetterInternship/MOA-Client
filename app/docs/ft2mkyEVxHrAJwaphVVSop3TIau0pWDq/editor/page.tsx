@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-15 16:09:41
+ * @ Modified time: 2025-11-15 16:20:01
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -9,6 +9,7 @@
 
 "use client";
 
+import "@/components/docs/forms/react-pdf-highlighter.css";
 import { Loader } from "@/components/ui/loader";
 import { ChangeEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -691,7 +692,7 @@ const Sidebar = ({
   };
 
   return (
-    <Tabs className="w-[33vw] gap-0" defaultValue="fields">
+    <Tabs className="gap-0" defaultValue="fields">
       <div className="flex h-20 flex-col justify-center gap-2">
         <div className="flex flex-row items-center gap-2">
           <Button scheme="secondary" onClick={() => fileInputRef.current?.click()}>
@@ -740,7 +741,7 @@ const Sidebar = ({
           Signatories
         </TabsTrigger>
       </TabsList>
-      <div className="h-full border border-t-0 border-gray-300 bg-white p-8">
+      <div className="h-full max-h-full border border-t-0 border-gray-300 p-8">
         <TabsContent value="fields">
           <div className="p-4">
             <div className="mb-2 flex flex-row gap-2">
@@ -752,7 +753,7 @@ const Sidebar = ({
               )}
             </div>
           </div>
-          <div className="flex flex-col">
+          <div className="flex max-h-[450px] flex-col overflow-auto">
             {sortedDocumentFields
               .filter((f) => !!f)
               .map((field) => (
