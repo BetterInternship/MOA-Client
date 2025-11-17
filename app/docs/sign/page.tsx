@@ -128,8 +128,9 @@ function PageContent() {
   const pendingInfo = pendingRes?.pendingInformation;
   const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url as string;
 
-  const audienceFromPending: string[] = (pendingInfo?.pendingInfo?.pending_parties ??
-    []) as string[];
+  const audienceFromPending: string[] = (pendingInfo?.pendingInfo?.pending_parties ?? [])
+    .map((p) => (typeof p === "string" ? p : (p?.party ?? "")))
+    .filter(Boolean) as string[];
   const audienceAllowed = audienceFromPending.includes(audienceParam);
 
   // Fetch form fields schema from API
