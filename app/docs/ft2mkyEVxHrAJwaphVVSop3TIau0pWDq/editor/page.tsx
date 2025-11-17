@@ -857,7 +857,7 @@ const Sidebar = ({
                 )}
               </div>
             </div>
-            <div className="flex max-h-[450px] flex-col overflow-auto">
+            <div className="flex max-h-[700px] flex-col overflow-auto">
               {sortedDocumentFields
                 .filter((f) => !!f)
                 .map((field) => (
