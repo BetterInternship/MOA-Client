@@ -14,7 +14,6 @@ import { useModal } from "@/app/providers/modal-provider";
 import { DocumentRenderer } from "@/components/docs/forms/previewer";
 import { useFormContext } from "../ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.ctx";
 import { cn } from "@/lib/utils";
-import { FormLabel } from "@/components/ui/form";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university" | "";
@@ -38,7 +37,6 @@ function getClientSigningInfo() {
   const nav = typeof navigator !== "undefined" ? navigator : ({} as Navigator);
   const scr = typeof screen !== "undefined" ? screen : ({} as Screen);
 
-  // Optional: try to get WebGL vendor/renderer (best-effort)
   let webglVendor: string | undefined;
   let webglRenderer: string | undefined;
   try {
@@ -83,7 +81,6 @@ function getClientSigningInfo() {
       availHeight: scr.availHeight,
       colorDepth: scr.colorDepth,
     },
-    // ipAddress: added server-side
     webgl: webglVendor || webglRenderer ? { vendor: webglVendor, renderer: webglRenderer } : null,
   };
   return info;
@@ -160,6 +157,27 @@ function PageContent() {
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // For mobile
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileStage, setMobileStage] = useState<"preview" | "form" | "confirm">("preview");
+  const [lastFlatValues, setLastFlatValues] = useState<Record<string, string> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 1023px)"); // Tailwind 'lg' breakpoint
+    const handle = (e: MediaQueryList | MediaQueryListEvent) => {
+      setIsMobile(!!e.matches);
+      if (e.matches) {
+        setMobileStage("preview"); // start on preview for mobile
+      } else {
+        setMobileStage("form"); // desktop behaves like form visible
+      }
+    };
+    handle(mq);
+    mq.addEventListener?.("change", handle);
+    return () => mq.removeEventListener?.("change", handle);
+  }, []);
+
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
   };
@@ -192,8 +210,12 @@ function PageContent() {
     return { nextErrors, flatValues };
   };
 
-  async function submitWithAuthorization(choice: "yes" | "no", flatValues: Record<string, string>) {
-    if (!formName || !pendingDocumentId || !party) return;
+  async function submitWithAuthorization(
+    choice: "yes" | "no",
+    flatValuesParam?: Record<string, string>
+  ) {
+    const flatValues = flatValuesParam ?? lastFlatValues;
+    if (!formName || !pendingDocumentId || !party || !flatValues) return;
     try {
       setBusy(true);
       const clientSigningInfo = getClientSigningInfo();
@@ -295,6 +317,17 @@ function PageContent() {
     if (Object.keys(nextErrors).length > 0) {
       return;
     }
+
+    setLastFlatValues(flatValues);
+
+    if (isMobile) {
+      // On mobile, move to confirm preview stage instead of immediately asking for authorization
+      setMobileStage("confirm");
+      // scroll to top so preview is visible
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     openModal(
       "sign-auth",
       <div className="space-y-4 text-sm">
@@ -330,7 +363,7 @@ function PageContent() {
 
   const handleAuthorizeChoice = async (
     choice: "yes" | "no",
-    flatValues: Record<string, string>
+    flatValues: Record<string, string> | undefined
   ) => {
     setAuthorizeChoice(choice);
     closeModal("sign-auth");
@@ -338,6 +371,24 @@ function PageContent() {
   };
 
   const goHome = () => router.push("/");
+
+  const docUrl = pendingUrl || form.document?.url;
+
+  const openDocPreviewModal = () => {
+    if (!docUrl) return;
+    openModal(
+      "doc-preview",
+      <div className="h-[95dvh] w-[95dvw] sm:w-[80vw]">
+        <DocumentRenderer
+          documentUrl={docUrl}
+          highlights={[]}
+          previews={previews}
+          onHighlightFinished={() => {}}
+        />
+      </div>,
+      { title: "Document Preview" }
+    );
+  };
 
   // Update form data if ever
   useEffect(() => {
@@ -350,80 +401,194 @@ function PageContent() {
   return (
     <div className="container mx-auto space-y-4 px-4 pt-8">
       <div>
-        <h2 className="text-justify tracking-tight">
+        <h2 className="text-justify text-sm tracking-tight sm:text-base">
           Internship Document Fill-out Request from{" "}
           <span className="font-semibold">{studentName}</span>
         </h2>
-        <h1 className="text-primary text-justify text-3xl font-bold tracking-tight">
+        <h1 className="text-primary text-2xl font-bold tracking-tight sm:text-3xl">
           {pendingInfo?.pendingInfo?.form_label}
         </h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-8">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
         {/* Form Renderer */}
-        <div className="space-y-6">
-          {/* loading / error / empty / form */}
-          {loadingForm ? (
-            <Card className="flex items-center justify-center p-6">
-              <span className="inline-flex items-center gap-2 text-sm">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading form…
-              </span>
-            </Card>
-          ) : formErr ? (
-            <Card className="p-4 text-sm text-rose-600">Failed to load fields.</Card>
-          ) : !audienceAllowed ? (
-            <Card className="p-4 text-sm text-gray-600">
-              This form is not available. If you believe this is an error, please contact support.
-            </Card>
-          ) : fields.length === 0 ? (
-            <Card className="p-4 text-sm text-gray-500">No fields available for this request.</Card>
-          ) : (
-            <Card className="space-y-4 rounded-none! p-4 sm:p-5">
-              <DynamicForm
-                party={party}
-                fields={fields}
-                values={values}
-                pendingUrl={pendingUrl}
-                onChange={setField}
-                errors={errors}
-                showErrors={submitted}
-                formName={""}
-                autofillValues={{}}
-                setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
-                setPreviews={setPreviews}
-              />
+        <div className="space-y-4">
+          <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
+            <div className="relative h-[50vh] w-full">
+              {docUrl ? (
+                <DocumentRenderer
+                  documentUrl={docUrl}
+                  highlights={[]}
+                  previews={previews}
+                  onHighlightFinished={() => {}}
+                />
+              ) : (
+                <div className="p-4 text-sm text-gray-500">No preview available</div>
+              )}
+            </div>
 
-              <div className="flex justify-end pt-2">
-                <Button onClick={onClickSubmitRequest} disabled={busy} aria-busy={busy}>
-                  {busy ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Submitting…
-                    </span>
-                  ) : (
-                    "Submit & Sign"
-                  )}
-                </Button>
-              </div>
-            </Card>
-          )}
+            <div className="mt-2 flex gap-2">
+              <Button
+                className="w-full"
+                onClick={() => setMobileStage("form")}
+                disabled={!audienceAllowed || loadingForm}
+              >
+                Fill Form
+              </Button>
+            </div>
+          </div>
 
-          <div className="mb-4 flex gap-2 text-xs text-gray-500">
-            <Info className="size-8 lg:size-5" />
-            By selecting Submit & Sign, I agree that the signature and initials will be the
-            electronic representation of my signature and initials for all purposes when I (or my
-            agent) use them on documents, including legally binding contracts
+          {/* Mobile: confirm preview stage */}
+          <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
+            <div className="relative h-[60vh] w-full overflow-hidden rounded-md border">
+              {docUrl ? (
+                <DocumentRenderer
+                  documentUrl={docUrl}
+                  highlights={[]}
+                  previews={previews}
+                  onHighlightFinished={() => {}}
+                />
+              ) : (
+                <div className="p-4 text-sm text-gray-500">No preview available</div>
+              )}
+            </div>
+            <div className="mt-2 flex gap-2">
+              <Button className="w-full" variant="outline" onClick={() => setMobileStage("form")}>
+                Back to Edit
+              </Button>
+              <Button
+                onClick={() => {
+                  // open the same authorization modal as desktop, using lastFlatValues
+                  const flatValues = lastFlatValues ?? {};
+                  openModal(
+                    "sign-auth",
+                    <div className="space-y-4 text-sm">
+                      <p className="text-justify text-gray-700">
+                        I authorize auto-fill and auto-sign of future school-issued templated
+                        documents on my behalf. A copy of each signed document will be emailed to
+                        me.
+                      </p>
+
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
+                          aria-pressed={authorizeChoice === "no"}
+                          className="w-full"
+                        >
+                          No, I’ll sign manually for now
+                        </Button>
+
+                        <Button
+                          type="button"
+                          onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
+                          aria-pressed={authorizeChoice === "yes"}
+                          className="w-full"
+                        >
+                          Yes, auto-fill & auto-sign
+                        </Button>
+                      </div>
+                    </div>,
+                    { title: "Permission to Auto-Fill & Auto-Sign" }
+                  );
+                }}
+                className="w-full"
+              >
+                Submit & Sign
+              </Button>
+            </div>
+          </div>
+
+          <div className={cn(mobileStage === "form" ? "" : "hidden", "sm:block")}>
+            {/* loading / error / empty / form */}
+            {loadingForm ? (
+              <Card className="flex items-center justify-center p-6">
+                <span className="inline-flex items-center gap-2 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading form…
+                </span>
+              </Card>
+            ) : formErr ? (
+              <Card className="p-4 text-sm text-rose-600">Failed to load fields.</Card>
+            ) : !audienceAllowed ? (
+              <Card className="p-4 text-sm text-gray-600">
+                This form is not available. If you believe this is an error, please contact support.
+              </Card>
+            ) : fields.length === 0 ? (
+              <Card className="p-4 text-sm text-gray-500">
+                No fields available for this request.
+              </Card>
+            ) : (
+              <Card className="space-y-4 p-4 sm:p-5">
+                <DynamicForm
+                  party={party}
+                  fields={fields}
+                  values={values}
+                  pendingUrl={pendingUrl}
+                  onChange={setField}
+                  errors={errors}
+                  showErrors={submitted}
+                  formName={""}
+                  autofillValues={{}}
+                  setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
+                  setPreviews={setPreviews}
+                />
+
+                <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+                  <Button
+                    onClick={onClickSubmitRequest}
+                    disabled={busy}
+                    aria-busy={busy}
+                    className="w-full sm:w-auto"
+                  >
+                    {busy ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Submitting…
+                      </span>
+                    ) : (
+                      "Submit & Sign"
+                    )}
+                  </Button>
+
+                  {/* On mobile, also show a secondary preview button */}
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      // On mobile while editing, allow quick jump to preview stage
+                      if (isMobile) {
+                        setMobileStage("preview");
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      } else {
+                        openDocPreviewModal();
+                      }
+                    }}
+                    disabled={!docUrl}
+                    className="w-full sm:hidden"
+                  >
+                    Open Preview
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            <div className="mb-4 flex gap-2 text-xs text-gray-500">
+              <Info className="size-8 lg:size-5" />
+              By selecting Submit & Sign, I agree that the signature and initials will be the
+              electronic representation of my signature and initials for all purposes when I (or my
+              agent) use them on documents, including legally binding contracts
+            </div>
           </div>
         </div>
 
-        {/* PDF Renderer */}
-        <div className="relative h-[70svh] w-full overflow-hidden">
+        {/* PDF Renderer - hidden on small screens, visible on sm+ */}
+        <div className="relative hidden h-[70svh] w-full overflow-hidden rounded-md border sm:block">
           {!loadingForm && audienceAllowed ? (
-            <div className="absolute flex h-full w-full flex-row gap-2">
-              {(!!pendingUrl || !!form.document.url) && (
+            <div className="absolute inset-0 flex h-full w-full flex-row gap-2">
+              {!!docUrl && (
                 <DocumentRenderer
-                  documentUrl={pendingUrl || form.document.url}
+                  documentUrl={docUrl}
                   highlights={[]}
                   previews={previews}
                   onHighlightFinished={() => {}}
