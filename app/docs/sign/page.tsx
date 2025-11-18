@@ -418,12 +418,11 @@ function PageContent() {
         </div>
 
         {/* PDF Renderer */}
-        <div className="h-full w-full overflow-hidden">
+        <div className="relative h-[70svh] w-full overflow-hidden">
           {!loadingForm && audienceAllowed ? (
-            <div className="flex h-full w-full flex-row gap-2">
+            <div className="absolute flex h-full w-full flex-row gap-2">
               {(!!pendingUrl || !!form.document.url) && (
                 <DocumentRenderer
-                  documentName={(pendingInfo?.pendingInfo?.form_label as string) ?? "Unnamed Form"}
                   documentUrl={pendingUrl || form.document.url}
                   highlights={[]}
                   previews={previews}
