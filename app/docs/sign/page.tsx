@@ -38,7 +38,6 @@ function getClientSigningInfo() {
   const nav = typeof navigator !== "undefined" ? navigator : ({} as Navigator);
   const scr = typeof screen !== "undefined" ? screen : ({} as Screen);
 
-  // Optional: try to get WebGL vendor/renderer (best-effort)
   let webglVendor: string | undefined;
   let webglRenderer: string | undefined;
   try {
@@ -83,7 +82,6 @@ function getClientSigningInfo() {
       availHeight: scr.availHeight,
       colorDepth: scr.colorDepth,
     },
-    // ipAddress: added server-side
     webgl: webglVendor || webglRenderer ? { vendor: webglVendor, renderer: webglRenderer } : null,
   };
   return info;
@@ -339,6 +337,24 @@ function PageContent() {
 
   const goHome = () => router.push("/");
 
+  const docUrl = pendingUrl || form.document?.url;
+
+  const openDocPreviewModal = () => {
+    if (!docUrl) return;
+    openModal(
+      "doc-preview",
+      <div className="h-[95dvh] w-[95dvw] sm:w-[80vw]">
+        <DocumentRenderer
+          documentUrl={docUrl}  
+          highlights={[]}
+          previews={previews}
+          onHighlightFinished={() => {}}
+        />
+      </div>,
+      { title: "Document Preview" }
+    );
+  };
+
   // Update form data if ever
   useEffect(() => {
     if (!!formName && (!!formVersion || formVersion === 0)) {
@@ -350,18 +366,26 @@ function PageContent() {
   return (
     <div className="container mx-auto space-y-4 px-4 pt-8">
       <div>
-        <h2 className="text-justify tracking-tight">
+        <h2 className="text-justify text-sm tracking-tight sm:text-base">
           Internship Document Fill-out Request from{" "}
           <span className="font-semibold">{studentName}</span>
         </h2>
-        <h1 className="text-primary text-justify text-3xl font-bold tracking-tight">
+        <h1 className="text-primary text-2xl font-bold tracking-tight sm:text-3xl">
           {pendingInfo?.pendingInfo?.form_label}
         </h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-8">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
         {/* Form Renderer */}
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {/* Mobile preview button */}
+          <div className="flex items-center justify-between sm:hidden">
+            <div className="text-xs text-gray-600">Preview the document</div>
+            <Button variant="outline" size="sm" onClick={openDocPreviewModal} disabled={!docUrl}>
+              Preview
+            </Button>
+          </div>
+
           {/* loading / error / empty / form */}
           {loadingForm ? (
             <Card className="flex items-center justify-center p-6">
@@ -379,7 +403,7 @@ function PageContent() {
           ) : fields.length === 0 ? (
             <Card className="p-4 text-sm text-gray-500">No fields available for this request.</Card>
           ) : (
-            <Card className="space-y-4 rounded-none! p-4 sm:p-5">
+            <Card className="space-y-4 p-4 sm:p-5">
               <DynamicForm
                 party={party}
                 fields={fields}
@@ -394,8 +418,13 @@ function PageContent() {
                 setPreviews={setPreviews}
               />
 
-              <div className="flex justify-end pt-2">
-                <Button onClick={onClickSubmitRequest} disabled={busy} aria-busy={busy}>
+              <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+                <Button
+                  onClick={onClickSubmitRequest}
+                  disabled={busy}
+                  aria-busy={busy}
+                  className="w-full sm:w-auto"
+                >
                   {busy ? (
                     <span className="inline-flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -404,6 +433,16 @@ function PageContent() {
                   ) : (
                     "Submit & Sign"
                   )}
+                </Button>
+
+                {/* On mobile, also show a secondary preview button */}
+                <Button
+                  variant="ghost"
+                  onClick={openDocPreviewModal}
+                  disabled={!docUrl}
+                  className="w-full sm:hidden"
+                >
+                  Open Preview
                 </Button>
               </div>
             </Card>
@@ -417,13 +456,13 @@ function PageContent() {
           </div>
         </div>
 
-        {/* PDF Renderer */}
-        <div className="relative h-[70svh] w-full overflow-hidden">
+        {/* PDF Renderer - hidden on small screens, visible on sm+ */}
+        <div className="relative hidden h-[70svh] w-full overflow-hidden rounded-md border sm:block">
           {!loadingForm && audienceAllowed ? (
-            <div className="absolute flex h-full w-full flex-row gap-2">
-              {(!!pendingUrl || !!form.document.url) && (
+            <div className="absolute inset-0 flex h-full w-full flex-row gap-2">
+              {!!docUrl && (
                 <DocumentRenderer
-                  documentUrl={pendingUrl || form.document.url}
+                  documentUrl={docUrl}
                   highlights={[]}
                   previews={previews}
                   onHighlightFinished={() => {}}
