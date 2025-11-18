@@ -14,6 +14,7 @@ import { useModal } from "@/app/providers/modal-provider";
 import { DocumentRenderer } from "@/components/docs/forms/previewer";
 import { useFormContext } from "../ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.ctx";
 import { cn } from "@/lib/utils";
+import { FormLabel } from "@/components/ui/form";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university" | "";
@@ -347,102 +348,90 @@ function PageContent() {
   }, [formName, formVersion, formRes]);
 
   return (
-    <div className="container mx-auto grid grid-cols-2 gap-x-0 px-4 pt-8 sm:px-10 sm:pt-16">
-      <div className="ml-auto max-w-xl space-y-6">
-        <div className="">
-          <h1 className="text-justify text-2xl font-bold tracking-tight">
-            Internship Document Fill-out Request
-          </h1>
-          <div className="text-md text-justify font-semibold tracking-tight">
-            from {studentName}
-            <br />
+    <div className="container mx-auto space-y-4 px-4 pt-8">
+      <div>
+        <h2 className="text-justify tracking-tight">
+          Internship Document Fill-out Request from{" "}
+          <span className="font-semibold">{studentName}</span>
+        </h2>
+        <h1 className="text-primary text-justify text-3xl font-bold tracking-tight">
+          {pendingInfo?.pendingInfo?.form_label}
+        </h1>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-8">
+        {/* Form Renderer */}
+        <div className="space-y-6">
+          {/* loading / error / empty / form */}
+          {loadingForm ? (
+            <Card className="flex items-center justify-center p-6">
+              <span className="inline-flex items-center gap-2 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading form…
+              </span>
+            </Card>
+          ) : formErr ? (
+            <Card className="p-4 text-sm text-rose-600">Failed to load fields.</Card>
+          ) : !audienceAllowed ? (
+            <Card className="p-4 text-sm text-gray-600">
+              This form is not available. If you believe this is an error, please contact support.
+            </Card>
+          ) : fields.length === 0 ? (
+            <Card className="p-4 text-sm text-gray-500">No fields available for this request.</Card>
+          ) : (
+            <Card className="space-y-4 rounded-none! p-4 sm:p-5">
+              <DynamicForm
+                party={party}
+                fields={fields}
+                values={values}
+                pendingUrl={pendingUrl}
+                onChange={setField}
+                errors={errors}
+                showErrors={submitted}
+                formName={""}
+                autofillValues={{}}
+                setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
+                setPreviews={setPreviews}
+              />
+
+              <div className="flex justify-end pt-2">
+                <Button onClick={onClickSubmitRequest} disabled={busy} aria-busy={busy}>
+                  {busy ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Submitting…
+                    </span>
+                  ) : (
+                    "Submit & Sign"
+                  )}
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          <div className="mb-4 flex gap-2 text-xs text-gray-500">
+            <Info className="size-8 lg:size-5" />
+            By selecting Submit & Sign, I agree that the signature and initials will be the
+            electronic representation of my signature and initials for all purposes when I (or my
+            agent) use them on documents, including legally binding contracts
           </div>
         </div>
 
-        {/* pending document preview */}
-        {pendingDocumentId && (
-          <>
-            {loadingPending ? (
-              <div className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading pending document…
-              </div>
-            ) : pendingErr ? (
-              <div className="text-rose-600">Failed to load pending document.</div>
-            ) : !pendingInfo || !audienceAllowed ? (
-              <div className="text-gray-600">No pending document data found.</div>
-            ) : (
-              <></>
-            )}
-          </>
-        )}
-
-        {/* loading / error / empty / form */}
-        {loadingForm ? (
-          <Card className="flex items-center justify-center p-6">
-            <span className="inline-flex items-center gap-2 text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading form…
-            </span>
-          </Card>
-        ) : formErr ? (
-          <Card className="p-4 text-sm text-rose-600">Failed to load fields.</Card>
-        ) : !audienceAllowed ? (
-          <Card className="p-4 text-sm text-gray-600">
-            This form is not available. If you believe this is an error, please contact support.
-          </Card>
-        ) : fields.length === 0 ? (
-          <Card className="p-4 text-sm text-gray-500">No fields available for this request.</Card>
-        ) : (
-          <Card className="space-y-4 p-4 sm:p-5">
-            <DynamicForm
-              party={party}
-              fields={fields}
-              values={values}
-              pendingUrl={pendingUrl}
-              onChange={setField}
-              errors={errors}
-              showErrors={submitted}
-              formName={""}
-              autofillValues={{}}
-              setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
-              setPreviews={setPreviews}
-            />
-
-            <div className="flex justify-end pt-2">
-              <Button onClick={onClickSubmitRequest} disabled={busy} aria-busy={busy}>
-                {busy ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Submitting…
-                  </span>
-                ) : (
-                  "Submit & Sign"
-                )}
-              </Button>
+        {/* PDF Renderer */}
+        <div className="h-full w-full overflow-hidden">
+          {!loadingForm && audienceAllowed ? (
+            <div className="flex h-full w-full flex-row gap-2">
+              {(!!pendingUrl || !!form.document.url) && (
+                <DocumentRenderer
+                  documentName={(pendingInfo?.pendingInfo?.form_label as string) ?? "Unnamed Form"}
+                  documentUrl={pendingUrl || form.document.url}
+                  highlights={[]}
+                  previews={previews}
+                  onHighlightFinished={() => {}}
+                />
+              )}
             </div>
-          </Card>
-        )}
-
-        <div className="mb-4 flex gap-2 text-xs text-gray-500">
-          <Info className="size-8 lg:size-5" />
-          By selecting Submit & Sign, I agree that the signature and initials will be the electronic
-          representation of my signature and initials for all purposes when I (or my agent) use them
-          on documents, including legally binding contracts
-        </div>
-      </div>
-
-      <div className="relative mx-auto h-full w-full overflow-hidden">
-        <div className="absolute flex h-full w-full flex-row justify-center gap-2">
-          {(!!pendingUrl || !!form.document.url) && (
-            <DocumentRenderer
-              documentName={(pendingInfo?.pendingInfo?.form_label as string) ?? "Unnamed Form"}
-              documentUrl={pendingUrl || form.document.url}
-              highlights={[]}
-              previews={previews}
-              onHighlightFinished={() => {}}
-            />
-          )}
+          ) : null}
         </div>
       </div>
     </div>
