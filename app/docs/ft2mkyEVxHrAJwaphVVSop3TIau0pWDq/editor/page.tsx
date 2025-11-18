@@ -484,6 +484,14 @@ const FieldEditor = ({
                   defaultValue={(fieldDetails as IFormField).w}
                   onChange={handleChangeFactory("w")}
                 />
+                <Badge>Height</Badge>
+                <Input
+                  value={(fieldDetails as IFormField).h}
+                  type="number"
+                  className="h-7 py-1 text-xs"
+                  defaultValue={(fieldDetails as IFormField).h}
+                  onChange={handleChangeFactory("h")}
+                />
                 <Badge>Page</Badge>
                 <Input
                   value={(fieldDetails as IFormField).page}
@@ -1036,7 +1044,7 @@ const RegisterFileModal = ({
         ...f
       } = {
         ...field,
-        h: field.type === "text" ? 10 : 25,
+        h: field.h ?? (field.type === "text" ? 10 : 25),
         _id: null, // TS is being a bitch, don't remove this line lol some type error is slipping thru
         is_phantom: null, // We hide this from the db
       };
