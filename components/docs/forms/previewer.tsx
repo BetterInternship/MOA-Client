@@ -44,13 +44,11 @@ export type DocumentHighlight = IHighlight;
  * @component
  */
 export const DocumentRenderer = ({
-  documentName,
   documentUrl,
   highlights,
   previews,
   onHighlightFinished,
 }: {
-  documentName?: string;
   documentUrl: string;
   highlights?: IHighlight[];
   previews?: Record<number, React.ReactNode[]>;
@@ -114,8 +112,8 @@ export const DocumentRenderer = ({
   if (!documentUrl) return <></>;
 
   return (
-    <div>
-      <PdfDecorator title={documentName ?? "No Name Specified"}>
+    <div className="">
+      <PdfDecorator>
         <PdfLoader url={documentUrl} beforeLoad={<Loader />}>
           {(pdfDocument) => (
             <PdfHighlighter
@@ -140,14 +138,10 @@ export const DocumentRenderer = ({
  *
  * @component
  */
-const PdfDecorator = ({ title, children }: { title: string; children: React.ReactNode }) => {
+const PdfDecorator = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex h-full flex-col gap-0">
-      <div className="flex h-16 flex-col justify-center text-xl font-semibold tracking-tight">
-        {title}
-      </div>
-      <div className="relative flex-1">{children}</div>
-      <div className="h-16"></div>
+      <div className="flex-1">{children}</div>
     </div>
   );
 };

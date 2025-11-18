@@ -584,7 +584,9 @@ const Sidebar = ({
   const { openModal, closeModal } = useModal();
   const [subscribers, setSubscribers] = useState<(IFormSubscriber & { id: string })[]>([]);
   const [signatories, setSignatories] = useState<(IFormSignatory & { id: string })[]>([]);
-  const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
+  // Use form context's selected preview id so clicking previews selects fields
+  const selectedFieldKey = form.selectedPreviewId;
+  const setSelectedFieldKey = (id: string | null) => form.setSelectedPreviewId(id);
 
   // Handle changes in file upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -716,7 +718,7 @@ const Sidebar = ({
     const initialOrder = form.keyedFields.toReversed();
     initialOrder.sort((a, b) => a.page - b.page || a.field.localeCompare(b.field));
     return initialOrder;
-  }, [selectedFieldKey, form.keyedFields, registry]);
+  }, [form.selectedPreviewId, form.keyedFields, registry]);
 
   // Give them ids hopefully
   useEffect(() => {
@@ -857,7 +859,7 @@ const Sidebar = ({
                 )}
               </div>
             </div>
-            <div className="flex max-h-[450px] flex-col overflow-auto">
+            <div className="flex max-h-[700px] flex-col overflow-auto">
               {sortedDocumentFields
                 .filter((f) => !!f)
                 .map((field) => (

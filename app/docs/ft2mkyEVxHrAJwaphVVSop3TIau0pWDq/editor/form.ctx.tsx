@@ -41,6 +41,8 @@ export interface IFormContext {
   previews: Record<number, React.ReactNode[]>;
   loading: boolean;
   refreshing: boolean;
+  selectedPreviewId: string | null;
+  setSelectedPreviewId: (id: string | null) => void;
 
   // Setters
   updateFormName: (newFormName: string) => void;
@@ -240,6 +242,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
       if (!newPreviews[field.page]) newPreviews[field.page] = [];
       newPreviews[field.page].push(
         <FieldPreview
+          key={field._id}
           field={field.field}
           x={field.x}
           y={field.y}
@@ -338,6 +341,8 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     previews,
     loading,
     refreshing,
+    selectedPreviewId: selectedPreviewId || null,
+    setSelectedPreviewId: (id: string | null) => setSelectedPreviewId(id ?? ""),
     document: { name: documentName, url: documentUrl, file: documentFile },
 
     updateField,
@@ -369,6 +374,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
  * @component
  */
 const FieldPreview = ({
+  field,
   x,
   y,
   w,
@@ -397,14 +403,14 @@ const FieldPreview = ({
         display: "inline-block",
         width: `round(var(--scale-factor) * ${w}px, 1px)`,
         height: `round(var(--scale-factor) * ${h}px, 1px)`,
-        fontSize: "12px",
+        fontSize: "10px",
         transform: `translate(round(var(--scale-factor) * ${x}px, 1px), round(var(--scale-factor) * ${y}px, 1px))`,
         boxSizing: "border-box",
         cursor: "pointer",
         flexShrink: "0",
       }}
     >
-      {"xxx"}
+      {field}
     </div>
   );
 };

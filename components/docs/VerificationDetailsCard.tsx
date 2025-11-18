@@ -49,19 +49,18 @@ export function VerificationDetailsCard({ signedDocument }: { signedDocument: Si
           <MetaRow
             icon={<FileText className="h-4 w-4" />}
             label="Title"
-            // @ts-expect-error -- not type casted yet
             value={signedDocument.form_label ?? "Signed Document"}
           />
           <MetaRow
             icon={<Clock className="h-4 w-4" />}
-            label="Effective Since"
+            label="Signed On"
             value={formatWhen(signedDocument.effective_date)}
           />
-          <MetaRow
+          {/* <MetaRow
             icon={<Clock className="h-4 w-4" />}
             label="Expires On"
             value={formatWhen(signedDocument.expiry_date)}
-          />
+          /> */}
           <MetaRow
             icon={<User className="h-4 w-4" />}
             label="Signatories"
@@ -73,12 +72,6 @@ export function VerificationDetailsCard({ signedDocument }: { signedDocument: Si
             value={<PeopleList list={[{ name: "Atty. Liza Mendoza", title: "Notary Public" }]} />}
           /> */}
         </div>
-
-        {signedDocument.inputs_hash && (
-          <div className="text-muted-foreground text-xs">
-            SHA-256: <code className="break-all">{signedDocument.inputs_hash}</code>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
