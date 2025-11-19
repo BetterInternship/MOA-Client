@@ -207,7 +207,6 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
         validator: field.validator ?? "",
         prefiller: field.prefiller ?? "",
         tooltip_label: field.tooltip_label ?? "",
-        h: 10,
       };
 
       return newField;

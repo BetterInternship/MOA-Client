@@ -325,7 +325,7 @@ const FieldEditor = ({
     };
 
     if (isPhantom) form.updatePhantomField(fieldIndex, newField as unknown as IFormPhantomField);
-    else form.updateField(fieldIndex, { ...newField, h: 10 } as IFormField);
+    else form.updateField(fieldIndex, { ...newField } as IFormField);
   };
 
   // Handle change for any of the props of the field
