@@ -237,6 +237,12 @@ function PageContent() {
             title: "Student Guardian",
           },
         ],
+        university: [
+          {
+            name: "Maria Adiel Aguiling",
+            title: "Internship Coordinator",
+          },
+        ],
       };
 
       const payload = {
