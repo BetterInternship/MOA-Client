@@ -586,14 +586,16 @@ function PageContent() {
         {/* PDF Renderer - hidden on small screens, visible on sm+ */}
         <div className="relative hidden h-[77svh] w-full overflow-auto sm:block">
           {!loadingForm && audienceAllowed ? (
-            <div className="absolute inset-0 flex h-full w-full flex-row gap-2">
+            <div className="relative flex h-full w-full flex-row gap-2">
               {!!docUrl && (
-                <DocumentRenderer
-                  documentUrl={docUrl}
-                  highlights={[]}
-                  previews={previews}
-                  onHighlightFinished={() => {}}
-                />
+                <div className="relative h-full w-full">
+                  <DocumentRenderer
+                    documentUrl={docUrl}
+                    highlights={[]}
+                    previews={previews}
+                    onHighlightFinished={() => {}}
+                  />
+                </div>
               )}
             </div>
           ) : null}
