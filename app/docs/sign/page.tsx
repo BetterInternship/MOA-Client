@@ -572,17 +572,19 @@ function PageContent() {
               </Card>
             )}
 
-            <div className="mb-4 flex gap-2 text-xs text-gray-500">
-              <Info className="size-8 lg:size-5" />
-              By selecting Submit & Sign, I agree that the signature and initials will be the
-              electronic representation of my signature and initials for all purposes when I (or my
-              agent) use them on documents, including legally binding contracts
+            <div className="mt-1 flex items-start gap-2 text-xs text-gray-500">
+              <Info className="mt-1 h-3 w-3 flex-shrink-0" />
+              <div>
+                By selecting Submit & Sign, I agree that the signature and initials will be the
+                electronic representation of my signature and initials for all purposes when I (or
+                my agent) use them on documents, including legally binding contracts
+              </div>
             </div>
           </div>
         </div>
 
         {/* PDF Renderer - hidden on small screens, visible on sm+ */}
-        <div className="relative hidden h-[70svh] w-full overflow-auto rounded-md border sm:block">
+        <div className="relative hidden h-[77svh] w-full overflow-auto sm:block">
           {!loadingForm && audienceAllowed ? (
             <div className="absolute inset-0 flex h-full w-full flex-row gap-2">
               {!!docUrl && (
