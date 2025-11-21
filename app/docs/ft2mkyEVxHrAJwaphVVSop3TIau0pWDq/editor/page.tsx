@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
- * @ Modified time: 2025-11-16 00:01:20
+ * @ Modified time: 2025-11-21 13:27:36
  * @ Description:
  *
  * This page will let us upload forms and define their schemas on the fly.
@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  FIELD_TYPES,
   IFormField,
   IFormMetadata,
   IFormPhantomField,
@@ -125,12 +126,11 @@ const FormEditorPageContent = () => {
         <Sidebar fieldTransform={fieldTransform} />
         {form.document.url && (
           <DocumentRenderer
-            documentName={form.document.name}
             documentUrl={form.document.url}
             highlights={highlight ? [highlight] : []}
             previews={form.previews}
             onHighlightFinished={onHighlightFinished}
-          ></DocumentRenderer>
+          />
         )}
       </div>
     </div>
@@ -528,6 +528,14 @@ const FieldEditor = ({
             )}
             {!isUsingTemplate && (
               <>
+                <Badge>Type</Badge>
+                <Autocomplete
+                  value={fieldDetails.type}
+                  inputClassName="h-7 py-1 text-xs"
+                  placeholder="Select Field Type"
+                  options={FIELD_TYPES.map((s) => ({ id: s, name: s }))}
+                  setter={(id) => id && handleChangeFactory("type")(id)}
+                />
                 <Badge>Source</Badge>
                 <Autocomplete
                   value={fieldDetails.source}
