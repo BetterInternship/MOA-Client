@@ -163,22 +163,13 @@ function PageContent() {
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // MOBILE VIEW CURRENTLY DISABLED
-  // useEffect(() => {
-  //   if (typeof window === "undefined") return;
-  //   const mq = window.matchMedia("(max-width: 1023px)"); // Tailwind 'lg' breakpoint
-  //   const handle = (e: MediaQueryList | MediaQueryListEvent) => {
-  //     setIsMobile(!!e.matches);
-  //     if (e.matches) {
-  //       setMobileStage("preview"); // start on preview for mobile
-  //     } else {
-  //       setMobileStage("form"); // desktop behaves like form visible
-  //     }
-  //   };
-  //   handle(mq);
-  //   mq.addEventListener?.("change", handle);
-  //   return () => mq.removeEventListener?.("change", handle);
-  // }, []);
+  useEffect(() => {
+    if (isMobile) {
+      setMobileStage("preview");
+    } else {
+      setMobileStage("form");
+    }
+  }, [isMobile]);
 
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
@@ -405,29 +396,6 @@ function PageContent() {
       form.updateFormVersion(formVersion);
     }
   }, [formName, formVersion, formRes]);
-
-  // If on mobile, show a desktop-recommendation message.
-  if (isMobile) {
-    return (
-      <div className="container mx-auto px-4 pt-8">
-        <div className="mx-auto max-w-xl rounded-md border bg-white p-6 text-center">
-          <h2 className="text-lg font-semibold">This page works best on desktop</h2>
-          <p className="mt-2 text-justify text-sm text-gray-600">
-            For the best experience, please access this page on a desktop device. Mobile support is
-            coming soon. <br></br>
-            <br></br>
-            If you need help, contact us via {""}
-            <a
-              href="https://www.facebook.com/profile.php?id=61579853068043"
-              className="font-semibold underline"
-            >
-              Facebook
-            </a>
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto space-y-4 px-4 pt-8">
