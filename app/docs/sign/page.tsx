@@ -413,7 +413,7 @@ function PageContent() {
         {/* Form Renderer */}
         <div className="space-y-4">
           <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
-            <div className="relative h-[50vh] w-full">
+            <div className="relative h-[60vh] w-full overflow-hidden rounded-md border">
               {docUrl ? (
                 <DocumentRenderer
                   documentUrl={docUrl}
