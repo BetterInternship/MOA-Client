@@ -413,7 +413,7 @@ function PageContent() {
         {/* Form Renderer */}
         <div className="space-y-4">
           <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
-            <div className="relative h-[60vh] w-full overflow-hidden rounded-md border">
+            <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
               {docUrl ? (
                 <DocumentRenderer
                   documentUrl={docUrl}
@@ -439,7 +439,7 @@ function PageContent() {
 
           {/* Mobile: confirm preview stage */}
           <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
-            <div className="relative h-[60vh] w-full overflow-hidden rounded-md border">
+            <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
               {docUrl ? (
                 <DocumentRenderer
                   documentUrl={docUrl}
@@ -582,7 +582,7 @@ function PageContent() {
         </div>
 
         {/* PDF Renderer - hidden on small screens, visible on sm+ */}
-        <div className="relative hidden h-[70svh] w-full overflow-hidden rounded-md border sm:block">
+        <div className="relative hidden h-[70svh] w-full overflow-auto rounded-md border sm:block">
           {!loadingForm && audienceAllowed ? (
             <div className="absolute inset-0 flex h-full w-full flex-row gap-2">
               {!!docUrl && (
