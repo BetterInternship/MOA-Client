@@ -6,7 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, Info } from "lucide-react";
-import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
+import {
+  getFormFields,
+  approveSignatory,
+  getPendingInformation,
+  ApproveSignatoryRequest,
+} from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
@@ -213,30 +218,26 @@ function PageContent() {
       setBusy(true);
       const clientSigningInfo = getClientSigningInfo();
 
-      const signatories: Record<string, { name: string; title: string }[]> = {
-        entity: [
+      // TODO: Put hard code somewhere else jesus christ
+      // Build signatories only when the corresponding flat value exists and is non-empty
+      const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
+      const supervisorName = (flatValues ?? {})["entity.supervisor-full-name:default"]
+        ?.toString?.()
+        .trim();
+      if (supervisorName) {
+        signatories.entity = [
           {
-            name: flatValues["entity.representative-full-name:default"],
-            title: flatValues["entity.representative-title:default"],
-          },
-          {
-            name: flatValues["entity.supervisor-full-name:default"],
+            name: supervisorName,
             title: "HTE Internship Supervisor",
+            party: "entity",
+            status: "completed",
+            email: "",
+            honorific: "",
           },
-        ],
-        "student-guardian": [
-          {
-            name: flatValues["student.guardian-full-name:default"],
-            title: "Student Guardian",
-          },
-        ],
-        university: [
-          {
-            name: "Maria Adiel Aguiling",
-            title: "Internship Coordinator",
-          },
-        ],
-      };
+        ];
+      } else {
+        signatories.entity = [];
+      }
 
       const payload = {
         pendingDocumentId,
