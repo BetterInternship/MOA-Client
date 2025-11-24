@@ -218,7 +218,7 @@ function PageContent() {
       setBusy(true);
       const clientSigningInfo = getClientSigningInfo();
 
-      // TODO: Put hard code somewhere else jesus christ
+      // TODO: SUPER BANDAID FOR DEMO PURPOSES HARDCODED
       // Build signatories only when the corresponding flat value exists and is non-empty
       const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
       const supervisorName = (flatValues ?? {})["entity.supervisor-full-name:default"]
@@ -237,6 +237,24 @@ function PageContent() {
         ];
       } else {
         signatories.entity = [];
+      }
+
+      const chairName = (flatValues ?? {})["university.department-chair-signature:acm-auto"]
+        ?.toString?.()
+        .trim();
+      if (chairName) {
+        signatories.university = [
+          {
+            name: "Raymund B Habaradas",
+            title: "Department Chair",
+            party: "university",
+            status: "completed",
+            email: "",
+            honorific: "",
+          },
+        ];
+      } else {
+        signatories.university = [];
       }
 
       const payload = {
