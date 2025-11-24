@@ -264,20 +264,70 @@ function PageContent() {
 
       openModal(
         "sign-success",
-        <div className="p-2 text-center">
-          <div className="mb-2">
-            <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
+        <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
+          {/* Animated success icon */}
+          <div className="grid h-24 w-24 animate-[pop_420ms_ease-out] place-items-center rounded-full border-4 border-emerald-200">
+            <svg
+              className="h-12 w-12 text-emerald-600"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 6L9 17l-5-5" className="animate-[draw_420ms_ease-out_120ms_forwards]" />
+            </svg>
           </div>
-          <div className="text-sm">{succ.body}</div>
-          <div className="flex w-full justify-center gap-2 pt-4">
+
+          {/* Success message */}
+          <div className="text-base font-medium text-gray-800">{succ.body}</div>
+
+          {/* Optional follow-up text */}
+          <div className="max-w-md text-sm text-gray-600">
+            In the meantime… would you like to check out how our students are automating internship
+            search?
+          </div>
+
+          {/* Action buttons */}
+          <div className="grid w-full grid-cols-1 gap-3">
             <Button
-              variant={succ.href ? "outline" : "default"}
-              onClick={() => closeModal("sign-success")}
+              onClick={() => (window.location.href = "https://betterinternship.com")}
               className="w-full"
             >
-              Close
+              Student internship portal
+            </Button>
+
+            <Button
+              onClick={() => (window.location.href = "https://hire.betterinternship.com")}
+              className="w-full"
+            >
+              Internship employer hiring portal
             </Button>
           </div>
+
+          <style jsx>{`
+            @keyframes pop {
+              0% {
+                transform: scale(0.8);
+                opacity: 0.2;
+              }
+              100% {
+                transform: scale(1);
+                opacity: 1;
+              }
+            }
+            @keyframes draw {
+              0% {
+                stroke-dasharray: 0 32;
+                opacity: 1;
+              }
+              100% {
+                stroke-dasharray: 32 0;
+                opacity: 1;
+              }
+            }
+          `}</style>
         </div>,
         {
           panelClassName: "sm:max-w-md",
