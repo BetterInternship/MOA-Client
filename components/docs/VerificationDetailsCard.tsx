@@ -12,7 +12,7 @@ function PeopleList({ list }: { list?: { name: string; title?: string }[] }) {
       {list.map((p, i) => (
         <div key={i}>
           <span className="font-semibold">{p.name}</span>
-          {p.title && (
+          {p.title && p.name && (
             <>
               {" "}
               — <span className="text-muted-foreground">{p.title}</span>

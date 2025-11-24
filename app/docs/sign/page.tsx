@@ -6,7 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, Info } from "lucide-react";
-import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
+import {
+  getFormFields,
+  approveSignatory,
+  getPendingInformation,
+  ApproveSignatoryRequest,
+} from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
@@ -163,22 +168,13 @@ function PageContent() {
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // MOBILE VIEW CURRENTLY DISABLED
-  // useEffect(() => {
-  //   if (typeof window === "undefined") return;
-  //   const mq = window.matchMedia("(max-width: 1023px)"); // Tailwind 'lg' breakpoint
-  //   const handle = (e: MediaQueryList | MediaQueryListEvent) => {
-  //     setIsMobile(!!e.matches);
-  //     if (e.matches) {
-  //       setMobileStage("preview"); // start on preview for mobile
-  //     } else {
-  //       setMobileStage("form"); // desktop behaves like form visible
-  //     }
-  //   };
-  //   handle(mq);
-  //   mq.addEventListener?.("change", handle);
-  //   return () => mq.removeEventListener?.("change", handle);
-  // }, []);
+  useEffect(() => {
+    if (isMobile) {
+      setMobileStage("preview");
+    } else {
+      setMobileStage("form");
+    }
+  }, [isMobile]);
 
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
@@ -222,30 +218,44 @@ function PageContent() {
       setBusy(true);
       const clientSigningInfo = getClientSigningInfo();
 
-      const signatories: Record<string, { name: string; title: string }[]> = {
-        entity: [
+      // TODO: SUPER BANDAID FOR DEMO PURPOSES HARDCODED
+      // Build signatories only when the corresponding flat value exists and is non-empty
+      const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
+      const supervisorName = (flatValues ?? {})["entity.supervisor-full-name:default"]
+        ?.toString?.()
+        .trim();
+      if (supervisorName) {
+        signatories.entity = [
           {
-            name: flatValues["entity.representative-full-name:default"],
-            title: flatValues["entity.representative-title:default"],
-          },
-          {
-            name: flatValues["entity.supervisor-full-name:default"],
+            name: supervisorName,
             title: "HTE Internship Supervisor",
+            party: "entity",
+            status: "completed",
+            email: "",
+            honorific: "",
           },
-        ],
-        "student-guardian": [
+        ];
+      } else {
+        signatories.entity = [];
+      }
+
+      const chairName = (flatValues ?? {})["university.department-chair-signature:acm-auto"]
+        ?.toString?.()
+        .trim();
+      if (chairName) {
+        signatories.university = [
           {
-            name: flatValues["student.guardian-full-name:default"],
-            title: "Student Guardian",
+            name: "Raymund B Habaradas",
+            title: "Department Chair",
+            party: "university",
+            status: "completed",
+            email: "",
+            honorific: "",
           },
-        ],
-        university: [
-          {
-            name: "Maria Adiel Aguiling",
-            title: "Internship Coordinator",
-          },
-        ],
-      };
+        ];
+      } else {
+        signatories.university = [];
+      }
 
       const payload = {
         pendingDocumentId,
@@ -272,20 +282,70 @@ function PageContent() {
 
       openModal(
         "sign-success",
-        <div className="p-2 text-center">
-          <div className="mb-2">
-            <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
+        <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
+          {/* Animated success icon */}
+          <div className="grid h-24 w-24 animate-[pop_420ms_ease-out] place-items-center rounded-full border-4 border-emerald-200">
+            <svg
+              className="h-12 w-12 text-emerald-600"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 6L9 17l-5-5" className="animate-[draw_420ms_ease-out_120ms_forwards]" />
+            </svg>
           </div>
-          <div className="text-sm">{succ.body}</div>
-          <div className="flex w-full justify-center gap-2 pt-4">
+
+          {/* Success message */}
+          <div className="text-base font-medium text-gray-800">{succ.body}</div>
+
+          {/* Optional follow-up text */}
+          <div className="max-w-md text-sm text-gray-600">
+            In the meantime… would you like to check out how our students are automating internship
+            search?
+          </div>
+
+          {/* Action buttons */}
+          <div className="grid w-full grid-cols-1 gap-3">
             <Button
-              variant={succ.href ? "outline" : "default"}
-              onClick={() => closeModal("sign-success")}
+              onClick={() => (window.location.href = "https://betterinternship.com")}
               className="w-full"
             >
-              Close
+              Student internship portal
+            </Button>
+
+            <Button
+              onClick={() => (window.location.href = "https://hire.betterinternship.com")}
+              className="w-full"
+            >
+              Internship employer hiring portal
             </Button>
           </div>
+
+          <style jsx>{`
+            @keyframes pop {
+              0% {
+                transform: scale(0.8);
+                opacity: 0.2;
+              }
+              100% {
+                transform: scale(1);
+                opacity: 1;
+              }
+            }
+            @keyframes draw {
+              0% {
+                stroke-dasharray: 0 32;
+                opacity: 1;
+              }
+              100% {
+                stroke-dasharray: 32 0;
+                opacity: 1;
+              }
+            }
+          `}</style>
         </div>,
         {
           panelClassName: "sm:max-w-md",
@@ -406,29 +466,6 @@ function PageContent() {
     }
   }, [formName, formVersion, formRes]);
 
-  // If on mobile, show a desktop-recommendation message.
-  if (isMobile) {
-    return (
-      <div className="container mx-auto px-4 pt-8">
-        <div className="mx-auto max-w-xl rounded-md border bg-white p-6 text-center">
-          <h2 className="text-lg font-semibold">This page works best on desktop</h2>
-          <p className="mt-2 text-justify text-sm text-gray-600">
-            For the best experience, please access this page on a desktop device. Mobile support is
-            coming soon. <br></br>
-            <br></br>
-            If you need help, contact us via {""}
-            <a
-              href="https://www.facebook.com/profile.php?id=61579853068043"
-              className="font-semibold underline"
-            >
-              Facebook
-            </a>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto space-y-4 px-4 pt-8">
       <div>
@@ -445,7 +482,7 @@ function PageContent() {
         {/* Form Renderer */}
         <div className="space-y-4">
           <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
-            <div className="relative h-[50vh] w-full">
+            <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
               {docUrl ? (
                 <DocumentRenderer
                   documentUrl={docUrl}
@@ -471,7 +508,7 @@ function PageContent() {
 
           {/* Mobile: confirm preview stage */}
           <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
-            <div className="relative h-[60vh] w-full overflow-hidden rounded-md border">
+            <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
               {docUrl ? (
                 <DocumentRenderer
                   documentUrl={docUrl}
@@ -604,26 +641,30 @@ function PageContent() {
               </Card>
             )}
 
-            <div className="mb-4 flex gap-2 text-xs text-gray-500">
-              <Info className="size-8 lg:size-5" />
-              By selecting Submit & Sign, I agree that the signature and initials will be the
-              electronic representation of my signature and initials for all purposes when I (or my
-              agent) use them on documents, including legally binding contracts
+            <div className="mt-1 flex items-start gap-2 text-xs text-gray-500">
+              <Info className="mt-1 h-3 w-3 flex-shrink-0" />
+              <div>
+                By selecting Submit & Sign, I agree that the signature and initials will be the
+                electronic representation of my signature and initials for all purposes when I (or
+                my agent) use them on documents, including legally binding contracts
+              </div>
             </div>
           </div>
         </div>
 
         {/* PDF Renderer - hidden on small screens, visible on sm+ */}
-        <div className="relative hidden h-[70svh] w-full overflow-hidden rounded-md border sm:block">
+        <div className="relative hidden h-[77svh] w-full overflow-auto sm:block">
           {!loadingForm && audienceAllowed ? (
-            <div className="absolute inset-0 flex h-full w-full flex-row gap-2">
+            <div className="relative flex h-full w-full flex-row gap-2">
               {!!docUrl && (
-                <DocumentRenderer
-                  documentUrl={docUrl}
-                  highlights={[]}
-                  previews={previews}
-                  onHighlightFinished={() => {}}
-                />
+                <div className="relative h-full w-full">
+                  <DocumentRenderer
+                    documentUrl={docUrl}
+                    highlights={[]}
+                    previews={previews}
+                    onHighlightFinished={() => {}}
+                  />
+                </div>
               )}
             </div>
           ) : null}
