@@ -221,23 +221,6 @@ function PageContent() {
       // TODO: SUPER BANDAID FOR DEMO PURPOSES HARDCODED
       // Build signatories only when the corresponding flat value exists and is non-empty
       const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
-      const supervisorName = (flatValues ?? {})["entity.supervisor-full-name:default"]
-        ?.toString?.()
-        .trim();
-      if (supervisorName) {
-        signatories.entity = [
-          {
-            name: supervisorName,
-            title: "HTE Internship Supervisor",
-            party: "entity",
-            status: "completed",
-            email: "",
-            honorific: "",
-          },
-        ];
-      } else {
-        signatories.entity = [];
-      }
 
       const chairName = (flatValues ?? {})["university.department-chair-signature:acm-auto"]
         ?.toString?.()
