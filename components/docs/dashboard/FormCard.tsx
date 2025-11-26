@@ -29,7 +29,7 @@ export default function FormCard({ title, requestedAt, downloadUrl, className }:
 
         {/* Actions */}
         <div className="">
-          {downloadUrl && (
+          {downloadUrl ? (
             <Button
               size="sm"
               className="h-8 px-3"
@@ -37,6 +37,8 @@ export default function FormCard({ title, requestedAt, downloadUrl, className }:
             >
               Download
             </Button>
+          ) : (
+            <div className="text-muted-foreground flex h-8 items-center px-3 text-sm">Pending</div>
           )}
         </div>
       </div>

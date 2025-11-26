@@ -20,11 +20,14 @@ import FormCard from "@/components/docs/dashboard/FormCard";
 import { getAllSignedForms } from "@/app/api/forms.api";
 
 type SignedDoc = {
-  id?: string | number;
-  form_name?: string;
-  form_label?: string;
-  date_made?: string; // ISO
-  url?: string;
+  id: string | number;
+  form_name: string;
+  form_label: string;
+  prefilled_document_id?: string;
+  pending_document_id?: string;
+  signed_document_id?: string;
+  timestamp: string;
+  url: string;
 };
 
 export default function DocsDashboardPage() {
@@ -58,8 +61,8 @@ export default function DocsDashboardPage() {
     const copy = Array.isArray(rows) ? [...rows] : [];
     // We'll apply base sort (date desc) then later additional sorting from UI
     copy.sort((a, b) => {
-      const ta = Date.parse(a?.date_made ?? "") || 0;
-      const tb = Date.parse(b?.date_made ?? "") || 0;
+      const ta = Date.parse(a?.timestamp ?? "") || 0;
+      const tb = Date.parse(b?.timestamp ?? "") || 0;
       return tb - ta;
     });
 
@@ -116,8 +119,8 @@ export default function DocsDashboardPage() {
       }
 
       // date range filter
-      if (dateRange !== "all" && r.date_made) {
-        const ts = Date.parse(r.date_made);
+      if (dateRange !== "all" && r.timestamp) {
+        const ts = Date.parse(r.timestamp);
         if (Number.isNaN(ts)) return false;
         const days = Number(dateRange);
         if (now - ts > daysToMs(days)) return false;
@@ -306,7 +309,7 @@ export default function DocsDashboardPage() {
               <FormCard
                 key={row.id ?? `${row.form_name ?? "row"}-${Math.random()}`}
                 title={row.form_label ?? "Form"}
-                requestedAt={row.date_made}
+                requestedAt={row.timestamp}
                 downloadUrl={row.url}
               />
             ))}
