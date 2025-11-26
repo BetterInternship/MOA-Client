@@ -17,10 +17,12 @@ export default function DocsTopbarUser() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["docs-self"],
     queryFn: getDocsSelf,
     staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const logoutMutation = useMutation({

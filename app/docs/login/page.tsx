@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, ShieldCheck, Lock } from "lucide-react";
-
+import { useQueryClient } from "@tanstack/react-query";
 import { requestLoginOtp, verifyLoginOtp } from "@/app/api/docs.api";
 
 /* ────────────────────────────
@@ -117,6 +117,7 @@ type Step = "email" | "otp";
 
 export default function DocsLoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [step, setStep] = useState<Step>("email");
 
@@ -206,6 +207,7 @@ export default function DocsLoginPage() {
         return;
       }
       // success → go to dashboard
+      await queryClient.invalidateQueries(["docs-self"]);
       router.push("/docs/dashboard");
     } finally {
       setBusy(false);
