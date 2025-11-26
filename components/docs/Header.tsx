@@ -24,9 +24,15 @@ export default function DocsTopbarUser() {
     },
   });
 
-  type DocsUser = { id: string; email: string; name?: string | null };
+  type DocsUser = {
+    id: string;
+    email: string;
+    name?: string;
+    coordinatorId?: string;
+  };
 
   const user = data?.profile as DocsUser | undefined;
+  console.log({ user });
 
   if (isLoading) {
     return <div className="bg-muted h-9 w-24 animate-pulse rounded" />;
@@ -38,9 +44,11 @@ export default function DocsTopbarUser() {
         <Link href="/dashboard">
           <Button variant="ghost">My Signed Forms</Button>
         </Link>
-        <Link href="/forms">
-          <Button variant="ghost">Forms Preview</Button>
-        </Link>
+        {user?.coordinatorId && (
+          <Link href="/forms">
+            <Button variant="ghost">Forms Preview</Button>
+          </Link>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
