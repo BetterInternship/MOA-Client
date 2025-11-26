@@ -40,7 +40,6 @@ export default function DocsTopbarUser() {
   };
 
   const user = data?.profile as DocsUser | undefined;
-  console.log({ user });
 
   if (isLoading) {
     return <div className="bg-muted h-9 w-24 animate-pulse rounded" />;
@@ -82,16 +81,23 @@ export default function DocsTopbarUser() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="outline">
-          {user ? user.name?.trim() || user.email || "User" : "Loading..."}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => logoutMutation.mutate()}
-          disabled={logoutMutation.status === "pending"}
-        >
-          {logoutMutation.status === "pending" ? "Logging out..." : "Logout"}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-1">
+              {user ? user.name?.trim() || user.email || "User" : "Loading..."}
+              <ChevronDown size={14} className="mt-0.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isLoading}
+            >
+              {logoutMutation.isLoading ? "Logging out..." : "Logout"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   ) : (
