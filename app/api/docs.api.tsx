@@ -43,7 +43,7 @@ export const autoLogin = async (params: {
   id?: string;
   name?: string;
   form?: string;
-  aud?: "entity" | "student-guardian" | "university";
+  aud: string;
   pending?: string;
   student?: string;
 }) => {

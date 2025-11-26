@@ -13,7 +13,7 @@ export default function LinkLoginPage() {
     const id = search.get("id") || "";
     const email = search.get("email") || "";
     const form = search.get("form") || "";
-    const aud = search.get("for") || "entity";
+    const aud = search.get("for");
     const pending = search.get("pending") || "";
     const student = search.get("student") || "";
 
@@ -27,11 +27,11 @@ export default function LinkLoginPage() {
       try {
         // Use the generated API client which sets cookie properly
         const res = await autoLogin({
-          id: id,
           email,
+          id: id,
           name: "",
           form,
-          for: aud,
+          aud,
           pending,
           student,
         });
