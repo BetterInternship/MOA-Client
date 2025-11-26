@@ -724,3 +724,70 @@ export const useAuthControllerDocsSelf = <TError = ErrorResponse, TContext = unk
 
   return useMutation(mutationOptions, queryClient);
 };
+export const authControllerDocsSignOut = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/auth/docs/logout`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getAuthControllerDocsSignOutMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["authControllerDocsSignOut"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+    void
+  > = () => {
+    return authControllerDocsSignOut();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AuthControllerDocsSignOutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authControllerDocsSignOut>>
+>;
+
+export type AuthControllerDocsSignOutMutationError = ErrorResponse;
+
+export const useAuthControllerDocsSignOut = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getAuthControllerDocsSignOutMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};

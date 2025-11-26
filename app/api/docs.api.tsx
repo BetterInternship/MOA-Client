@@ -2,6 +2,7 @@ import {
   authControllerDocsLoginRequest,
   authControllerDocsLoginVerify,
   authControllerDocsSelf,
+  authControllerDocsSignOut,
 } from "./app/api/endpoints/auth/auth";
 import { docsControllerGetEntityForms } from "./app/api/endpoints/docs/docs";
 
@@ -33,6 +34,15 @@ export const getDocsSelf = async () => {
     return { ...res, isLoading: false, error: null };
   } catch (error) {
     return { ok: false, profile: null, isLoading: false, error };
+  }
+};
+
+export const logoutDocs = async () => {
+  try {
+    const res = await authControllerDocsSignOut();
+    return { ...res, isLoading: false, error: null };
+  } catch (error) {
+    return { ok: false, isLoading: false, error };
   }
 };
 

@@ -12,4 +12,6 @@ export interface FormSignatory {
   title: string;
   email: string;
   field: string;
+  status: string;
+  party: string;
 }
