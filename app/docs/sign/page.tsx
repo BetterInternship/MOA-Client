@@ -300,29 +300,9 @@ function PageContent() {
 
           {/* Success message */}
           <div className="text-base font-medium text-gray-800">{succ.body}</div>
-
-          {/* Optional follow-up text */}
-          <div className="max-w-md text-sm text-gray-600">
-            In the meantime… would you like to check out how our students are automating internship
-            search?
-          </div>
-
-          {/* Action buttons */}
-          <div className="grid w-full grid-cols-1 gap-3">
-            <Button
-              onClick={() => (window.location.href = "https://betterinternship.com")}
-              className="w-full"
-            >
-              Student internship portal
-            </Button>
-
-            <Button
-              onClick={() => (window.location.href = "https://hire.betterinternship.com")}
-              className="w-full"
-            >
-              Internship employer hiring portal
-            </Button>
-          </div>
+          <Button onClick={() => (window.location.href = "/dashboard")} className="w-full">
+            Close
+          </Button>
 
           <style jsx>{`
             @keyframes pop {
@@ -400,8 +380,8 @@ function PageContent() {
       "sign-auth",
       <div className="space-y-4 text-sm">
         <p className="text-justify text-gray-700">
-          I authorize auto-fill and auto-sign of future school-issued templated documents on my
-          behalf. A copy of each signed document will be emailed to me.
+          I authorize auto-sign of future school-issued templated documents on my behalf. A copy of
+          each signed document will be emailed to me.
         </p>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -421,7 +401,7 @@ function PageContent() {
             aria-pressed={authorizeChoice === "yes"}
             className="w-full"
           >
-            Yes, auto-fill & auto-sign
+            Yes, confirm and e-sign
           </Button>
         </div>
       </div>,
@@ -438,7 +418,7 @@ function PageContent() {
     await submitWithAuthorization(choice, flatValues);
   };
 
-  const goHome = () => router.push("/");
+  const goHome = () => router.push("/dashboard");
 
   const docUrl = pendingUrl || form.document?.url;
 
