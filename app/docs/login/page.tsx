@@ -10,10 +10,6 @@ import { Loader2, ShieldCheck, Lock } from "lucide-react";
 
 import { requestLoginOtp, verifyLoginOtp } from "@/app/api/docs.api";
 
-// NOTE
-// This page previously used mock helpers. We now call the real API helpers
-// `requestLoginOtp` and `verifyLoginOtp` exported from `app/api/docs.api.tsx`.
-
 /* ────────────────────────────
    OTP Input (6 boxes, paste-friendly)
 ────────────────────────────── */
