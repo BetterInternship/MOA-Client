@@ -24,8 +24,9 @@ export default function DocsTopbarUser() {
     },
   });
 
-  const user =
-    data && typeof data === "object" && "profile" in (data as any) ? (data as any).profile : null;
+  type DocsUser = { id: string; email: string; name?: string | null };
+
+  const user = data?.profile as DocsUser | undefined;
 
   if (isLoading) {
     return <div className="bg-muted h-9 w-24 animate-pulse rounded" />;
@@ -43,7 +44,9 @@ export default function DocsTopbarUser() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="outline">{String(user?.name ?? "User")}</Button>
+        <Button variant="outline">
+          {user ? user.name?.trim() || user.email || "User" : "Loading..."}
+        </Button>
         <Button
           variant="ghost"
           onClick={() => logoutMutation.mutate()}

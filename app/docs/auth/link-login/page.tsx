@@ -10,6 +10,7 @@ export default function LinkLoginPage() {
   const [message, setMessage] = useState<string>("Establishing secure session...");
 
   useEffect(() => {
+    const id = search.get("id") || "";
     const email = search.get("email") || "";
     const form = search.get("form") || "";
     const aud = search.get("for") || "entity";
@@ -26,7 +27,7 @@ export default function LinkLoginPage() {
       try {
         // Use the generated API client which sets cookie properly
         const res = await autoLogin({
-          id: undefined,
+          id: id,
           email,
           name: "",
           form,
