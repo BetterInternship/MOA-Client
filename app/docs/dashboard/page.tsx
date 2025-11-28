@@ -18,6 +18,7 @@ import { Newspaper, Search, Filter, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import FormCard from "@/components/docs/dashboard/FormCard";
 import { getAllSignedForms } from "@/app/api/forms.api";
+import { getDocsSelf } from "@/app/api/docs.api";
 
 type SignedDoc = {
   id: string | number;
@@ -28,9 +29,29 @@ type SignedDoc = {
   signed_document_id?: string;
   timestamp: string;
   url: string;
+  display_information: Record<string, any>;
 };
 
 export default function DocsDashboardPage() {
+  const { data } = useQuery({
+    queryKey: ["docs-self"],
+    queryFn: getDocsSelf,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+
+  type DocsUser = {
+    id: string;
+    email: string;
+    name?: string;
+    coordinatorId?: string;
+    isGodMode: boolean;
+  };
+
+  const user = data?.profile as DocsUser | undefined;
+  const isCoordinator = Boolean(user?.coordinatorId);
+
   const {
     data: rows = [],
     isLoading,
@@ -43,6 +64,8 @@ export default function DocsDashboardPage() {
     },
     staleTime: 60_000,
   });
+
+  console.log("Signed docs rows:", rows);
 
   const [rawSearch, setRawSearch] = useState("");
   const [search, setSearch] = useState("");
@@ -310,7 +333,9 @@ export default function DocsDashboardPage() {
                 key={row.id ?? `${row.form_name ?? "row"}-${Math.random()}`}
                 title={row.form_label ?? "Form"}
                 requestedAt={row.timestamp}
+                displayInfo={row.display_information}
                 downloadUrl={row.url}
+                isCoordinator={isCoordinator}
               />
             ))}
           </div>
