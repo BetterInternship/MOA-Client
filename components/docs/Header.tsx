@@ -29,7 +29,7 @@ export default function DocsTopbarUser() {
     mutationFn: logoutDocs,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
-      router.push("/");
+      router.push("/login");
     },
   });
 
