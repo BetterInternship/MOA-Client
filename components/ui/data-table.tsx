@@ -44,6 +44,13 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectTrigger,
+  SelectItem,
+  SelectValue,
+  SelectContent,
+} from "@/components/ui/select";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -250,17 +257,21 @@ export function DataTable<TData, TValue>({
 
         <div className="flex items-center gap-2">
           <span className="text-sm">Rows per page</span>
-          <select
-            className="bg-background h-10 rounded-[0.33em] border px-2 text-sm"
-            value={table.getState().pagination.pageSize}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
+          <Select
+            value={String(table.getState().pagination.pageSize)}
+            onValueChange={(val: string) => table.setPageSize(Number(val))}
           >
-            {pageSizes.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-fit!">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {pageSizes.map((s) => (
+                <SelectItem key={s} value={String(s)}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <div className="flex items-center gap-1">
             <Button
