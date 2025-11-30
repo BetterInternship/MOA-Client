@@ -5,6 +5,7 @@ import { ClientField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
 import { FieldRenderer } from "./FieldRenderer";
 import { useFormContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.ctx";
+import { RecipientSection } from "./RecipientSection";
 
 export function DynamicForm({
   formName,
@@ -153,6 +154,18 @@ export function DynamicForm({
         showErrors={showErrors}
         setSelected={setSelectedField}
         onBlurValidate={onBlurValidate}
+      />
+
+      <RecipientSection
+        formKey={formName}
+        title="Recipient Email(s) — IMPORTANT"
+        subtitle="These email fields are important. Please double-check addresses, recipients are emailed a seperate form to them to complete and sign."
+        fields={recipientFields}
+        values={values}
+        onChange={onChange}
+        onBlurValidate={onBlurValidate}
+        errors={errors}
+        showErrors={showErrors}
       />
     </div>
   );
