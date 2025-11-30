@@ -251,7 +251,7 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center gap-2">
           <span className="text-sm">Rows per page</span>
           <select
-            className="bg-background h-9 rounded-md border px-2 text-sm"
+            className="bg-background h-10 rounded-[0.33em] border px-2 text-sm"
             value={table.getState().pagination.pageSize}
             onChange={(e) => table.setPageSize(Number(e.target.value))}
           >
@@ -280,8 +280,8 @@ export function DataTable<TData, TValue>({
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="px-2 text-sm">
-              Page <strong>{table.getState().pagination.pageIndex + 1}</strong> of{" "}
-              {table.getPageCount() || 1}
+              Page {table.getState().pagination.pageIndex + 1} {""}
+              of {table.getPageCount() || 1}
             </span>
             <Button
               variant="outline"
