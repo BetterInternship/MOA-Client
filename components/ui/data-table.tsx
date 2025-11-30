@@ -38,6 +38,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ChevronUp,
+  ChevronDown,
   Download,
   SlidersHorizontal,
 } from "lucide-react";
@@ -47,6 +49,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   /** Optional: which column to bind the top search box to (e.g., "company") */
+  searchLabel?: string;
   searchKey?: string;
   /** Optional: show column visibility menu (default: true) */
   enableColumnVisibility?: boolean;
@@ -66,6 +69,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
+  searchLabel,
   searchKey,
   enableColumnVisibility = true,
   enableRowSelection = false,
@@ -101,7 +105,6 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize: pageSizes[0] ?? 10 } },
   });
 
-
   const isFiltered = React.useMemo(() => {
     return (
       Object.values(table.getState().columnFilters ?? {}).length > 0 ||
@@ -123,7 +126,7 @@ export function DataTable<TData, TValue>({
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
           {searchKey && (
             <Input
-              placeholder={`Search ${searchKey}...`}
+              placeholder={`Search ${searchLabel ?? searchKey}...`}
               value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
               onChange={(e) => table.getColumn(searchKey)?.setFilterValue(e.target.value)}
               className="w-full sm:w-64"
@@ -164,7 +167,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-hidden rounded-[0.33em]">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -187,13 +190,17 @@ export function DataTable<TData, TValue>({
                     className={cn(header.column.getCanSort() && "cursor-pointer select-none")}
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                    {{
-                      asc: " ▲",
-                      desc: " ▼",
-                    }[header.column.getIsSorted() as string] ?? null}
+                    {header.isPlaceholder ? null : (
+                      <div className="flex items-center gap-1">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getIsSorted() === "asc" && (
+                          <ChevronUp className="text-muted-foreground mt-0.5 h-4 w-4" />
+                        )}
+                        {header.column.getIsSorted() === "desc" && (
+                          <ChevronDown className="text-muted-foreground mt-0.5 h-4 w-4" />
+                        )}
+                      </div>
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
