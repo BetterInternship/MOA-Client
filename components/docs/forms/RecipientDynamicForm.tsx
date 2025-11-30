@@ -1,3 +1,5 @@
+"use client";
+
 import { cn, coerceAnyDate } from "@/lib/utils";
 import { ClientField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
@@ -16,6 +18,7 @@ export function DynamicForm({
   showErrors = false,
   setPreviews,
   pendingUrl,
+  onBlurValidate,
 }: {
   formName: string;
   party?: "entity" | "student-guardian" | "university" | "student";
@@ -28,22 +31,29 @@ export function DynamicForm({
   setValues: (values: Record<string, string>) => void;
   onChange: (key: string, value: any) => void;
   setPreviews?: (previews: Record<number, React.ReactNode[]>) => void;
+  onBlurValidate?: (fieldKey: string) => void;
 }) {
   const form = useFormContext();
   const filteredFields = fields.filter((field) => field.party === party);
   const [selectedField, setSelectedField] = useState<string>("");
 
+  // Separate recipient fields (those whose field name ends with ":recipient")
+  const recipientFields = filteredFields.filter((f) => String(f.field).endsWith(":recipient"));
+
+  // All non-recipient fields
+  const nonRecipientFields = filteredFields.filter((f) => !String(f.field).endsWith(":recipient"));
+
   // Group by section
-  const entitySectionFields: ClientField<[]>[] = filteredFields.filter(
+  const entitySectionFields: ClientField<[]>[] = nonRecipientFields.filter(
     (d) => d.section === "entity"
   );
-  const studentSectionFields: ClientField<[]>[] = filteredFields.filter(
+  const studentSectionFields: ClientField<[]>[] = nonRecipientFields.filter(
     (d) => d.section === "student"
   );
-  const internshipSectionFields: ClientField<[]>[] = filteredFields.filter(
+  const internshipSectionFields: ClientField<[]>[] = nonRecipientFields.filter(
     (d) => d.section === "internship"
   );
-  const universitySectionFields: ClientField<[]>[] = filteredFields.filter(
+  const universitySectionFields: ClientField<[]>[] = nonRecipientFields.filter(
     (d) => d.section === "university"
   );
 
@@ -106,6 +116,7 @@ export function DynamicForm({
         errors={errors}
         showErrors={showErrors}
         setSelected={setSelectedField}
+        onBlurValidate={onBlurValidate}
       />
 
       <FormSection
@@ -117,6 +128,7 @@ export function DynamicForm({
         errors={errors}
         showErrors={showErrors}
         setSelected={setSelectedField}
+        onBlurValidate={onBlurValidate}
       />
 
       <FormSection
@@ -128,6 +140,7 @@ export function DynamicForm({
         errors={errors}
         showErrors={showErrors}
         setSelected={setSelectedField}
+        onBlurValidate={onBlurValidate}
       />
 
       <FormSection
@@ -139,6 +152,7 @@ export function DynamicForm({
         errors={errors}
         showErrors={showErrors}
         setSelected={setSelectedField}
+        onBlurValidate={onBlurValidate}
       />
     </div>
   );
@@ -153,6 +167,7 @@ const FormSection = function FormSection({
   errors,
   showErrors,
   setSelected,
+  onBlurValidate,
 }: {
   formKey: string;
   title: string;
@@ -162,6 +177,7 @@ const FormSection = function FormSection({
   errors: Record<string, string>;
   showErrors: boolean;
   setSelected: (selected: string) => void;
+  onBlurValidate?: (fieldKey: string) => void;
 }) {
   if (!fields.length) return null;
   const reducedFields = fields.reduce(
@@ -185,8 +201,11 @@ const FormSection = function FormSection({
               field={field}
               value={values[field.field]}
               onChange={(v) => onChange(field.field, v)}
+              onBlur={() => {
+                console.log("onBlur triggered for field:", field.field);
+                onBlurValidate?.(field.field);
+              }}
               error={errors[field.field]}
-              showError={showErrors}
               allValues={values}
             />
           </div>

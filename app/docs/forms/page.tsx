@@ -131,6 +131,48 @@ export default function DocsFormsPage() {
   // UI helpers: fields per party
   const fieldsForParty = (party: string) => showableFields.filter((f) => f.party === party);
 
+  const validateFieldOnBlur = (fieldKey: string) => {
+    const field = fields.find((f) => f.field === fieldKey);
+    if (!field) return;
+
+    // Only validate fields for the current party
+    if (field.party !== selectedParty || field.source !== "manual") return;
+
+    // Get the value from the correct party
+    const partyValues = values[field.party] ?? {};
+    const value = partyValues[field.field];
+
+    try {
+      const coerced = field.coerce ? field.coerce(value) : value;
+      const result = field.validator?.safeParse(coerced);
+
+      console.log("Validating field on blur:", field.field, value, coerced, result);
+
+      if (result?.error) {
+        const errorString = z
+          .treeifyError(result.error)
+          .errors.map((e) => e.split(" ").slice(0).join(" "))
+          .join("\n");
+        setErrors((prev) => ({
+          ...prev,
+          [field.field]: `${field.label}: ${errorString}`,
+        }));
+      } else {
+        setErrors((prev) => {
+          const copy = { ...prev };
+          delete copy[field.field];
+          return copy;
+        });
+      }
+    } catch (err) {
+      console.debug("Validation error:", err);
+      setErrors((prev) => ({
+        ...prev,
+        [field.field]: `${field.label}: invalid value`,
+      }));
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
       <div className="mb-6 space-y-2 sm:mb-8">
@@ -218,6 +260,7 @@ export default function DocsFormsPage() {
                         formName={previewName ?? ""}
                         autofillValues={{}}
                         setValues={(newVals) => setValuesForParty(selectedParty, newVals)}
+                        onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
                       />
 
                       {allValid && fieldsForParty(selectedParty).length > 0 && (
