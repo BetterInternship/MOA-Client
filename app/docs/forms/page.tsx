@@ -18,6 +18,8 @@ import { getFormFields } from "@/app/api/forms.api";
 import { getViewableForms } from "@/app/api/docs.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
+import { requestGenerateForm } from "@/app/api/forms.api";
+import { getDocsSelf } from "@/app/api/docs.api";
 
 type FormItem = { name: string };
 
@@ -45,6 +47,18 @@ export default function DocsFormsPage() {
       return await getFormFields(previewName);
     },
     enabled: !!previewName && open,
+  });
+
+  const {
+    data: docsSelfData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["docs-self"],
+    queryFn: getDocsSelf,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const formMetadata = previewQuery.data?.formMetadata
@@ -83,8 +97,9 @@ export default function DocsFormsPage() {
   };
 
   const [allValid, setAllValid] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleValidate = () => {
     const newErrors: Record<string, string> = { ...(errors ?? {}) };
 
     // Clear previous errors for fields in this party
@@ -125,6 +140,81 @@ export default function DocsFormsPage() {
       console.log("Validation passed for party:", selectedParty);
     } else {
       console.log("Validation failed for party:", selectedParty, newErrors);
+    }
+
+    return !hasPartyErrors;
+  };
+
+  /**
+   * This submits the student form to the server
+   * @returns
+   */
+  const handleSubmitStudent = async () => {
+    if (selectedParty !== "student") return;
+
+    setSubmitting(true);
+    const newErrors: Record<string, string> = {};
+
+    // Validate all student fields
+    const studentFields = showableFields.filter((f) => f.party === "student");
+    const studentValues = values["student"] ?? {};
+
+    for (const field of studentFields) {
+      if (field.source !== "manual") continue;
+
+      const value = studentValues[field.field];
+      const coerced = field.coerce ? field.coerce(value) : value;
+      const result = field.validator?.safeParse(coerced);
+
+      if (result?.error) {
+        const errorString = z
+          .treeifyError(result.error)
+          .errors.map((e) => e.split(" ").slice(0).join(" "))
+          .join("\n");
+        newErrors[field.field] = `${field.label}: ${errorString}`;
+      }
+    }
+
+    // If any errors, show them and stop
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length) {
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      // TODO: Replace with your actual API call
+      console.log("Submitting student form:", {
+        formName: previewName,
+        values: studentValues,
+      });
+
+      const testStudentValues = {
+        "student.email:default": "jana_bantolino@dlsu.edu.ph",
+        "student.school:default": "9c044cb4-637d-427c-a399-b00b01d573d4",
+        "student.full-name:default": "Test Student",
+        "student.last-name:default": "Student",
+        "student.department:default": "7c964274-e4a0-43a8-897f-8d12949e4043",
+        "student.first-name:default": "Test",
+        "student.university:default": "45e8deea-0635-4c9f-b0b0-05e6c55db8e3",
+        "student.middle-name:default": "",
+        "student.phone-number:default": "09123456789",
+        "student-signature:default": "Test Student",
+      };
+      const payloadValues = { ...(studentValues ?? {}), ...testStudentValues };
+
+      await requestGenerateForm({
+        formName: previewName || "",
+        values: payloadValues,
+      });
+
+      // Success
+      alert("Student form submitted successfully!");
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("Failed to submit form. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -278,9 +368,18 @@ export default function DocsFormsPage() {
           </DialogDescription>
 
           <div className="mt-4 flex justify-end gap-2">
-            <Button type="button" onClick={handleSubmit}>
+            <Button type="button" variant="outline" onClick={handleValidate}>
               Test Validation
             </Button>
+            {selectedParty === "student" && (
+              <Button
+                type="button"
+                onClick={() => void handleSubmitStudent()}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Student Form"}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

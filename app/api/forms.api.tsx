@@ -2,6 +2,7 @@ import {
   formsControllerGetLatestFormDocumentAndMetadata,
   formsControllerGetPending,
   formsControllerApproveSignatory,
+  formsControllerGenerateForm,
 } from "./app/api/endpoints/forms/forms";
 import { FormMetadata, IFormField, IFormMetadata } from "@betterinternship/core/forms";
 import { formsControllerGetSignedDocumentsBySignatory } from "./app/api/endpoints/forms/forms";
@@ -59,5 +60,25 @@ export const getAllSignedForms = async () => {
     return { signedDocuments, isLoading: false, error: null };
   } catch (error) {
     return { signedDocuments: null, isLoading: false, error };
+  }
+};
+
+export const requestGenerateForm = async (data: {
+  formName: string;
+  formVersion?: number;
+  values: Record<string, string>;
+  signatories?: { name: string; title: string }[];
+  parties?: {
+    userId?: string | null;
+    employerId?: string | null;
+    universityId?: string | null;
+  };
+  disableEsign?: boolean;
+}) => {
+  try {
+    const res = await formsControllerGenerateForm(data);
+    return { response: res, isLoading: false, error: null };
+  } catch (error) {
+    return { response: null, isLoading: false, error };
   }
 };
