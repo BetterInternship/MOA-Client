@@ -37,18 +37,19 @@ export function createFormColumns(isCoordinator: boolean): ColumnDef<SignedDoc>[
     {
       accessorKey: "form_label",
       header: "Form",
-      cell: (info) => info.getValue() ?? info.row.original.form_name,
-    },
-    {
-      id: "requester",
-      header: "Requester",
-      cell: (info) =>
-        getDisplayValue(info.row.original.display_information, "student", "full-name"),
+      cell: (info) => info.getValue(),
     },
     {
       accessorKey: "timestamp",
       header: "Generated At",
       cell: (info) => formatDate(new Date(info.getValue() as string), "MM/dd/yyyy hh:mm a"),
+    },
+    {
+      id: "requester",
+      header: "Requester",
+      accessorFn: (row) => getDisplayValue(row.display_information, "student", "full-name"),
+      cell: (info) => info.getValue(),
+      enableSorting: true,
     },
   ];
 
@@ -59,14 +60,16 @@ export function createFormColumns(isCoordinator: boolean): ColumnDef<SignedDoc>[
       {
         id: "studentId",
         header: "Student ID",
-        cell: (info) =>
-          getDisplayValue(info.row.original.display_information, "student", "id-number"),
+        accessorFn: (row) => getDisplayValue(row.display_information, "student", "id-number"),
+        cell: (info) => info.getValue(),
+        enableSorting: true,
       },
       {
         id: "company",
         header: "Company",
-        cell: (info) =>
-          getDisplayValue(info.row.original.display_information, "entity", "legal-name"),
+        accessorFn: (row) => getDisplayValue(row.display_information, "entity", "legal-name"),
+        cell: (info) => info.getValue(),
+        enableSorting: true,
       }
     );
   }
