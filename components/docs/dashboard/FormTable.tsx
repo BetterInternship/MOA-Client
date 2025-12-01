@@ -48,7 +48,7 @@ export function createFormColumns(isCoordinator: boolean): ColumnDef<SignedDoc>[
     {
       accessorKey: "timestamp",
       header: "Generated At",
-      cell: (info) => formatDate(new Date(info.getValue() as string), "PPPp"),
+      cell: (info) => formatDate(new Date(info.getValue() as string), "MM/dd/yyyy hh:mm a"),
     },
   ];
 
