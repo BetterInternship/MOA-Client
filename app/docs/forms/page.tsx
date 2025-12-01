@@ -19,7 +19,6 @@ import { getViewableForms } from "@/app/api/docs.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { requestGenerateForm } from "@/app/api/forms.api";
-import { getDocsSelf } from "@/app/api/docs.api";
 
 type FormItem = { name: string };
 
@@ -49,23 +48,9 @@ export default function DocsFormsPage() {
     enabled: !!previewName && open,
   });
 
-  const {
-    data: docsSelfData,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["docs-self"],
-    queryFn: getDocsSelf,
-    staleTime: 60_000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-  });
-
   const formMetadata = previewQuery.data?.formMetadata
     ? new FormMetadata(previewQuery.data?.formMetadata)
     : null;
-
-  // all fields for client
   const fields = formMetadata?.getFieldsForClient() ?? [];
 
   const showableFields = fields.filter((f) => f.source === "manual");
@@ -190,7 +175,7 @@ export default function DocsFormsPage() {
       });
 
       const testStudentValues = {
-        "student.email:default": "jana_bantolino@dlsu.edu.ph",
+        "student.email:default": "hello@betterinternship.com",
         "student.school:default": "9c044cb4-637d-427c-a399-b00b01d573d4",
         "student.full-name:default": "Test Student",
         "student.last-name:default": "Student",
@@ -262,6 +247,26 @@ export default function DocsFormsPage() {
       }));
     }
   };
+
+  // Autofill values computed from field.prefiller (prefiller is called without user context)
+  const autofillValues = useMemo(() => {
+    const out: Record<string, string> = {};
+    if (!fields || fields.length === 0) return out;
+
+    for (const field of fields) {
+      if (!field.prefiller) continue;
+      try {
+        // Call prefiller without user context
+        const s = field.prefiller();
+        out[field.field] =
+          typeof s === "string" ? s.trim().replace(/\s{2,}/g, " ") : (s as any);
+      } catch (e) {
+        console.debug("prefiller error for field", field.field, e);
+      }
+    }
+
+    return out;
+  }, [fields]);
 
   return (
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
@@ -348,7 +353,7 @@ export default function DocsFormsPage() {
                         errors={errors}
                         showErrors={true}
                         formName={previewName ?? ""}
-                        autofillValues={{}}
+                        autofillValues={autofillValues}
                         setValues={(newVals) => setValuesForParty(selectedParty, newVals)}
                         onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
                       />
