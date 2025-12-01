@@ -40,6 +40,7 @@ import {
   ChevronsRight,
   ChevronUp,
   ChevronDown,
+  ChevronsUpDown,
   Download,
   SlidersHorizontal,
 } from "lucide-react";
@@ -260,12 +261,17 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className={cn(header.column.getCanSort() && "cursor-pointer select-none")}
+                    className={cn(
+                      header.column.getCanSort() && "hover:bg-muted/50 cursor-pointer select-none"
+                    )}
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {header.isPlaceholder ? null : (
                       <div className="flex items-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getCanSort() && !header.column.getIsSorted() && (
+                          <ChevronsUpDown className="text-muted-foreground/40 mt-0.5 h-4 w-4" />
+                        )}
                         {header.column.getIsSorted() === "asc" && (
                           <ChevronUp className="text-muted-foreground mt-0.5 h-4 w-4" />
                         )}
