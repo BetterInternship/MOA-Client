@@ -40,6 +40,7 @@ import {
   ChevronsRight,
   ChevronUp,
   ChevronDown,
+  ChevronsUpDown,
   Download,
   SlidersHorizontal,
 } from "lucide-react";
@@ -55,9 +56,10 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  /** Optional: which column to bind the top search box to (e.g., "company") */
+  /** Optional: which column(s) to bind the top search box to (e.g., "company") */
   searchLabel?: string;
-  searchKey?: string;
+  /** single key or multiple keys to search across */
+  searchKey?: string | string[];
   /** Optional: show column visibility menu (default: true) */
   enableColumnVisibility?: boolean;
   /** Optional: enable row selection with checkboxes (default: false) */
@@ -112,17 +114,42 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize: pageSizes[0] ?? 10 } },
   });
 
+  const searchKeys = React.useMemo(() => {
+    if (!searchKey) return [] as string[];
+    return Array.isArray(searchKey) ? searchKey : [searchKey];
+  }, [searchKey]);
+
+  // Allow user to pick a single column to search. Default to first provided searchKey
+  const [selectedSearchKey, setSelectedSearchKey] = React.useState<string>(searchKeys[0] ?? "");
+
+  React.useEffect(() => {
+    if (searchKeys.length) {
+      setSelectedSearchKey(searchKeys[0]);
+      return;
+    }
+
+    // If no searchKey prop provided, default to first filterable column when table is ready
+    const first = table.getAllLeafColumns().find((c) => c.getCanFilter() !== false);
+    if (first) setSelectedSearchKey(first.id);
+  }, [JSON.stringify(searchKeys), table]);
+
+  const effectiveSearchKeys = React.useMemo(() => {
+    return selectedSearchKey ? [selectedSearchKey] : searchKeys;
+  }, [selectedSearchKey, searchKeys]);
+
   const isFiltered = React.useMemo(() => {
-    return (
-      Object.values(table.getState().columnFilters ?? {}).length > 0 ||
-      !!(searchKey && table.getColumn(searchKey)?.getFilterValue())
+    const hasColumnFilters = Object.values(table.getState().columnFilters ?? {}).length > 0;
+    const hasSearchFilters = (effectiveSearchKeys ?? []).some(
+      (k) => !!table.getColumn(k)?.getFilterValue()
     );
-  }, [table, searchKey]);
+    return hasColumnFilters || hasSearchFilters;
+  }, [table, effectiveSearchKeys]);
 
   function resetFilters() {
     table.resetColumnFilters();
-    if (searchKey) {
-      table.getColumn(searchKey)?.setFilterValue("");
+    // clear any explicit search key filters too
+    for (const k of effectiveSearchKeys) {
+      table.getColumn(k)?.setFilterValue("");
     }
   }
 
@@ -131,22 +158,62 @@ export function DataTable<TData, TValue>({
       {/* Toolbar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
-          {searchKey && (
-            <Input
-              placeholder={`Search ${searchLabel ?? searchKey}...`}
-              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-              onChange={(e) => table.getColumn(searchKey)?.setFilterValue(e.target.value)}
-              className="w-full sm:w-64"
-            />
+          {effectiveSearchKeys.length > 0 && (
+            <div className="flex items-center gap-2">
+              {/* Single-column selector */}
+              <Select
+                value={selectedSearchKey}
+                onValueChange={(v) => {
+                  // Clear the previous column's filter before switching
+                  if (selectedSearchKey) {
+                    table.getColumn(selectedSearchKey)?.setFilterValue("");
+                  }
+                  setSelectedSearchKey(v);
+                }}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="start">
+                  {table
+                    .getAllLeafColumns()
+                    .filter((c) => c.getCanFilter() !== false)
+                    .map((column) => (
+                      <SelectItem key={column.id} value={column.id}>
+                        {String(column.columnDef.header ?? column.id)}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+
+              <Input
+                placeholder={`Search ${searchLabel ?? effectiveSearchKeys.join(", ")}...`}
+                value={
+                  (effectiveSearchKeys
+                    .map((k) => (table.getColumn(k)?.getFilterValue() as string) ?? "")
+                    .find((v) => !!v) as string) ?? ""
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  for (const k of effectiveSearchKeys) {
+                    table.getColumn(k)?.setFilterValue(v);
+                  }
+                }}
+                className="h-10 w-full sm:w-64"
+              />
+            </div>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           {toolbarActions}
+          {/* <Button variant="ghost" size="sm" onClick={resetFilters} disabled={!isFiltered}>
+            Clear
+          </Button> */}
           {enableColumnVisibility && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="h-10 gap-2">
                   <SlidersHorizontal className="h-4 w-4" />
                   View
                 </Button>
@@ -164,7 +231,7 @@ export function DataTable<TData, TValue>({
                       checked={column.getIsVisible()}
                       onCheckedChange={(checked) => column.toggleVisibility(!!checked)}
                     >
-                      {(column.columnDef.header as any)?.toString?.() ?? column.id}
+                      {String(column.columnDef.header ?? column.id)}
                     </DropdownMenuCheckboxItem>
                   ))}
               </DropdownMenuContent>
@@ -194,12 +261,17 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className={cn(header.column.getCanSort() && "cursor-pointer select-none")}
+                    className={cn(
+                      header.column.getCanSort() && "hover:bg-muted/50 cursor-pointer select-none"
+                    )}
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {header.isPlaceholder ? null : (
                       <div className="flex items-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getCanSort() && !header.column.getIsSorted() && (
+                          <ChevronsUpDown className="text-muted-foreground/40 mt-0.5 h-4 w-4" />
+                        )}
                         {header.column.getIsSorted() === "asc" && (
                           <ChevronUp className="text-muted-foreground mt-0.5 h-4 w-4" />
                         )}
