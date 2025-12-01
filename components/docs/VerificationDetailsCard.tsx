@@ -4,14 +4,17 @@ import { Clock, FileText, Hash, ShieldAlert, ShieldCheck, User, Stamp } from "lu
 import { MetaRow } from "./MetaRow";
 import { formatWhen } from "@/lib/format";
 import { SignedDocument } from "@/types/db";
+import { IFormSignatory } from "@betterinternship/core/forms";
 
-function PeopleList({ list }: { list?: { name: string; title?: string }[] }) {
+function PeopleList({ list }: { list?: IFormSignatory[] }) {
   if (!list || list.length === 0) return <>--</>;
   return (
     <div className="space-y-1">
       {list.map((p, i) => (
         <div key={i}>
-          <span className="font-semibold">{p.name}</span>
+          <span className="font-semibold">
+            {p.honorific} {p.name}
+          </span>
           {p.title && p.name && (
             <>
               {" "}

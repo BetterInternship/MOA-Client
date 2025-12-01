@@ -11,4 +11,5 @@ export interface FormSubscriber {
   honorific: string;
   title: string;
   email: string;
+  party: string;
 }

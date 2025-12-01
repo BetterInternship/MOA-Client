@@ -21,6 +21,7 @@ export * from "./createPrefilledFormDtoValues";
 export * from "./createSignedFormDto";
 export * from "./createSignedFormDtoParties";
 export * from "./createSignedFormDtoValues";
+export * from "./docsLinkLoginControllerLinkLoginParams";
 export * from "./docsLoginRequestDto";
 export * from "./docsVerifyDto";
 export * from "./entitiesDto";

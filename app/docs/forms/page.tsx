@@ -18,6 +18,7 @@ import { getFormFields } from "@/app/api/forms.api";
 import { getViewableForms } from "@/app/api/docs.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
+import { requestGenerateForm } from "@/app/api/forms.api";
 
 type FormItem = { name: string };
 
@@ -50,8 +51,6 @@ export default function DocsFormsPage() {
   const formMetadata = previewQuery.data?.formMetadata
     ? new FormMetadata(previewQuery.data?.formMetadata)
     : null;
-
-  // all fields for client
   const fields = formMetadata?.getFieldsForClient() ?? [];
 
   const showableFields = fields.filter((f) => f.source === "manual");
@@ -83,8 +82,9 @@ export default function DocsFormsPage() {
   };
 
   const [allValid, setAllValid] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleValidate = () => {
     const newErrors: Record<string, string> = { ...(errors ?? {}) };
 
     // Clear previous errors for fields in this party
@@ -126,10 +126,157 @@ export default function DocsFormsPage() {
     } else {
       console.log("Validation failed for party:", selectedParty, newErrors);
     }
+
+    return !hasPartyErrors;
+  };
+
+  /**
+   * This submits the student form to the server
+   * @returns
+   */
+  const handleSubmitStudent = async () => {
+    if (selectedParty !== "student") return;
+
+    setSubmitting(true);
+    const newErrors: Record<string, string> = {};
+
+    // Validate all student fields
+    const studentFields = showableFields.filter((f) => f.party === "student");
+    const studentValues = values["student"] ?? {};
+
+    for (const field of studentFields) {
+      if (field.source !== "manual") continue;
+
+      const value = studentValues[field.field];
+      const coerced = field.coerce ? field.coerce(value) : value;
+      const result = field.validator?.safeParse(coerced);
+
+      if (result?.error) {
+        const errorString = z
+          .treeifyError(result.error)
+          .errors.map((e) => e.split(" ").slice(0).join(" "))
+          .join("\n");
+        newErrors[field.field] = `${field.label}: ${errorString}`;
+      }
+    }
+
+    // If any errors, show them and stop
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length) {
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      // TODO: Replace with your actual API call
+      console.log("Submitting student form:", {
+        formName: previewName,
+        values: studentValues,
+      });
+
+      const testStudentValues = {
+        "student.email:default": "hello@betterinternship.com",
+        "student.school:default": "9c044cb4-637d-427c-a399-b00b01d573d4",
+        "student.full-name:default": "Test Student",
+        "student.last-name:default": "Student",
+        "student.department:default": "7c964274-e4a0-43a8-897f-8d12949e4043",
+        "student.first-name:default": "Test",
+        "student.university:default": "45e8deea-0635-4c9f-b0b0-05e6c55db8e3",
+        "student.middle-name:default": "",
+        "student.phone-number:default": "09123456789",
+        "student-signature:default": "Test Student",
+      };
+      const payloadValues = { ...autofillValues, ...(studentValues ?? {}), ...testStudentValues };
+
+      await requestGenerateForm({
+        formName: previewName || "",
+        values: payloadValues,
+      });
+
+      // Success
+      alert("Student form submitted successfully!");
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("Failed to submit form. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // UI helpers: fields per party
   const fieldsForParty = (party: string) => showableFields.filter((f) => f.party === party);
+
+  const validateFieldOnBlur = (fieldKey: string) => {
+    const field = fields.find((f) => f.field === fieldKey);
+    if (!field) return;
+
+    // Only validate fields for the current party
+    if (field.party !== selectedParty || field.source !== "manual") return;
+
+    // Get the value from the correct party
+    const partyValues = values[field.party] ?? {};
+    const value = partyValues[field.field];
+
+    try {
+      const coerced = field.coerce ? field.coerce(value) : value;
+      const result = field.validator?.safeParse(coerced);
+
+      console.log("Validating field on blur:", field.field, value, coerced, result);
+
+      if (result?.error) {
+        const errorString = z
+          .treeifyError(result.error)
+          .errors.map((e) => e.split(" ").slice(0).join(" "))
+          .join("\n");
+        setErrors((prev) => ({
+          ...prev,
+          [field.field]: `${field.label}: ${errorString}`,
+        }));
+      } else {
+        setErrors((prev) => {
+          const copy = { ...prev };
+          delete copy[field.field];
+          return copy;
+        });
+      }
+    } catch (err) {
+      console.debug("Validation error:", err);
+      setErrors((prev) => ({
+        ...prev,
+        [field.field]: `${field.label}: invalid value`,
+      }));
+    }
+  };
+
+  const autofillValues = useMemo(() => {
+    const autofillValues: Record<string, string> = {};
+    if (!fields || fields.length === 0) return autofillValues;
+
+    for (const field of fields) {
+      if (!field.prefiller) continue;
+      try {
+        const s = field.prefiller({
+          user: {
+            "student.email:default": "hello@betterinternship.com",
+            "student.school:default": "9c044cb4-637d-427c-a399-b00b01d573d4",
+            "student.full-name:default": "Test Student",
+            "student.last-name:default": "Student",
+            "student.department:default": "7c964274-e4a0-43a8-897f-8d12949e4043",
+            "student.first-name:default": "Test",
+            "student.university:default": "45e8deea-0635-4c9f-b0b0-05e6c55db8e3",
+            "student.middle-name:default": "",
+            "student.phone-number:default": "09123456789",
+            "student-signature:default": "Test Student",
+          },
+        });
+        autofillValues[field.field] = typeof s === "string" ? s.trim().replace(/\s{2,}/g, " ") : s;
+      } catch (e) {
+        console.debug("prefiller error for field", field.field, e);
+      }
+    }
+
+    return autofillValues;
+  }, [fields]);
 
   return (
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
@@ -216,8 +363,9 @@ export default function DocsFormsPage() {
                         errors={errors}
                         showErrors={true}
                         formName={previewName ?? ""}
-                        autofillValues={{}}
+                        autofillValues={autofillValues}
                         setValues={(newVals) => setValuesForParty(selectedParty, newVals)}
+                        onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
                       />
 
                       {allValid && fieldsForParty(selectedParty).length > 0 && (
@@ -235,9 +383,18 @@ export default function DocsFormsPage() {
           </DialogDescription>
 
           <div className="mt-4 flex justify-end gap-2">
-            <Button type="button" onClick={handleSubmit}>
+            <Button type="button" variant="outline" onClick={handleValidate}>
               Test Validation
             </Button>
+            {selectedParty === "student" && (
+              <Button
+                type="button"
+                onClick={() => void handleSubmitStudent()}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Student Form"}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

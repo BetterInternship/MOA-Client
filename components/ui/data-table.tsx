@@ -38,15 +38,25 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ChevronUp,
+  ChevronDown,
   Download,
   SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectTrigger,
+  SelectItem,
+  SelectValue,
+  SelectContent,
+} from "@/components/ui/select";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   /** Optional: which column to bind the top search box to (e.g., "company") */
+  searchLabel?: string;
   searchKey?: string;
   /** Optional: show column visibility menu (default: true) */
   enableColumnVisibility?: boolean;
@@ -66,6 +76,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
+  searchLabel,
   searchKey,
   enableColumnVisibility = true,
   enableRowSelection = false,
@@ -101,7 +112,6 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize: pageSizes[0] ?? 10 } },
   });
 
-
   const isFiltered = React.useMemo(() => {
     return (
       Object.values(table.getState().columnFilters ?? {}).length > 0 ||
@@ -123,7 +133,7 @@ export function DataTable<TData, TValue>({
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
           {searchKey && (
             <Input
-              placeholder={`Search ${searchKey}...`}
+              placeholder={`Search ${searchLabel ?? searchKey}...`}
               value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
               onChange={(e) => table.getColumn(searchKey)?.setFilterValue(e.target.value)}
               className="w-full sm:w-64"
@@ -164,7 +174,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-hidden rounded-[0.33em]">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -187,13 +197,17 @@ export function DataTable<TData, TValue>({
                     className={cn(header.column.getCanSort() && "cursor-pointer select-none")}
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                    {{
-                      asc: " ▲",
-                      desc: " ▼",
-                    }[header.column.getIsSorted() as string] ?? null}
+                    {header.isPlaceholder ? null : (
+                      <div className="flex items-center gap-1">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getIsSorted() === "asc" && (
+                          <ChevronUp className="text-muted-foreground mt-0.5 h-4 w-4" />
+                        )}
+                        {header.column.getIsSorted() === "desc" && (
+                          <ChevronDown className="text-muted-foreground mt-0.5 h-4 w-4" />
+                        )}
+                      </div>
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -243,17 +257,21 @@ export function DataTable<TData, TValue>({
 
         <div className="flex items-center gap-2">
           <span className="text-sm">Rows per page</span>
-          <select
-            className="bg-background h-9 rounded-md border px-2 text-sm"
-            value={table.getState().pagination.pageSize}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
+          <Select
+            value={String(table.getState().pagination.pageSize)}
+            onValueChange={(val: string) => table.setPageSize(Number(val))}
           >
-            {pageSizes.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-fit!">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {pageSizes.map((s) => (
+                <SelectItem key={s} value={String(s)}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <div className="flex items-center gap-1">
             <Button
@@ -273,8 +291,8 @@ export function DataTable<TData, TValue>({
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="px-2 text-sm">
-              Page <strong>{table.getState().pagination.pageIndex + 1}</strong> of{" "}
-              {table.getPageCount() || 1}
+              Page {table.getState().pagination.pageIndex + 1} {""}
+              of {table.getPageCount() || 1}
             </span>
             <Button
               variant="outline"

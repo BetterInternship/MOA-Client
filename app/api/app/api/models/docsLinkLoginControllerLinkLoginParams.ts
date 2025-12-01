@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface FormSignatory {
-  name: string;
-  honorific: string;
-  title: string;
+export type DocsLinkLoginControllerLinkLoginParams = {
+  id: string;
   email: string;
-  field: string;
-  status: string;
-  party: string;
-}
+  name: string;
+  form: string;
+  for: string;
+  pending: string;
+  student: string;
+};

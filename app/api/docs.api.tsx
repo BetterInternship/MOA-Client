@@ -2,7 +2,9 @@ import {
   authControllerDocsLoginRequest,
   authControllerDocsLoginVerify,
   authControllerDocsSelf,
+  authControllerDocsSignOut,
 } from "./app/api/endpoints/auth/auth";
+import { docsLinkLoginControllerLinkLogin } from "./app/api/endpoints/docs-link-login/docs-link-login";
 import { docsControllerGetEntityForms } from "./app/api/endpoints/docs/docs";
 
 export const requestLoginOtp = async (email: string) => {
@@ -33,6 +35,41 @@ export const getDocsSelf = async () => {
     return { ...res, isLoading: false, error: null };
   } catch (error) {
     return { ok: false, profile: null, isLoading: false, error };
+  }
+};
+
+export const autoLogin = async (params: {
+  email: string;
+  id?: string;
+  name?: string;
+  form?: string;
+  aud: string;
+  pending?: string;
+  student?: string;
+}) => {
+  try {
+    const { id, email, name, form, aud, pending, student } = params;
+    const res = await docsLinkLoginControllerLinkLogin({
+      id,
+      email,
+      name,
+      form,
+      for: aud,
+      pending,
+      student,
+    } as any);
+    return { ...res, isLoading: false, error: null };
+  } catch (error) {
+    return { ok: false, isLoading: false, error };
+  }
+};
+
+export const logoutDocs = async () => {
+  try {
+    const res = await authControllerDocsSignOut();
+    return { ...res, isLoading: false, error: null };
+  } catch (error) {
+    return { ok: false, isLoading: false, error };
   }
 };
 
