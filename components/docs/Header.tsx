@@ -34,6 +34,7 @@ export default function DocsTopbarUser() {
   });
 
   type DocsUser = {
+    sub: string;
     id: string;
     email: string;
     name?: string;
@@ -42,6 +43,7 @@ export default function DocsTopbarUser() {
   };
 
   const user = data?.profile as DocsUser | undefined;
+  console.log("DocsTopbarUser user:", user);
 
   if (isLoading) {
     return <div className="bg-muted h-9 w-24 animate-pulse rounded" />;
