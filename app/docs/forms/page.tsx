@@ -186,7 +186,7 @@ export default function DocsFormsPage() {
         "student.phone-number:default": "09123456789",
         "student-signature:default": "Test Student",
       };
-      const payloadValues = { ...(studentValues ?? {}), ...testStudentValues };
+      const payloadValues = { ...autofillValues, ...(studentValues ?? {}), ...testStudentValues };
 
       await requestGenerateForm({
         formName: previewName || "",
@@ -248,24 +248,34 @@ export default function DocsFormsPage() {
     }
   };
 
-  // Autofill values computed from field.prefiller (prefiller is called without user context)
   const autofillValues = useMemo(() => {
-    const out: Record<string, string> = {};
-    if (!fields || fields.length === 0) return out;
+    const autofillValues: Record<string, string> = {};
+    if (!fields || fields.length === 0) return autofillValues;
 
     for (const field of fields) {
       if (!field.prefiller) continue;
       try {
-        // Call prefiller without user context
-        const s = field.prefiller();
-        out[field.field] =
-          typeof s === "string" ? s.trim().replace(/\s{2,}/g, " ") : (s as any);
+        const s = field.prefiller({
+          user: {
+            "student.email:default": "hello@betterinternship.com",
+            "student.school:default": "9c044cb4-637d-427c-a399-b00b01d573d4",
+            "student.full-name:default": "Test Student",
+            "student.last-name:default": "Student",
+            "student.department:default": "7c964274-e4a0-43a8-897f-8d12949e4043",
+            "student.first-name:default": "Test",
+            "student.university:default": "45e8deea-0635-4c9f-b0b0-05e6c55db8e3",
+            "student.middle-name:default": "",
+            "student.phone-number:default": "09123456789",
+            "student-signature:default": "Test Student",
+          },
+        });
+        autofillValues[field.field] = typeof s === "string" ? s.trim().replace(/\s{2,}/g, " ") : s;
       } catch (e) {
         console.debug("prefiller error for field", field.field, e);
       }
     }
 
-    return out;
+    return autofillValues;
   }, [fields]);
 
   return (
