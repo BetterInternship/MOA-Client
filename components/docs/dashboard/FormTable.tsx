@@ -111,8 +111,6 @@ export default function FormTable({
     <DataTable
       columns={columns}
       data={rows}
-      searchLabel="form"
-      searchKey="form_label"
       enableColumnVisibility
       initialSorting={[{ id: "timestamp", desc: true }]}
       pageSizes={[20, 50]}
