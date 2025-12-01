@@ -218,26 +218,30 @@ function PageContent() {
       setBusy(true);
       const clientSigningInfo = getClientSigningInfo();
 
-      // TODO: SUPER BANDAID FOR DEMO PURPOSES HARDCODED
-      // Build signatories only when the corresponding flat value exists and is non-empty
       const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
 
-      const chairName = (flatValues ?? {})["university.department-chair-signature:acm-auto"]
-        ?.toString?.()
-        .trim();
-      if (chairName) {
-        signatories.university = [
-          {
-            name: "Raymund B Habaradas",
-            title: "Department Chair",
-            party: "university",
-            status: "completed",
-            email: "",
-            honorific: "",
-          },
-        ];
-      } else {
-        signatories.university = [];
+      if (authorizeChoice === "yes") {
+        const finalValues = flatValues ?? {};
+        const internshipMoaFieldsToSave: Record<string, Record<string, string>> = {
+          shared: {},
+        };
+
+        for (const field of fields) {
+          // only include fields relevant to this signing audience
+          if (field.party !== audienceParam) continue;
+
+          if (field.shared) {
+            internshipMoaFieldsToSave.shared[field.field] = finalValues[field.field];
+          } else {
+            if (!internshipMoaFieldsToSave[formName]) {
+              internshipMoaFieldsToSave[formName] = {};
+            }
+            internshipMoaFieldsToSave[formName][field.field] = finalValues[field.field];
+          }
+        }
+
+        console.log("Internship MOA fields to save:", internshipMoaFieldsToSave);
+        // TODO: Attach API here
       }
 
       const payload = {
@@ -246,7 +250,6 @@ function PageContent() {
         party,
         values: flatValues,
         clientSigningInfo,
-        // authorizeProfileSave: choice === "yes",
       };
 
       const res = await approveSignatory(payload);
