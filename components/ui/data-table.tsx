@@ -207,13 +207,13 @@ export function DataTable<TData, TValue>({
 
         <div className="flex items-center gap-2">
           {toolbarActions}
-          <Button variant="ghost" size="sm" onClick={resetFilters} disabled={!isFiltered}>
+          {/* <Button variant="ghost" size="sm" onClick={resetFilters} disabled={!isFiltered}>
             Clear
-          </Button>
+          </Button> */}
           {enableColumnVisibility && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="h-10 gap-2">
                   <SlidersHorizontal className="h-4 w-4" />
                   View
                 </Button>
