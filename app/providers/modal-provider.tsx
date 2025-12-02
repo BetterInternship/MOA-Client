@@ -32,6 +32,8 @@ type ModalOptions = {
   title?: React.ReactNode;
   headerClassName?: string;
   panelClassName?: string;
+  // Optional custom content classes; defaults include max-height + overflow + padding
+  contentClassName?: string;
   backdropClassName?: string;
   showHeaderDivider?: boolean;
 
@@ -260,9 +262,8 @@ const ModalWrapper = ({
         <div className={!options.hasClose ? "pt-3" : ""}>
           <div
             className={
-              options.panelClassName
-                ? ""
-                : "max-h-[calc(var(--vh,1vh)*100-4rem)] overflow-auto px-4 pb-4 sm:max-h-[calc(90vh-4rem)]"
+              options.contentClassName ??
+              "max-h-[calc(var(--vh,1vh)*100-4rem)] overflow-auto px-4 pb-4 sm:max-h-[calc(90vh-4rem)]"
             }
           >
             {children}
