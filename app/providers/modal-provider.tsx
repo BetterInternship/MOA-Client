@@ -239,7 +239,7 @@ const ModalWrapper = ({
           >
             {options.title ? (
               typeof options.title === "string" ? (
-                <h2 className="text-2xl leading-snug font-bold tracking-tight">{options.title}</h2>
+                <h2 className="text-2xl leading-snug font-semibold tracking-tight">{options.title}</h2>
               ) : (
                 <div className="min-w-0 flex-1">{options.title}</div>
               )
