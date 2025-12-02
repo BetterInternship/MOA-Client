@@ -33,7 +33,10 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
     ? new FormMetadata(previewQuery.data?.formMetadata)
     : null;
   const fields = formMetadata?.getFieldsForClient() ?? [];
-  const showableFields = fields.filter((f) => f.source === "manual");
+  const showableFields = useMemo(() => {
+    if (!fields) return [];
+    return fields.filter((f) => (selectedParty === "student" ? f.source === "manual" : true));
+  }, [fields, selectedParty]);
 
   const parties = useMemo(() => {
     const required = formMetadata?.getRequiredParties?.() ?? [];
@@ -228,7 +231,7 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
 
         {previewQuery.isLoading ? (
           <div className="rounded-md border p-3">
-            <div className="text-sm text-muted-foreground">Loading form preview...</div>
+            <div className="text-muted-foreground text-sm">Loading form preview...</div>
           </div>
         ) : (previewQuery.data?.formMetadata?.schema ?? []).length === 0 ? (
           <div className="text-sm">No preview available.</div>
@@ -264,11 +267,20 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
         )}
 
         <div className="mt-4 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleValidate} disabled={previewQuery.isLoading}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleValidate}
+            disabled={previewQuery.isLoading}
+          >
             Test Validation
           </Button>
           {selectedParty === "student" && (
-            <Button type="button" onClick={() => void handleSubmitStudent()} disabled={submitting || previewQuery.isLoading}>
+            <Button
+              type="button"
+              onClick={() => void handleSubmitStudent()}
+              disabled={submitting || previewQuery.isLoading}
+            >
               {submitting ? "Submitting..." : "Submit Student Form"}
             </Button>
           )}
