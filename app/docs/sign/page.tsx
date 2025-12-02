@@ -243,8 +243,9 @@ function PageContent() {
         }
 
         console.log("Internship MOA fields to save:", internshipMoaFieldsToSave);
-        update.mutateAsync({
+        await update.mutateAsync({
           autofill: internshipMoaFieldsToSave,
+          auto_form_permissions: { [formName]: true },
         });
       }
 
