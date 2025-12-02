@@ -141,8 +141,6 @@ export default function FormAutosignEditorModal({ formName, initialValues = {}, 
       }
     }
 
-    console.log("Submitting autosign values", internshipMoaFieldsToSave);
-
     try {
       await update.mutateAsync({
         autofill: internshipMoaFieldsToSave,

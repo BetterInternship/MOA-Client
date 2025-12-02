@@ -122,7 +122,6 @@ function PageContent() {
 
   // Optional header bits
   const studentName = params.get("student") || "The student";
-  const [authorizeChoice, setAuthorizeChoice] = useState<"yes" | "no">("yes");
 
   // Pending document preview
   const {
@@ -222,7 +221,7 @@ function PageContent() {
 
       const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
 
-      if (authorizeChoice === "yes") {
+      if (choice === "yes") {
         const finalValues = flatValues ?? {};
         const internshipMoaFieldsToSave: Record<string, Record<string, string>> = {
           shared: {},
@@ -380,7 +379,6 @@ function PageContent() {
             type="button"
             variant="outline"
             onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
-            aria-pressed={authorizeChoice === "no"}
             className="w-full"
           >
             No, I’ll sign manually for now
@@ -389,7 +387,6 @@ function PageContent() {
           <Button
             type="button"
             onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
-            aria-pressed={authorizeChoice === "yes"}
             className="w-full"
           >
             Yes, confirm and e-sign
@@ -404,7 +401,6 @@ function PageContent() {
     choice: "yes" | "no",
     flatValues: Record<string, string> | undefined
   ) => {
-    setAuthorizeChoice(choice);
     closeModal("sign-auth");
     await submitWithAuthorization(choice, flatValues);
   };
@@ -513,7 +509,6 @@ function PageContent() {
                           type="button"
                           variant="outline"
                           onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
-                          aria-pressed={authorizeChoice === "no"}
                           className="w-full"
                         >
                           No, I’ll sign manually for now
