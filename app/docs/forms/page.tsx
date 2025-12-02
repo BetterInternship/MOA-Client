@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper } from "lucide-react";
@@ -11,11 +12,15 @@ import { useModal } from "@/app/providers/modal-provider";
 import { getDocsSelf } from "@/app/api/docs.api";
 import { DocsUser } from "@/types/docs-user";
 import MyFormCard from "@/components/docs/MyFormCard";
+import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorModal";
+import { Button } from "@/components/ui/button";
+import { useSignatoryAccountActions } from "@/app/api/signatory.api";
+import { useQueryClient } from "@tanstack/react-query";
 
-type FormItem = { name: string };
+type FormItem = { name: string; autoSign: boolean };
 
 export default function DocsFormsPage() {
-  const { data, isLoading, refetch } = useQuery({
+  const { data } = useQuery({
     queryKey: ["docs-self"],
     queryFn: getDocsSelf,
     staleTime: 60_000,
@@ -29,20 +34,48 @@ export default function DocsFormsPage() {
   const { data: rows = [] } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
     queryFn: async () => {
-      const res = await getViewableForms();
-      if (!res) return [];
-      if (Array.isArray(res.forms)) return res.forms.map((n: string) => ({ name: n }));
+      const res = (await getViewableForms()) as unknown;
+      if (!res || typeof res !== "object") return [];
+      const maybe = res as { forms?: unknown };
+      if (maybe.forms && typeof maybe.forms === "object" && !Array.isArray(maybe.forms)) {
+        const entries = Object.entries(maybe.forms);
+        return entries.map(([name, autoSign]) => ({
+          name,
+          autoSign: !!autoSign,
+        }));
+      }
       return [];
     },
     staleTime: 60_000,
   });
 
   const { openModal } = useModal();
+
   const onPreview = (name: string) => {
-    openModal(`form-preview:${name}`, <FormPreviewModal previewName={name} />, {
+    openModal(`form-preview:${name}`, <FormPreviewModal formName={name} />, {
       title: `Preview: ${name}`,
       panelClassName: "sm:max-w-4xl sm:min-w-[56rem]",
     });
+  };
+
+  const party = isCoordinator ? "university" : "entity";
+  const onAuthorizeAutoSign = (name: string, currentValue: boolean) => {
+    // If currently OFF (false), open enable modal; if ON (true), open disable modal
+    if (!currentValue) {
+      openModal(
+        `form-auto-sign:${name}`,
+        <FormAutosignEditorModal formName={name} party={party} />,
+        {
+          title: `Enable Auto-Sign: ${name}`,
+          panelClassName: "sm:max-w-2xl sm:min-w-[32rem]",
+        }
+      );
+    } else {
+      openModal(`form-auto-sign:${name}`, <FormAutosignDisableModal previewName={name} />, {
+        title: `Disable Auto-Sign: ${name}`,
+        panelClassName: "sm:min-w-md",
+      });
+    }
   };
 
   return (
@@ -65,17 +98,68 @@ export default function DocsFormsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {rows.map((f) => (
-              <>
-                <MyFormCard
-                  row={f}
-                  isCoordinator={isCoordinator}
-                  onPreview={() => onPreview(f.name)}
-                />
-              </>
+              <MyFormCard
+                key={f.name}
+                row={f}
+                isCoordinator={isCoordinator}
+                onPreview={() => onPreview(f.name)}
+                onToggleAutoSign={(name, currentValue) => {
+                  void onAuthorizeAutoSign(name, currentValue);
+                }}
+              />
             ))}
           </div>
         )}
       </Card>
+    </div>
+  );
+}
+
+function FormAutosignDisableModal({ previewName }: { previewName: string }) {
+  const queryClient = useQueryClient();
+  const { update } = useSignatoryAccountActions();
+  const { closeModal } = useModal();
+  const [saving, setSaving] = useState(false);
+
+  const handleDisable = async () => {
+    setSaving(true);
+    try {
+      await update.mutateAsync({
+        auto_form_permissions: { [previewName]: false },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
+      await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
+      closeModal(`form-auto-sign:${previewName}`);
+    } catch (err) {
+      console.error("Failed to disable auto-sign:", err);
+      alert("Failed to disable auto-sign. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border p-4">
+        <h3 className="mb-1 text-sm font-medium">Disable Auto-sign</h3>
+        <p className="text-muted-foreground text-sm">
+          Turning off auto-sign means you'll need to sign this form manually.
+        </p>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => closeModal(`form-auto-sign:${previewName}`)}
+          disabled={saving}
+        >
+          Cancel
+        </Button>
+        <Button type="button" onClick={handleDisable} disabled={saving}>
+          {saving ? "Disabling..." : "Disable"}
+        </Button>
+      </div>
     </div>
   );
 }

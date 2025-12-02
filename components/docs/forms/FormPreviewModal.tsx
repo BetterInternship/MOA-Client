@@ -10,12 +10,12 @@ import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
 
 type Props = {
-  previewName: string;
+  formName: string;
   // optional initial values to seed the preview
   initialValues?: Record<string, Record<string, string>>;
 };
 
-export default function FormPreviewModal({ previewName, initialValues = {} }: Props) {
+export default function FormPreviewModal({ formName, initialValues = {} }: Props) {
   const { closeModal } = useModal();
   const [values, setValues] = useState<Record<string, Record<string, string>>>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -24,9 +24,9 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
   const [submitting, setSubmitting] = useState(false);
 
   const previewQuery = useQuery({
-    queryKey: ["form-fields", previewName],
-    queryFn: async () => await getFormFields(previewName),
-    enabled: !!previewName,
+    queryKey: ["form-fields", formName],
+    queryFn: async () => await getFormFields(formName),
+    enabled: !!formName,
   });
 
   const formMetadata = previewQuery.data?.formMetadata
@@ -159,7 +159,7 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
 
     try {
       console.log("(Preview modal) Submit student payload", {
-        formName: previewName,
+        formName: formName,
         values: studentValues,
       });
 
@@ -178,7 +178,7 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
       const payloadValues = { ...autofillValues, ...(studentValues ?? {}), ...testStudentValues };
 
       await requestGenerateForm({
-        formName: previewName || "",
+        formName: formName || "",
         values: payloadValues,
       });
 
@@ -252,7 +252,7 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
               onChange={(field, value) => setField(selectedParty, field, value)}
               errors={errors}
               showErrors={true}
-              formName={previewName ?? ""}
+              formName={formName ?? ""}
               autofillValues={autofillValues}
               setValues={(newVals) => setValuesForParty(selectedParty, newVals)}
               onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}

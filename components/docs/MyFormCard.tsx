@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -7,9 +7,10 @@ import { Tooltip } from "@/components/ui/tooltip";
 export type FormRow = {
   name: string;
   label?: string;
+  autoSign: boolean;
 };
 
-export default function AutoSignToggleCard({
+export default function MyFormCard({
   row,
   isCoordinator,
   onPreview,
@@ -18,23 +19,10 @@ export default function AutoSignToggleCard({
   row: FormRow;
   isCoordinator?: boolean;
   onPreview?: (name: string) => void;
-  onToggleAutoSign?: (name: string, value: boolean) => void;
+  onToggleAutoSign?: (name: string, currentValue: boolean) => void;
 }) {
-  const [autoSignState, setAutoSignState] = useState<Record<string, boolean>>({});
-
-  // initialize toggles (false by default)
-  useEffect(() => {
-    const initial: Record<string, boolean> = {};
-    initial[row.name] = !!autoSignState[row.name];
-    setAutoSignState((prev) => ({ ...initial, ...prev }));
-  }, [row.name]);
-
   function toggle(name: string) {
-    setAutoSignState((s) => {
-      const next = { ...s, [name]: !s[name] };
-      onToggleAutoSign?.(name, next[name]);
-      return next;
-    });
+    onToggleAutoSign?.(name, row.autoSign);
   }
 
   return (
@@ -51,7 +39,7 @@ export default function AutoSignToggleCard({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Authorize auto-sign</span>
                 <Switch
-                  checked={!!autoSignState[row.name]}
+                  checked={row.autoSign}
                   onCheckedChange={() => toggle(row.name)}
                   aria-label={`Toggle auto-sign for ${row.name}`}
                 />
