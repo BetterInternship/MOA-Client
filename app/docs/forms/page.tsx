@@ -19,6 +19,8 @@ import { getViewableForms } from "@/app/api/docs.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { requestGenerateForm } from "@/app/api/forms.api";
+import { getDocsSelf } from "@/app/api/docs.api";
+import { DocsUser } from "@/types/docs-user";
 
 type FormItem = { name: string };
 
@@ -28,6 +30,17 @@ export default function DocsFormsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
   const [selectedParty, setSelectedParty] = useState<string>("student");
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["docs-self"],
+    queryFn: getDocsSelf,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+
+  const user = data?.profile as DocsUser | undefined;
+  const isCoordinator = !!user?.coordinatorId;
 
   const { data: rows = [] } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
@@ -283,11 +296,13 @@ export default function DocsFormsPage() {
       <div className="mb-6 space-y-2 sm:mb-8">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
-          <HeaderText>Forms Preview</HeaderText>
+          <HeaderText> {isCoordinator ? "Forms Preview" : "My Saved Forms"} </HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
-          Preview form templates used in the system. Switch parties to preview each party's portion
-          of the form.
+          {isCoordinator
+            ? "Preview form templates used in the system. Switch parties to preview each party's portion of the form."
+            : "View and manage your saved forms."}{" "}
+          Check forms that have auto-sign enabled
         </p>
       </div>
 

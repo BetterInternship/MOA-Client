@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import { getDocsSelf, logoutDocs } from "@/app/api/docs.api";
+import { DocsUser } from "@/types/docs-user";
 
 export default function DocsTopbarUser() {
   const queryClient = useQueryClient();
@@ -33,17 +34,7 @@ export default function DocsTopbarUser() {
     },
   });
 
-  type DocsUser = {
-    sub: string;
-    id: string;
-    email: string;
-    name?: string;
-    coordinatorId?: string;
-    isGodMode: boolean;
-  };
-
   const user = data?.profile as DocsUser | undefined;
-  console.log("DocsTopbarUser user:", user);
 
   if (isLoading) {
     return <div className="bg-muted h-9 w-24 animate-pulse rounded" />;
@@ -55,11 +46,11 @@ export default function DocsTopbarUser() {
         <Link href="/dashboard">
           <Button variant="ghost">My Signed Forms</Button>
         </Link>
-        {user?.coordinatorId && (
-          <Link href="/forms">
-            <Button variant="ghost">Forms Preview</Button>
-          </Link>
-        )}
+        <Link href="/forms">
+          <Button variant="ghost">
+            {user?.coordinatorId ? "Forms Preview" : "My Saved Forms"}{" "}
+          </Button>
+        </Link>
 
         {user?.isGodMode && (
           <DropdownMenu>
