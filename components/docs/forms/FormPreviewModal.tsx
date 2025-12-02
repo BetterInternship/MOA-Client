@@ -226,7 +226,11 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
           ))}
         </div>
 
-        {(previewQuery.data?.formMetadata?.schema ?? []).length === 0 ? (
+        {previewQuery.isLoading ? (
+          <div className="rounded-md border p-3">
+            <div className="text-sm text-muted-foreground">Loading form preview...</div>
+          </div>
+        ) : (previewQuery.data?.formMetadata?.schema ?? []).length === 0 ? (
           <div className="text-sm">No preview available.</div>
         ) : (
           <div className="rounded-md border p-3">
@@ -260,11 +264,11 @@ export default function FormPreviewModal({ previewName, initialValues = {} }: Pr
         )}
 
         <div className="mt-4 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleValidate}>
+          <Button type="button" variant="outline" onClick={handleValidate} disabled={previewQuery.isLoading}>
             Test Validation
           </Button>
           {selectedParty === "student" && (
-            <Button type="button" onClick={() => void handleSubmitStudent()} disabled={submitting}>
+            <Button type="button" onClick={() => void handleSubmitStudent()} disabled={submitting || previewQuery.isLoading}>
               {submitting ? "Submitting..." : "Submit Student Form"}
             </Button>
           )}
