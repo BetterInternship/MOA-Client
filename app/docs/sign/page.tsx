@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import { useFormContext } from "../ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
+import { getSignatorySelf } from "@/app/api/signatory.api";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university" | "";
@@ -134,6 +135,27 @@ function PageContent() {
     staleTime: 60_000,
     enabled: !!pendingDocumentId,
   });
+
+  const profile = useQuery({
+    queryKey: ["signatory-self"],
+    queryFn: async () => await getSignatorySelf(),
+    staleTime: 60_000,
+  });
+
+  // Saved autofill
+  const autofillValues = useMemo(() => {
+    const profileAutofill = profile.data?.autofill as Record<string, Record<string, string>>;
+    if (!profileAutofill) return;
+
+    // Destructure to isolate only shared fields or fields for that form
+    const autofillValues = {
+      ...(profileAutofill.base ?? {}),
+      ...profileAutofill.shared,
+      ...(profileAutofill[formName] ?? {}),
+    };
+
+    return autofillValues;
+  }, [profile, formName]) as Record<string, string>;
 
   const pendingInfo = pendingRes?.pendingInformation;
   const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url as string;
@@ -576,7 +598,7 @@ function PageContent() {
                   errors={errors}
                   showErrors={submitted}
                   formName={""}
-                  autofillValues={{}}
+                  autofillValues={autofillValues}
                   setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
                   setPreviews={setPreviews}
                 />
