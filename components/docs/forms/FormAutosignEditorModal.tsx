@@ -14,10 +14,10 @@ import { useQueryClient } from "@tanstack/react-query";
 type Props = {
   formName: string;
   party: string;
-  initialValues?: Record<string, string>;
+  currentValue: boolean;
 };
 
-export default function FormAutosignEditorModal({ formName, initialValues = {}, party }: Props) {
+export default function FormAutosignEditorModal({ formName, party, currentValue }: Props) {
   const queryClient = useQueryClient();
   const { update } = useSignatoryAccountActions();
   const { closeModal } = useModal();
@@ -167,7 +167,7 @@ export default function FormAutosignEditorModal({ formName, initialValues = {}, 
         autofill: internshipMoaFieldsToSave,
         auto_form_permissions: {
           [formName]: {
-            enabled: true,
+            enabled: currentValue,
             party: party,
           },
         },

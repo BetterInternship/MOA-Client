@@ -5,20 +5,22 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import FormPreviewModal from "@/components/docs/forms/FormPreviewModal";
 import { getViewableForms } from "@/app/api/docs.api";
 import { useModal } from "@/app/providers/modal-provider";
 import { getDocsSelf } from "@/app/api/docs.api";
 import { DocsUser } from "@/types/docs-user";
-import MyFormCard from "@/components/docs/MyFormCard";
+import MyFormCard from "@/components/docs/MyFormRow";
 import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorModal";
-import { Button } from "@/components/ui/button";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
+import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
 
 type FormItem = { name: string; enabledAutosign: boolean; party: string };
 
 export default function DocsFormsPage() {
+  const queryClient = useQueryClient();
+  const { update } = useSignatoryAccountActions();
+
   const { data } = useQuery({
     queryKey: ["docs-self"],
     queryFn: getDocsSelf,
@@ -34,7 +36,6 @@ export default function DocsFormsPage() {
     queryKey: ["docs-forms-names"],
     queryFn: async () => {
       const res = await getViewableForms();
-      console.log("getViewableForms response:", res);
       if (!res || !res.forms) return [];
 
       // res.forms is an object keyed by form name. Convert to array.
@@ -53,6 +54,7 @@ export default function DocsFormsPage() {
 
   const { openModal } = useModal();
 
+  // Open form preview
   const onPreview = (name: string) => {
     openModal(`form-preview:${name}`, <FormPreviewModal formName={name} />, {
       title: `Preview: ${name}`,
@@ -60,26 +62,35 @@ export default function DocsFormsPage() {
     });
   };
 
-  const onAuthorizeAutoSign = (name: string, currentValue: boolean, party: string) => {
-    // If currently OFF (false), open enable modal; if ON (true), open disable modal
-    if (!currentValue) {
-      openModal(
-        `form-auto-sign:${name}`,
-        <FormAutosignEditorModal formName={name} party={party} />,
-        {
-          title: `Enable Auto-Sign: ${name}`,
-          panelClassName: "sm:max-w-2xl sm:min-w-[32rem]",
-        }
-      );
-    } else {
-      openModal(
-        `form-auto-sign:${name}`,
-        <FormAutosignDisableModal formName={name} party={party} />,
-        {
-          title: `Disable Auto-Sign: ${name}`,
-          panelClassName: "sm:min-w-md",
-        }
-      );
+  // Open auto-sign editor
+  const onOpenAutoSignForm = (formName: string, party: string, currentValue: boolean) => {
+    openModal(
+      `form-auto-sign:${formName}`,
+      <FormAutosignEditorModal formName={formName} party={party} currentValue={currentValue} />,
+      {
+        title: `Enable Auto-Sign: ${formName}`,
+        panelClassName: "sm:max-w-2xl sm:min-w-[32rem]",
+      }
+    );
+  };
+
+  const toggleAutoSign = async (formName: string, party: string, currentValue: boolean) => {
+    console.log("Toggled auto-sign for", formName);
+
+    try {
+      await update.mutateAsync({
+        auto_form_permissions: {
+          [formName]: {
+            enabled: !currentValue,
+            party: party,
+          },
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
+      await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
+    } catch (err) {
+      console.error("Failed to toggle auto-sign:", err);
+      alert("Failed to toggle auto-sign. Please try again.");
     }
   };
 
@@ -97,82 +108,16 @@ export default function DocsFormsPage() {
           Check form templates that have auto-sign enabled
         </p>
       </div>
-      <Card className="p-3 sm:p-4">
-        {rows.length === 0 ? (
-          <div className="text-muted-foreground text-sm">
-            No form templates available. You will have access to a form template when you have
-            signed one.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {rows.map((f) => (
-              <MyFormCard
-                key={f.name}
-                row={f}
-                isCoordinator={isCoordinator}
-                onPreview={() => onPreview(f.name)}
-                onToggleAutoSign={() => {
-                  void onAuthorizeAutoSign(f.name, f.enabledAutosign, f.party);
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-function FormAutosignDisableModal({ formName, party }: { formName: string; party: string }) {
-  const queryClient = useQueryClient();
-  const { update } = useSignatoryAccountActions();
-  const { closeModal } = useModal();
-  const [saving, setSaving] = useState(false);
-
-  const handleDisable = async () => {
-    setSaving(true);
-    try {
-      await update.mutateAsync({
-        auto_form_permissions: {
-          [formName]: {
-            enabled: false,
-            party: party,
-          },
-        },
-      });
-      await queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
-      await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
-      closeModal(`form-auto-sign:${formName}`);
-    } catch (err) {
-      console.error("Failed to disable auto-sign:", err);
-      alert("Failed to disable auto-sign. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border p-4">
-        <h3 className="mb-1 text-sm font-medium">Disable Auto-sign</h3>
-        <p className="text-muted-foreground text-sm">
-          Turning off auto-sign means you'll need to sign this form manually.
-        </p>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => closeModal(`form-auto-sign:${formName}`)}
-          disabled={saving}
-        >
-          Cancel
-        </Button>
-        <Button type="button" onClick={handleDisable} disabled={saving}>
-          {saving ? "Disabling..." : "Disable"}
-        </Button>
-      </div>
+      <MyFormsTableLike
+        rows={rows}
+        onPreview={(name) => onPreview(name)}
+        onOpenAutoSignForm={(name, party, currentValue) =>
+          void onOpenAutoSignForm(name, party, currentValue)
+        }
+        toggleAutoSign={(name, party, currentValue) =>
+          void toggleAutoSign(name, party, currentValue)
+        }
+      />
     </div>
   );
 }
