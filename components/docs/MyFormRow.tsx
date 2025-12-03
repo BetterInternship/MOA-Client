@@ -3,7 +3,6 @@
 import React from "react";
 import { Eye, Check, Info, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useModal } from "@/app/providers/modal-provider";
 
 export type FormItem = { name: string; enabledAutosign: boolean; party: string };
 
@@ -63,7 +62,6 @@ export default function MyFormRow({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{row.enabledAutosign ? "On" : "Off"}</span>
             {loading ? (
-              // simple spinner
               <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24">
                 <circle
                   className="opacity-25"

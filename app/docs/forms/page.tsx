@@ -10,7 +10,6 @@ import { getViewableForms } from "@/app/api/docs.api";
 import { useModal } from "@/app/providers/modal-provider";
 import { getDocsSelf } from "@/app/api/docs.api";
 import { DocsUser } from "@/types/docs-user";
-import MyFormCard from "@/components/docs/MyFormRow";
 import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorModal";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
