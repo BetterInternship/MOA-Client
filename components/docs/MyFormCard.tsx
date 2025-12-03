@@ -6,8 +6,9 @@ import { Tooltip } from "@/components/ui/tooltip";
 
 export type FormRow = {
   name: string;
+  enabledAutosign: boolean;
+  party: string;
   label?: string;
-  autoSign: boolean;
 };
 
 export default function MyFormCard({
@@ -22,7 +23,7 @@ export default function MyFormCard({
   onToggleAutoSign?: (name: string, currentValue: boolean) => void;
 }) {
   function toggle(name: string) {
-    onToggleAutoSign?.(name, row.autoSign);
+    onToggleAutoSign?.(name, row.enabledAutosign);
   }
 
   return (
@@ -39,8 +40,8 @@ export default function MyFormCard({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Authorize auto-sign</span>
                 <Switch
-                  checked={row.autoSign}
-                  onCheckedChange={() => toggle(row.name)}
+                  checked={row.enabledAutosign}
+                  onCheckedChange={() => toggle(row.name, row.enabledAutosign)}
                   aria-label={`Toggle auto-sign for ${row.name}`}
                 />
               </div>

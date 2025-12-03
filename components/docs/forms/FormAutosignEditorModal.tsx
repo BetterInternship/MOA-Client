@@ -144,7 +144,12 @@ export default function FormAutosignEditorModal({ formName, initialValues = {}, 
     try {
       await update.mutateAsync({
         autofill: internshipMoaFieldsToSave,
-        auto_form_permissions: { [formName]: true },
+        auto_form_permissions: {
+          [formName]: {
+            enabled: true,
+            party: party,
+          },
+        },
       });
       await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
       await queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
