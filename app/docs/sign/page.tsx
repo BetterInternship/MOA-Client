@@ -241,14 +241,23 @@ function PageContent() {
           }
         }
 
-        console.log("Internship MOA fields to save:", internshipMoaFieldsToSave);
         await update.mutateAsync({
           autofill: internshipMoaFieldsToSave,
-          auto_form_permissions: { [formName]: true },
+          auto_form_permissions: {
+            [formName]: {
+              enabled: true,
+              party: party,
+            },
+          },
         });
       } else {
         await update.mutateAsync({
-          auto_form_permissions: { [formName]: false },
+          auto_form_permissions: {
+            [formName]: {
+              enabled: false,
+              party: party,
+            },
+          },
         });
       }
 
