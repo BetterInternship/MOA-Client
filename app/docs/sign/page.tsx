@@ -22,77 +22,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { getSignatorySelf } from "@/app/api/signatory.api";
+import Link from "next/link";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university" | "";
 type Role = "entity" | "student-guardian" | "university" | "";
-
-function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } {
-  switch (aud) {
-    case "entity":
-      return { role: "entity", party: "entity" };
-    case "student-guardian":
-      return { role: "student-guardian", party: "student-guardian" };
-    case "university":
-      return { role: "university", party: "university" };
-    default:
-      return { role: "", party: "" };
-  }
-}
-
-function getClientSigningInfo() {
-  if (typeof window === "undefined") return {};
-  const nav = typeof navigator !== "undefined" ? navigator : ({} as Navigator);
-  const scr = typeof screen !== "undefined" ? screen : ({} as Screen);
-
-  let webglVendor: string | undefined;
-  let webglRenderer: string | undefined;
-  try {
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-    if (gl) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const dbgInfo = gl.getExtension("WEBGL_debug_renderer_info");
-      if (dbgInfo) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        webglVendor = gl.getParameter(dbgInfo.UNMASKED_VENDOR_WEBGL);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        webglRenderer = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
-      }
-    }
-  } catch {
-    // ignore
-  }
-
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const info = {
-    timestamp: new Date().toISOString(),
-    timezone: tz,
-    tzOffsetMinutes: new Date().getTimezoneOffset(),
-    languages: (nav.languages || []).slice(0, 5),
-    userAgent: nav.userAgent,
-    platform: nav.platform,
-    vendor: nav.vendor,
-    deviceMemory: (nav as any).deviceMemory ?? null,
-    hardwareConcurrency: nav.hardwareConcurrency ?? null,
-    doNotTrack: (nav as any).doNotTrack ?? null,
-    referrer: document.referrer || null,
-    viewport: {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio || 1,
-    },
-    screen: {
-      width: scr.width,
-      height: scr.height,
-      availWidth: scr.availWidth,
-      availHeight: scr.availHeight,
-      colorDepth: scr.colorDepth,
-    },
-    webgl: webglVendor || webglRenderer ? { vendor: webglVendor, renderer: webglRenderer } : null,
-  };
-  return info;
-}
 
 const Page = () => {
   return (
@@ -231,10 +165,39 @@ function PageContent() {
     return { nextErrors, flatValues };
   };
 
-  async function submitWithAuthorization(
-    choice: "yes" | "no",
-    flatValuesParam?: Record<string, string>
-  ) {
+  const [agreed, setAgreed] = useState<boolean>(false);
+  const onClickSubmitRequest = () => {
+    setSubmitted(true);
+    const { nextErrors, flatValues } = validateAndCollect();
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    setLastFlatValues(flatValues);
+
+    if (isMobile) {
+      // On mobile, move to confirm preview stage instead of immediately asking for authorization
+      setMobileStage("confirm");
+      // scroll to top so preview is visible
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    openModal(
+      "sign-auth",
+      <SignAuthModalContent
+        initial={agreed}
+        onClose={() => closeModal("sign-auth")}
+        onConfirm={(val) => {
+          setAgreed(val);
+          handleAuthorizeChoice(flatValues ?? {});
+        }}
+      />,
+      { title: "Permission to e-sign", panelClassName: "sm:min-w-xl" }
+    );
+  };
+
+  async function submitWithAuthorization(flatValuesParam?: Record<string, string>) {
     const flatValues = flatValuesParam ?? lastFlatValues;
     if (!formName || !pendingDocumentId || !party || !flatValues) return;
     try {
@@ -243,45 +206,35 @@ function PageContent() {
 
       const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
 
-      if (choice === "yes") {
-        const finalValues = flatValues ?? {};
-        const internshipMoaFieldsToSave: Record<string, Record<string, string>> = {
-          shared: {},
-        };
+      const finalValues = flatValues ?? {};
+      const internshipMoaFieldsToSave: Record<string, Record<string, string>> = {
+        shared: {},
+      };
 
-        for (const field of fields) {
-          // only include fields relevant to this signing audience
-          if (field.party !== audienceParam) continue;
+      // To save their autofill fields
+      for (const field of fields) {
+        // only include fields relevant to this signing audience
+        if (field.party !== audienceParam) continue;
 
-          if (field.shared) {
-            internshipMoaFieldsToSave.shared[field.field] = finalValues[field.field];
-          } else {
-            if (!internshipMoaFieldsToSave[formName]) {
-              internshipMoaFieldsToSave[formName] = {};
-            }
-            internshipMoaFieldsToSave[formName][field.field] = finalValues[field.field];
+        if (field.shared) {
+          internshipMoaFieldsToSave.shared[field.field] = finalValues[field.field];
+        } else {
+          if (!internshipMoaFieldsToSave[formName]) {
+            internshipMoaFieldsToSave[formName] = {};
           }
+          internshipMoaFieldsToSave[formName][field.field] = finalValues[field.field];
         }
-
-        await update.mutateAsync({
-          autofill: internshipMoaFieldsToSave,
-          auto_form_permissions: {
-            [formName]: {
-              enabled: true,
-              party: party,
-            },
-          },
-        });
-      } else {
-        await update.mutateAsync({
-          auto_form_permissions: {
-            [formName]: {
-              enabled: false,
-              party: party,
-            },
-          },
-        });
       }
+
+      await update.mutateAsync({
+        autofill: internshipMoaFieldsToSave,
+        auto_form_permissions: {
+          [formName]: {
+            enabled: false,
+            party: party,
+          },
+        },
+      });
 
       const payload = {
         pendingDocumentId,
@@ -384,60 +337,9 @@ function PageContent() {
     }
   }
 
-  const onClickSubmitRequest = () => {
-    setSubmitted(true);
-    const { nextErrors, flatValues } = validateAndCollect();
-    if (Object.keys(nextErrors).length > 0) {
-      return;
-    }
-
-    setLastFlatValues(flatValues);
-
-    if (isMobile) {
-      // On mobile, move to confirm preview stage instead of immediately asking for authorization
-      setMobileStage("confirm");
-      // scroll to top so preview is visible
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    openModal(
-      "sign-auth",
-      <div className="space-y-4 text-sm">
-        <p className="text-justify text-gray-700">
-          I authorize auto-sign of future school-issued templated documents on my behalf. A copy of
-          each signed document will be emailed to me.
-        </p>
-
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
-            className="w-full"
-          >
-            No, I’ll sign manually for now
-          </Button>
-
-          <Button
-            type="button"
-            onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
-            className="w-full"
-          >
-            Yes, confirm and e-sign
-          </Button>
-        </div>
-      </div>,
-      { title: "Permission to Auto-Fill & Auto-Sign" }
-    );
-  };
-
-  const handleAuthorizeChoice = async (
-    choice: "yes" | "no",
-    flatValues: Record<string, string> | undefined
-  ) => {
+  const handleAuthorizeChoice = async (flatValues: Record<string, string> | undefined) => {
     closeModal("sign-auth");
-    await submitWithAuthorization(choice, flatValues);
+    await submitWithAuthorization(flatValues);
   };
 
   const goHome = () => router.push("/dashboard");
@@ -672,6 +574,134 @@ function PageContent() {
       </div>
     </div>
   );
+}
+
+function SignAuthModalContent({
+  initial,
+  onClose,
+  onConfirm,
+}: {
+  initial: boolean;
+  onClose: () => void;
+  onConfirm: (value: boolean) => void;
+}) {
+  const [localAgreed, setLocalAgreed] = useState<boolean>(initial);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-justify text-gray-700">
+        Please read the{" "}
+        <Link
+          className="text-primary underline"
+          href="/sign/disclosure"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Electronic Record and Signature Disclosure
+        </Link>
+      </p>
+
+      {/* TODO: LOL will integrate our checkbox here. For some reason refuses to work or im prolly dumb */}
+      <div className="flex items-start gap-2">
+        <input
+          id="agree-e-sign"
+          type="checkbox"
+          checked={localAgreed}
+          onChange={(e) => setLocalAgreed(e.target.checked)}
+          className="focus:ring-primary mt-1 h-4 w-4 rounded border-gray-300"
+        />
+        <label htmlFor="agree-e-sign" className="cursor-pointer text-gray-700 select-none">
+          I agree to use electronic records and signatures{" "}
+          <span className="text-destructive"> *</span>
+        </label>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Button type="button" variant="outline" onClick={() => onClose()} className="w-full">
+          Cancel
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => {
+            onConfirm(localAgreed);
+          }}
+          className="w-full"
+          disabled={!localAgreed}
+        >
+          Yes, confirm and e-sign
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Helpers
+function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } {
+  switch (aud) {
+    case "entity":
+      return { role: "entity", party: "entity" };
+    case "student-guardian":
+      return { role: "student-guardian", party: "student-guardian" };
+    case "university":
+      return { role: "university", party: "university" };
+    default:
+      return { role: "", party: "" };
+  }
+}
+
+function getClientSigningInfo() {
+  if (typeof window === "undefined") return {};
+  const nav = typeof navigator !== "undefined" ? navigator : ({} as Navigator);
+  const scr = typeof screen !== "undefined" ? screen : ({} as Screen);
+
+  let webglVendor: string | undefined;
+  let webglRenderer: string | undefined;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (gl) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const dbgInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      if (dbgInfo) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        webglVendor = gl.getParameter(dbgInfo.UNMASKED_VENDOR_WEBGL);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        webglRenderer = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const info = {
+    timestamp: new Date().toISOString(),
+    timezone: tz,
+    tzOffsetMinutes: new Date().getTimezoneOffset(),
+    languages: (nav.languages || []).slice(0, 5),
+    userAgent: nav.userAgent,
+    platform: nav.platform,
+    vendor: nav.vendor,
+    deviceMemory: (nav as any).deviceMemory ?? null,
+    hardwareConcurrency: nav.hardwareConcurrency ?? null,
+    doNotTrack: (nav as any).doNotTrack ?? null,
+    referrer: document.referrer || null,
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio || 1,
+    },
+    screen: {
+      width: scr.width,
+      height: scr.height,
+      availWidth: scr.availWidth,
+      availHeight: scr.availHeight,
+      colorDepth: scr.colorDepth,
+    },
+    webgl: webglVendor || webglRenderer ? { vendor: webglVendor, renderer: webglRenderer } : null,
+  };
+  return info;
 }
 
 export default Page;
