@@ -246,6 +246,10 @@ function PageContent() {
           autofill: internshipMoaFieldsToSave,
           auto_form_permissions: { [formName]: true },
         });
+      } else {
+        await update.mutateAsync({
+          auto_form_permissions: { [formName]: false },
+        });
       }
 
       const payload = {
@@ -517,7 +521,6 @@ function PageContent() {
                         <Button
                           type="button"
                           onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
-                          aria-pressed={authorizeChoice === "yes"}
                           className="w-full"
                         >
                           Yes, auto-fill & auto-sign
