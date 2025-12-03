@@ -41,12 +41,13 @@ export default function DocsFormsPage() {
       // res.forms is an object keyed by form name. Convert to array.
       const entries = Object.entries(res.forms) as [
         string,
-        { enabled?: boolean; party?: string },
+        { enabled: boolean; party: string; date?: string },
       ][];
       return entries.map(([name, obj]) => ({
         name,
         enabledAutosign: !!obj.enabled,
         party: obj.party ?? "",
+        date: obj.date ?? "",
       }));
     },
     staleTime: 60_000,
@@ -84,6 +85,7 @@ export default function DocsFormsPage() {
           [formName]: {
             enabled: !currentValue,
             party: party,
+            date: new Date().toISOString(),
           },
         },
       });

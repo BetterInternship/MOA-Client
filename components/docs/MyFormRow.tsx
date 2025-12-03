@@ -3,8 +3,9 @@
 import React from "react";
 import { Eye, Check, Info, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatWhen } from "@/lib/format";
 
-export type FormItem = { name: string; enabledAutosign: boolean; party: string };
+export type FormItem = { name: string; enabledAutosign: boolean; party: string; date?: string };
 
 export default function MyFormRow({
   row,
@@ -21,6 +22,7 @@ export default function MyFormRow({
   index?: number;
   loading?: boolean;
 }) {
+  const date = formatWhen(row.date ?? "", "mmddyyyy");
   return (
     <div
       role="row"
@@ -89,7 +91,7 @@ export default function MyFormRow({
         {/* show date only when enabled (remove condition if you always want to display) */}
         {row.enabledAutosign ? (
           <div className="text-muted-foreground text-center text-[11px]">
-            authorized: <span className="font-medium">11/12/2025</span>
+            authorized: <span className="font-medium">{date ?? "-"}</span>
           </div>
         ) : (
           <div className="text-muted-foreground text-center text-[11px] opacity-40">
