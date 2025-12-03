@@ -88,18 +88,21 @@ export default function DocsFormsPage() {
       <div className="mb-6 space-y-2 sm:mb-8">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
-          <HeaderText> {isCoordinator ? "Forms Preview" : "My Saved Forms"} </HeaderText>
+          <HeaderText> {isCoordinator ? "Forms Preview" : "My Saved Templates"} </HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
           {isCoordinator
             ? "Preview form templates used in the system. Switch parties to preview each party's portion of the form."
-            : "View and manage your saved forms."}{" "}
-          Check forms that have auto-sign enabled
+            : "View and manage your saved form templates."}{" "}
+          Check form templates that have auto-sign enabled
         </p>
       </div>
       <Card className="p-3 sm:p-4">
         {rows.length === 0 ? (
-          <div className="text-muted-foreground text-sm">No forms available.</div>
+          <div className="text-muted-foreground text-sm">
+            No form templates available. You will have access to a form template when you have
+            signed one.
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {rows.map((f) => (

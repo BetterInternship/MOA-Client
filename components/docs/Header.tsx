@@ -48,7 +48,7 @@ export default function DocsTopbarUser() {
         </Link>
         <Link href="/forms">
           <Button variant="ghost">
-            {user?.coordinatorId ? "Forms Preview" : "My Saved Forms"}{" "}
+            {user?.coordinatorId ? "Forms Preview" : "My Saved Templates"}{" "}
           </Button>
         </Link>
 
