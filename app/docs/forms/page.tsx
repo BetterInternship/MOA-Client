@@ -20,6 +20,7 @@ type FormItem = { name: string; enabledAutosign: boolean; party: string };
 export default function DocsFormsPage() {
   const queryClient = useQueryClient();
   const { update } = useSignatoryAccountActions();
+  const [togglingName, setTogglingName] = useState<string | null>(null);
 
   const { data } = useQuery({
     queryKey: ["docs-self"],
@@ -78,6 +79,7 @@ export default function DocsFormsPage() {
     console.log("Toggled auto-sign for", formName);
 
     try {
+      setTogglingName(formName);
       await update.mutateAsync({
         auto_form_permissions: {
           [formName]: {
@@ -91,6 +93,8 @@ export default function DocsFormsPage() {
     } catch (err) {
       console.error("Failed to toggle auto-sign:", err);
       alert("Failed to toggle auto-sign. Please try again.");
+    } finally {
+      setTogglingName(null);
     }
   };
 
@@ -117,6 +121,7 @@ export default function DocsFormsPage() {
         toggleAutoSign={(name, party, currentValue) =>
           void toggleAutoSign(name, party, currentValue)
         }
+        togglingName={togglingName}
       />
     </div>
   );

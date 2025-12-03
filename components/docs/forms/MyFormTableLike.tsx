@@ -9,11 +9,13 @@ export default function MyFormsTableLike({
   onPreview,
   onOpenAutoSignForm,
   toggleAutoSign,
+  togglingName,
 }: {
   rows: FormItem[];
   onPreview: (name: string) => void;
   onOpenAutoSignForm: (name: string, party: string, currentValue: boolean) => void;
   toggleAutoSign: (name: string, party: string, currentValue: boolean) => void;
+  togglingName?: string | null;
 }) {
   return (
     <div className="space-y-4">
@@ -46,6 +48,7 @@ export default function MyFormsTableLike({
                 onPreview={() => onPreview(r.name)}
                 onOpenAutoSignForm={() => onOpenAutoSignForm(r.name, r.party, r.enabledAutosign)}
                 toggleAutoSign={() => toggleAutoSign(r.name, r.party, r.enabledAutosign)}
+                loading={togglingName === r.name}
               />
             ))
           )}
