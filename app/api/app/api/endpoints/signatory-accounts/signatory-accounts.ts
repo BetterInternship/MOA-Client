@@ -5,17 +5,244 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
   QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult,
+  UseSuspenseQueryOptions,
+  UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
 import type { BaseResponse, ErrorResponse, UpdateSignatoryDto } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
+
+export const signatoryAccountsControllerGetSelf = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/signatory-accounts/me`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getSignatoryAccountsControllerGetSelfQueryKey = () => {
+  return [`/api/signatory-accounts/me`] as const;
+};
+
+export const getSignatoryAccountsControllerGetSelfQueryOptions = <
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>, TError, TData>
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSignatoryAccountsControllerGetSelfQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>> = ({
+    signal,
+  }) => signatoryAccountsControllerGetSelf(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SignatoryAccountsControllerGetSelfQueryResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>
+>;
+export type SignatoryAccountsControllerGetSelfQueryError = ErrorResponse;
+
+export function useSignatoryAccountsControllerGetSelf<
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+          TError,
+          Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSignatoryAccountsControllerGetSelf<
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+          TError,
+          Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSignatoryAccountsControllerGetSelf<
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSignatoryAccountsControllerGetSelf<
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSignatoryAccountsControllerGetSelfQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSignatoryAccountsControllerGetSelfSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseSuspenseQueryOptions<
+      Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+      TError,
+      TData
+    >
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSignatoryAccountsControllerGetSelfQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>> = ({
+    signal,
+  }) => signatoryAccountsControllerGetSelf(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SignatoryAccountsControllerGetSelfSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>
+>;
+export type SignatoryAccountsControllerGetSelfSuspenseQueryError = ErrorResponse;
+
+export function useSignatoryAccountsControllerGetSelfSuspense<
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSignatoryAccountsControllerGetSelfSuspense<
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSignatoryAccountsControllerGetSelfSuspense<
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSignatoryAccountsControllerGetSelfSuspense<
+  TData = Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+  TError = ErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryAccountsControllerGetSelf>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSignatoryAccountsControllerGetSelfSuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
 
 export const signatoryAccountsControllerUpdateSelf = (updateSignatoryDto: UpdateSignatoryDto) => {
   return preconfiguredAxiosFunction<BaseResponse>({

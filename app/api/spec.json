@@ -1577,6 +1577,25 @@
       }
     },
     "/api/signatory-accounts/me": {
+      "get": {
+        "operationId": "SignatoryAccountsController_getSelf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SignatoryAccounts"]
+      },
       "put": {
         "operationId": "SignatoryAccountsController_updateSelf",
         "parameters": [],

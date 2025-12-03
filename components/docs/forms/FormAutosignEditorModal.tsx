@@ -8,7 +8,7 @@ import { getFormFields } from "@/app/api/forms.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
-import { useSignatoryAccountActions } from "@/app/api/signatory.api";
+import { getSignatorySelf, useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useQueryClient } from "@tanstack/react-query";
 
 type Props = {
@@ -30,6 +30,27 @@ export default function FormAutosignEditorModal({ formName, initialValues = {}, 
     queryFn: async () => await getFormFields(formName),
     enabled: !!formName,
   });
+
+  const profile = useQuery({
+    queryKey: ["signatory-self"],
+    queryFn: async () => await getSignatorySelf(),
+    staleTime: 60_000,
+  });
+
+  // Saved autofill
+  const autofillValues = useMemo(() => {
+    const profileAutofill = profile.data?.autofill as Record<string, Record<string, string>>;
+    if (!profileAutofill) return;
+
+    // Destructure to isolate only shared fields or fields for that form
+    const autofillValues = {
+      ...(profileAutofill.base ?? {}),
+      ...profileAutofill.shared,
+      ...(profileAutofill[formName] ?? {}),
+    };
+
+    return autofillValues;
+  }, [profile, formName]) as Record<string, string>;
 
   const formMetadata = previewQuery.data?.formMetadata
     ? new FormMetadata(previewQuery.data?.formMetadata)
@@ -189,7 +210,7 @@ export default function FormAutosignEditorModal({ formName, initialValues = {}, 
               errors={errors}
               showErrors={true}
               formName={formName ?? ""}
-              autofillValues={{}}
+              autofillValues={autofillValues}
               setValues={(newVals) => setValuesForParty(party, newVals)}
               onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
             />
