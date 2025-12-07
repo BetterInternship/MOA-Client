@@ -1,60 +1,20 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Table2, Database, Upload } from "lucide-react";
+import { Table2, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Table from "@/components/docs/dashboard/Table";
 import CsvExporter from "@/components/docs/dashboard/CsvExporter";
 import FieldVisibilityToggle from "@/components/docs/dashboard/FieldVisibilityToggle";
 import { RowEntry } from "@/lib/types";
-import { getAllSignedForms } from "@/app/api/forms.api";
-
-type DataSource = "api" | "upload";
 
 export default function TableDisplayPage() {
-  const [dataSource, setDataSource] = useState<DataSource>("api");
   const [uploadedData, setUploadedData] = useState<RowEntry[][]>([]);
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Fetch data from API
-  const { data: apiData, isLoading } = useQuery({
-    queryKey: ["docs-signed-table"],
-    queryFn: async () => {
-      const res = await getAllSignedForms();
-      const signedDocs = res?.signedDocuments ?? [];
-      
-      // Transform API data to RowEntry[][] format
-      return signedDocs.map((doc: any) => {
-        const entries: RowEntry[] = [];
-        
-        // Add basic fields
-        entries.push({ col: "id", value: doc.id });
-        entries.push({ col: "form_name", value: doc.form_name });
-        entries.push({ col: "form_label", value: doc.form_label });
-        entries.push({ col: "timestamp", value: doc.timestamp });
-        entries.push({ col: "url", value: doc.url });
-        
-        // Flatten display_information if it exists
-        if (doc.display_information) {
-          Object.entries(doc.display_information).forEach(([key, value]) => {
-            entries.push({ col: key, value: value as string | number | boolean | null });
-          });
-        }
-        
-        return entries;
-      });
-    },
-    staleTime: 60_000,
-    enabled: dataSource === "api",
-  });
-
-  // Use either API data or uploaded data
-  const tableData = dataSource === "api" ? (apiData ?? []) : uploadedData;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,7 +34,6 @@ export default function TableDisplayPage() {
         
         const processed = await res.json();
         setUploadedData(processed);
-        setDataSource("upload");
         setVisibleColumns([]);
       } catch (err) {
         console.error("Invalid JSON", err);
@@ -84,15 +43,20 @@ export default function TableDisplayPage() {
     reader.readAsText(file);
   };
 
-  const handleDataLoaded = (data: RowEntry[][]) => {
-    setUploadedData(data);
-    setDataSource("upload");
-    setVisibleColumns([]); // Reset visible columns when new data loads
-  };
-
   const handleColumnsExtracted = (columns: string[]) => {
     setAvailableColumns(columns);
     setVisibleColumns(columns); // Show all columns by default
+  };
+
+  const handleColumnOrderChange = (newOrder: string[]) => {
+    // Update both visible and available columns to maintain new order
+    setVisibleColumns(newOrder);
+    
+    // Update availableColumns to reflect new order for future toggles
+    const allColumnsInNewOrder = newOrder.concat(
+      availableColumns.filter(col => !newOrder.includes(col))
+    );
+    setAvailableColumns(allColumnsInNewOrder);
   };
 
   const handleToggleColumn = (columnName: string) => {
@@ -134,28 +98,28 @@ export default function TableDisplayPage() {
         </p>
       </div>
 
-      {/* Data Source Toggle */}
+      {/* Upload JSON Section */}
       <Card className="p-6">
-        <div className="flex gap-2">
-          <Button
-            variant={dataSource === "api" ? "default" : "outline"}
-            onClick={() => setDataSource("api")}
-            className="flex items-center gap-2"
-          >
-            <Database className="h-4 w-4" />
-            API Data
-          </Button>
-          <Button
-            variant={dataSource === "upload" ? "default" : "outline"}
-            onClick={() => {
-              setDataSource("upload");
-              fileInputRef.current?.click();
-            }}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Upload JSON
-          </Button>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex gap-2">
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload JSON
+            </Button>
+            {availableColumns.length > 0 && (
+              <FieldVisibilityToggle
+                availableColumns={availableColumns}
+                visibleColumns={visibleColumns}
+                onToggleColumn={handleToggleColumn}
+              />
+            )}
+          </div>
+          {availableColumns.length > 0 && (
+            <CsvExporter tableData={uploadedData} visibleColumns={visibleColumns} />
+          )}
           <input
             ref={fileInputRef}
             type="file"
@@ -166,41 +130,20 @@ export default function TableDisplayPage() {
         </div>
       </Card>
 
-      {/* Column Visibility Controls */}
-      {availableColumns.length > 0 && (
-        <Card className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <FieldVisibilityToggle
-              availableColumns={availableColumns}
-              visibleColumns={visibleColumns}
-              onToggleColumn={handleToggleColumn}
-            />
-            {tableData.length > 0 && (
-              <CsvExporter tableData={tableData} visibleColumns={visibleColumns} />
-            )}
-          </div>
-        </Card>
-      )}
-
       {/* Table Display */}
-      {isLoading && dataSource === "api" ? (
-        <Card className="p-6">
-          <div className="text-sm text-gray-600">Loading data...</div>
-        </Card>
-      ) : tableData.length > 0 ? (
-        <Card className="p-4 overflow-hidden">
+      {uploadedData.length > 0 ? (
+        <Card className="p-4 overflow-hidden mb-8">
           <Table
-            table={tableData}
+            table={uploadedData}
             visibleColumns={visibleColumns}
             onColumnsExtracted={handleColumnsExtracted}
+            onColumnOrderChange={handleColumnOrderChange}
           />
         </Card>
       ) : (
         <Card className="p-6">
           <div className="text-sm text-gray-500">
-            {dataSource === "api" 
-              ? "No data available from API" 
-              : "Upload a JSON file to display data"}
+            Upload a JSON file to display data
           </div>
         </Card>
       )}

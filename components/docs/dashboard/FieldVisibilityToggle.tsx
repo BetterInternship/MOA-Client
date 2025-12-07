@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { EyeOff, ListMinus, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
     
 interface FieldVisibilityToggleProps {
   availableColumns: string[];
@@ -42,9 +43,10 @@ export default function FieldVisibilityToggle({
   return (
     <div className="relative">
       {/* Toggle Button */}
-      <button
+      <Button
+        variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded border border-gray-300 bg-gray-100 px-4 py-2 text-gray-700 hover:bg-gray-200"
+        className="flex items-center gap-2"
       >
         <EyeOff className="h-4 w-4" />
         <span>Hide fields</span>
@@ -53,7 +55,7 @@ export default function FieldVisibilityToggle({
             {hiddenCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Dropdown Panel */}
       {isOpen && (
