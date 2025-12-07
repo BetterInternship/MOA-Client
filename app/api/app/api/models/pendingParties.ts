@@ -6,4 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export type FormMetadataRequiredPartiesItem = { [key: string]: unknown };
+export interface PendingParties {
+  party: string;
+  order: number;
+}

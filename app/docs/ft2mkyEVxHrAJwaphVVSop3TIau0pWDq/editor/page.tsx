@@ -1030,20 +1030,35 @@ const RegisterFileModal = ({
   const router = useRouter();
   const [documentName, setDocumentName] = useState(form.formMetadata.name ?? "");
   const [documentLabel, setDocumentLabel] = useState(form.formMetadata.label ?? "");
-  const [requiredParties, setRequiredParties] = useState<string>(
-    form.formMetadata.required_parties?.join(", ") ?? ""
+  const [requiredParties, setRequiredParties] = useState<{ party: string; order: number }[]>(
+    form.formMetadata.required_parties ?? []
   );
+
   const [submitting, setSubmitting] = useState(false);
+
+  // Add a party to the order list
+  const handleAddParty = (partyName: string) => {
+    if (!partyName || requiredParties.some((p) => p.party === partyName)) return;
+    setRequiredParties([
+      ...requiredParties,
+      { party: partyName, order: Math.max(0, ...requiredParties.map((p) => p.order)) + 1 },
+    ]);
+  };
+
+  // Remove a party from the order list
+  const handleRemoveParty = (partyName: string) => {
+    setRequiredParties(requiredParties.filter((p) => p.party !== partyName));
+  };
+
+  // Update party order number
+  const handleUpdatePartyOrder = (partyName: string, newOrder: number) => {
+    setRequiredParties(
+      requiredParties.map((p) => (p.party === partyName ? { ...p, order: newOrder } : p))
+    );
+  };
 
   // Constructs the latest metadata given the state
   const formMetadataDraft: IFormMetadata & { name: string; base_document: File } = useMemo(() => {
-    const requiredPartiesRaw = requiredParties.split(",").map((rp) => rp.trim());
-
-    // Make sure required parties are unique and valid
-    const requiredPartiesArray = Array.from(
-      new Set(requiredPartiesRaw.filter((rp) => PARTIES.includes(rp)))
-    );
-
     // Make signatures bigger
     const resizedFields = form.fields.map((field) => {
       const {
@@ -1075,12 +1090,7 @@ const RegisterFileModal = ({
     });
 
     return {
-      required_parties: requiredPartiesArray as (
-        | "student"
-        | "student-guardian"
-        | "entity"
-        | "university"
-      )[],
+      required_parties: requiredParties,
       schema_version: SCHEMA_VERSION,
       name: documentName,
       label: documentLabel,
@@ -1107,6 +1117,8 @@ const RegisterFileModal = ({
     if (!form.document.file) return;
     if (!documentLabel) return alert("Please specify a label for the form.");
 
+    console.log("Submitting form with metadata:", formMetadataDraft);
+
     // After submitting, redirect to new version
     setSubmitting(true);
     await formsControllerRegisterForm(formMetadataDraft as unknown as RegisterFormSchemaDto);
@@ -1121,6 +1133,8 @@ const RegisterFileModal = ({
   const handleExportMetadata = () => {
     downloadJSON(`${documentName}.metadata.json`, formMetadataDraft);
   };
+
+  const availableParties = PARTIES.filter((p) => !requiredParties.some((rpo) => rpo.party === p));
 
   return (
     <div className="flex min-w-xl flex-col gap-2">
@@ -1144,15 +1158,52 @@ const RegisterFileModal = ({
           onChange={(e) => setDocumentLabel(e.target.value)}
         />
       </div>
-      <div className="flex flex-row gap-2">
-        <Badge className="w-fit max-w-prose">Who Needs to Sign?</Badge>
-        <Input
-          type="text"
-          className="h-7 py-1 text-xs"
-          value={requiredParties}
-          placeholder="Comma separated, any of: student, entity, student-guardian, university"
-          onChange={(e) => setRequiredParties(e.target.value)}
-        />
+      <div className="flex flex-col gap-2">
+        <Badge className="w-fit max-w-prose">Required Parties (with order)</Badge>
+        <div className="flex flex-row gap-2">
+          <Autocomplete
+            placeholder="Select a party..."
+            options={availableParties.map((p) => ({ id: p, name: p }))}
+            setter={(id) => id && handleAddParty(id)}
+          />
+        </div>
+        <div className="flex max-h-[200px] flex-col gap-2 overflow-auto rounded border border-gray-300 p-2">
+          {requiredParties.length === 0 ? (
+            <Badge type="warning" className="w-fit">
+              No parties added yet
+            </Badge>
+          ) : (
+            requiredParties
+              .sort((a, b) => a.order - b.order)
+              .map((item) => (
+                <div
+                  key={item.party}
+                  className="flex flex-row items-center gap-2 rounded bg-gray-100 p-2"
+                >
+                  <Badge>{item.party}</Badge>
+                  <Input
+                    type="number"
+                    min="1"
+                    className="h-7 w-16 py-1 text-xs"
+                    value={item.order}
+                    onChange={(e) =>
+                      handleUpdatePartyOrder(item.party, parseInt(e.target.value) || 1)
+                    }
+                  />
+                  <span className="text-xs text-gray-500">(same number = concurrent)</span>
+                  <div className="flex-1" />
+                  <Button
+                    className="h-6 w-6"
+                    scheme="destructive"
+                    variant="outline"
+                    onClick={() => handleRemoveParty(item.party)}
+                  >
+                    <X />
+                  </Button>
+                </div>
+              ))
+          )}
+        </div>
       </div>
       <div className="max-h-[480px] overflow-y-auto">
         <JsonView

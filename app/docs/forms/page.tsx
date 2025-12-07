@@ -35,19 +35,28 @@ export default function DocsFormsPage() {
   const { data: rows = [] } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
     queryFn: async () => {
-      const res = await getViewableForms();
+      type FormsResponse = {
+        forms?: {
+          [name: string]: {
+            enabled: boolean;
+            party: string;
+            date?: string;
+            order?: number;
+          };
+        };
+      };
+
+      const res = (await getViewableForms()) as FormsResponse;
       if (!res || !res.forms) return [];
 
       // res.forms is an object keyed by form name. Convert to array.
-      const entries = Object.entries(res.forms) as [
-        string,
-        { enabled: boolean; party: string; date?: string },
-      ][];
+      const entries = Object.entries(res.forms);
       return entries.map(([name, obj]) => ({
         name,
-        enabledAutosign: !!obj.enabled,
-        party: obj.party ?? "",
-        date: obj.date ?? "",
+        enabledAutosign: !!obj?.enabled,
+        party: obj?.party ?? "",
+        date: obj?.date ?? "",
+        order: obj?.order ?? 0,
       }));
     },
     staleTime: 60_000,

@@ -10,7 +10,7 @@ import type { FormPhantomField } from "./formPhantomField";
 import type { RegisterFormSchemaDtoParams } from "./registerFormSchemaDtoParams";
 import type { FormSubscriber } from "./formSubscriber";
 import type { FormSignatory } from "./formSignatory";
-import type { RegisterFormSchemaDtoRequiredPartiesItem } from "./registerFormSchemaDtoRequiredPartiesItem";
+import type { PendingParties } from "./pendingParties";
 
 export interface RegisterFormSchemaDto {
   name: string;
@@ -22,5 +22,5 @@ export interface RegisterFormSchemaDto {
   subscribers: FormSubscriber[];
   signatories: FormSignatory[];
   base_document: Blob;
-  required_parties: RegisterFormSchemaDtoRequiredPartiesItem[];
+  required_parties: PendingParties[];
 }
