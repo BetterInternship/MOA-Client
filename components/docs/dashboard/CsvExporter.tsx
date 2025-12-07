@@ -46,7 +46,7 @@ export default function CsvExporter({ tableData, visibleColumns }: CsvExporterPr
     <button
       onClick={handleExport}
       disabled={!tableData || tableData.length === 0}
-      className="flex cursor-pointer items-center gap-2 rounded bg-blue-900 px-4 py-2 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+      className="flex cursor-pointer items-center gap-2 rounded border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
     >
       <FileDown className="h-4 w-4" />
       Export CSV

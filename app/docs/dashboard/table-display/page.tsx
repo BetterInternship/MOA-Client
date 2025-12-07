@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Table2, Database, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Table from "@/components/docs/dashboard/Table";
-import JsonUploader from "@/components/docs/dashboard/JsonUploader";
 import CsvExporter from "@/components/docs/dashboard/CsvExporter";
 import FieldVisibilityToggle from "@/components/docs/dashboard/FieldVisibilityToggle";
 import { RowEntry } from "@/lib/types";
@@ -20,6 +19,7 @@ export default function TableDisplayPage() {
   const [uploadedData, setUploadedData] = useState<RowEntry[][]>([]);
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch data from API
   const { data: apiData, isLoading } = useQuery({
@@ -56,6 +56,34 @@ export default function TableDisplayPage() {
   // Use either API data or uploaded data
   const tableData = dataSource === "api" ? (apiData ?? []) : uploadedData;
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const text = reader.result as string;
+        const json = JSON.parse(text);
+
+        const res = await fetch("/api/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(json),
+        });
+        
+        const processed = await res.json();
+        setUploadedData(processed);
+        setDataSource("upload");
+        setVisibleColumns([]);
+      } catch (err) {
+        console.error("Invalid JSON", err);
+        alert("Failed to parse JSON file");
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleDataLoaded = (data: RowEntry[][]) => {
     setUploadedData(data);
     setDataSource("upload");
@@ -77,12 +105,13 @@ export default function TableDisplayPage() {
         const newVisible = [...prev];
         const originalIndex = availableColumns.indexOf(columnName);
         
-        // Find the correct position to insert based on original order
-        let insertIndex = 0;
-        for (let i = 0; i < availableColumns.length && insertIndex < newVisible.length; i++) {
-          if (availableColumns[i] === columnName) break;
-          if (newVisible[insertIndex] === availableColumns[i]) {
-            insertIndex++;
+        // Find the correct position to insert
+        let insertIndex = newVisible.length;
+        for (let i = 0; i < newVisible.length; i++) {
+          const currentColIndex = availableColumns.indexOf(newVisible[i]);
+          if (currentColIndex > originalIndex) {
+            insertIndex = i;
+            break;
           }
         }
         
@@ -95,8 +124,8 @@ export default function TableDisplayPage() {
   return (
     <div className="container mx-auto max-w-6xl space-y-6 px-4 pt-6 sm:px-10 sm:pt-16">
       {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
           <HeaderIcon icon={Table2} />
           <HeaderText>Table Display</HeaderText>
         </div>
@@ -107,25 +136,52 @@ export default function TableDisplayPage() {
 
       {/* Data Source Toggle */}
       <Card className="p-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-2">
-            <Button
-              variant={dataSource === "api" ? "default" : "outline"}
-              onClick={() => setDataSource("api")}
-              className="flex items-center gap-2"
-            >
-              <Database className="h-4 w-4" />
-              API Data
-            </Button>
-            <Button
-              variant={dataSource === "upload" ? "default" : "outline"}
-              onClick={() => setDataSource("upload")}
-              className="flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Upload JSON
-            </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={dataSource === "api" ? "default" : "outline"}
+            onClick={() => setDataSource("api")}
+            className="flex items-center gap-2"
+          >
+            <Database className="h-4 w-4" />
+            API Data
+          </Button>
+          <Button
+            variant={dataSource === "upload" ? "default" : "outline"}
+            onClick={() => {
+              setDataSource("upload");
+              fileInputRef.current?.click();
+            }}
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Upload JSON
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+        </div>
+      </Card>
+
+      {/* Column Visibility Controls */}
+      {availableColumns.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <FieldVisibilityToggle
+              availableColumns={availableColumns}
+              visibleColumns={visibleColumns}
+              onToggleColumn={handleToggleColumn}
+            />
+            {tableData.length > 0 && (
+              <CsvExporter tableData={tableData} visibleColumns={visibleColumns} />
+            )}
           </div>
+        </Card>
+      )}
+
       {/* Table Display */}
       {isLoading && dataSource === "api" ? (
         <Card className="p-6">
@@ -146,35 +202,6 @@ export default function TableDisplayPage() {
               ? "No data available from API" 
               : "Upload a JSON file to display data"}
           </div>
-        </Card>
-      )}
-    </div>
-  );
-}             <CsvExporter tableData={tableData} visibleColumns={visibleColumns} />
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Column Visibility Controls */}
-      {availableColumns.length > 0 && (
-        <Card className="p-6">
-          <FieldVisibilityToggle
-            availableColumns={availableColumns}
-            visibleColumns={visibleColumns}
-            onToggleColumn={handleToggleColumn}
-          />
-        </Card>
-      )}
-
-      {/* Table Display */}
-      {tableData.length > 0 && (
-        <Card className="p-4 overflow-hidden">
-          <Table
-            table={tableData}
-            visibleColumns={visibleColumns}
-            onColumnsExtracted={handleColumnsExtracted}
-          />
         </Card>
       )}
     </div>
