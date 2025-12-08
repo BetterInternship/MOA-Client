@@ -14,7 +14,12 @@ import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorM
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
 
-type FormItem = { name: string; enabledAutosign: boolean; party: string };
+type FormItem = {
+  name: string;
+  enabledAutosign: boolean;
+  party: string;
+  order?: number;
+};
 
 export default function DocsFormsPage() {
   const queryClient = useQueryClient();
@@ -55,7 +60,6 @@ export default function DocsFormsPage() {
         name,
         enabledAutosign: !!obj?.enabled,
         party: obj?.party ?? "",
-        date: obj?.date ?? "",
         order: obj?.order ?? 0,
       }));
     },
