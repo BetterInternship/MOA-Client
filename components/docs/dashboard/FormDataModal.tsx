@@ -1,21 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Table2, Download } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Table from "@/components/docs/dashboard/Table";
 import CsvExporter from "@/components/docs/dashboard/CsvExporter";
 import FieldVisibilityToggle from "@/components/docs/dashboard/FieldVisibilityToggle";
 import { FormRow } from "@/components/docs/dashboard/FormTable";
 import { RowEntry } from "@/lib/types";
+import { RotateCcw } from "lucide-react";
 
 function formRowsToRowEntries(rows: FormRow[]): RowEntry[][] {
   return rows.map((row) => {
@@ -78,62 +70,53 @@ export default function FormDataModal({ rows, label }: { rows: FormRow[]; label:
   const hasData = tableData.length > 0;
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Table2 className="h-4 w-4" />
-          View / Export CSV
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-6xl" showCloseButton>
-        <DialogHeader>
-          <DialogTitle>{label}</DialogTitle>
-          <DialogDescription>
-            Reorder or hide fields, then export the visible data as CSV.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="flex flex-col gap-3 px-4">
+      <div className="space-y-1">
+        <p className="text-sm text-gray-600">
+          Reorder or hide fields, then export the visible data as CSV.
+        </p>
+      </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {availableColumns.length > 0 && (
-              <FieldVisibilityToggle
-                availableColumns={availableColumns}
-                visibleColumns={visibleColumns}
-                onToggleColumn={handleToggleColumn}
-              />
-            )}
+      <div className="flex flex-wrap justify-between gap-2">
+        <div className="flex gap-2">
+          {availableColumns.length > 0 && (
+            <FieldVisibilityToggle
+              availableColumns={availableColumns}
+              visibleColumns={visibleColumns}
+              onToggleColumn={handleToggleColumn}
+            />
+          )}
 
-            <CsvExporter tableData={tableData} visibleColumns={visibleColumns} />
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto inline-flex items-center gap-2"
-              onClick={() => {
-                // reset columns to initial state
-                setVisibleColumns(availableColumns);
-              }}
-              disabled={!availableColumns.length}
-            >
-              <Download className="h-4 w-4" />
-              Reset columns
-            </Button>
-          </div>
-
-          <div className="max-h-[70vh] overflow-auto rounded border">
-            {hasData ? (
-              <Table
-                table={tableData}
-                visibleColumns={visibleColumns}
-                onColumnsExtracted={handleColumnsExtracted}
-                onColumnOrderChange={handleColumnOrderChange}
-              />
-            ) : (
-              <div className="p-6 text-sm text-gray-600">No data available.</div>
-            )}
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              // reset columns to initial state
+              setVisibleColumns(availableColumns);
+            }}
+            disabled={!availableColumns.length}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset columns
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <CsvExporter tableData={tableData} visibleColumns={visibleColumns} />
+      </div>
+
+      <div className="max-h-[70vh] overflow-auto rounded-[0.33em]">
+        {hasData ? (
+          <Table
+            table={tableData}
+            visibleColumns={visibleColumns}
+            onColumnsExtracted={handleColumnsExtracted}
+            onColumnOrderChange={handleColumnOrderChange}
+          />
+        ) : (
+          <div className="p-6 text-sm text-gray-600">No data available.</div>
+        )}
+      </div>
+    </div>
   );
 }

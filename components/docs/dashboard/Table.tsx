@@ -124,7 +124,7 @@ export default function Table({
   };
 
   return (
-    <div className="my-4 overflow-x-auto rounded-lg border border-gray-300 shadow-sm">
+    <div className="overflow-x-auto rounded-[0.33em] border border-gray-300">
       <table className="min-w-full bg-white">
         {/* Table Header */}
         <thead className="sticky top-0 bg-gray-100">

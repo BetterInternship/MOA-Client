@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FileDown } from "lucide-react";
+import { Download } from "lucide-react";
 import { RowEntry } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 
@@ -45,12 +45,11 @@ export default function CsvExporter({ tableData, visibleColumns }: CsvExporterPr
 
   return (
     <Button
-      variant="outline"
       onClick={handleExport}
       disabled={!tableData || tableData.length === 0}
       className="flex items-center gap-2"
     >
-      <FileDown className="h-4 w-4" />
+      <Download className="h-4 w-4" />
       Export CSV
     </Button>
   );

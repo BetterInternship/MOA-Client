@@ -1,10 +1,13 @@
 "use client";
 
+import { useCallback, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Download, Hourglass } from "lucide-react";
+import { Download, Hourglass, Table2 } from "lucide-react";
+import FormDataModal from "@/components/docs/dashboard/FormDataModal";
+import { useModal } from "@/app/providers/modal-provider";
 
 export interface FormRow {
   id: string | number;
@@ -19,17 +22,30 @@ export interface FormRow {
 }
 
 export function getDisplayValue(
-  info: Record<string, any>,
+  info: Record<string, unknown>,
   section: string,
   key: string,
   preferredSuffixes: string[] = ["student-filled", "default"]
 ) {
+  const toDisplayString = (value: unknown): string => {
+    if (value === null || value === undefined) return "—";
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return `${value}`;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "—";
+    }
+  };
+
   if (!info) return "—";
   for (const sfx of preferredSuffixes) {
     const composed = `${section}.${key}:${sfx}`;
-    if (info[composed]) return info[composed];
+    const val = info[composed];
+    if (val !== undefined && val !== null) return toDisplayString(val);
   }
-  return info[`${section}.${key}`] ?? "—";
+  const raw = info[`${section}.${key}`];
+  return raw !== undefined && raw !== null ? toDisplayString(raw) : "—";
 }
 
 export function createFormColumns(isCoordinator: boolean): ColumnDef<FormRow>[] {
@@ -101,19 +117,56 @@ export function createFormColumns(isCoordinator: boolean): ColumnDef<FormRow>[] 
 export default function FormTable({
   rows,
   isCoordinator,
+  exportEnabled = false,
+  exportLabel,
 }: {
   rows: FormRow[];
   isCoordinator: boolean;
+  exportEnabled?: boolean;
+  exportLabel?: string;
 }) {
   const columns = createFormColumns(isCoordinator);
+  const { openModal } = useModal();
+
+  const modalName = useMemo(
+    () => `form-data-${exportLabel ? exportLabel.replace(/\s+/g, "-").toLowerCase() : "all"}`,
+    [exportLabel]
+  );
+
+  const handleOpenExport = useCallback(() => {
+    openModal(
+      modalName,
+      <FormDataModal rows={rows} label={exportLabel ?? "Form Data"} />, // content
+      {
+        title: exportLabel ?? "Form Data",
+        panelClassName: "sm:max-w-6xl sm:w-[92vw]",
+      }
+    );
+  }, [exportLabel, modalName, openModal, rows]);
 
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      enableColumnVisibility
-      initialSorting={[{ id: "timestamp", desc: true }]}
-      pageSizes={[20, 50]}
-    />
+    <div className="space-y-3">
+      {exportEnabled ? (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            className="inline-flex items-center gap-2"
+            onClick={handleOpenExport}
+          >
+            <Table2 className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
+      ) : null}
+
+      <DataTable
+        columns={columns}
+        data={rows}
+        enableColumnVisibility
+        initialSorting={[{ id: "timestamp", desc: true }]}
+        pageSizes={[20, 50]}
+      />
+    </div>
   );
 }

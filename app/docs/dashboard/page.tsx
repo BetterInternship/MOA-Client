@@ -15,7 +15,6 @@ import {
   VerticalTabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
-import FormDataModal from "@/components/docs/dashboard/FormDataModal";
 
 export default function DocsDashboardPage() {
   const { data } = useQuery({
@@ -82,12 +81,7 @@ export default function DocsDashboardPage() {
         ) : error ? (
           <div className="text-sm text-red-600">Failed to load signed documents.</div>
         ) : !isCoordinator ? (
-          <div className="space-y-3">
-            <div className="flex justify-end">
-              <FormDataModal rows={rows} label="All Forms" />
-            </div>
-            <FormTable rows={rows} isCoordinator={isCoordinator} />
-          </div>
+          <FormTable rows={rows} isCoordinator={isCoordinator} />
         ) : (
           <VerticalTabs
             orientation="vertical"
@@ -114,20 +108,19 @@ export default function DocsDashboardPage() {
             <div className="min-w-0 flex-1">
               <TabsContent value="all" className="mt-0">
                 <Card className="space-y-3 p-3">
-                  <div className="flex justify-end">
-                    <FormDataModal rows={rows} label="All Forms" />
-                  </div>
-                  <FormTable rows={rows} isCoordinator={isCoordinator} />
+                  <FormTable rows={rows} isCoordinator={isCoordinator} exportEnabled={false} />
                 </Card>
               </TabsContent>
 
               {formTabs.map((tab) => (
                 <TabsContent key={tab.value} value={tab.value} className="mt-0">
                   <Card className="space-y-3 p-3">
-                    <div className="flex justify-end">
-                      <FormDataModal rows={rowsByForm(tab.value)} label={tab.label} />
-                    </div>
-                    <FormTable rows={rowsByForm(tab.value)} isCoordinator={isCoordinator} />
+                    <FormTable
+                      rows={rowsByForm(tab.value)}
+                      isCoordinator={isCoordinator}
+                      exportEnabled
+                      exportLabel={tab.label}
+                    />
                   </Card>
                 </TabsContent>
               ))}
