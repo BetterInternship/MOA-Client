@@ -148,12 +148,7 @@ export default function FormTable({
     <div className="space-y-3">
       {exportEnabled ? (
         <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            className="inline-flex items-center gap-2"
-            onClick={handleOpenExport}
-          >
+          <Button size="sm" className="inline-flex items-center gap-2" onClick={handleOpenExport}>
             <Table2 className="h-4 w-4" />
             Export CSV
           </Button>
