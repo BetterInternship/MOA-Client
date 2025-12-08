@@ -367,21 +367,18 @@ function PageContent() {
   }, [formName, formVersion, formRes]);
 
   return (
-    <div className="relative mx-auto flex max-h-[100%] flex-col space-y-4 overflow-y-hidden px-4 py-8">
-      <div className="relative grid grid-cols-1 gap-7 sm:grid-cols-2">
-        <div className="justify-self-end overflow-x-visible sm:w-2/3">
-          <h2 className="text-justify text-sm tracking-tight whitespace-normal sm:text-base sm:whitespace-nowrap">
-            Internship Document Fill-out Request from{" "}
-            <span className="font-semibold">{studentName}</span>
-          </h2>
-          <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-normal sm:text-3xl sm:whitespace-nowrap">
-            {pendingInfo?.pendingInfo?.form_label as string}
-          </h1>
-        </div>
-        <div></div>
+    <div className="relative mx-auto flex max-h-[100%] flex-col items-center space-y-4 overflow-y-hidden px-4 py-8">
+      <div className="w-7xl overflow-x-visible overflow-y-visible">
+        <h2 className="text-justify text-sm tracking-tight whitespace-normal sm:text-base sm:whitespace-nowrap">
+          Internship Document Fill-out Request from{" "}
+          <span className="font-semibold">{studentName}</span>
+        </h2>
+        <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-normal sm:whitespace-nowrap">
+          {pendingInfo?.pendingInfo?.form_label as string}
+        </h1>
       </div>
-      <div className="relative grid grid-cols-1 gap-7 overflow-y-hidden sm:grid-cols-2">
-        <div className="relative max-h-[100%] justify-self-end overflow-y-hidden sm:w-2/3">
+      <div className="relative flex w-7xl max-w-7xl flex-col justify-center gap-7 overflow-y-hidden sm:flex-row">
+        <div className="relative max-h-[100%] overflow-y-visible sm:w-[80%]">
           {/* Form Renderer */}
           <div className="h-full max-h-[100%] space-y-4 overflow-y-auto rounded-[0.33em] border border-gray-300 p-5">
             <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
@@ -554,7 +551,7 @@ function PageContent() {
         </div>
 
         {/* PDF Renderer - hidden on small screens, visible on sm+ */}
-        <div className="relative hidden w-full overflow-auto sm:block">
+        <div className="relative hidden max-w-[600px] min-w-[600px] overflow-auto sm:block">
           {!loadingForm && audienceAllowed ? (
             <div className="relative flex h-full w-full flex-row gap-2">
               {!!docUrl && (
