@@ -136,6 +136,7 @@ export default function DocsFormsPage() {
           void toggleAutoSign(name, party, currentValue)
         }
         togglingName={togglingName}
+        isCoordinator={isCoordinator}
       />
     </div>
   );
