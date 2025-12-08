@@ -502,20 +502,6 @@ function PageContent() {
                     setPreviews={setPreviews}
                   />
 
-                  <DynamicForm
-                    party={party}
-                    fields={fields}
-                    values={values}
-                    pendingUrl={pendingUrl}
-                    onChange={setField}
-                    errors={errors}
-                    showErrors={submitted}
-                    formName={""}
-                    autofillValues={autofillValues}
-                    setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
-                    setPreviews={setPreviews}
-                  />
-
                   <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
                     <Button
                       onClick={onClickSubmitRequest}
