@@ -38,6 +38,7 @@ const Page = () => {
 function PageContent() {
   const params = useSearchParams();
   const router = useRouter();
+  // ! WARNING, FACTOR THIS OUT: this allows editing form, and can be an exploit in the future
   const form = useFormContext();
   const { openModal, closeModal } = useModal();
   const { update } = useSignatoryAccountActions();
