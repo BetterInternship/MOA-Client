@@ -3,7 +3,6 @@
 import React, { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, Info } from "lucide-react";
 import {
@@ -59,11 +58,7 @@ function PageContent() {
   const studentName = params.get("student") || "The student";
 
   // Pending document preview
-  const {
-    data: pendingRes,
-    isLoading: loadingPending,
-    error: pendingErr,
-  } = useQuery({
+  const { data: pendingRes } = useQuery({
     queryKey: ["pending-info", pendingDocumentId],
     queryFn: () => getPendingInformation(pendingDocumentId),
     staleTime: 60_000,
