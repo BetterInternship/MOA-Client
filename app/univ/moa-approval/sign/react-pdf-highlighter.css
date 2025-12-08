@@ -50,6 +50,11 @@ blockquote:after {
   content: close-quote;
 }
 
+div:has(> ._container_12oj9_1) {
+  width: 100px;
+  height: 200px;
+}
+
 ._container_12oj9_1 {
   position: absolute;
   overflow: auto;
