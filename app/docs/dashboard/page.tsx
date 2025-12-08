@@ -46,7 +46,7 @@ export default function DocsDashboardPage() {
   // Temp solution, in the future, lets look at the coordinator forms + autofill forms
   const formTabs = useMemo(() => {
     const seen = new Set<string>();
-    return rows.reduce<{ value: string; label: string }[]>((acc, row) => {
+    return rows.reduce<{ value: string; label: string }[]>((acc, row: FormRow) => {
       const value = row.form_name || String(row.id);
       if (!value || seen.has(value)) return acc;
       seen.add(value);
@@ -54,6 +54,12 @@ export default function DocsDashboardPage() {
       return acc;
     }, []);
   }, [rows]);
+
+  const rowsByForm = (formName: string): FormRow[] =>
+    rows.filter((row): row is FormRow => {
+      if (!row || typeof row !== "object" || !("form_name" in row)) return false;
+      return (row as { form_name?: string }).form_name === formName;
+    });
 
   return (
     <div className="max-w-8xl container mx-auto space-y-6 px-4 pt-6 sm:px-10 sm:pt-16">
@@ -101,17 +107,19 @@ export default function DocsDashboardPage() {
 
             <div className="min-w-0 flex-1">
               <TabsContent value="all" className="mt-0">
-                <Card className="p-3">
-                  <FormTable rows={rows} isCoordinator={isCoordinator} />
+                <Card className="space-y-3 p-3">
+                  <FormTable rows={rows} isCoordinator={isCoordinator} exportEnabled={false} />
                 </Card>
               </TabsContent>
 
               {formTabs.map((tab) => (
                 <TabsContent key={tab.value} value={tab.value} className="mt-0">
-                  <Card className="p-3">
+                  <Card className="space-y-3 p-3">
                     <FormTable
-                      rows={rows.filter((r) => r.form_name === tab.value)}
+                      rows={rowsByForm(tab.value)}
                       isCoordinator={isCoordinator}
+                      exportEnabled
+                      exportLabel={tab.label}
                     />
                   </Card>
                 </TabsContent>
