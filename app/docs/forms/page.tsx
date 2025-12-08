@@ -84,6 +84,7 @@ export default function DocsFormsPage() {
       {
         title: `Enable Auto-Sign: ${formName}`,
         panelClassName: "sm:max-w-2xl sm:min-w-[32rem]",
+        useCustomPanel: true,
       }
     );
   };
