@@ -373,19 +373,19 @@ function PageContent() {
   return (
     <div className="relative mx-auto flex max-h-[100%] flex-col space-y-4 overflow-y-hidden px-4 py-8">
       <div className="relative grid grid-cols-1 gap-7 sm:grid-cols-2">
-        <div className="w-2/3 justify-self-end overflow-x-visible">
-          <h2 className="text-justify text-sm tracking-tight whitespace-nowrap sm:text-base">
+        <div className="justify-self-end overflow-x-visible sm:w-2/3">
+          <h2 className="text-justify text-sm tracking-tight whitespace-normal sm:text-base sm:whitespace-nowrap">
             Internship Document Fill-out Request from{" "}
             <span className="font-semibold">{studentName}</span>
           </h2>
-          <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-nowrap sm:text-3xl">
+          <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-normal sm:text-3xl sm:whitespace-nowrap">
             {pendingInfo?.pendingInfo?.form_label as string}
           </h1>
         </div>
         <div></div>
       </div>
       <div className="relative grid grid-cols-1 gap-7 overflow-y-hidden sm:grid-cols-2">
-        <div className="relative max-h-[100%] w-2/3 justify-self-end overflow-y-hidden">
+        <div className="relative max-h-[100%] justify-self-end overflow-y-hidden sm:w-2/3">
           {/* Form Renderer */}
           <div className="h-full max-h-[100%] space-y-4 overflow-y-auto rounded-[0.33em] border border-gray-300 p-5">
             <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
