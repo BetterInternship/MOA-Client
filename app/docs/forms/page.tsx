@@ -14,7 +14,12 @@ import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorM
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
 
-type FormItem = { name: string; enabledAutosign: boolean; party: string };
+type FormItem = {
+  name: string;
+  enabledAutosign: boolean;
+  party: string;
+  order?: number;
+};
 
 export default function DocsFormsPage() {
   const queryClient = useQueryClient();
@@ -55,7 +60,6 @@ export default function DocsFormsPage() {
         name,
         enabledAutosign: !!obj?.enabled,
         party: obj?.party ?? "",
-        date: obj?.date ?? "",
         order: obj?.order ?? 0,
       }));
     },
@@ -80,6 +84,7 @@ export default function DocsFormsPage() {
       {
         title: `Enable Auto-Sign: ${formName}`,
         panelClassName: "sm:max-w-2xl sm:min-w-[32rem]",
+        useCustomPanel: true,
       }
     );
   };
@@ -132,6 +137,7 @@ export default function DocsFormsPage() {
           void toggleAutoSign(name, party, currentValue)
         }
         togglingName={togglingName}
+        isCoordinator={isCoordinator}
       />
     </div>
   );

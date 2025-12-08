@@ -3,7 +3,6 @@
 import React, { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, Info } from "lucide-react";
 import {
@@ -39,6 +38,7 @@ const Page = () => {
 function PageContent() {
   const params = useSearchParams();
   const router = useRouter();
+  // ! WARNING, FACTOR THIS OUT: this allows editing form, and can be an exploit in the future
   const form = useFormContext();
   const { openModal, closeModal } = useModal();
   const { update } = useSignatoryAccountActions();
@@ -59,11 +59,7 @@ function PageContent() {
   const studentName = params.get("student") || "The student";
 
   // Pending document preview
-  const {
-    data: pendingRes,
-    isLoading: loadingPending,
-    error: pendingErr,
-  } = useQuery({
+  const { data: pendingRes } = useQuery({
     queryKey: ["pending-info", pendingDocumentId],
     queryFn: () => getPendingInformation(pendingDocumentId),
     staleTime: 60_000,
@@ -371,191 +367,191 @@ function PageContent() {
   }, [formName, formVersion, formRes]);
 
   return (
-    <div className="container mx-auto space-y-4 px-4 pt-8">
-      <div>
-        <h2 className="text-justify text-sm tracking-tight sm:text-base">
+    <div className="relative mx-auto flex h-[100%] max-h-[100%] flex-col items-center space-y-4 overflow-y-hidden px-4 py-8">
+      <div className="w-full max-w-7xl overflow-x-visible overflow-y-visible sm:w-7xl">
+        <h2 className="text-justify text-sm tracking-tight whitespace-normal sm:text-base sm:whitespace-nowrap">
           Internship Document Fill-out Request from{" "}
           <span className="font-semibold">{studentName}</span>
         </h2>
-        <h1 className="text-primary text-2xl font-bold tracking-tight sm:text-3xl">
-          {pendingInfo?.pendingInfo?.form_label}
+        <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-normal sm:whitespace-nowrap">
+          {pendingInfo?.pendingInfo?.form_label as string}
         </h1>
       </div>
+      <div className="relative flex h-[100%] w-full max-w-7xl flex-col justify-center gap-7 overflow-y-hidden sm:w-7xl sm:flex-row">
+        <div className="relative max-h-[100%] overflow-y-auto">
+          {/* Form Renderer */}
+          <div className="h-full max-h-[100%] space-y-4 overflow-y-auto rounded-[0.33em] border border-gray-300 p-5">
+            <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
+              <div className="relative w-full overflow-auto rounded-md border">
+                {docUrl ? (
+                  <DocumentRenderer
+                    documentUrl={docUrl}
+                    highlights={[]}
+                    previews={previews}
+                    onHighlightFinished={() => {}}
+                  />
+                ) : (
+                  <div className="p-4 text-sm text-gray-500">No preview available</div>
+                )}
+              </div>
 
-      <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-        {/* Form Renderer */}
-        <div className="space-y-4">
-          <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
-            <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
-              {docUrl ? (
-                <DocumentRenderer
-                  documentUrl={docUrl}
-                  highlights={[]}
-                  previews={previews}
-                  onHighlightFinished={() => {}}
-                />
-              ) : (
-                <div className="p-4 text-sm text-gray-500">No preview available</div>
-              )}
+              <div className="mt-2 flex gap-2">
+                <Button
+                  className="w-full"
+                  onClick={() => setMobileStage("form")}
+                  disabled={!audienceAllowed || loadingForm}
+                >
+                  Fill Form
+                </Button>
+              </div>
             </div>
 
-            <div className="mt-2 flex gap-2">
-              <Button
-                className="w-full"
-                onClick={() => setMobileStage("form")}
-                disabled={!audienceAllowed || loadingForm}
-              >
-                Fill Form
-              </Button>
+            {/* Mobile: confirm preview stage */}
+            <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
+              <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
+                {docUrl ? (
+                  <DocumentRenderer
+                    documentUrl={docUrl}
+                    highlights={[]}
+                    previews={previews}
+                    onHighlightFinished={() => {}}
+                  />
+                ) : (
+                  <div className="p-4 text-sm text-gray-500">No preview available</div>
+                )}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <Button className="w-full" variant="outline" onClick={() => setMobileStage("form")}>
+                  Back to Edit
+                </Button>
+                <Button
+                  onClick={() => {
+                    // open the same authorization modal as desktop, using lastFlatValues
+                    const flatValues = lastFlatValues ?? {};
+                    openModal(
+                      "sign-auth",
+                      <div className="space-y-4 text-sm">
+                        <p className="text-justify text-gray-700">
+                          I authorize auto-fill and auto-sign of future school-issued templated
+                          documents on my behalf. A copy of each signed document will be emailed to
+                          me.
+                        </p>
+
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
+                            className="w-full"
+                          >
+                            No, I’ll sign manually for now
+                          </Button>
+
+                          <Button
+                            type="button"
+                            onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
+                            className="w-full"
+                          >
+                            Yes, auto-fill & auto-sign
+                          </Button>
+                        </div>
+                      </div>,
+                      { title: "Permission to Auto-Fill & Auto-Sign" }
+                    );
+                  }}
+                  className="w-full"
+                >
+                  Submit & Sign
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Mobile: confirm preview stage */}
-          <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
-            <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
-              {docUrl ? (
-                <DocumentRenderer
-                  documentUrl={docUrl}
-                  highlights={[]}
-                  previews={previews}
-                  onHighlightFinished={() => {}}
-                />
-              ) : (
-                <div className="p-4 text-sm text-gray-500">No preview available</div>
-              )}
-            </div>
-            <div className="mt-2 flex gap-2">
-              <Button className="w-full" variant="outline" onClick={() => setMobileStage("form")}>
-                Back to Edit
-              </Button>
-              <Button
-                onClick={() => {
-                  // open the same authorization modal as desktop, using lastFlatValues
-                  const flatValues = lastFlatValues ?? {};
-                  openModal(
-                    "sign-auth",
-                    <div className="space-y-4 text-sm">
-                      <p className="text-justify text-gray-700">
-                        I authorize auto-fill and auto-sign of future school-issued templated
-                        documents on my behalf. A copy of each signed document will be emailed to
-                        me.
-                      </p>
-
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
-                          className="w-full"
-                        >
-                          No, I’ll sign manually for now
-                        </Button>
-
-                        <Button
-                          type="button"
-                          onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
-                          className="w-full"
-                        >
-                          Yes, auto-fill & auto-sign
-                        </Button>
-                      </div>
-                    </div>,
-                    { title: "Permission to Auto-Fill & Auto-Sign" }
-                  );
-                }}
-                className="w-full"
-              >
-                Submit & Sign
-              </Button>
-            </div>
-          </div>
-
-          <div className={cn(mobileStage === "form" ? "" : "hidden", "sm:block")}>
-            {/* loading / error / empty / form */}
-            {loadingForm ? (
-              <Card className="flex items-center justify-center p-6">
-                <span className="inline-flex items-center gap-2 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading form…
-                </span>
-              </Card>
-            ) : formErr ? (
-              <Card className="p-4 text-sm text-rose-600">Failed to load fields.</Card>
-            ) : !audienceAllowed ? (
-              <Card className="p-4 text-sm text-gray-600">
-                This form is not available. If you believe this is an error, please contact support.
-              </Card>
-            ) : fields.length === 0 ? (
-              <Card className="p-4 text-sm text-gray-500">
-                No fields available for this request.
-              </Card>
-            ) : (
-              <Card className="space-y-4 p-4 sm:p-5">
-                <DynamicForm
-                  party={party}
-                  fields={fields}
-                  values={values}
-                  pendingUrl={pendingUrl}
-                  onChange={setField}
-                  errors={errors}
-                  showErrors={submitted}
-                  formName={""}
-                  autofillValues={autofillValues}
-                  setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
-                  setPreviews={setPreviews}
-                />
-
-                <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
-                  <Button
-                    onClick={onClickSubmitRequest}
-                    disabled={busy}
-                    aria-busy={busy}
-                    className="w-full sm:w-auto"
-                  >
-                    {busy ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Submitting…
-                      </span>
-                    ) : (
-                      "Submit & Sign"
-                    )}
-                  </Button>
-
-                  {/* On mobile, also show a secondary preview button */}
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      // On mobile while editing, allow quick jump to preview stage
-                      if (isMobile) {
-                        setMobileStage("preview");
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      } else {
-                        openDocPreviewModal();
-                      }
-                    }}
-                    disabled={!docUrl}
-                    className="w-full sm:hidden"
-                  >
-                    Open Preview
-                  </Button>
+            <div className={cn(mobileStage === "form" ? "" : "hidden", "sm:block")}>
+              {/* loading / error / empty / form */}
+              {loadingForm ? (
+                <div className="flex items-center justify-center">
+                  <span className="inline-flex items-center gap-2 text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading form…
+                  </span>
                 </div>
-              </Card>
-            )}
+              ) : formErr ? (
+                <div className="text-sm text-rose-600">Failed to load fields.</div>
+              ) : !audienceAllowed ? (
+                <>
+                  This form is not available. If you believe this is an error, please contact
+                  support.
+                </>
+              ) : fields.length === 0 ? (
+                <div className="text-sm text-gray-500">No fields available for this request.</div>
+              ) : (
+                <div className="space-y-4">
+                  <DynamicForm
+                    party={party || "student"}
+                    fields={fields}
+                    values={values}
+                    pendingUrl={pendingUrl}
+                    onChange={setField}
+                    errors={errors}
+                    showErrors={submitted}
+                    formName={""}
+                    autofillValues={autofillValues}
+                    setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
+                    setPreviews={setPreviews}
+                  />
 
-            <div className="mt-1 flex items-start gap-2 text-xs text-gray-500">
-              <Info className="mt-1 h-3 w-3 flex-shrink-0" />
-              <div>
-                By selecting Submit & Sign, I agree that the signature and initials will be the
-                electronic representation of my signature and initials for all purposes when I (or
-                my agent) use them on documents, including legally binding contracts
+                  <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+                    <Button
+                      onClick={onClickSubmitRequest}
+                      disabled={busy}
+                      aria-busy={busy}
+                      className="w-full sm:w-auto"
+                    >
+                      {busy ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Submitting…
+                        </span>
+                      ) : (
+                        "Submit & Sign"
+                      )}
+                    </Button>
+
+                    {/* On mobile, also show a secondary preview button */}
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        // On mobile while editing, allow quick jump to preview stage
+                        if (isMobile) {
+                          setMobileStage("preview");
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        } else {
+                          openDocPreviewModal();
+                        }
+                      }}
+                      disabled={!docUrl}
+                      className="w-full sm:hidden"
+                    >
+                      Open Preview
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-5 flex items-start gap-2 text-xs text-gray-500">
+                <Info className="mt-1 h-3 w-3 flex-shrink-0" />
+                <div>
+                  By selecting Submit & Sign, I agree that the signature and initials will be the
+                  electronic representation of my signature and initials for all purposes when I (or
+                  my agent) use them on documents, including legally binding contracts
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* PDF Renderer - hidden on small screens, visible on sm+ */}
-        <div className="relative hidden h-[77svh] w-full overflow-auto sm:block">
+        <div className="relative hidden max-w-[600px] min-w-[600px] overflow-auto sm:block">
           {!loadingForm && audienceAllowed ? (
             <div className="relative flex h-full w-full flex-row gap-2">
               {!!docUrl && (

@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { Download, Hourglass } from "lucide-react";
 
-export interface SignedDoc {
+export interface FormRow {
   id: string | number;
   form_name: string;
   form_label: string;
@@ -32,8 +32,8 @@ export function getDisplayValue(
   return info[`${section}.${key}`] ?? "—";
 }
 
-export function createFormColumns(isCoordinator: boolean): ColumnDef<SignedDoc>[] {
-  const cols: ColumnDef<SignedDoc>[] = [
+export function createFormColumns(isCoordinator: boolean): ColumnDef<FormRow>[] {
+  const cols: ColumnDef<FormRow>[] = [
     {
       accessorKey: "form_label",
       header: "Form",
@@ -102,7 +102,7 @@ export default function FormTable({
   rows,
   isCoordinator,
 }: {
-  rows: SignedDoc[];
+  rows: FormRow[];
   isCoordinator: boolean;
 }) {
   const columns = createFormColumns(isCoordinator);

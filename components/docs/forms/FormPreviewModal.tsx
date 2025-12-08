@@ -40,7 +40,8 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
 
   const parties = useMemo(() => {
     const required = formMetadata?.getRequiredParties?.() ?? [];
-    const uniq = new Set<string>(["student", ...(Array.isArray(required) ? required : [])]);
+    const requiredParties = Array.isArray(required) ? required.map((r) => typeof r === "string" ? r : r.party) : [];
+    const uniq = new Set<string>(["student", ...requiredParties]);
     return Array.from(uniq);
   }, [formMetadata]);
 
