@@ -1,21 +1,30 @@
 import { RowEntry } from "@/lib/types";
 import { flattenData, getColumns } from "@/lib/dataProcessor";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface TableProps {
-table: RowEntry[][];
-visibleColumns?: string[];
-onColumnsExtracted?: (columns: string[]) => void;
-onColumnOrderChange?: (newOrder: string[]) => void;
+  table: RowEntry[][];
+  visibleColumns?: string[];
+  onColumnsExtracted?: (columns: string[]) => void;
+  onColumnOrderChange?: (newOrder: string[]) => void;
 }
 
-export default function Table({ table, visibleColumns, onColumnsExtracted, onColumnOrderChange }: TableProps) {
+export default function Table({
+  table,
+  visibleColumns,
+  onColumnsExtracted,
+  onColumnOrderChange,
+}: TableProps) {
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    column: string | null;
+    direction: "asc" | "desc";
+  }>({ column: null, direction: "asc" });
 
   // Flatten the data and extract columns
-  const data = flattenData(table);
-  const allColumns = getColumns(data);
+  const data = useMemo(() => flattenData(table), [table]);
+  const allColumns = useMemo(() => getColumns(data), [data]);
 
   // Notify parent of available columns in useEffect (not during render)
   useEffect(() => {
@@ -25,7 +34,25 @@ export default function Table({ table, visibleColumns, onColumnsExtracted, onCol
   }, [allColumns.length]); // Only when column count changes
 
   // Use visible columns if provided, otherwise show all
-  const columns = visibleColumns || allColumns;
+  const columns = visibleColumns && visibleColumns.length > 0 ? visibleColumns : allColumns;
+
+  const sortedData = useMemo(() => {
+    if (!sortConfig.column) return data;
+
+    const sorted = [...data].sort((a, b) => {
+      const aVal = a[sortConfig.column!];
+      const bVal = b[sortConfig.column!];
+
+      const aStr = aVal == null ? "" : String(aVal).toLowerCase();
+      const bStr = bVal == null ? "" : String(bVal).toLowerCase();
+
+      if (aStr < bStr) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aStr > bStr) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [data, sortConfig]);
 
   // Handle empty data
   if (data.length === 0) {
@@ -49,7 +76,7 @@ export default function Table({ table, visibleColumns, onColumnsExtracted, onCol
 
   const handleDrop = (e: React.DragEvent, targetColumn: string) => {
     e.preventDefault();
-    
+
     if (!draggedColumn || draggedColumn === targetColumn) {
       setDraggedColumn(null);
       setDragOverColumn(null);
@@ -79,6 +106,23 @@ export default function Table({ table, visibleColumns, onColumnsExtracted, onCol
     setDragOverColumn(null);
   };
 
+  const handleSortToggle = (columnName: string) => {
+    setSortConfig((prev) => {
+      if (prev.column === columnName) {
+        return {
+          column: columnName,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+      return { column: columnName, direction: "asc" };
+    });
+  };
+
+  const sortIcon = (columnName: string) => {
+    if (sortConfig.column !== columnName) return "⇅";
+    return sortConfig.direction === "asc" ? "↑" : "↓";
+  };
+
   return (
     <div className="my-4 overflow-x-auto rounded-lg border border-gray-300 shadow-sm">
       <table className="min-w-full bg-white">
@@ -94,29 +138,31 @@ export default function Table({ table, visibleColumns, onColumnsExtracted, onCol
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, columnName)}
                 onDragEnd={handleDragEnd}
-                className={`
-                  border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700
-                  cursor-move select-none transition-colors
-                  ${draggedColumn === columnName ? 'opacity-50' : ''}
-                  ${dragOverColumn === columnName ? 'bg-blue-100' : 'hover:bg-gray-200'}
-                `}
+                className={`cursor-move border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700 transition-colors select-none ${draggedColumn === columnName ? "opacity-50" : ""} ${dragOverColumn === columnName ? "bg-blue-100" : "hover:bg-gray-200"} `}
+                onClick={() => handleSortToggle(columnName)}
               >
-                {columnName}
+                <span className="flex items-center gap-1">
+                  {columnName}
+                  <span className="text-xs text-gray-500">{sortIcon(columnName)}</span>
+                </span>
               </th>
             ))}
           </tr>
         </thead>
-        
+
         {/* Table Body */}
         <tbody>
-          {data.map((row, index) => (
+          {sortedData.map((row, index) => (
             <tr key={index} className="transition-colors hover:bg-gray-50">
               {columns.map((columnName) => {
                 const value = row[columnName] ?? null;
                 const displayValue = value === null ? "-" : String(value);
-                
+
                 return (
-                  <td key={columnName} className="border border-gray-300 px-4 py-2 text-sm text-black">
+                  <td
+                    key={columnName}
+                    className="border border-gray-300 px-4 py-2 text-sm text-black"
+                  >
                     {displayValue}
                   </td>
                 );
