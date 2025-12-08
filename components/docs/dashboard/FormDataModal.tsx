@@ -70,7 +70,7 @@ export default function FormDataModal({ rows, label }: { rows: FormRow[]; label:
   const hasData = tableData.length > 0;
 
   return (
-    <div className="flex flex-col gap-3 px-4">
+    <div className="flex flex-col gap-3">
       <div className="space-y-1">
         <p className="text-sm text-gray-600">
           Reorder or hide fields, then export the visible data as CSV.

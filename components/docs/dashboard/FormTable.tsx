@@ -145,23 +145,20 @@ export default function FormTable({
   }, [exportLabel, modalName, openModal, rows]);
 
   return (
-    <div className="space-y-3">
-      {exportEnabled ? (
-        <div className="flex justify-end">
-          <Button size="sm" className="inline-flex items-center gap-2" onClick={handleOpenExport}>
+    <DataTable
+      columns={columns}
+      data={rows}
+      enableColumnVisibility
+      initialSorting={[{ id: "timestamp", desc: true }]}
+      pageSizes={[20, 50]}
+      toolbarActions={
+        exportEnabled ? (
+          <Button className="inline-flex h-10 items-center gap-2" onClick={handleOpenExport}>
             <Table2 className="h-4 w-4" />
             Export CSV
           </Button>
-        </div>
-      ) : null}
-
-      <DataTable
-        columns={columns}
-        data={rows}
-        enableColumnVisibility
-        initialSorting={[{ id: "timestamp", desc: true }]}
-        pageSizes={[20, 50]}
-      />
-    </div>
+        ) : null
+      }
+    />
   );
 }
