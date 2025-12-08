@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, coerceAnyDate } from "@/lib/utils";
+import { cn, coerceAnyDate, formatDateWithoutTime } from "@/lib/utils";
 import { ClientField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
 import { FieldRenderer } from "./FieldRenderer";
@@ -86,9 +86,16 @@ export function DynamicForm({
       .filter((kf) => filteredFields.find((f) => f.field === kf.field))
       .forEach((field) => {
         if (!newPreviews[field.page]) newPreviews[field.page] = [];
+        const clientField = fields.find((f) => f.field === field.field);
+        let value = values[field.field] as string;
+
+        // Map values appropriately for preview
+        if (clientField?.type === "date")
+          value = formatDateWithoutTime(new Date(parseInt(value || "0")).toISOString());
+
         newPreviews[field.page].push(
           <FieldPreview
-            value={values[field.field] as string}
+            value={value}
             x={field.x}
             y={field.y}
             w={field.w}
@@ -310,7 +317,7 @@ const FieldPreview = ({
     <div
       ref={scrollRef}
       className={cn(
-        "absolute top-0 left-0 border-0!",
+        "absolute top-0 left-0 truncate border-0! text-ellipsis",
         selected ? "bg-supportive/25" : "bg-primary/20"
       )}
       style={{
