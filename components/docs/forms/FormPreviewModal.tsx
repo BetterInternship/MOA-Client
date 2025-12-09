@@ -22,6 +22,8 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
   const [selectedParty, setSelectedParty] = useState<string>("student");
   const [allValid, setAllValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [values, setValues] = useState(initialValues);
 
   const previewQuery = useQuery({
     queryKey: ["form-fields", formName],
