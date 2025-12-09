@@ -1294,7 +1294,7 @@ export const formsControllerRegisterForm = (
   );
   formData.append(`base_document`, registerFormSchemaDto.base_document);
   registerFormSchemaDto.required_parties.forEach((value) =>
-    formData.append(`required_parties`, value)
+    formData.append(`required_parties`, JSON.stringify(value))
   );
 
   return preconfiguredAxiosFunction<BaseResponse>({

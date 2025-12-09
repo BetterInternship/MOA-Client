@@ -28,3 +28,17 @@ export const coerceAnyDate = (raw: unknown): number | undefined => {
   const ms = Date.parse(s);
   return Number.isFinite(ms) && ms > 0 ? ms : undefined;
 };
+
+/**
+ * Return a formatted date string from another timestamp string without the time.
+ * @param dateString Timestamp/date in string form.
+ */
+export const formatDateWithoutTime = (dateString?: string | null) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};

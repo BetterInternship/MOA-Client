@@ -8,6 +8,8 @@ import { getFormFields, requestGenerateForm } from "@/app/api/forms.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
+import FormAutosignEditorModal from "./FormAutosignEditorModal";
+import { ArrowLeft } from "lucide-react";
 
 type Props = {
   formName: string;
@@ -17,8 +19,6 @@ type Props = {
 
 export default function FormPreviewModal({ formName, initialValues = {} }: Props) {
   const { closeModal } = useModal();
-  const [values, setValues] = useState<Record<string, Record<string, string>>>(initialValues);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedParty, setSelectedParty] = useState<string>("student");
   const [allValid, setAllValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -40,53 +40,14 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
 
   const parties = useMemo(() => {
     const required = formMetadata?.getRequiredParties?.() ?? [];
-    const uniq = new Set<string>(["student", ...(Array.isArray(required) ? required : [])]);
+    const requiredParties = Array.isArray(required)
+      ? required.map((r) => (typeof r === "string" ? r : r.party))
+      : [];
+    const uniq = new Set<string>(["student", ...requiredParties]);
     return Array.from(uniq);
   }, [formMetadata]);
 
   const fieldsForParty = (party: string) => showableFields.filter((f) => f.party === party);
-
-  const setField = (party: string, key: string, value: any) => {
-    setValues((prev) => {
-      const partyVals = { ...(prev[party] ?? {}) };
-      partyVals[key] = value?.toString() ?? "";
-      return { ...prev, [party]: partyVals };
-    });
-  };
-
-  const setValuesForParty = (party: string, newValues: Record<string, string>) => {
-    setValues((prev) => ({ ...prev, [party]: { ...(prev[party] ?? {}), ...newValues } }));
-  };
-
-  const validateFieldOnBlur = (fieldKey: string) => {
-    const field = fields.find((f) => f.field === fieldKey);
-    if (!field) return;
-    if (field.source !== "manual") return;
-
-    const partyValues = values[field.party] ?? {};
-    const value = partyValues[field.field];
-
-    try {
-      const coerced = field.coerce ? field.coerce(value) : value;
-      const result = field.validator?.safeParse(coerced);
-
-      if (result?.error) {
-        const errorString = z
-          .treeifyError(result.error)
-          .errors.map((e) => e.split(" ").slice(0).join(" "))
-          .join("\n");
-        setErrors((prev) => ({ ...prev, [field.field]: `${field.label}: ${errorString}` }));
-      } else {
-        setErrors((prev) => {
-          const copy = { ...prev };
-          delete copy[field.field];
-          return copy;
-        });
-      }
-    } catch (err) {
-      setErrors((prev) => ({ ...prev, [field.field]: `${field.label}: invalid value` }));
-    }
-  };
 
   const handleValidate = () => {
     const newErrors: Record<string, string> = { ...(errors ?? {}) };
@@ -210,80 +171,68 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
   }, [fields]);
 
   return (
-    <div>
-      <div className="space-y-3">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {parties.map((p) => (
-            <button
-              key={p}
-              onClick={() => {
-                setSelectedParty(p);
-                setAllValid(false);
-              }}
-              className={`rounded-full border px-3 py-1 text-sm whitespace-nowrap transition ${
-                selectedParty === p ? "bg-primary border-primary text-white" : "bg-transparent"
-              }`}
+    <div className="relative h-full w-full">
+      <div className="relative mx-auto h-full w-fit rounded-[0.33em] bg-white">
+        <div className="mx-auto h-[80%] w-fit space-y-3 p-5">
+          <div className="w-fit">
+            <Button
+              variant="ghost"
+              className="text-opacity-65 relative translate-x-[-1em] p-2"
+              size="xs"
+              onClick={() => closeModal(`form-preview:${formName}`)}
             >
-              {p}
-            </button>
-          ))}
-        </div>
-
-        {previewQuery.isLoading ? (
-          <div className="rounded-md border p-3">
-            <div className="text-muted-foreground text-sm">Loading form preview...</div>
+              <ArrowLeft className="h-2 w-2 scale-75" />
+              Back
+            </Button>
+            <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-normal sm:whitespace-nowrap">
+              Preview: {formName}
+            </h1>
           </div>
-        ) : (previewQuery.data?.formMetadata?.schema ?? []).length === 0 ? (
-          <div className="text-sm">No preview available.</div>
-        ) : (
-          <div className="rounded-md border p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="text-sm font-semibold">{selectedParty}</div>
-              <div className="text-muted-foreground text-xs">
-                {fieldsForParty(selectedParty).length} field
-                {fieldsForParty(selectedParty).length !== 1 ? "s" : ""}
-              </div>
-            </div>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {parties.map((p) => (
+              <button
+                key={p}
+                onClick={() => {
+                  setSelectedParty(p);
+                  setAllValid(false);
+                }}
+                className={`rounded-full border px-3 py-1 text-sm whitespace-nowrap transition ${
+                  selectedParty === p ? "bg-primary border-primary text-white" : "bg-transparent"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
 
-            <DynamicForm
+          <>
+            <FormAutosignEditorModal
+              formName={formName}
               party={selectedParty}
-              fields={fieldsForParty(selectedParty)}
-              values={values[selectedParty] ?? {}}
-              onChange={(field, value) => setField(selectedParty, field, value)}
-              errors={errors}
-              showErrors={true}
-              formName={formName ?? ""}
-              autofillValues={autofillValues}
-              setValues={(newVals) => setValuesForParty(selectedParty, newVals)}
-              onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
-            />
+              currentValue={false}
+              notAsModal={true}
+            ></FormAutosignEditorModal>
+          </>
 
-            {allValid && fieldsForParty(selectedParty).length > 0 && (
-              <div className="mt-2 flex items-center gap-1 text-sm font-medium text-green-600">
-                All fields are valid ✅
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="mt-4 flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleValidate}
-            disabled={previewQuery.isLoading}
-          >
-            Test Validation
-          </Button>
-          {selectedParty === "student" && (
+          <div className="mt-4 flex justify-end gap-2">
             <Button
               type="button"
-              onClick={() => void handleSubmitStudent()}
-              disabled={submitting || previewQuery.isLoading}
+              variant="outline"
+              onClick={handleValidate}
+              disabled={previewQuery.isLoading}
             >
-              {submitting ? "Submitting..." : "Submit Student Form"}
+              Test Validation
             </Button>
-          )}
+            {selectedParty === "student" && (
+              <Button
+                type="button"
+                onClick={() => void handleSubmitStudent()}
+                disabled={submitting || previewQuery.isLoading}
+              >
+                {submitting ? "Submitting..." : "Submit Student Form"}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

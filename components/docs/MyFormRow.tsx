@@ -14,6 +14,7 @@ export default function MyFormRow({
   toggleAutoSign,
   index,
   loading,
+  isCoordinator,
 }: {
   row: FormItem;
   onPreview: () => void;
@@ -21,6 +22,7 @@ export default function MyFormRow({
   toggleAutoSign: () => void;
   index?: number;
   loading?: boolean;
+  isCoordinator?: boolean;
 }) {
   const date = formatWhen(row.date ?? "", "mmddyyyy");
   return (
@@ -39,10 +41,17 @@ export default function MyFormRow({
 
       {/* Preview */}
       <div role="cell" className="col-span-2 min-w-0">
-        <Button size="sm" variant="outline" onClick={onPreview} aria-label={`Preview ${row.name}`}>
-          Preview
-          <ChevronRight className="mt-0.5 ml-1 h-4 w-4" />
-        </Button>
+        {isCoordinator && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onPreview}
+            aria-label={`Preview ${row.name}`}
+          >
+            Preview
+            <ChevronRight className="mt-0.5 ml-1 h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Form values (eye) */}

@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-26 12:42:20
- * @ Modified time: 2025-10-26 13:44:57
+ * @ Modified time: 2025-12-08 17:52:07
  * @ Description:
  *
  * Creds to J. Bantolino for the original code; modified later on but original concept is the same.
@@ -36,6 +36,7 @@ type ModalOptions = {
   contentClassName?: string;
   backdropClassName?: string;
   showHeaderDivider?: boolean;
+  useCustomPanel?: boolean;
 
   // Called AFTER the modal is unmounted
   onClose?: () => void;
@@ -204,75 +205,81 @@ const ModalWrapper = ({
       onClick={handleBackdropClick}
       onTouchEnd={handleBackdropClick}
     >
-      <motion.div
-        // Panel entrance: bottom-sheet slide on mobile, scale/raise on desktop
-        initial={{ opacity: 0, y: 24, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 16, scale: 0.98 }}
-        transition={{
-          type: "spring",
-          stiffness: 320,
-          damping: 28,
-          mass: 0.8,
-        }}
-        className={[
-          // Base panel
-          "relative overflow-hidden border bg-white shadow-2xl",
-          // Mobile: full-width bottom sheet, rounded top only
-          "w-full max-w-full min-w-[100svw] rounded-t-[0.33em] rounded-b-none",
-          // Let content grow but cap height properly
-          "max-h-[calc(var(--vh,1vh)*100)]",
-          // Desktop+: classic centered card
-          "sm:max-h-[90vh] sm:w-auto sm:max-w-2xl sm:min-w-0 sm:rounded-[0.33em]",
-          options.panelClassName ?? "",
-        ].join(" ")}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header row: title (left) + close (right) */}
-        {(options.title || options.hasClose !== false) && (
-          <div
-            className={cn(
-              "flex items-start justify-between gap-3 px-4 py-3",
-              options.showHeaderDivider ? "border-b" : "",
-              options.headerClassName ?? ""
-            )}
-          >
-            {options.title ? (
-              typeof options.title === "string" ? (
-                <h2 className="text-2xl leading-snug font-semibold tracking-tight">{options.title}</h2>
+      {!options?.useCustomPanel ? (
+        <motion.div
+          // Panel entrance: bottom-sheet slide on mobile, scale/raise on desktop
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 16, scale: 0.98 }}
+          transition={{
+            type: "spring",
+            stiffness: 320,
+            damping: 28,
+            mass: 0.8,
+          }}
+          className={[
+            // Base panel
+            "relative overflow-hidden border bg-white shadow-2xl",
+            // Mobile: full-width bottom sheet, rounded top only
+            "w-full max-w-full min-w-[100svw] rounded-t-[0.33em] rounded-b-none",
+            // Let content grow but cap height properly
+            "max-h-[calc(var(--vh,1vh)*100)]",
+            // Desktop+: classic centered card
+            "sm:max-h-[90vh] sm:w-auto sm:max-w-2xl sm:min-w-0 sm:rounded-[0.33em]",
+            options.panelClassName ?? "",
+          ].join(" ")}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header row: title (left) + close (right) */}
+          {(options.title || options.hasClose !== false) && (
+            <div
+              className={cn(
+                "flex items-start justify-between gap-3 px-4 py-3",
+                options.showHeaderDivider ? "border-b" : "",
+                options.headerClassName ?? ""
+              )}
+            >
+              {options.title ? (
+                typeof options.title === "string" ? (
+                  <h2 className="text-2xl leading-snug font-semibold tracking-tight">
+                    {options.title}
+                  </h2>
+                ) : (
+                  <div className="min-w-0 flex-1">{options.title}</div>
+                )
               ) : (
-                <div className="min-w-0 flex-1">{options.title}</div>
-              )
-            ) : (
-              <div className="flex-1" />
-            )}
-            {options.hasClose !== false && (
-              <button
-                aria-label="Close"
-                onClick={() => close(name)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200"
-              >
-                <X className="h-4 w-4 text-gray-500" />
-              </button>
-            )}
-          </div>
-        )}
+                <div className="flex-1" />
+              )}
+              {options.hasClose !== false && (
+                <button
+                  aria-label="Close"
+                  onClick={() => close(name)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200"
+                >
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
+              )}
+            </div>
+          )}
 
-        {/* Content area */}
-        <div className={!options.hasClose ? "pt-3" : ""}>
-          <div
-            className={
-              options.contentClassName ??
-              "max-h-[calc(var(--vh,1vh)*100-4rem)] overflow-auto px-4 pb-4 sm:max-h-[calc(90vh-4rem)]"
-            }
-          >
-            {children}
+          {/* Content area */}
+          <div className={!options.hasClose ? "pt-3" : ""}>
+            <div
+              className={
+                options.contentClassName ??
+                "max-h-[calc(var(--vh,1vh)*100-4rem)] overflow-auto px-4 pb-4 sm:max-h-[calc(90vh-4rem)]"
+              }
+            >
+              {children}
+            </div>
           </div>
-        </div>
 
-        {/* Mobile safe area spacer */}
-        <div className="pb-safe h-4 sm:hidden" />
-      </motion.div>
+          {/* Mobile safe area spacer */}
+          <div className="pb-safe h-4 sm:hidden" />
+        </motion.div>
+      ) : (
+        children
+      )}
     </motion.div>
   );
 };

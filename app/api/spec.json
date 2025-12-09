@@ -2054,11 +2054,12 @@
             "items": { "$ref": "#/components/schemas/FormSignatory" }
           },
           "required_parties": {
+            "properties": {
+              "party": { "enum": ["student", "student-guardian", "university", "entity"] },
+              "order": { "type": "number" }
+            },
             "type": "array",
-            "items": {
-              "type": "string",
-              "enum": ["student", "student-guardian", "university", "entity"]
-            }
+            "items": { "type": "object" }
           }
         },
         "required": [
@@ -2112,6 +2113,11 @@
         },
         "required": ["success", "message", "signedDocuments"]
       },
+      "PendingParties": {
+        "type": "object",
+        "properties": { "party": { "type": "string" }, "order": { "type": "number" } },
+        "required": ["party", "order"]
+      },
       "RegisterFormSchemaDto": {
         "type": "object",
         "properties": {
@@ -2135,10 +2141,7 @@
           "base_document": { "type": "string", "format": "binary" },
           "required_parties": {
             "type": "array",
-            "items": {
-              "type": "string",
-              "enum": ["student", "student-guardian", "university", "entity"]
-            }
+            "items": { "$ref": "#/components/schemas/PendingParties" }
           }
         },
         "required": [

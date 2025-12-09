@@ -14,7 +14,12 @@ import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorM
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
 
-type FormItem = { name: string; enabledAutosign: boolean; party: string };
+type FormItem = {
+  name: string;
+  enabledAutosign: boolean;
+  party: string;
+  order?: number;
+};
 
 export default function DocsFormsPage() {
   const queryClient = useQueryClient();
@@ -35,19 +40,27 @@ export default function DocsFormsPage() {
   const { data: rows = [] } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
     queryFn: async () => {
-      const res = await getViewableForms();
+      type FormsResponse = {
+        forms?: {
+          [name: string]: {
+            enabled: boolean;
+            party: string;
+            date?: string;
+            order?: number;
+          };
+        };
+      };
+
+      const res = (await getViewableForms()) as FormsResponse;
       if (!res || !res.forms) return [];
 
       // res.forms is an object keyed by form name. Convert to array.
-      const entries = Object.entries(res.forms) as [
-        string,
-        { enabled: boolean; party: string; date?: string },
-      ][];
+      const entries = Object.entries(res.forms);
       return entries.map(([name, obj]) => ({
         name,
-        enabledAutosign: !!obj.enabled,
-        party: obj.party ?? "",
-        date: obj.date ?? "",
+        enabledAutosign: !!obj?.enabled,
+        party: obj?.party ?? "",
+        order: obj?.order ?? 0,
       }));
     },
     staleTime: 60_000,
@@ -59,7 +72,7 @@ export default function DocsFormsPage() {
   const onPreview = (name: string) => {
     openModal(`form-preview:${name}`, <FormPreviewModal formName={name} />, {
       title: `Preview: ${name}`,
-      panelClassName: "sm:max-w-4xl sm:min-w-[56rem]",
+      useCustomPanel: true,
     });
   };
 
@@ -71,6 +84,7 @@ export default function DocsFormsPage() {
       {
         title: `Enable Auto-Sign: ${formName}`,
         panelClassName: "sm:max-w-2xl sm:min-w-[32rem]",
+        useCustomPanel: true,
       }
     );
   };
@@ -123,6 +137,7 @@ export default function DocsFormsPage() {
           void toggleAutoSign(name, party, currentValue)
         }
         togglingName={togglingName}
+        isCoordinator={isCoordinator}
       />
     </div>
   );

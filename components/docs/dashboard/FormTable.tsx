@@ -1,12 +1,15 @@
 "use client";
 
+import { useCallback, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Download, Hourglass } from "lucide-react";
+import { Download, Hourglass, Table2 } from "lucide-react";
+import FormDataModal from "@/components/docs/dashboard/FormDataModal";
+import { useModal } from "@/app/providers/modal-provider";
 
-export interface SignedDoc {
+export interface FormRow {
   id: string | number;
   form_name: string;
   form_label: string;
@@ -19,21 +22,34 @@ export interface SignedDoc {
 }
 
 export function getDisplayValue(
-  info: Record<string, any>,
+  info: Record<string, unknown>,
   section: string,
   key: string,
   preferredSuffixes: string[] = ["student-filled", "default"]
 ) {
+  const toDisplayString = (value: unknown): string => {
+    if (value === null || value === undefined) return "—";
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return `${value}`;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "—";
+    }
+  };
+
   if (!info) return "—";
   for (const sfx of preferredSuffixes) {
     const composed = `${section}.${key}:${sfx}`;
-    if (info[composed]) return info[composed];
+    const val = info[composed];
+    if (val !== undefined && val !== null) return toDisplayString(val);
   }
-  return info[`${section}.${key}`] ?? "—";
+  const raw = info[`${section}.${key}`];
+  return raw !== undefined && raw !== null ? toDisplayString(raw) : "—";
 }
 
-export function createFormColumns(isCoordinator: boolean): ColumnDef<SignedDoc>[] {
-  const cols: ColumnDef<SignedDoc>[] = [
+export function createFormColumns(isCoordinator: boolean): ColumnDef<FormRow>[] {
+  const cols: ColumnDef<FormRow>[] = [
     {
       accessorKey: "form_label",
       header: "Form",
@@ -101,11 +117,32 @@ export function createFormColumns(isCoordinator: boolean): ColumnDef<SignedDoc>[
 export default function FormTable({
   rows,
   isCoordinator,
+  exportEnabled = false,
+  exportLabel,
 }: {
-  rows: SignedDoc[];
+  rows: FormRow[];
   isCoordinator: boolean;
+  exportEnabled?: boolean;
+  exportLabel?: string;
 }) {
   const columns = createFormColumns(isCoordinator);
+  const { openModal } = useModal();
+
+  const modalName = useMemo(
+    () => `form-data-${exportLabel ? exportLabel.replace(/\s+/g, "-").toLowerCase() : "all"}`,
+    [exportLabel]
+  );
+
+  const handleOpenExport = useCallback(() => {
+    openModal(
+      modalName,
+      <FormDataModal rows={rows} label={exportLabel ?? "Form Data"} />, // content
+      {
+        title: exportLabel ?? "Form Data",
+        panelClassName: "sm:max-w-6xl sm:w-[92vw]",
+      }
+    );
+  }, [exportLabel, modalName, openModal, rows]);
 
   return (
     <DataTable
@@ -114,6 +151,14 @@ export default function FormTable({
       enableColumnVisibility
       initialSorting={[{ id: "timestamp", desc: true }]}
       pageSizes={[20, 50]}
+      toolbarActions={
+        exportEnabled ? (
+          <Button className="inline-flex h-10 items-center gap-2" onClick={handleOpenExport}>
+            <Table2 className="h-4 w-4" />
+            Export CSV
+          </Button>
+        ) : null
+      }
     />
   );
 }

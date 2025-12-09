@@ -10,8 +10,11 @@ export const metadata: Metadata = {
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="flex h-[100svh]! w-[100vw] flex-col justify-evenly overflow-x-hidden bg-white">
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className="flex h-[100svh]! w-[100vw] flex-col justify-evenly overflow-x-hidden bg-white"
+        suppressHydrationWarning
+      >
         <header className="bg-background/70 h-[4em] border-b backdrop-blur">
           <div className="mx-auto flex h-16 max-w-screen-xl items-center gap-2">
             <Link
