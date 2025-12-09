@@ -20,18 +20,20 @@ type Props = {
   formName: string;
   party: string;
   currentValue: boolean;
+  valueSetter?: (values: Record<string, Record<string, string>>) => void;
   notAsModal?: boolean;
+  errors?: Record<string, string>;
 };
 
 const FormAutosignEditorModal = React.memo(
-  ({ formName, party, currentValue, notAsModal }: Props) => {
+  ({ formName, party, currentValue, valueSetter, notAsModal, errors: _errors }: Props) => {
     const queryClient = useQueryClient();
     const form = useFormContext();
     const isMobile = useIsMobile();
     const { update } = useSignatoryAccountActions();
     const { openModal, closeModal } = useModal();
     const [values, setValues] = useState<Record<string, Record<string, string>>>({});
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [errors, setErrors] = useState<Record<string, string>>(_errors ?? {});
     const [mobileStage, setMobileStage] = useState<"preview" | "form" | "confirm">("preview");
     const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
     const [submitting, setSubmitting] = useState(false);
@@ -81,7 +83,9 @@ const FormAutosignEditorModal = React.memo(
       setValues((prev) => {
         const partyVals = { ...(prev[p] ?? {}) };
         partyVals[key] = value?.toString() ?? "";
-        return { ...prev, [p]: partyVals };
+        const newVals = { ...prev, [p]: partyVals };
+        valueSetter?.(newVals);
+        return newVals;
       });
     };
 
@@ -289,13 +293,15 @@ const FormAutosignEditorModal = React.memo(
                   )}
                 </div>
                 <div className="flex flex-wrap justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    onClick={() => void handleSubmit()}
-                    disabled={submitting || previewQuery.isLoading}
-                  >
-                    {submitting ? "Saving..." : "Save"}
-                  </Button>
+                  {!notAsModal && (
+                    <Button
+                      type="button"
+                      onClick={() => void handleSubmit()}
+                      disabled={submitting || previewQuery.isLoading}
+                    >
+                      {submitting ? "Saving..." : "Save"}
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -328,13 +334,15 @@ const FormAutosignEditorModal = React.memo(
 
                     <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
                       <div className="flex flex-wrap justify-end gap-2 pt-2">
-                        <Button
-                          type="button"
-                          onClick={() => void handleSubmit()}
-                          disabled={submitting || previewQuery.isLoading}
-                        >
-                          {submitting ? "Saving..." : "Save"}
-                        </Button>
+                        {!notAsModal && (
+                          <Button
+                            type="button"
+                            onClick={() => void handleSubmit()}
+                            disabled={submitting || previewQuery.isLoading}
+                          >
+                            {submitting ? "Saving..." : "Save"}
+                          </Button>
+                        )}
                       </div>
 
                       {/* On mobile, also show a secondary preview button */}
