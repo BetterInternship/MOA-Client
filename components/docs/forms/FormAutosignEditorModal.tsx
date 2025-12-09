@@ -20,9 +20,15 @@ type Props = {
   formName: string;
   party: string;
   currentValue: boolean;
+  notAsModal?: boolean;
 };
 
-export default function FormAutosignEditorModal({ formName, party, currentValue }: Props) {
+export default function FormAutosignEditorModal({
+  formName,
+  party,
+  currentValue,
+  notAsModal,
+}: Props) {
   const queryClient = useQueryClient();
   const form = useFormContext();
   const isMobile = useIsMobile();
@@ -225,23 +231,25 @@ export default function FormAutosignEditorModal({ formName, party, currentValue 
 
   return (
     <div className="bg-opacity-25 relative mx-auto flex h-[100%] max-h-[100%] w-full flex-col items-center overflow-hidden">
-      <div className="w-full max-w-7xl overflow-x-visible overflow-y-visible rounded-[0.33em] bg-white">
-        <div className="flex flex-col items-start gap-1 rounded-[0.33em] rounded-b-none border bg-white px-6 py-3">
-          <Button
-            variant="ghost"
-            className="text-opacity-65 relative translate-x-[-1em] p-2"
-            size="xs"
-            onClick={() => closeModal(`form-auto-sign:${formName}`)}
-          >
-            <ArrowLeft className="h-2 w-2 scale-75" />
-            Back
-          </Button>
-          <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-normal sm:whitespace-nowrap">
-            {formName}
-          </h1>
+      {!notAsModal && (
+        <div className="w-full max-w-7xl overflow-x-visible overflow-y-visible rounded-[0.33em] bg-white">
+          <div className="flex flex-col items-start gap-1 rounded-[0.33em] rounded-b-none border bg-white px-6 py-3">
+            <Button
+              variant="ghost"
+              className="text-opacity-65 relative translate-x-[-1em] p-2"
+              size="xs"
+              onClick={() => closeModal(`form-auto-sign:${formName}`)}
+            >
+              <ArrowLeft className="h-2 w-2 scale-75" />
+              Back
+            </Button>
+            <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-normal sm:whitespace-nowrap">
+              {formName}
+            </h1>
+          </div>
         </div>
-      </div>
-      <div className="relative flex h-[100%] w-full max-w-7xl flex-col justify-center overflow-y-hidden sm:flex-row">
+      )}
+      <div className="relative flex h-[100%] w-7xl max-w-7xl flex-col justify-center overflow-y-hidden sm:flex-row">
         <div className="relative max-h-[100%] w-[100%] overflow-y-auto">
           {/* Form Renderer */}
           <div className="h-full max-h-[100%] space-y-4 overflow-y-auto rounded-[0.33em] rounded-t-none rounded-r-none border border-gray-300 bg-white p-5">

@@ -72,7 +72,7 @@ export default function DocsFormsPage() {
   const onPreview = (name: string) => {
     openModal(`form-preview:${name}`, <FormPreviewModal formName={name} />, {
       title: `Preview: ${name}`,
-      panelClassName: "sm:max-w-4xl sm:min-w-[56rem]",
+      useCustomPanel: true,
     });
   };
 
