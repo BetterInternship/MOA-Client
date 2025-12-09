@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
 import { getFormFields, requestGenerateForm } from "@/app/api/forms.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
@@ -213,6 +212,8 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
               party={selectedParty}
               currentValue={false}
               notAsModal={true}
+              valueSetter={setValues}
+              errors={errors}
             ></FormAutosignEditorModal>
           </>
 
@@ -229,7 +230,7 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
               <Button
                 type="button"
                 onClick={() => void handleSubmitStudent()}
-                disabled={submitting || previewQuery.isLoading}
+                disabled={submitting || previewQuery.isLoading || !allValid}
               >
                 {submitting ? "Submitting..." : "Submit Student Form"}
               </Button>
