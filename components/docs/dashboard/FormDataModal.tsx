@@ -18,7 +18,7 @@ function formRowsToRowEntries(rows: FormRow[]): RowEntry[][] {
       { col: "url", value: row.url },
     ];
 
-    Object.entries(row.display_information || {}).forEach(([k, v]) => {
+    Object.entries(row.inputs || {}).forEach(([k, v]) => {
       entries.push({ col: k, value: v as RowEntry["value"] });
     });
 
