@@ -86,6 +86,7 @@ export function DynamicForm({
     // Push new previews here
     form.keyedFields
       .filter((kf) => filteredFields.find((f) => f.field === kf.field))
+      .filter((kf) => kf.x && kf.y)
       .forEach((field) => {
         if (!newPreviews[field.page]) newPreviews[field.page] = [];
         const clientField = fields.find((f) => f.field === field.field);
