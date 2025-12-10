@@ -13,12 +13,16 @@ import { ArrowLeft } from "lucide-react";
 type Props = {
   formName: string;
   // optional initial values to seed the preview
+  selectedParty: string;
   initialValues?: Record<string, Record<string, string>>;
 };
 
-export default function FormPreviewModal({ formName, initialValues = {} }: Props) {
+export default function FormPreviewModal({
+  formName,
+  selectedParty = "student",
+  initialValues = {},
+}: Props) {
   const { closeModal } = useModal();
-  const [selectedParty, setSelectedParty] = useState<string>("student");
   const [allValid, setAllValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -39,17 +43,7 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
     return fields.filter((f) => (selectedParty === "student" ? f.source === "manual" : true));
   }, [fields, selectedParty]);
 
-  const parties = useMemo(() => {
-    const required = formMetadata?.getRequiredParties?.() ?? [];
-    const requiredParties = Array.isArray(required)
-      ? required.map((r) => (typeof r === "string" ? r : r.party))
-      : [];
-    const uniq = new Set<string>(["student", ...requiredParties]);
-    return Array.from(uniq);
-  }, [formMetadata]);
-
   const fieldsForParty = (party: string) => showableFields.filter((f) => f.party === party);
-
   const handleValidate = () => {
     const newErrors: Record<string, string> = { ...(errors ?? {}) };
 
@@ -189,22 +183,6 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
               Preview: {formName}
             </h1>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {parties.map((p) => (
-              <button
-                key={p}
-                onClick={() => {
-                  setSelectedParty(p);
-                  setAllValid(false);
-                }}
-                className={`rounded-full border px-3 py-1 text-sm whitespace-nowrap transition ${
-                  selectedParty === p ? "bg-primary border-primary text-white" : "bg-transparent"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
 
           <>
             <FormAutosignEditorModal
@@ -226,7 +204,7 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
             >
               Test Validation
             </Button>
-            {selectedParty === "student" && (
+            {/* {selectedParty === "student" && (
               <Button
                 type="button"
                 onClick={() => void handleSubmitStudent()}
@@ -234,7 +212,7 @@ export default function FormPreviewModal({ formName, initialValues = {} }: Props
               >
                 {submitting ? "Submitting..." : "Submit Student Form"}
               </Button>
-            )}
+            )} */}
           </div>
         </div>
       </div>

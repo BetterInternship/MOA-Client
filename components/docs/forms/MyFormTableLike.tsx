@@ -3,6 +3,9 @@
 import React from "react";
 import MyFormRow, { FormItem } from "../MyFormRow";
 import { Card } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { getFormFields } from "@/app/api/forms.api";
+import { Loader2 } from "lucide-react";
 
 export default function MyFormsTableLike({
   rows,
@@ -13,12 +16,23 @@ export default function MyFormsTableLike({
   isCoordinator,
 }: {
   rows: FormItem[];
-  onPreview: (name: string) => void;
+  onPreview: (name: string, party: string) => void;
   onOpenAutoSignForm: (name: string, party: string, currentValue: boolean) => void;
   toggleAutoSign: (name: string, party: string, currentValue: boolean) => void;
   togglingName?: string | null;
   isCoordinator?: boolean;
 }) {
+  // Pull the form data eeeeeeeeeeee
+  const forms = rows.map((f) => {
+    const r = useQuery({
+      queryKey: ["form-fields", f.name],
+      queryFn: async () => await getFormFields(f.name),
+      enabled: !!f.name,
+    });
+
+    return { ...f, ...r };
+  });
+
   return (
     <div className="space-y-4">
       <div
@@ -42,18 +56,30 @@ export default function MyFormsTableLike({
           {rows.length === 0 ? (
             <div className="text-muted-foreground p-4 text-sm">No form templates available.</div>
           ) : (
-            rows.map((r, i) => (
-              <MyFormRow
-                key={r.name}
-                row={r}
-                index={i}
-                onPreview={() => onPreview(r.name)}
-                onOpenAutoSignForm={() => onOpenAutoSignForm(r.name, r.party, r.enabledAutosign)}
-                toggleAutoSign={() => toggleAutoSign(r.name, r.party, r.enabledAutosign)}
-                loading={togglingName === r.name}
-                isCoordinator={isCoordinator}
-              />
-            ))
+            forms.map((r, i) =>
+              r.isLoading ? (
+                <div className="border-b p-2">
+                  <Loader2>Alright</Loader2>
+                </div>
+              ) : (
+                <MyFormRow
+                  key={r.name}
+                  parties={
+                    r.data?.formMetadata.required_parties
+                      ?.map((f) => (f?.party ?? "") as string)
+                      ?.filter((p) => !!p.trim())
+                      .concat(["student"]) ?? ["student"]
+                  }
+                  row={r}
+                  index={i}
+                  onPreview={(party: string) => onPreview(r.name, party)}
+                  onOpenAutoSignForm={() => onOpenAutoSignForm(r.name, r.party, r.enabledAutosign)}
+                  toggleAutoSign={() => toggleAutoSign(r.name, r.party, r.enabledAutosign)}
+                  loading={togglingName === r.name}
+                  isCoordinator={isCoordinator}
+                />
+              )
+            )
           )}
         </div>
       </Card>

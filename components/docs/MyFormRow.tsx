@@ -1,7 +1,16 @@
 "use client";
 
 import React from "react";
-import { Eye, Check, Info, ChevronRight, X } from "lucide-react";
+import {
+  Eye,
+  Check,
+  Info,
+  ChevronRight,
+  X,
+  Expand,
+  EyeIcon,
+  SquareArrowOutUpRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWhen } from "@/lib/format";
 
@@ -9,6 +18,7 @@ export type FormItem = { name: string; enabledAutosign: boolean; party: string; 
 
 export default function MyFormRow({
   row,
+  parties,
   onPreview,
   onOpenAutoSignForm,
   toggleAutoSign,
@@ -17,7 +27,8 @@ export default function MyFormRow({
   isCoordinator,
 }: {
   row: FormItem;
-  onPreview: () => void;
+  parties: string[];
+  onPreview: (party: string) => void;
   onOpenAutoSignForm: () => void;
   toggleAutoSign: () => void;
   index?: number;
@@ -29,35 +40,37 @@ export default function MyFormRow({
     <div
       role="row"
       aria-rowindex={index ? index + 2 : undefined}
-      className="group grid grid-cols-12 items-center gap-3 p-3"
+      className="group rounded-0 grid grid-cols-12 items-center gap-3 border-b p-3"
       tabIndex={0}
     >
       {/* Name */}
-      <div role="cell" className="col-span-6 min-w-0">
+      <div role="cell" className="col-span-6 min-w-0 items-center space-y-2">
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium">{row.name}</div>
+          <div className="text-md truncate font-medium">{row.name}</div>
+        </div>
+        <div className="flex flex-row space-x-2">
+          <span className="text-sm">previews: </span>
+          {isCoordinator &&
+            parties &&
+            parties.map((p) => (
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() => onPreview(p)}
+                aria-label={`Preview ${row.name}`}
+              >
+                {p}
+                <SquareArrowOutUpRight className="h-3! w-3!" />
+              </Button>
+            ))}
         </div>
       </div>
-
-      {/* Preview */}
-      <div role="cell" className="col-span-2 min-w-0">
-        {isCoordinator && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onPreview}
-            aria-label={`Preview ${row.name}`}
-          >
-            Preview
-            <ChevronRight className="mt-0.5 ml-1 h-4 w-4" />
-          </Button>
-        )}
-      </div>
+      <div role="cell" className="col-span-2"></div>
 
       {/* Form values (eye) */}
       <div role="cell" className="col-span-2 flex items-center justify-center">
-        <Button variant="ghost" size="icon" onClick={onOpenAutoSignForm}>
-          <Eye className="text-slate-700" />
+        <Button variant="outline" onClick={onOpenAutoSignForm}>
+          My Default Values <Eye className="h-3 w-3 text-slate-700" />
         </Button>
       </div>
 
@@ -97,7 +110,7 @@ export default function MyFormRow({
           </div>
         </Button>
 
-        {/* show date only when enabled (remove condition if you always want to display) */}
+        {/* show date only when enabled */}
         {row.enabledAutosign ? (
           <div className="text-muted-foreground text-center text-[11px]">
             authorized: <span className="font-medium">{date ?? "-"}</span>
