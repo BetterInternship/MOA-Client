@@ -928,24 +928,24 @@ const Sidebar = ({
                   This form has no parameters.
                 </Badge>
               )}
-                {!!paramEntries.length &&
+              {!!paramEntries.length &&
                 paramEntries.map(([key, value], i) => (
                   <div key={key} className="flex flex-row gap-2">
-                  <ParamEditor
-                    initialParamDetails={{
-                    key,
-                    value: typeof value === "string" ? value : JSON.stringify(value),
-                    }}
-                    updateParam={form.updateParam}
-                  ></ParamEditor>
-                  <Button
-                    className="h-7 w-7"
-                    scheme="destructive"
-                    variant="outline"
-                    onClick={() => form.removeParam?.(key)}
-                  >
-                    <X></X>
-                  </Button>
+                    <ParamEditor
+                      initialParamDetails={{
+                        key,
+                        value: typeof value === "string" ? value : JSON.stringify(value),
+                      }}
+                      updateParam={form.updateParam}
+                    ></ParamEditor>
+                    <Button
+                      className="h-7 w-7"
+                      scheme="destructive"
+                      variant="outline"
+                      onClick={() => form.removeParam?.(key)}
+                    >
+                      <X></X>
+                    </Button>
                   </div>
                 ))}
             </div>
@@ -1132,9 +1132,7 @@ const RegisterFileModal = ({
     // After submitting, redirect to new version
     setSubmitting(true);
     await formsControllerRegisterForm(formMetadataDraft as unknown as RegisterFormSchemaDto);
-    router.push(
-      `/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor?name=${form.formName}&version=${form.formVersion + 1}`
-    );
+    router.push(`/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/registry`);
     setSubmitting(false);
     close();
   };
