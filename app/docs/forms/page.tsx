@@ -68,8 +68,8 @@ export default function DocsFormsPage() {
   const { openModal } = useModal();
 
   // Open form preview
-  const onPreview = (name: string) => {
-    openModal(`form-preview:${name}`, <FormPreviewModal formName={name} />, {
+  const onPreview = (name: string, party: string) => {
+    openModal(`form-preview:${name}`, <FormPreviewModal formName={name} selectedParty={party} />, {
       title: `Preview: ${name}`,
       useCustomPanel: true,
     });
@@ -128,7 +128,7 @@ export default function DocsFormsPage() {
       </div>
       <MyFormsTableLike
         rows={rows}
-        onPreview={(name) => onPreview(name)}
+        onPreview={(name, party) => onPreview(name, party)}
         onOpenAutoSignForm={(name, party, currentValue) =>
           void onOpenAutoSignForm(name, party, currentValue)
         }

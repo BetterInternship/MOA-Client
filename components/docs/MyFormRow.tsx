@@ -28,7 +28,7 @@ export default function MyFormRow({
 }: {
   row: FormItem;
   parties: string[];
-  onPreview: () => void;
+  onPreview: (party: string) => void;
   onOpenAutoSignForm: () => void;
   toggleAutoSign: () => void;
   index?: number;
@@ -56,7 +56,7 @@ export default function MyFormRow({
               <Button
                 size="xs"
                 variant="outline"
-                onClick={onPreview}
+                onClick={() => onPreview(p)}
                 aria-label={`Preview ${row.name}`}
               >
                 {p}

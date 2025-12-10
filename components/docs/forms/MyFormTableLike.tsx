@@ -16,7 +16,7 @@ export default function MyFormsTableLike({
   isCoordinator,
 }: {
   rows: FormItem[];
-  onPreview: (name: string) => void;
+  onPreview: (name: string, party: string) => void;
   onOpenAutoSignForm: (name: string, party: string, currentValue: boolean) => void;
   toggleAutoSign: (name: string, party: string, currentValue: boolean) => void;
   togglingName?: string | null;
@@ -71,7 +71,7 @@ export default function MyFormsTableLike({
                   }
                   row={r}
                   index={i}
-                  onPreview={() => onPreview(r.name)}
+                  onPreview={(party: string) => onPreview(r.name, party)}
                   onOpenAutoSignForm={() => onOpenAutoSignForm(r.name, r.party, r.enabledAutosign)}
                   toggleAutoSign={() => toggleAutoSign(r.name, r.party, r.enabledAutosign)}
                   loading={togglingName === r.name}
