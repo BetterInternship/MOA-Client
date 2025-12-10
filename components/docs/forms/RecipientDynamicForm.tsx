@@ -35,7 +35,9 @@ export function DynamicForm({
   onBlurValidate?: (fieldKey: string) => void;
 }) {
   const form = useFormContext();
-  const filteredFields = fields.filter((field) => field.party === party);
+  const filteredFields = fields
+    .filter((field) => field.party === party)
+    .filter((field) => field.source === "manual" || party !== "student");
   const [selectedField, setSelectedField] = useState<string>("");
 
   // Separate recipient fields (those whose field name ends with ":recipient")
