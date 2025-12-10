@@ -67,7 +67,8 @@ export default function MyFormsTableLike({
                   parties={
                     r.data?.formMetadata.required_parties
                       ?.map((f) => (f?.party ?? "") as string)
-                      ?.filter((p) => !!p.trim()) ?? []
+                      ?.filter((p) => !!p.trim())
+                      .concat(["student"]) ?? ["student"]
                   }
                   row={r}
                   index={i}

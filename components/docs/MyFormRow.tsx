@@ -110,7 +110,7 @@ export default function MyFormRow({
           </div>
         </Button>
 
-        {/* show date only when enabled (remove condition if you always want to display) */}
+        {/* show date only when enabled */}
         {row.enabledAutosign ? (
           <div className="text-muted-foreground text-center text-[11px]">
             authorized: <span className="font-medium">{date ?? "-"}</span>
