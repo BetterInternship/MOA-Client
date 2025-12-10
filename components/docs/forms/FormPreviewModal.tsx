@@ -204,7 +204,7 @@ export default function FormPreviewModal({
             >
               Test Validation
             </Button>
-            {selectedParty === "student" && (
+            {/* {selectedParty === "student" && (
               <Button
                 type="button"
                 onClick={() => void handleSubmitStudent()}
@@ -212,7 +212,7 @@ export default function FormPreviewModal({
               >
                 {submitting ? "Submitting..." : "Submit Student Form"}
               </Button>
-            )}
+            )} */}
           </div>
         </div>
       </div>
