@@ -45,3 +45,4 @@ If you’re using VS Code:
 3. Save any file — it will be automatically formatted.
     > Note: Build output folders and dependencies (like .next and node_modules) are ignored via .prettierignore.
 
+
