@@ -45,8 +45,7 @@ export default function DocsFormsPage() {
           [name: string]: {
             enabled: boolean;
             party: string;
-            date?: string;
-            order?: number;
+            date: string;
           };
         };
       };
@@ -60,7 +59,7 @@ export default function DocsFormsPage() {
         name,
         enabledAutosign: !!obj?.enabled,
         party: obj?.party ?? "",
-        order: obj?.order ?? 0,
+        date: obj?.date,
       }));
     },
     staleTime: 60_000,

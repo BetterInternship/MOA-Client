@@ -5,7 +5,7 @@ import { Eye, Check, Info, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWhen } from "@/lib/format";
 
-export type FormItem = { name: string; enabledAutosign: boolean; party: string; date?: string };
+export type FormItem = { name: string; enabledAutosign: boolean; party: string; date: string };
 
 export default function MyFormRow({
   row,
