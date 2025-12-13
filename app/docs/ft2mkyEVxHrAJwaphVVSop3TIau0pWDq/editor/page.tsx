@@ -62,6 +62,8 @@ import {
   DocumentRenderer,
 } from "@/components/docs/forms/previewer";
 
+const newParties = PARTIES.concat(["entity-representative"]);
+
 /**
  * We wrap the page around a suspense boundary to use search params.
  *
@@ -549,7 +551,7 @@ const FieldEditor = ({
                   value={fieldDetails.party}
                   inputClassName="h-7 py-1 text-xs"
                   placeholder="Select Field Party"
-                  options={PARTIES.map((s) => ({ id: s, name: s }))}
+                  options={newParties.map((s) => ({ id: s, name: s }))}
                   setter={(id) => id && handleChangeFactory("party")(id)}
                 />
                 <Badge>Tooltip Label</Badge>
@@ -1142,7 +1144,9 @@ const RegisterFileModal = ({
     downloadJSON(`${documentName}.metadata.json`, formMetadataDraft);
   };
 
-  const availableParties = PARTIES.filter((p) => !requiredParties.some((rpo) => rpo.party === p));
+  const availableParties = newParties.filter(
+    (p) => !requiredParties.some((rpo) => rpo.party === p)
+  );
 
   return (
     <div className="flex min-w-xl flex-col gap-2">
