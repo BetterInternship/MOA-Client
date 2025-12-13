@@ -22,7 +22,7 @@ export function DynamicForm({
   onBlurValidate,
 }: {
   formName: string;
-  party?: "entity" | "student-guardian" | "university" | "student";
+  party?: "entity" | "student-guardian" | "university" | "student" | "entity-representative";
   fields: ClientField<[]>[];
   values: Record<string, any>;
   autofillValues: Record<string, string>;

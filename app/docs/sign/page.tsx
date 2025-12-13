@@ -23,9 +23,9 @@ import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { getSignatorySelf } from "@/app/api/signatory.api";
 import Link from "next/link";
 
-type Audience = "entity" | "student-guardian" | "university";
-type Party = "entity" | "student-guardian" | "university" | "";
-type Role = "entity" | "student-guardian" | "university" | "";
+type Audience = "entity" | "student-guardian" | "university" | "entity-representative";
+type Party = "entity" | "student-guardian" | "university" | "entity-representative" | "";
+type Role = "entity" | "student-guardian" | "university" | "entity-representative" | "";
 
 const Page = () => {
   return (
@@ -51,6 +51,7 @@ function PageContent() {
   // URL params
   const audienceParam = (params.get("for") || "entity").trim() as Audience;
   const { party } = mapAudienceToRoleAndParty(audienceParam);
+  console.log("Audience param:", audienceParam, "mapped party:", party);
 
   const formName = (params.get("form") || "").trim();
   const pendingDocumentId = (params.get("pending") || "").trim();
@@ -93,7 +94,10 @@ function PageContent() {
   const audienceFromPending: string[] = (pendingInfo?.pendingInfo?.pending_parties ?? [])
     .map((p) => (typeof p === "string" ? p : (p?.party ?? "")))
     .filter(Boolean) as string[];
+
+  console.log("Audience from pending:", audienceFromPending);
   const audienceAllowed = audienceFromPending.includes(audienceParam);
+  console.log("Audience allowed:", audienceAllowed);
 
   // Fetch form fields schema from API
   const {
@@ -635,6 +639,8 @@ function SignAuthModalContent({
 // Helpers
 function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } {
   switch (aud) {
+    case "entity-representative":
+      return { role: "entity-representative", party: "entity-representative" };
     case "entity":
       return { role: "entity", party: "entity" };
     case "student-guardian":
