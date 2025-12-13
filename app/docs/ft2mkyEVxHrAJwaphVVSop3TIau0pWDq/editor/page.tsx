@@ -62,7 +62,7 @@ import {
   DocumentRenderer,
 } from "@/components/docs/forms/previewer";
 
-const newParties = PARTIES.concat(["entity-representative"]);
+const newParties = PARTIES.concat(["entity-representative", "entity-supervisor"]);
 
 /**
  * We wrap the page around a suspense boundary to use search params.
