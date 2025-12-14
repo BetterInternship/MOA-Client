@@ -23,9 +23,26 @@ import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { getSignatorySelf } from "@/app/api/signatory.api";
 import Link from "next/link";
 
-type Audience = "entity" | "student-guardian" | "university" | "entity-representative";
-type Party = "entity" | "student-guardian" | "university" | "entity-representative" | "";
-type Role = "entity" | "student-guardian" | "university" | "entity-representative" | "";
+type Audience =
+  | "entity"
+  | "student-guardian"
+  | "university"
+  | "entity-representative"
+  | "entity-supervisor";
+type Party =
+  | "entity"
+  | "student-guardian"
+  | "university"
+  | "entity-representative"
+  | "entity-supervisor"
+  | "";
+type Role =
+  | "entity"
+  | "student-guardian"
+  | "university"
+  | "entity-representative"
+  | "entity-supervisor"
+  | "";
 
 const Page = () => {
   return (
