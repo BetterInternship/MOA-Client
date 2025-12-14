@@ -22,7 +22,7 @@ export default function DisclosurePage() {
       </p>
       <p>
         After this period, requesting paper copies from our office may incur a fee of{" "}
-        <strong>$0.00 per page</strong>. Requests can be made via the procedure described below.
+        <strong>PHP10.00 per page</strong>. Requests can be made via the procedure described below.
       </p>
 
       <h2 className="text-xl font-semibold">Withdrawing Your Consent</h2>
