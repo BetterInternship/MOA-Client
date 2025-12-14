@@ -1,6 +1,7 @@
 import { FieldRenderer } from "@/components/docs/forms/FieldRenderer";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import { ClientField } from "@betterinternship/core/forms";
 import { useState, useMemo } from "react";
 
@@ -66,13 +67,19 @@ export function RecipientSection({
   ) => {
     const isSelected = recipientHandling[party] === option;
     return (
-      <div key={option} className="space-y-2">
-        <div className="flex items-center gap-3 rounded-[0.33em] p-2 transition-all hover:bg-slate-100">
+      <div
+        key={option}
+        className={cn(
+          "p-2 transition-all",
+          isSelected ? "bg-blue-50" : "opacity-75 hover:cursor-pointer hover:bg-slate-200"
+        )}
+      >
+        <div className="flex items-center gap-3 rounded-[0.33em] p-2">
           <Checkbox
             id={`${formKey}-${party}-${option}`}
             checked={isSelected}
             onCheckedChange={() => handleRecipientOptionChange(party, option)}
-            className="h-4 w-4"
+            className="h-4 w-4 rounded-full bg-slate-400"
           />
           <label
             htmlFor={`${formKey}-${party}-${option}`}
@@ -104,8 +111,8 @@ export function RecipientSection({
           return (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold capitalize">{party.replace(/-/g, " ")}</h3>
-              <Card key={party} className="space-y-2 rounded-[0.33em] border border-slate-300 p-2">
-                <div className="space-y-1">
+              <Card key={party} className="rounded-[0.33em] border border-slate-300 p-0">
+                <div className="flex flex-col">
                   {renderOption(
                     party,
                     "self",
