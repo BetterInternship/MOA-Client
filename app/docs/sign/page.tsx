@@ -214,7 +214,7 @@ function PageContent() {
 
       // Check if this field is visible based on recipientHandling state
       const fieldParty = field.party;
-      const handling = recipientHandling[fieldParty];
+      const handling = recipientHandling[fieldParty] ?? "self"; // Default to "self" if not set
       const isDelegateEmailField = field.field.includes(":delegate-email");
       const isPartyFormField = !isDelegateEmailField;
 
@@ -224,19 +224,23 @@ function PageContent() {
 
       const value = values[field.field];
 
-      // Only validate and collect fields that have values
+      // Validate all visible fields (including empty/unchecked ones for proper zod validation)
+      const coerced = field.coerce(value);
+      const result = field.validator?.safeParse(coerced);
+      if (result?.error) {
+        const errorString = z
+          .treeifyError(result.error)
+          .errors.map((e) => e.split(" ").slice(0).join(" "))
+          .join("\n");
+        nextErrors[field.field] = `${field.label}: ${errorString}`;
+      } else {
+        // Clear error if validation passes
+        delete nextErrors[field.field];
+      }
+
+      // Only collect non-empty values for the payload
       if (value !== undefined && value !== null && String(value).trim() !== "") {
         flatValues[field.field] = String(value);
-
-        const coerced = field.coerce(value);
-        const result = field.validator?.safeParse(coerced);
-        if (result?.error) {
-          const errorString = z
-            .treeifyError(result.error)
-            .errors.map((e) => e.split(" ").slice(0).join(" "))
-            .join("\n");
-          nextErrors[field.field] = `${field.label}: ${errorString}`;
-        }
       }
     }
     setErrors(nextErrors);
@@ -724,6 +728,8 @@ function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } 
   switch (aud) {
     case "entity-representative":
       return { role: "entity-representative", party: "entity-representative" };
+    case "entity-supervisor":
+      return { role: "entity-supervisor", party: "entity-supervisor" };
     case "entity":
       return { role: "entity", party: "entity" };
     case "student-guardian":
