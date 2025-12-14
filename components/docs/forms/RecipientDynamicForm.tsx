@@ -77,8 +77,6 @@ export function DynamicForm({
     recipientFields.push(...delegateFields);
   }
 
-  console.log("Recipient fields:", recipientFields);
-
   // All non-recipient fields
   const nonRecipientFields = filteredFields.filter(
     (f) => !String(f.field).endsWith(":recipient") && !String(f.field).includes(":delegate-email")

@@ -95,9 +95,7 @@ function PageContent() {
     .map((p) => (typeof p === "string" ? p : (p?.party ?? "")))
     .filter(Boolean) as string[];
 
-  console.log("Audience from pending:", audienceFromPending);
   const audienceAllowed = audienceFromPending.includes(audienceParam);
-  console.log("Audience allowed:", audienceAllowed);
 
   // Fetch form fields schema from API
   const {
