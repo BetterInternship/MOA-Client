@@ -105,7 +105,24 @@ export function RecipientSection({
               <h3 className="text-sm font-semibold capitalize">{party.replace(/-/g, " ")}</h3>
               <div key={party} className="space-y-2 rounded-[0.33em] border border-slate-200 p-2">
                 <div className="space-y-1">
-                  {renderOption(party, "self", `I am the ${party.replace(/-/g, " ")}`, null)}
+                  {renderOption(
+                    party,
+                    "self",
+                    `I am the ${party.replace(/-/g, " ")}`,
+                    <div className="space-y-3">
+                      {partyFormFields.map((field) => (
+                        <FieldRenderer
+                          key={`${formKey}:${field.section}:${field.field}`}
+                          field={field}
+                          value={values[field.field]}
+                          onChange={(v) => onChange(field.field, v)}
+                          onBlur={() => onBlurValidate?.(field.field)}
+                          error={errors[field.field]}
+                          allValues={values}
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   {renderOption(
                     party,
@@ -158,22 +175,6 @@ export function RecipientSection({
                           I have authorization to sign on behalf of the {party.replace(/-/g, " ")}
                         </label>
                       </div>
-                    </div>
-                  )}
-
-                  {currentHandling === "self" && (
-                    <div className="ml-7 space-y-3 rounded-[0.33em] border border-slate-200 bg-slate-50 p-3">
-                      {partyFormFields.map((field) => (
-                        <FieldRenderer
-                          key={`${formKey}:${field.section}:${field.field}`}
-                          field={field}
-                          value={values[field.field]}
-                          onChange={(v) => onChange(field.field, v)}
-                          onBlur={() => onBlurValidate?.(field.field)}
-                          error={errors[field.field]}
-                          allValues={values}
-                        />
-                      ))}
                     </div>
                   )}
                 </div>
