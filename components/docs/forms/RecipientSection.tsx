@@ -120,7 +120,7 @@ export function RecipientSection({
   });
   const [recipientHandling, setRecipientHandling] = useState<
     Record<string, RecipientHandlingOption>
-  >(partyKeys.reduce((acc, party) => ({ ...acc, [party]: "self" }), {}));
+  >(partyKeys.reduce((acc, party) => ({ ...acc, [party]: "delegate-email" }), {}));
   const hasSelfSigner = useMemo(
     () => Object.values(recipientHandling).includes("self"),
     [recipientHandling]
