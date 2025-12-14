@@ -23,6 +23,10 @@ import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { getSignatorySelf } from "@/app/api/signatory.api";
 import Link from "next/link";
 
+const REP_FULL_NAME_KEY = "entity.representative-full-name:default";
+const SUP_FULL_NAME_KEY = "entity.supervisor-full-name:default";
+const DUP_FULL_NAME_ERROR = "Representative full name must be different from supervisor full name.";
+
 type Audience =
   | "entity"
   | "student-guardian"
@@ -197,6 +201,24 @@ function PageContent() {
         return next;
       });
     }
+
+    // Bandaid: prevent representative and supervisor full names from being identical
+    const repName = values[REP_FULL_NAME_KEY]?.toString().trim();
+    const supName = values[SUP_FULL_NAME_KEY]?.toString().trim();
+    if (repName && supName && repName === supName) {
+      setErrors((prev) => ({
+        ...prev,
+        [REP_FULL_NAME_KEY]: DUP_FULL_NAME_ERROR,
+        [SUP_FULL_NAME_KEY]: DUP_FULL_NAME_ERROR,
+      }));
+    } else {
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (next[REP_FULL_NAME_KEY] === DUP_FULL_NAME_ERROR) delete next[REP_FULL_NAME_KEY];
+        if (next[SUP_FULL_NAME_KEY] === DUP_FULL_NAME_ERROR) delete next[SUP_FULL_NAME_KEY];
+        return next;
+      });
+    }
   };
 
   const validateAndCollect = () => {
@@ -243,6 +265,15 @@ function PageContent() {
         flatValues[field.field] = String(value);
       }
     }
+
+    // Bandaid: prevent representative and supervisor full names from being identical
+    const repName = values[REP_FULL_NAME_KEY]?.toString().trim();
+    const supName = values[SUP_FULL_NAME_KEY]?.toString().trim();
+    if (repName && supName && repName === supName) {
+      nextErrors[REP_FULL_NAME_KEY] = DUP_FULL_NAME_ERROR;
+      nextErrors[SUP_FULL_NAME_KEY] = DUP_FULL_NAME_ERROR;
+    }
+
     setErrors(nextErrors);
     return { nextErrors, flatValues };
   };
