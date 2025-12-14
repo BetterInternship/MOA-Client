@@ -66,19 +66,13 @@ export function RecipientSection({
   };
 
   return (
-    <Card className="space-y-4 rounded-lg border border-amber-600 bg-amber-50/50 p-4">
-      {/* Header */}
-      <div className="border-b border-amber-600 pb-3">
-        <div className="flex items-start gap-2">
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-amber-900">{title}</h3>
-            {subtitle && <p className="mt-1 text-xs text-amber-800">{subtitle}</p>}
-          </div>
-        </div>
+    <Card className="space-y-3 rounded-lg border border-amber-600 bg-amber-50/50 p-3">
+      <div className="border-b border-amber-600 pb-2">
+        <h3 className="text-sm font-semibold text-amber-900">{title}</h3>
+        {subtitle && <p className="mt-0.5 text-xs text-amber-800">{subtitle}</p>}
       </div>
 
-      {/* Recipient sections per party */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {partyKeys.map((party) => {
           const partyFields = reducedFieldsByParty[party];
           const currentHandling = recipientHandling[party];
@@ -86,50 +80,47 @@ export function RecipientSection({
           const partyFormFields = partyFields.filter((f) => !f.field.includes(":delegate-email"));
 
           return (
-            <div key={party} className="border-t border-amber-100 pt-4 first:border-t-0 first:pt-0">
-              {/* Party Title */}
-              <h4 className="mb-3 text-sm font-semibold text-amber-900 capitalize">
+            <div key={party} className="border-t border-amber-100 pt-3 first:border-t-0 first:pt-0">
+              <h4 className="mb-2 text-xs font-semibold tracking-wide text-amber-900 uppercase">
                 {party.replace(/-/g, " ")}
               </h4>
 
-              {/* Question: Who will handle the signing? */}
-              <div className="mb-4 space-y-3">
-                {/* Option 1: I am the recipient */}
-                <div className="flex items-start gap-3 rounded-md p-3 transition-colors hover:bg-amber-100/30">
+              <div className="space-y-2">
+                {/* Option 1: Self */}
+                <div className="flex items-start gap-2 rounded-md p-2 transition-colors hover:bg-amber-100/30">
                   <Checkbox
                     id={`${formKey}-${party}-self`}
                     checked={currentHandling === "self"}
                     onCheckedChange={() => handleRecipientOptionChange(party, "self")}
-                    className="mt-0.5"
+                    className="mt-0.5 h-4 w-4"
                   />
                   <label
                     htmlFor={`${formKey}-${party}-self`}
-                    className="flex-1 cursor-pointer text-sm font-medium text-amber-900"
+                    className="flex-1 cursor-pointer text-sm text-amber-900"
                   >
                     I am the {party.replace(/-/g, " ")}
                   </label>
                 </div>
 
-                {/* Option 2: Send to their email */}
-                <div className="space-y-2">
-                  <div className="flex items-start gap-3 rounded-md p-3 transition-colors hover:bg-amber-100/30">
+                {/* Option 2: Delegate email */}
+                <div className="space-y-1">
+                  <div className="flex items-start gap-2 rounded-md p-2 transition-colors hover:bg-amber-100/30">
                     <Checkbox
                       id={`${formKey}-${party}-delegate`}
                       checked={currentHandling === "delegate-email"}
                       onCheckedChange={() => handleRecipientOptionChange(party, "delegate-email")}
-                      className="mt-0.5"
+                      className="mt-0.5 h-4 w-4"
                     />
                     <label
                       htmlFor={`${formKey}-${party}-delegate`}
-                      className="flex-1 cursor-pointer text-sm font-medium text-amber-900"
+                      className="flex-1 cursor-pointer text-sm text-amber-900"
                     >
-                      Send this to the {party.replace(/-/g, " ")}
+                      Send to the {party.replace(/-/g, " ")}
                     </label>
                   </div>
 
-                  {/* Email field for delegate option */}
                   {currentHandling === "delegate-email" && delegateEmailField && (
-                    <div className="ml-7 rounded-md border border-amber-200 bg-white p-3">
+                    <div className="ml-6 rounded-md border border-amber-200 bg-white p-2">
                       <FieldRenderer
                         field={delegateEmailField}
                         value={values[delegateEmailField.field]}
@@ -142,28 +133,26 @@ export function RecipientSection({
                   )}
                 </div>
 
-                {/* Option 3: Sign on behalf */}
-                <div className="space-y-2">
-                  <div className="flex items-start gap-3 rounded-md p-3 transition-colors hover:bg-amber-100/30">
+                {/* Option 3: On behalf */}
+                <div className="space-y-1">
+                  <div className="flex items-start gap-2 rounded-md p-2 transition-colors hover:bg-amber-100/30">
                     <Checkbox
                       id={`${formKey}-${party}-behalf`}
                       checked={currentHandling === "on-behalf"}
                       onCheckedChange={() => handleRecipientOptionChange(party, "on-behalf")}
-                      className="mt-0.5"
+                      className="mt-0.5 h-4 w-4"
                     />
                     <label
                       htmlFor={`${formKey}-${party}-behalf`}
-                      className="flex-1 cursor-pointer text-sm font-medium text-amber-900"
+                      className="flex-1 cursor-pointer text-sm text-amber-900"
                     >
-                      I will sign on behalf of the {party.replace(/-/g, " ")}
+                      Sign on behalf of the {party.replace(/-/g, " ")}
                     </label>
                   </div>
 
-                  {/* Show recipient fields + authorization checkbox when signing on behalf */}
                   {currentHandling === "on-behalf" && (
-                    <div className="ml-7 space-y-3 rounded-md border border-amber-200 bg-white p-3">
-                      {/* Recipient's form fields */}
-                      <div className="space-y-3 border-b border-amber-100 pb-3">
+                    <div className="ml-6 space-y-2 rounded-md border border-amber-200 bg-white p-2">
+                      <div className="space-y-2 border-b border-amber-100 pb-2">
                         {partyFormFields.map((field) => (
                           <div key={`${formKey}:${field.section}:${field.field}`}>
                             <FieldRenderer
@@ -178,22 +167,20 @@ export function RecipientSection({
                         ))}
                       </div>
 
-                      {/* Authorization confirmation checkbox */}
-                      <div className="flex items-start gap-3 rounded bg-blue-50 p-2">
+                      <div className="flex items-start gap-2 rounded bg-blue-50 p-2">
                         <Checkbox
                           id={`${formKey}-${party}-auth`}
                           checked={values[`${party}:on-behalf-auth`] === "true"}
                           onCheckedChange={(checked) =>
                             onChange(`${party}:on-behalf-auth`, checked ? "true" : "false")
                           }
-                          className="mt-1"
+                          className="mt-0.5 h-4 w-4"
                         />
                         <label
                           htmlFor={`${formKey}-${party}-auth`}
                           className="cursor-pointer text-xs text-blue-900"
                         >
-                          I have obtained authorization to sign on behalf of the{" "}
-                          {party.replace(/-/g, " ")}
+                          I have authorization to sign on behalf of the {party.replace(/-/g, " ")}
                         </label>
                       </div>
                     </div>
@@ -201,9 +188,9 @@ export function RecipientSection({
                 </div>
               </div>
 
-              {/* Show recipient fields when signing as self (default case) */}
+              {/* Self option fields */}
               {currentHandling === "self" && (
-                <div className="space-y-3 rounded-md border border-amber-200 bg-white p-3">
+                <div className="mt-2 space-y-2 rounded-md border border-amber-200 bg-white p-2">
                   {partyFormFields.map((field) => (
                     <div key={`${formKey}:${field.section}:${field.field}`}>
                       <FieldRenderer
