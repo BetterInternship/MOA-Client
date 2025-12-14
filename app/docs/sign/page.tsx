@@ -23,9 +23,30 @@ import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { getSignatorySelf } from "@/app/api/signatory.api";
 import Link from "next/link";
 
-type Audience = "entity" | "student-guardian" | "university" | "entity-representative";
-type Party = "entity" | "student-guardian" | "university" | "entity-representative" | "";
-type Role = "entity" | "student-guardian" | "university" | "entity-representative" | "";
+const REP_FULL_NAME_KEY = "entity.representative-full-name:default";
+const SUP_FULL_NAME_KEY = "entity.supervisor-full-name:default";
+const DUP_FULL_NAME_ERROR = "Representative full name must be different from supervisor full name.";
+
+type Audience =
+  | "entity"
+  | "student-guardian"
+  | "university"
+  | "entity-representative"
+  | "entity-supervisor";
+type Party =
+  | "entity"
+  | "student-guardian"
+  | "university"
+  | "entity-representative"
+  | "entity-supervisor"
+  | "";
+type Role =
+  | "entity"
+  | "student-guardian"
+  | "university"
+  | "entity-representative"
+  | "entity-supervisor"
+  | "";
 
 const Page = () => {
   return (
@@ -51,7 +72,6 @@ function PageContent() {
   // URL params
   const audienceParam = (params.get("for") || "entity").trim() as Audience;
   const { party } = mapAudienceToRoleAndParty(audienceParam);
-  console.log("Audience param:", audienceParam, "mapped party:", party);
 
   const formName = (params.get("form") || "").trim();
   const pendingDocumentId = (params.get("pending") || "").trim();
@@ -95,9 +115,7 @@ function PageContent() {
     .map((p) => (typeof p === "string" ? p : (p?.party ?? "")))
     .filter(Boolean) as string[];
 
-  console.log("Audience from pending:", audienceFromPending);
   const audienceAllowed = audienceFromPending.includes(audienceParam);
-  console.log("Audience allowed:", audienceAllowed);
 
   // Fetch form fields schema from API
   const {
@@ -124,6 +142,9 @@ function PageContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [recipientHandling, setRecipientHandling] = useState<
+    Record<string, "self" | "delegate-email" | "on-behalf">
+  >({});
 
   useEffect(() => {
     if (isMobile) {
@@ -137,19 +158,95 @@ function PageContent() {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
   };
 
+  const clearErrors = (keys: string[]) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      keys.forEach((key) => delete next[key]);
+      return next;
+    });
+  };
+
+  const handleBlurValidate = (fieldKey: string) => {
+    // Find the field to check its party and type
+    const field = fields.find((f) => f.field === fieldKey);
+    if (!field) return;
+
+    const fieldParty = field.party;
+    const handling = recipientHandling[fieldParty];
+    const isDelegateEmailField = field.field.includes(":delegate-email");
+    const isPartyFormField = !isDelegateEmailField;
+
+    // Skip validation for fields that aren't visible
+    if (handling === "delegate-email" && isPartyFormField) return;
+    if (handling !== "delegate-email" && isDelegateEmailField) return;
+
+    // Validate the field - let the zod validator handle empty values
+    const value = values[fieldKey];
+    const coerced = field.coerce(value);
+    const result = field.validator?.safeParse(coerced);
+    if (result?.error) {
+      const errorString = z
+        .treeifyError(result.error)
+        .errors.map((e) => e.split(" ").slice(0).join(" "))
+        .join("\n");
+      setErrors((prev) => ({
+        ...prev,
+        [fieldKey]: `${field.label}: ${errorString}`,
+      }));
+    } else {
+      // Clear error if validation passes
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[fieldKey];
+        return next;
+      });
+    }
+
+    // Bandaid: prevent representative and supervisor full names from being identical
+    const repName = values[REP_FULL_NAME_KEY]?.toString().trim();
+    const supName = values[SUP_FULL_NAME_KEY]?.toString().trim();
+    if (repName && supName && repName === supName) {
+      setErrors((prev) => ({
+        ...prev,
+        [REP_FULL_NAME_KEY]: DUP_FULL_NAME_ERROR,
+        [SUP_FULL_NAME_KEY]: DUP_FULL_NAME_ERROR,
+      }));
+    } else {
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (next[REP_FULL_NAME_KEY] === DUP_FULL_NAME_ERROR) delete next[REP_FULL_NAME_KEY];
+        if (next[SUP_FULL_NAME_KEY] === DUP_FULL_NAME_ERROR) delete next[SUP_FULL_NAME_KEY];
+        return next;
+      });
+    }
+  };
+
   const validateAndCollect = () => {
     const nextErrors: Record<string, string> = {};
     const flatValues: Record<string, string> = {};
 
     for (const field of fields) {
-      if (field.party !== audienceParam) continue;
+      // Include fields that match the audience, plus entity-representative/entity-supervisor when party is "entity"
+      const isRelevantParty =
+        field.party === audienceParam ||
+        (audienceParam === "entity" &&
+          (field.party === "entity-representative" || field.party === "entity-supervisor"));
+
+      if (!isRelevantParty) continue;
+
+      // Check if this field is visible based on recipientHandling state
+      const fieldParty = field.party;
+      const handling = recipientHandling[fieldParty] ?? "self"; // Default to "self" if not set
+      const isDelegateEmailField = field.field.includes(":delegate-email");
+      const isPartyFormField = !isDelegateEmailField;
+
+      // Skip fields that aren't visible based on current handling option
+      if (handling === "delegate-email" && isPartyFormField) continue;
+      if (handling !== "delegate-email" && isDelegateEmailField) continue;
 
       const value = values[field.field];
 
-      if (value !== undefined && value !== null && String(value).trim() !== "") {
-        flatValues[field.field] = String(value);
-      }
-
+      // Validate all visible fields (including empty/unchecked ones for proper zod validation)
       const coerced = field.coerce(value);
       const result = field.validator?.safeParse(coerced);
       if (result?.error) {
@@ -158,7 +255,23 @@ function PageContent() {
           .errors.map((e) => e.split(" ").slice(0).join(" "))
           .join("\n");
         nextErrors[field.field] = `${field.label}: ${errorString}`;
+      } else {
+        // Clear error if validation passes
+        delete nextErrors[field.field];
       }
+
+      // Only collect non-empty values for the payload
+      if (value !== undefined && value !== null && String(value).trim() !== "") {
+        flatValues[field.field] = String(value);
+      }
+    }
+
+    // Bandaid: prevent representative and supervisor full names from being identical
+    const repName = values[REP_FULL_NAME_KEY]?.toString().trim();
+    const supName = values[SUP_FULL_NAME_KEY]?.toString().trim();
+    if (repName && supName && repName === supName) {
+      nextErrors[REP_FULL_NAME_KEY] = DUP_FULL_NAME_ERROR;
+      nextErrors[SUP_FULL_NAME_KEY] = DUP_FULL_NAME_ERROR;
     }
 
     setErrors(nextErrors);
@@ -199,6 +312,7 @@ function PageContent() {
 
   async function submitWithAuthorization(flatValuesParam?: Record<string, string>) {
     const flatValues = flatValuesParam ?? lastFlatValues;
+    console.log("VALUES", flatValues);
     if (!formName || !pendingDocumentId || !party || !flatValues) return;
     try {
       setBusy(true);
@@ -206,7 +320,6 @@ function PageContent() {
 
       const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
 
-      const finalValues = flatValues ?? {};
       const internshipMoaFieldsToSave: Record<string, Record<string, string>> = {
         shared: {},
       };
@@ -217,12 +330,12 @@ function PageContent() {
         if (field.party !== audienceParam) continue;
 
         if (field.shared) {
-          internshipMoaFieldsToSave.shared[field.field] = finalValues[field.field];
+          internshipMoaFieldsToSave.shared[field.field] = flatValues[field.field];
         } else {
           if (!internshipMoaFieldsToSave[formName]) {
             internshipMoaFieldsToSave[formName] = {};
           }
-          internshipMoaFieldsToSave[formName][field.field] = finalValues[field.field];
+          internshipMoaFieldsToSave[formName][field.field] = flatValues[field.field];
         }
       }
 
@@ -243,6 +356,8 @@ function PageContent() {
         values: flatValues,
         clientSigningInfo,
       };
+
+      console.log("Flat values", flatValues);
 
       const res = await approveSignatory(payload);
 
@@ -502,6 +617,9 @@ function PageContent() {
                     autofillValues={autofillValues}
                     setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
                     setPreviews={setPreviews}
+                    onClearErrors={clearErrors}
+                    onRecipientHandlingChange={setRecipientHandling}
+                    onBlurValidate={handleBlurValidate}
                   />
 
                   <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
@@ -641,6 +759,8 @@ function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } 
   switch (aud) {
     case "entity-representative":
       return { role: "entity-representative", party: "entity-representative" };
+    case "entity-supervisor":
+      return { role: "entity-supervisor", party: "entity-supervisor" };
     case "entity":
       return { role: "entity", party: "entity" };
     case "student-guardian":

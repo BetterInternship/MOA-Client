@@ -20,9 +20,17 @@ export function DynamicForm({
   setPreviews,
   pendingUrl,
   onBlurValidate,
+  onClearErrors,
+  onRecipientHandlingChange,
 }: {
   formName: string;
-  party?: "entity" | "student-guardian" | "university" | "student" | "entity-representative";
+  party?:
+    | "entity"
+    | "student-guardian"
+    | "university"
+    | "student"
+    | "entity-representative"
+    | "entity-supervisor";
   fields: ClientField<[]>[];
   values: Record<string, any>;
   autofillValues: Record<string, string>;
@@ -33,6 +41,10 @@ export function DynamicForm({
   onChange: (key: string, value: any) => void;
   setPreviews?: (previews: Record<number, React.ReactNode[]>) => void;
   onBlurValidate?: (fieldKey: string) => void;
+  onClearErrors?: (keys: string[]) => void;
+  onRecipientHandlingChange?: (
+    handling: Record<string, "self" | "delegate-email" | "on-behalf">
+  ) => void;
 }) {
   const form = useFormContext();
   const filteredFields = fields
@@ -43,8 +55,38 @@ export function DynamicForm({
   // Separate recipient fields (those whose field name ends with ":recipient")
   const recipientFields = filteredFields.filter((f) => String(f.field).endsWith(":recipient"));
 
+  // ? This is for the new custom entity-supervisor and entity-representative fields
+  const delegateFields = filteredFields.filter((f) => String(f.field).endsWith(":delegate-fields"));
+  if (party === "entity") {
+    const hasSpecificEntityParties = fields.some(
+      (field) =>
+        (field.party as string) === "entity-supervisor" ||
+        (field.party as string) === "entity-representative"
+    );
+
+    // If we have specific entity parties (supervisor/representative), exclude generic entity fields
+    if (hasSpecificEntityParties) {
+      // Remove entity party recipient fields since we'll use the specific ones instead
+      recipientFields.length = 0;
+    }
+
+    fields
+      .filter(
+        (field) =>
+          (field.party as string) === "entity-supervisor" ||
+          (field.party as string) === "entity-representative"
+      )
+      .forEach((field) => {
+        recipientFields.push(field);
+      });
+
+    recipientFields.push(...delegateFields);
+  }
+
   // All non-recipient fields
-  const nonRecipientFields = filteredFields.filter((f) => !String(f.field).endsWith(":recipient"));
+  const nonRecipientFields = filteredFields.filter(
+    (f) => !String(f.field).endsWith(":recipient") && !String(f.field).includes(":delegate-email")
+  );
 
   // Group by section
   const entitySectionFields: ClientField<[]>[] = nonRecipientFields.filter(
@@ -168,14 +210,14 @@ export function DynamicForm({
 
       <RecipientSection
         formKey={formName}
-        title="Recipient Email(s) — IMPORTANT"
-        subtitle="These email fields are important. Please double-check addresses, recipients are emailed a seperate form to them to complete and sign."
+        title="Signatories"
         fields={recipientFields}
         values={values}
         onChange={onChange}
         onBlurValidate={onBlurValidate}
         errors={errors}
-        showErrors={showErrors}
+        onClearErrors={onClearErrors}
+        onHandlingChange={onRecipientHandlingChange}
       />
     </div>
   );
@@ -188,7 +230,7 @@ const FormSection = function FormSection({
   values,
   onChange,
   errors,
-  showErrors,
+  showErrors: _showErrors,
   setSelected,
   onBlurValidate,
 }: {
