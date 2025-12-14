@@ -68,7 +68,6 @@ function PageContent() {
   // URL params
   const audienceParam = (params.get("for") || "entity").trim() as Audience;
   const { party } = mapAudienceToRoleAndParty(audienceParam);
-  console.log("Audience param:", audienceParam, "mapped party:", party);
 
   const formName = (params.get("form") || "").trim();
   const pendingDocumentId = (params.get("pending") || "").trim();
@@ -139,6 +138,9 @@ function PageContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [recipientHandling, setRecipientHandling] = useState<
+    Record<string, "self" | "delegate-email" | "on-behalf">
+  >({});
 
   useEffect(() => {
     if (isMobile) {
@@ -150,6 +152,51 @@ function PageContent() {
 
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
+  };
+
+  const clearErrors = (keys: string[]) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      keys.forEach((key) => delete next[key]);
+      return next;
+    });
+  };
+
+  const handleBlurValidate = (fieldKey: string) => {
+    // Find the field to check its party and type
+    const field = fields.find((f) => f.field === fieldKey);
+    if (!field) return;
+
+    const fieldParty = field.party;
+    const handling = recipientHandling[fieldParty];
+    const isDelegateEmailField = field.field.includes(":delegate-email");
+    const isPartyFormField = !isDelegateEmailField;
+
+    // Skip validation for fields that aren't visible
+    if (handling === "delegate-email" && isPartyFormField) return;
+    if (handling !== "delegate-email" && isDelegateEmailField) return;
+
+    // Validate the field - let the zod validator handle empty values
+    const value = values[fieldKey];
+    const coerced = field.coerce(value);
+    const result = field.validator?.safeParse(coerced);
+    if (result?.error) {
+      const errorString = z
+        .treeifyError(result.error)
+        .errors.map((e) => e.split(" ").slice(0).join(" "))
+        .join("\n");
+      setErrors((prev) => ({
+        ...prev,
+        [fieldKey]: `${field.label}: ${errorString}`,
+      }));
+    } else {
+      // Clear error if validation passes
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[fieldKey];
+        return next;
+      });
+    }
   };
 
   const validateAndCollect = () => {
@@ -164,6 +211,16 @@ function PageContent() {
           (field.party === "entity-representative" || field.party === "entity-supervisor"));
 
       if (!isRelevantParty) continue;
+
+      // Check if this field is visible based on recipientHandling state
+      const fieldParty = field.party;
+      const handling = recipientHandling[fieldParty];
+      const isDelegateEmailField = field.field.includes(":delegate-email");
+      const isPartyFormField = !isDelegateEmailField;
+
+      // Skip fields that aren't visible based on current handling option
+      if (handling === "delegate-email" && isPartyFormField) continue;
+      if (handling !== "delegate-email" && isDelegateEmailField) continue;
 
       const value = values[field.field];
 
@@ -182,7 +239,6 @@ function PageContent() {
         }
       }
     }
-
     setErrors(nextErrors);
     return { nextErrors, flatValues };
   };
@@ -239,12 +295,12 @@ function PageContent() {
         if (field.party !== audienceParam) continue;
 
         if (field.shared) {
-          internshipMoaFieldsToSave.shared[field.field] = finalValues[field.field];
+          internshipMoaFieldsToSave.shared[field.field] = flatValues[field.field];
         } else {
           if (!internshipMoaFieldsToSave[formName]) {
             internshipMoaFieldsToSave[formName] = {};
           }
-          internshipMoaFieldsToSave[formName][field.field] = finalValues[field.field];
+          internshipMoaFieldsToSave[formName][field.field] = flatValues[field.field];
         }
       }
 
@@ -265,6 +321,8 @@ function PageContent() {
         values: flatValues,
         clientSigningInfo,
       };
+
+      console.log("Flat values", flatValues);
 
       const res = await approveSignatory(payload);
 
@@ -524,6 +582,9 @@ function PageContent() {
                     autofillValues={autofillValues}
                     setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
                     setPreviews={setPreviews}
+                    onClearErrors={clearErrors}
+                    onRecipientHandlingChange={setRecipientHandling}
+                    onBlurValidate={handleBlurValidate}
                   />
 
                   <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">

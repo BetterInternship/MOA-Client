@@ -72,6 +72,8 @@ export function RecipientSection({
   onChange,
   onBlurValidate,
   errors,
+  onClearErrors,
+  onHandlingChange,
 }: {
   formKey: string;
   title: string;
@@ -80,6 +82,8 @@ export function RecipientSection({
   onChange: (key: string, value: any) => void;
   onBlurValidate?: (fieldKey: string) => void;
   errors: Record<string, string>;
+  onClearErrors?: (keys: string[]) => void;
+  onHandlingChange?: (handling: Record<string, RecipientHandlingOption>) => void;
 }) {
   if (!fields.length) return null;
 
@@ -115,9 +119,37 @@ export function RecipientSection({
   >(partyKeys.reduce((acc, party) => ({ ...acc, [party]: "self" }), {}));
 
   const handleRecipientOptionChange = (party: string, option: RecipientHandlingOption) => {
+    const previousOption = recipientHandling[party];
     setRecipientHandling((prev) => ({ ...prev, [party]: option }));
-    if (option !== "delegate-email") {
-      onChange(`${party}:delegate-email`, undefined);
+
+    const partyFields = reducedFieldsByParty[party] || [];
+    const fieldsToClean: string[] = [];
+
+    // Clear delegate-email when switching away from delegate-email option
+    if (option !== "delegate-email" && previousOption === "delegate-email") {
+      const delegateField = `${party}:delegate-email`;
+      fieldsToClean.push(delegateField);
+      onChange(delegateField, undefined);
+    }
+
+    // Clear all party form fields when switching to delegate-email
+    if (option === "delegate-email" && previousOption !== "delegate-email") {
+      partyFields.forEach((field) => {
+        if (!field.field.includes(":delegate-email")) {
+          fieldsToClean.push(field.field);
+          onChange(field.field, undefined);
+        }
+      });
+    }
+
+    // Clear errors for fields that are no longer visible
+    if (fieldsToClean.length > 0 && onClearErrors) {
+      onClearErrors(fieldsToClean);
+    }
+
+    // Notify parent of handling change
+    if (onHandlingChange) {
+      onHandlingChange({ ...recipientHandling, [party]: option });
     }
   };
   const formatPartyLabel = (party: string) =>

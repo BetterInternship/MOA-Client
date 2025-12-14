@@ -20,6 +20,8 @@ export function DynamicForm({
   setPreviews,
   pendingUrl,
   onBlurValidate,
+  onClearErrors,
+  onRecipientHandlingChange,
 }: {
   formName: string;
   party?:
@@ -39,6 +41,10 @@ export function DynamicForm({
   onChange: (key: string, value: any) => void;
   setPreviews?: (previews: Record<number, React.ReactNode[]>) => void;
   onBlurValidate?: (fieldKey: string) => void;
+  onClearErrors?: (keys: string[]) => void;
+  onRecipientHandlingChange?: (
+    handling: Record<string, "self" | "delegate-email" | "on-behalf">
+  ) => void;
 }) {
   const form = useFormContext();
   const filteredFields = fields
@@ -210,6 +216,8 @@ export function DynamicForm({
         onChange={onChange}
         onBlurValidate={onBlurValidate}
         errors={errors}
+        onClearErrors={onClearErrors}
+        onHandlingChange={onRecipientHandlingChange}
       />
     </div>
   );

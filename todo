@@ -1,0 +1,21 @@
+[x]: Make new party == entity supervisor 
+[x]: Append proper fields onto form editor 
+  - [x]: When form party === entity,
+    - [x]: Check if form has entity-supervisor fields and entity-representative fields 
+    - [x]: If yes, render respective fields recipient form 
+        - [x]: If they are the respective person, render their form and add to fields and 
+        - [ ]: Add values payload 
+        - [x]: If no, ask for the email of the respective party to send them a link to fill out their form
+          - [x]: Append then as party on the front of the Array, fix order as well
+        - [x]: If they sign on their behalf, render their form 
+          - [ ]: Add values to payload 
+          - [x]: Also put a checkbox to confirm they are signing on behalf of the other party 
+        - [ ]: Disallow none of the above, by default, they are the entity-representative 
+[x]: Make entity supervisor allowable in the forms
+[x]: Make the order email, i am supervisor, on behalf of supervisor
+[x]: Remove the yellow box on behalf, just make the language better
+[x]: Error if they're the same email and same person name
+[x]: Change language from Send Request -> Request Signature from Supervisor Internship
+[x]: Make it that is company/organization internship supervisor
+[ ]: Request signature only
+
