@@ -230,17 +230,24 @@ export function RecipientSection({
 
                 {selected === "on-behalf" && (
                   <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    {partyFormFields.map((field) => (
-                      <FieldRenderer
-                        key={`${formKey}:${field.section}:${field.field}`}
-                        field={field}
-                        value={values[field.field]}
-                        onChange={(v) => onChange(field.field, v)}
-                        onBlur={() => onBlurValidate?.(field.field)}
-                        error={errors[field.field]}
-                        allValues={values}
-                      />
-                    ))}
+                    {partyFormFields.map((field) => {
+                      const overriddenField = {
+                        ...field,
+                        tooltip_label:
+                          "I have obtained the necessary authorization to sign on behalf of the signatory or signatories.",
+                      } as typeof field;
+                      return (
+                        <FieldRenderer
+                          key={`${formKey}:${field.section}:${field.field}`}
+                          field={overriddenField}
+                          value={values[field.field]}
+                          onChange={(v) => onChange(field.field, v)}
+                          onBlur={() => onBlurValidate?.(field.field)}
+                          error={errors[field.field]}
+                          allValues={values}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
