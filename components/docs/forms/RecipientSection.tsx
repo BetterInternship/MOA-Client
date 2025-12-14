@@ -10,6 +10,7 @@ type PickOption<T extends string = string> = {
   value: T;
   label: string;
   description?: string;
+  disabled?: boolean;
 };
 
 function SinglePickerBig<T extends string = string>({
@@ -36,16 +37,19 @@ function SinglePickerBig<T extends string = string>({
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {options.map((opt) => {
           const active = value === opt.value;
+          const disabled = !!opt.disabled;
           return (
             <button
               key={opt.value}
               type="button"
-              onClick={() => handlePick(opt.value)}
+              disabled={disabled}
+              onClick={() => !disabled && handlePick(opt.value)}
               className={cn(
                 "relative min-h-[72px] rounded-[0.33em] border px-3 py-2.5 text-left transition-all",
                 "ring-primary/50 focus-visible:ring-2 focus-visible:outline-none",
                 "hover:border-primary/50 hover:bg-border/10 hover:shadow-sm",
-                active ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-card"
+                active ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-card",
+                disabled ? "cursor-not-allowed opacity-60" : ""
               )}
             >
               <div className="flex h-full flex-col items-center justify-center space-y-1 text-center">
@@ -117,8 +121,17 @@ export function RecipientSection({
   const [recipientHandling, setRecipientHandling] = useState<
     Record<string, RecipientHandlingOption>
   >(partyKeys.reduce((acc, party) => ({ ...acc, [party]: "self" }), {}));
+  const hasSelfSigner = useMemo(
+    () => Object.values(recipientHandling).includes("self"),
+    [recipientHandling]
+  );
 
   const handleRecipientOptionChange = (party: string, option: RecipientHandlingOption) => {
+    const otherSelf = Object.entries(recipientHandling).some(
+      ([p, handling]) => p !== party && handling === "self"
+    );
+    if (option === "self" && otherSelf) return;
+
     const previousOption = recipientHandling[party];
     setRecipientHandling((prev) => ({ ...prev, [party]: option }));
 
@@ -170,6 +183,8 @@ export function RecipientSection({
           const delegateEmailField = partyFields.find((f) => f.field === `${party}:delegate-email`);
           const partyFormFields = partyFields.filter((f) => !f.field.includes(":delegate-email"));
 
+          const selected = recipientHandling[party] ?? null;
+
           const options: PickOption<RecipientHandlingOption>[] = [
             {
               value: "delegate-email",
@@ -178,14 +193,13 @@ export function RecipientSection({
             {
               value: "self",
               label: `Self Sign`,
+              disabled: hasSelfSigner && selected !== "self",
             },
             {
               value: "on-behalf",
               label: `Sign on Behalf`,
             },
           ];
-
-          const selected = recipientHandling[party] ?? null;
 
           return (
             <Card key={party} className="rounded-[0.33em] border border-slate-300 p-3">
