@@ -1,4 +1,5 @@
 import { FieldRenderer } from "@/components/docs/forms/FieldRenderer";
+import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ClientField } from "@betterinternship/core/forms";
 import { useState, useMemo } from "react";
@@ -103,7 +104,7 @@ export function RecipientSection({
           return (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold capitalize">{party.replace(/-/g, " ")}</h3>
-              <div key={party} className="space-y-2 rounded-[0.33em] border border-slate-200 p-2">
+              <Card key={party} className="space-y-2 rounded-[0.33em] border border-slate-300 p-2">
                 <div className="space-y-1">
                   {renderOption(
                     party,
@@ -178,7 +179,7 @@ export function RecipientSection({
                     </div>
                   )}
                 </div>
-              </div>
+              </Card>
             </div>
           );
         })}
