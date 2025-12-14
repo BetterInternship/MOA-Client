@@ -142,18 +142,18 @@ export function RecipientSection({
                         ))}
                       </div>
 
-                      <div className="rounded-[0.33em]border flex items-start gap-3 border-blue-200 bg-blue-50 p-3">
+                      <div className="flex items-start gap-3 rounded-[0.33em] border border-yellow-600 bg-yellow-50 p-3">
                         <Checkbox
                           id={`${formKey}-${party}-auth`}
                           checked={values[`${party}:on-behalf-auth`] === "true"}
                           onCheckedChange={(checked) =>
                             onChange(`${party}:on-behalf-auth`, checked ? "true" : "false")
                           }
-                          className="mt-0.5 h-4 w-4"
+                          className="h-4 w-4"
                         />
                         <label
                           htmlFor={`${formKey}-${party}-auth`}
-                          className="cursor-pointer text-xs font-medium text-blue-900"
+                          className="cursor-pointer text-xs font-medium text-amber-700"
                         >
                           I have authorization to sign on behalf of the {party.replace(/-/g, " ")}
                         </label>
