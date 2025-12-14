@@ -69,6 +69,7 @@ export function RecipientSection({
     return (
       <div
         key={option}
+        onClick={() => handleRecipientOptionChange(party, option)}
         className={cn(
           "p-2 transition-all",
           isSelected ? "bg-blue-50" : "opacity-75 hover:cursor-pointer hover:bg-slate-200"
@@ -78,7 +79,6 @@ export function RecipientSection({
           <Checkbox
             id={`${formKey}-${party}-${option}`}
             checked={isSelected}
-            onCheckedChange={() => handleRecipientOptionChange(party, option)}
             className="h-4 w-4 rounded-full bg-slate-400"
           />
           <label
