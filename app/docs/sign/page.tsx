@@ -157,22 +157,29 @@ function PageContent() {
     const flatValues: Record<string, string> = {};
 
     for (const field of fields) {
-      if (field.party !== audienceParam) continue;
+      // Include fields that match the audience, plus entity-representative/entity-supervisor when party is "entity"
+      const isRelevantParty =
+        field.party === audienceParam ||
+        (audienceParam === "entity" &&
+          (field.party === "entity-representative" || field.party === "entity-supervisor"));
+
+      if (!isRelevantParty) continue;
 
       const value = values[field.field];
 
+      // Only validate and collect fields that have values
       if (value !== undefined && value !== null && String(value).trim() !== "") {
         flatValues[field.field] = String(value);
-      }
 
-      const coerced = field.coerce(value);
-      const result = field.validator?.safeParse(coerced);
-      if (result?.error) {
-        const errorString = z
-          .treeifyError(result.error)
-          .errors.map((e) => e.split(" ").slice(0).join(" "))
-          .join("\n");
-        nextErrors[field.field] = `${field.label}: ${errorString}`;
+        const coerced = field.coerce(value);
+        const result = field.validator?.safeParse(coerced);
+        if (result?.error) {
+          const errorString = z
+            .treeifyError(result.error)
+            .errors.map((e) => e.split(" ").slice(0).join(" "))
+            .join("\n");
+          nextErrors[field.field] = `${field.label}: ${errorString}`;
+        }
       }
     }
 
@@ -214,6 +221,7 @@ function PageContent() {
 
   async function submitWithAuthorization(flatValuesParam?: Record<string, string>) {
     const flatValues = flatValuesParam ?? lastFlatValues;
+    console.log("VALUES", flatValues);
     if (!formName || !pendingDocumentId || !party || !flatValues) return;
     try {
       setBusy(true);
@@ -255,7 +263,7 @@ function PageContent() {
         pendingDocumentId,
         signatories: signatories[audienceParam],
         party,
-        values: flatValues,
+        values: finalValues,
         clientSigningInfo,
       };
 
