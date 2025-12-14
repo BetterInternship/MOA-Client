@@ -52,6 +52,18 @@ export function DynamicForm({
   // ? This is for the new custom entity-supervisor and entity-representative fields
   const delegateFields = filteredFields.filter((f) => String(f.field).endsWith(":delegate-fields"));
   if (party === "entity") {
+    const hasSpecificEntityParties = fields.some(
+      (field) =>
+        (field.party as string) === "entity-supervisor" ||
+        (field.party as string) === "entity-representative"
+    );
+
+    // If we have specific entity parties (supervisor/representative), exclude generic entity fields
+    if (hasSpecificEntityParties) {
+      // Remove entity party recipient fields since we'll use the specific ones instead
+      recipientFields.length = 0;
+    }
+
     fields
       .filter(
         (field) =>
@@ -69,7 +81,7 @@ export function DynamicForm({
 
   // All non-recipient fields
   const nonRecipientFields = filteredFields.filter(
-    (f) => !String(f.field).endsWith(":recipient") && !String(f.field).endsWith(":delegate-fields")
+    (f) => !String(f.field).endsWith(":recipient") && !String(f.field).includes(":delegate-email")
   );
 
   // Group by section
