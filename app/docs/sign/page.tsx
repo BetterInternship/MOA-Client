@@ -229,7 +229,6 @@ function PageContent() {
 
       const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
 
-      const finalValues = flatValues ?? {};
       const internshipMoaFieldsToSave: Record<string, Record<string, string>> = {
         shared: {},
       };
@@ -263,7 +262,7 @@ function PageContent() {
         pendingDocumentId,
         signatories: signatories[audienceParam],
         party,
-        values: finalValues,
+        values: flatValues,
         clientSigningInfo,
       };
 

@@ -1,11 +1,68 @@
 import { FieldRenderer } from "@/components/docs/forms/FieldRenderer";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { ClientField } from "@betterinternship/core/forms";
 import { useState, useMemo } from "react";
 
 type RecipientHandlingOption = "self" | "delegate-email" | "on-behalf";
+
+type PickOption<T extends string = string> = {
+  value: T;
+  label: string;
+  description?: string;
+};
+
+function SinglePickerBig<T extends string = string>({
+  label = "Select one",
+  options,
+  value,
+  onChange,
+  className,
+}: {
+  label?: React.ReactNode;
+  options: PickOption<T>[];
+  value: T | null;
+  onChange: (v: T | null) => void;
+  className?: string;
+}) {
+  const handlePick = (v: T) => {
+    onChange(v);
+  };
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      {label && <div className="text-xs text-gray-600">{label}</div>}
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {options.map((opt) => {
+          const active = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => handlePick(opt.value)}
+              className={cn(
+                "relative min-h-[72px] rounded-[0.33em] border px-3 py-2.5 text-left transition-all",
+                "ring-primary/50 focus-visible:ring-2 focus-visible:outline-none",
+                "hover:border-primary/50 hover:bg-border/10 hover:shadow-sm",
+                active ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-card"
+              )}
+            >
+              <div className="flex h-full flex-col items-center justify-center space-y-1 text-center">
+                <div className="text-primary text-base leading-tight font-semibold">
+                  {opt.label}
+                </div>
+                {opt.description && (
+                  <div className="text-muted-foreground mt-0.5 text-xs">{opt.description}</div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function RecipientSection({
   formKey,
@@ -47,7 +104,12 @@ export function RecipientSection({
     return reduced;
   }, [fieldsByParty]);
 
-  const partyKeys = Object.keys(reducedFieldsByParty);
+  const partyKeys = Object.keys(reducedFieldsByParty).sort((a, b) => {
+    // Always place company representative first, then others
+    if (a === "entity-representative") return -1;
+    if (b === "entity-representative") return 1;
+    return a.localeCompare(b);
+  });
   const [recipientHandling, setRecipientHandling] = useState<
     Record<string, RecipientHandlingOption>
   >(partyKeys.reduce((acc, party) => ({ ...acc, [party]: "self" }), {}));
@@ -58,42 +120,11 @@ export function RecipientSection({
       onChange(`${party}:delegate-email`, undefined);
     }
   };
-
-  const renderOption = (
-    party: string,
-    option: RecipientHandlingOption,
-    label: string,
-    content?: React.ReactNode
-  ) => {
-    const isSelected = recipientHandling[party] === option;
-    return (
-      <div
-        key={option}
-        onClick={() => handleRecipientOptionChange(party, option)}
-        className={cn(
-          "p-2 transition-all",
-          isSelected ? "bg-blue-50" : "opacity-75 hover:cursor-pointer hover:bg-slate-200"
-        )}
-      >
-        <div className="flex items-center gap-3 rounded-[0.33em] p-2">
-          <Checkbox
-            id={`${formKey}-${party}-${option}`}
-            checked={isSelected}
-            className="h-4 w-4 rounded-full bg-slate-400"
-          />
-          <label
-            htmlFor={`${formKey}-${party}-${option}`}
-            className="flex-1 cursor-pointer text-sm font-medium text-slate-700"
-          >
-            {label}
-          </label>
-        </div>
-        {isSelected && content && (
-          <div className="ml-7 rounded-lg border border-slate-200 bg-slate-50 p-3">{content}</div>
-        )}
-      </div>
-    );
-  };
+  const formatPartyLabel = (party: string) =>
+    party
+      .replace(/entity/gi, "Company/Internship")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
 
   return (
     <div className="space-y-3 border-t border-slate-300 pt-3">
@@ -101,93 +132,87 @@ export function RecipientSection({
         <h2 className="text-lg font-semibold">{title}</h2>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-4">
         {partyKeys.map((party) => {
           const partyFields = reducedFieldsByParty[party];
-          const currentHandling = recipientHandling[party];
           const delegateEmailField = partyFields.find((f) => f.field === `${party}:delegate-email`);
           const partyFormFields = partyFields.filter((f) => !f.field.includes(":delegate-email"));
 
-          return (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold capitalize">{party.replace(/-/g, " ")}</h3>
-              <Card key={party} className="rounded-[0.33em] border border-slate-300 p-0">
-                <div className="flex flex-col">
-                  {renderOption(
-                    party,
-                    "self",
-                    `I am the ${party.replace(/-/g, " ")}`,
-                    <div className="space-y-3">
-                      {partyFormFields.map((field) => (
-                        <FieldRenderer
-                          key={`${formKey}:${field.section}:${field.field}`}
-                          field={field}
-                          value={values[field.field]}
-                          onChange={(v) => onChange(field.field, v)}
-                          onBlur={() => onBlurValidate?.(field.field)}
-                          error={errors[field.field]}
-                          allValues={values}
-                        />
-                      ))}
-                    </div>
-                  )}
+          const options: PickOption<RecipientHandlingOption>[] = [
+            {
+              value: "delegate-email",
+              label: `Request Signature`,
+            },
+            {
+              value: "self",
+              label: `Self Sign`,
+            },
+            {
+              value: "on-behalf",
+              label: `Sign on Behalf`,
+            },
+          ];
 
-                  {renderOption(
-                    party,
-                    "delegate-email",
-                    `Send to the ${party.replace(/-/g, " ")}`,
-                    delegateEmailField ? (
+          const selected = recipientHandling[party] ?? null;
+
+          return (
+            <Card key={party} className="rounded-[0.33em] border border-slate-300 p-3">
+              <div className="text-sm font-semibold capitalize">{formatPartyLabel(party)}</div>
+
+              <SinglePickerBig
+                label={null}
+                options={options}
+                value={selected}
+                onChange={(v) => v && handleRecipientOptionChange(party, v)}
+              />
+
+              <div className="space-y-3">
+                {selected === "delegate-email" && delegateEmailField ? (
+                  <div className="rounded-[0.33em] border border-slate-200 bg-slate-50 p-3">
+                    <FieldRenderer
+                      field={delegateEmailField}
+                      value={values[delegateEmailField.field]}
+                      onChange={(v) => onChange(delegateEmailField.field, v)}
+                      onBlur={() => onBlurValidate?.(delegateEmailField.field)}
+                      error={errors[delegateEmailField.field]}
+                      allValues={values}
+                    />
+                  </div>
+                ) : null}
+
+                {selected === "self" && (
+                  <div className="space-y-3 rounded-[0.33em] border border-slate-200 bg-slate-50 p-3">
+                    {partyFormFields.map((field) => (
                       <FieldRenderer
-                        field={delegateEmailField}
-                        value={values[delegateEmailField.field]}
-                        onChange={(v) => onChange(delegateEmailField.field, v)}
-                        onBlur={() => onBlurValidate?.(delegateEmailField.field)}
-                        error={errors[delegateEmailField.field]}
+                        key={`${formKey}:${field.section}:${field.field}`}
+                        field={field}
+                        value={values[field.field]}
+                        onChange={(v) => onChange(field.field, v)}
+                        onBlur={() => onBlurValidate?.(field.field)}
+                        error={errors[field.field]}
                         allValues={values}
                       />
-                    ) : null
-                  )}
+                    ))}
+                  </div>
+                )}
 
-                  {renderOption(
-                    party,
-                    "on-behalf",
-                    `Sign on behalf of the ${party.replace(/-/g, " ")}`,
-                    <div className="space-y-4">
-                      <div className="space-y-3">
-                        {partyFormFields.map((field) => (
-                          <FieldRenderer
-                            key={`${formKey}:${field.section}:${field.field}`}
-                            field={field}
-                            value={values[field.field]}
-                            onChange={(v) => onChange(field.field, v)}
-                            onBlur={() => onBlurValidate?.(field.field)}
-                            error={errors[field.field]}
-                            allValues={values}
-                          />
-                        ))}
-                      </div>
-
-                      <div className="flex items-start gap-3 rounded-[0.33em] border border-yellow-600 bg-yellow-50 p-3">
-                        <Checkbox
-                          id={`${formKey}-${party}-auth`}
-                          checked={values[`${party}:on-behalf-auth`] === "true"}
-                          onCheckedChange={(checked) =>
-                            onChange(`${party}:on-behalf-auth`, checked ? "true" : "false")
-                          }
-                          className="h-4 w-4"
-                        />
-                        <label
-                          htmlFor={`${formKey}-${party}-auth`}
-                          className="cursor-pointer text-xs font-medium text-amber-700"
-                        >
-                          I have authorization to sign on behalf of the {party.replace(/-/g, " ")}
-                        </label>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
+                {selected === "on-behalf" && (
+                  <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    {partyFormFields.map((field) => (
+                      <FieldRenderer
+                        key={`${formKey}:${field.section}:${field.field}`}
+                        field={field}
+                        value={values[field.field]}
+                        onChange={(v) => onChange(field.field, v)}
+                        onBlur={() => onBlurValidate?.(field.field)}
+                        error={errors[field.field]}
+                        allValues={values}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
           );
         })}
       </div>
