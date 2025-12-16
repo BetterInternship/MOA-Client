@@ -429,7 +429,13 @@ const PdfPageCanvas = ({
     const outputScale = window.devicePixelRatio || 1;
     const scaledX = (cssX * canvas.width) / rect.width;
     const scaledY = (cssY * canvas.height) / rect.height;
-    const [pdfX, pdfY] = viewport.convertToPdfPoint(scaledX / outputScale, scaledY / outputScale);
+    const [pdfX, pdfYBottom] = viewport.convertToPdfPoint(
+      scaledX / outputScale,
+      scaledY / outputScale
+    );
+
+    // Convert from PDF bottom-left origin to top-left origin
+    const pdfY = viewport.height - pdfYBottom;
 
     return {
       page: pageNumber,
