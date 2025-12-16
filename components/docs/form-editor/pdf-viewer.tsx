@@ -1,3 +1,11 @@
+/**
+ * @ Author: BetterInternship [Jana]
+ * @ Create Time: 2025-12-16 16:03:54
+ * @ Modified by: Your name
+ * @ Modified time: 2025-12-16 16:28:44
+ * @ Description: pdf viewer component using pdfjs
+ */
+
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -423,8 +431,16 @@ const PdfPageCanvas = ({
     if (!canvas || !viewport) return null;
 
     const rect = canvas.getBoundingClientRect();
+    const containerRect = canvas.parentElement?.getBoundingClientRect();
+    if (!containerRect) return null;
+
+    // Coordinates relative to canvas for PDF calculation
     const cssX = event.clientX - rect.left;
     const cssY = event.clientY - rect.top;
+
+    // Coordinates relative to container for crosshair overlay
+    const displayX = event.clientX - containerRect.left;
+    const displayY = event.clientY - containerRect.top;
 
     const outputScale = window.devicePixelRatio || 1;
     const scaledX = (cssX * canvas.width) / rect.width;
@@ -443,8 +459,8 @@ const PdfPageCanvas = ({
       page: pageNumber,
       pdfX,
       pdfY,
-      displayX: cssX,
-      displayY: cssY,
+      displayX,
+      displayY,
       viewportWidth: viewport.width,
       viewportHeight: viewport.height,
     };
