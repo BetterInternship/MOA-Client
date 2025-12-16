@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:07:53
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 00:50:34
+ * @ Modified time: 2025-12-17 01:12:01
  * @ Description: Editor sidebar component
  */
 
@@ -11,7 +11,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldListPanel } from "./field-list-panel";
 import { PlacementControl } from "./placement-control";
-import { SelectedFieldDetails } from "../form-editor/selected-field-details";
 import type { FormField } from "./pdf-viewer";
 import { List, Settings } from "lucide-react";
 
@@ -83,16 +82,6 @@ export const EditorSidebar = ({
             onFieldDelete={onFieldDelete}
             onFieldDuplicate={onFieldDuplicate}
           />
-
-          {/* Selected Field Details */}
-          {selectedField && (
-            <SelectedFieldDetails
-              field={selectedField}
-              fieldId={selectedFieldId}
-              onDuplicate={onFieldDuplicate}
-              onDelete={onFieldDelete}
-            />
-          )}
         </TabsContent>
 
         {/* Settings Tab */}
