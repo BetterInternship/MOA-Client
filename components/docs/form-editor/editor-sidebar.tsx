@@ -1,9 +1,18 @@
+/**
+ * @ Author: BetterInternship [Jana]
+ * @ Create Time: 2025-12-16 23:07:53
+ * @ Modified by: Your name
+ * @ Modified time: 2025-12-16 23:59:49
+ * @ Description: Editor sidebar component
+ */
+
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldListPanel } from "./field-list-panel";
-import type { FormField } from "../pdf-viewer";
 import { PlacementControl } from "./placement-control";
+import { SelectedFieldDetails } from "./selected-field-details";
+import type { FormField } from "./pdf-viewer";
 import { List, Settings } from "lucide-react";
 
 type EditorSidebarProps = {
@@ -47,9 +56,9 @@ export const EditorSidebar = ({
           </TabsTrigger>
         </TabsList>
 
-        {/* Fields Tab - with placement control + field list combined */}
+        {/* Fields Tab */}
         <TabsContent value="fields" className="mt-0 flex-1 space-y-4 overflow-y-auto">
-          {/* Placement Control */}
+          {/* Add Field Section */}
           <div className="space-y-2 rounded-md border border-dashed border-slate-300 bg-white p-2">
             <div className="text-xs font-semibold text-slate-700">Add Field</div>
             <PlacementControl
@@ -77,30 +86,12 @@ export const EditorSidebar = ({
 
           {/* Selected Field Details */}
           {selectedField && (
-            <div className="border-primary/30 bg-primary/5 space-y-2 rounded-md border p-2 text-xs">
-              <div className="text-primary font-semibold">{selectedField.field}</div>
-              <div className="text-muted-foreground grid grid-cols-2 gap-1">
-                <div>Page: {selectedField.page}</div>
-                <div>X: {selectedField.x.toFixed(1)}</div>
-                <div>Y: {selectedField.y.toFixed(1)}</div>
-                <div>W: {selectedField.w.toFixed(1)}</div>
-                <div>H: {selectedField.h.toFixed(1)}</div>
-              </div>
-              <div className="flex gap-1 pt-1">
-                <button
-                  onClick={() => onFieldDuplicate(selectedFieldId)}
-                  className="flex-1 rounded bg-slate-200 px-2 py-1 text-xs font-medium transition-colors hover:bg-slate-300"
-                >
-                  Duplicate
-                </button>
-                <button
-                  onClick={() => onFieldDelete(selectedFieldId)}
-                  className="rounded bg-red-100 px-2 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-200"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+            <SelectedFieldDetails
+              field={selectedField}
+              fieldId={selectedFieldId}
+              onDuplicate={onFieldDuplicate}
+              onDelete={onFieldDelete}
+            />
           )}
         </TabsContent>
 

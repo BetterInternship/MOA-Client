@@ -1,6 +1,6 @@
 "use client";
 
-import type { PointerLocation } from "../pdf-viewer";
+import type { PointerLocation } from "./pdf-viewer";
 
 type ClickListPanelProps = {
   clickHistory: PointerLocation[];

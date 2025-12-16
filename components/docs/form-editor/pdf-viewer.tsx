@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 23:46:11
+ * @ Modified time: 2025-12-16 23:49:16
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -31,9 +31,9 @@ import {
   RefreshCcw,
   Search,
 } from "lucide-react";
-import { FieldBox, type FormField } from "./_components/field-box";
-import { PlacementControl } from "./_components/placement-control";
-import { GhostField } from "./_components/ghost-field";
+import { FieldBox, type FormField } from "./field-box";
+import { PlacementControl } from "./placement-control";
+import { GhostField } from "./ghost-field";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -264,7 +264,6 @@ export function PdfViewer({
             />
           </label>
         </div>
-        {fileName && <p className="text-muted-foreground mt-1 text-xs">📄 {fileName}</p>}
       </div>
 
       {/* PDF Viewer Canvas */}

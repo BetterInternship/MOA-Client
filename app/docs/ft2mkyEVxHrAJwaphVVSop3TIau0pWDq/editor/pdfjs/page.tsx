@@ -2,124 +2,116 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 23:41:54
- * @ Description: pdfjs-based form editor page
+ * @ Modified time: 2025-12-16 23:58:46
+ * @ Description: PDF Form Editor Page
+ *                Orchestrates form editor state with field management and undo/redo
  */
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Suspense } from "react";
 import { Loader } from "@/components/ui/loader";
 import { PdfViewer } from "../../../../../components/docs/form-editor/pdf-viewer";
-import { EditorSidebar } from "../../../../../components/docs/form-editor/_components/editor-sidebar";
-import type { FormField } from "../../../../../components/docs/form-editor/_components/field-box";
+import { EditorSidebar } from "../../../../../components/docs/form-editor/editor-sidebar";
+import { useFormHistory } from "../../../../../hooks/use-form-history";
+import { useFieldOperations } from "../../../../../hooks/use-field-operations";
+import type { FormField } from "../../../../../components/docs/form-editor/field-box";
+
+const INITIAL_FIELDS: FormField[] = [
+  { field: "signature", page: 1, x: 72.3, y: 9.7, w: 466, h: 60 },
+];
 
 const PdfJsEditorPage = () => {
   const [selectedFieldId, setSelectedFieldId] = useState<string>("");
-  const [fields, setFields] = useState<FormField[]>([
-    { field: "signature", page: 1, x: 72.3, y: 9.7, w: 466, h: 60 },
-  ]);
+  const [fields, setFields] = useState<FormField[]>(INITIAL_FIELDS);
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
   const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
-  const [historyState, setHistoryState] = useState({
-    history: [[{ field: "signature", page: 1, x: 72.3, y: 9.7, w: 466, h: 60 }]],
-    index: 0,
-  });
   const dragStartStateRef = useRef<FormField[] | null>(null);
 
-  const updateFieldsWithHistory = (newFields: FormField[]) => {
-    setHistoryState((prev) => {
-      const newHistory = prev.history.slice(0, prev.index + 1);
-      newHistory.push(newFields);
-      return { history: newHistory, index: newHistory.length - 1 };
-    });
-    setFields(newFields);
-  };
+  const { historyState, updateFieldsWithHistory, undo, redo, canUndo, canRedo } =
+    useFormHistory(INITIAL_FIELDS);
 
-  const handleFieldUpdate = (fieldId: string, updates: Partial<FormField>) => {
-    // Direct update without history (for live dragging)
-    // On first drag, save the state before changes
-    if (!dragStartStateRef.current) {
-      dragStartStateRef.current = JSON.parse(JSON.stringify(fields)) as FormField[];
-    }
+  // Callback when history state changes
+  const handleHistoryChange = useCallback(
+    (newFields: FormField[]) => {
+      updateFieldsWithHistory(newFields);
+      setFields(newFields);
+    },
+    [updateFieldsWithHistory]
+  );
 
-    const newFields = fields.map((f, idx) => {
-      const currentId = `${f.field}:${idx}`;
-      return currentId === fieldId ? { ...f, ...updates } : f;
-    });
-    setFields(newFields);
-  };
+  // Field operations with history tracking
+  const fieldOps = useFieldOperations(
+    fields,
+    handleHistoryChange,
+    setSelectedFieldId,
+    selectedFieldId
+  );
 
-  const handleFieldUpdateFinal = () => {
-    // Only add to history if we were dragging
-    if (dragStartStateRef.current) {
-      updateFieldsWithHistory(fields);
-      dragStartStateRef.current = null;
-    }
-  };
+  /**
+   * Live field update during drag (no history)
+   * Saves state snapshot on first drag
+   */
+  const handleFieldUpdate = useCallback(
+    (fieldId: string, updates: Partial<FormField>) => {
+      // Save state snapshot on first drag
+      if (!dragStartStateRef.current) {
+        dragStartStateRef.current = JSON.parse(JSON.stringify(fields)) as FormField[];
+      }
 
-  const handleFieldCreate = (newField: FormField) => {
-    const newFields = [...fields, newField];
-    updateFieldsWithHistory(newFields);
-    // Auto-select the new field
-    const newFieldIndex = newFields.length - 1;
-    setSelectedFieldId(`${newField.field}:${newFieldIndex}`);
-    // Exit placement mode
-    setIsPlacingField(false);
-  };
-
-  const handleFieldDelete = (fieldId: string) => {
-    const targetIdx = parseInt(fieldId.split(":")[1], 10);
-    const newFields = fields.filter((_, idx) => idx !== targetIdx);
-    updateFieldsWithHistory(newFields);
-    if (selectedFieldId === fieldId) {
-      setSelectedFieldId("");
-    }
-  };
-
-  const handleFieldDuplicate = (fieldId: string) => {
-    const targetIdx = parseInt(fieldId.split(":")[1], 10);
-    const fieldToDuplicate = fields[targetIdx];
-    if (!fieldToDuplicate) return;
-
-    const duplicated: FormField = {
-      ...fieldToDuplicate,
-      x: fieldToDuplicate.x + 20,
-      y: fieldToDuplicate.y + 20,
-    };
-
-    const newFields = [...fields, duplicated];
-    updateFieldsWithHistory(newFields);
-    const newFieldIndex = newFields.length - 1;
-    setSelectedFieldId(`${duplicated.field}:${newFieldIndex}`);
-  };
-
-  const handleUndo = () => {
-    if (historyState.index > 0) {
-      const newIndex = historyState.index - 1;
-      setHistoryState((prev) => ({ ...prev, index: newIndex }));
-      setFields(historyState.history[newIndex]);
-    }
-  };
-
-  const handleRedo = () => {
-    if (historyState.index < historyState.history.length - 1) {
-      const newIndex = historyState.index + 1;
-      setHistoryState((prev) => ({ ...prev, index: newIndex }));
-      setFields(historyState.history[newIndex]);
-    }
-  };
-
-  const handleCoordinatesChange = (coords: { x: number; y: number; w: number; h: number }) => {
-    if (selectedFieldId) {
-      // Direct update with history (for numeric input changes)
       const newFields = fields.map((f, idx) => {
         const currentId = `${f.field}:${idx}`;
-        return currentId === selectedFieldId ? { ...f, ...coords } : f;
+        return currentId === fieldId ? { ...f, ...updates } : f;
       });
-      updateFieldsWithHistory(newFields);
+      setFields(newFields);
+    },
+    [fields]
+  );
+
+  /**
+   * Finalize field update and add to history
+   * Called when drag or resize completes
+   */
+  const handleFieldUpdateFinal = useCallback(() => {
+    if (dragStartStateRef.current) {
+      handleHistoryChange(fields);
+      dragStartStateRef.current = null;
     }
+  }, [fields, handleHistoryChange]);
+
+  /**
+   * Handle field creation with auto-selection
+   */
+  const handleFieldCreate = useCallback(
+    (newField: FormField) => {
+      fieldOps.create(newField);
+      setIsPlacingField(false);
+    },
+    [fieldOps]
+  );
+
+  /**
+   * Handle coordinate input changes
+   */
+  const handleCoordinatesChange = useCallback(
+    (coords: { x: number; y: number; w: number; h: number }) => {
+      if (selectedFieldId) {
+        const newFields = fields.map((f, idx) => {
+          const currentId = `${f.field}:${idx}`;
+          return currentId === selectedFieldId ? { ...f, ...coords } : f;
+        });
+        handleHistoryChange(newFields);
+      }
+    },
+    [selectedFieldId, fields, handleHistoryChange]
+  );
+
+  /**
+   * Get current history state
+   */
+  const getCurrentFields = () => {
+    return historyState.history[historyState.index] || [];
   };
 
   return (
@@ -146,10 +138,10 @@ const PdfJsEditorPage = () => {
               onPlacementFieldTypeChange={setPlacementFieldType}
               onStartPlacing={() => setIsPlacingField(true)}
               onCancelPlacing={() => setIsPlacingField(false)}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={historyState.index > 0}
-              canRedo={historyState.index < historyState.history.length - 1}
+              onUndo={undo}
+              onRedo={redo}
+              canUndo={canUndo}
+              canRedo={canRedo}
             />
           </Suspense>
         </div>
@@ -160,15 +152,13 @@ const PdfJsEditorPage = () => {
             fields={fields}
             selectedFieldId={selectedFieldId}
             onFieldSelect={setSelectedFieldId}
-            onFieldDelete={handleFieldDelete}
-            onFieldDuplicate={handleFieldDuplicate}
+            onFieldDelete={fieldOps.delete}
+            onFieldDuplicate={fieldOps.duplicate}
             isPlacing={isPlacingField}
             placementFieldType={placementFieldType}
             onFieldTypeChange={setPlacementFieldType}
             onStartPlacing={() => setIsPlacingField(true)}
-            onCancelPlacing={() => {
-              setIsPlacingField(false);
-            }}
+            onCancelPlacing={() => setIsPlacingField(false)}
             onCoordinatesChange={handleCoordinatesChange}
           />
         </div>

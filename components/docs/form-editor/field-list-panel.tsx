@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { FormField } from "../pdf-viewer";
+import { FormField } from "./pdf-viewer";
 import { Copy, Trash2 } from "lucide-react";
 
 type FieldListPanelProps = {
