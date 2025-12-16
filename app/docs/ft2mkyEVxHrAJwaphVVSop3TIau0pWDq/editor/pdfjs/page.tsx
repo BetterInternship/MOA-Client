@@ -29,6 +29,13 @@ const PdfJsEditorPage = () => {
     );
   };
 
+  const handleFieldCreate = (newField: FormField) => {
+    setFields((prev) => [...prev, newField]);
+    // Auto-select the new field: find its ID by index
+    const newFieldIndex = fields.length;
+    setSelectedFieldId(`${newField.field}:${newFieldIndex}`);
+  };
+
   return (
     <div className="flex h-full flex-col gap-4 px-6 py-4">
       <div className="flex flex-col gap-1">
@@ -44,6 +51,7 @@ const PdfJsEditorPage = () => {
           selectedFieldId={selectedFieldId}
           onFieldSelect={setSelectedFieldId}
           onFieldUpdate={handleFieldUpdate}
+          onFieldCreate={handleFieldCreate}
         />
       </Suspense>
     </div>

@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 20:48:12
+ * @ Modified time: 2025-12-16 21:03:13
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -21,6 +21,8 @@ import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/type
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { FileUp, Maximize2, Minimize2, MousePointer2, RefreshCcw, Search } from "lucide-react";
 import { FieldBox, type FormField } from "./_components/field-box";
+import { PlacementControl } from "./_components/placement-control";
+import { GhostField } from "./_components/ghost-field";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -40,6 +42,7 @@ type PdfViewerProps = {
   selectedFieldId?: string;
   onFieldSelect?: (fieldId: string) => void;
   onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
+  onFieldCreate?: (field: FormField) => void;
 };
 
 export function PdfViewer({
@@ -48,6 +51,7 @@ export function PdfViewer({
   selectedFieldId,
   onFieldSelect,
   onFieldUpdate,
+  onFieldCreate,
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
   const [pendingUrl, setPendingUrl] = useState<string>(
@@ -64,6 +68,10 @@ export function PdfViewer({
   const [clickPoint, setClickPoint] = useState<PointerLocation | null>(null);
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
+  const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
+  const [hoverPointDuringPlacement, setHoverPointDuringPlacement] =
+    useState<PointerLocation | null>(null);
 
   const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const objectUrlRef = useRef<string | null>(null);
@@ -221,18 +229,36 @@ export function PdfViewer({
                   {clickPoint.pdfY.toFixed(1)}
                 </Badge>
               )}
-              {selectedFieldId && fields.length > 0 && (() => {
-                const selectedField = fields.find(
-                  (f, idx) => `${f.field}:${idx}` === selectedFieldId
-                );
-                return selectedField ? (
-                  <Badge variant="secondary">
-                    {selectedField.field} w={selectedField.w.toFixed(1)}, h=
-                    {selectedField.h.toFixed(1)}
-                  </Badge>
-                ) : null;
-              })()}
+              {selectedFieldId &&
+                fields.length > 0 &&
+                (() => {
+                  const selectedField = fields.find(
+                    (f, idx) => `${f.field}:${idx}` === selectedFieldId
+                  );
+                  return selectedField ? (
+                    <Badge variant="secondary">
+                      {selectedField.field} w={selectedField.w.toFixed(1)}, h=
+                      {selectedField.h.toFixed(1)}
+                    </Badge>
+                  ) : null;
+                })()}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+              Field Placement
+            </label>
+            <PlacementControl
+              isPlacing={isPlacingField}
+              fieldType={placementFieldType}
+              onFieldTypeChange={setPlacementFieldType}
+              onStartPlacing={() => setIsPlacingField(true)}
+              onCancelPlacing={() => {
+                setIsPlacingField(false);
+                setHoverPointDuringPlacement(null);
+              }}
+            />
           </div>
 
           <div className="space-y-2">
@@ -366,6 +392,11 @@ export function PdfViewer({
                   onFieldSelect={onFieldSelect}
                   onFieldUpdate={onFieldUpdate}
                   clickPoint={clickPoint}
+                  isPlacingField={isPlacingField}
+                  placementFieldType={placementFieldType}
+                  hoverPointDuringPlacement={hoverPointDuringPlacement}
+                  onHoverPlacement={setHoverPointDuringPlacement}
+                  onPlaceField={onFieldCreate}
                 />
               ))}
             </div>
@@ -391,6 +422,11 @@ type PdfPageCanvasProps = {
   onFieldSelect?: (fieldId: string) => void;
   onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
   clickPoint?: PointerLocation | null;
+  isPlacingField?: boolean;
+  placementFieldType?: string;
+  onHoverPlacement?: (loc: PointerLocation | null) => void;
+  hoverPointDuringPlacement?: PointerLocation | null;
+  onPlaceField?: (field: FormField) => void;
 };
 
 const PdfPageCanvas = ({
@@ -408,6 +444,11 @@ const PdfPageCanvas = ({
   onFieldSelect,
   onFieldUpdate,
   clickPoint,
+  isPlacingField = false,
+  placementFieldType = "signature",
+  onHoverPlacement,
+  onPlaceField,
+  hoverPointDuringPlacement,
 }: PdfPageCanvasProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -555,16 +596,41 @@ const PdfPageCanvas = ({
     const location = extractLocation(event);
     setLocalHover(location);
     onHover(location);
+
+    // Update placement hover preview
+    if (isPlacingField && onHoverPlacement) {
+      onHoverPlacement(location);
+    }
   };
 
   const handleMouseLeave = () => {
     setLocalHover(null);
     onHover(null);
+    if (isPlacingField && onHoverPlacement) {
+      onHoverPlacement(null);
+    }
   };
 
   const handleClick = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     const location = extractLocation(event);
-    if (location) onClick(location);
+    if (!location) return;
+
+    // Handle field placement mode
+    if (isPlacingField && onPlaceField) {
+      const defaultSize = { w: 100, h: 40 };
+      const newField: FormField = {
+        field: placementFieldType,
+        page: pageNumber,
+        x: location.pdfX,
+        y: location.pdfY,
+        ...defaultSize,
+      };
+      onPlaceField(newField);
+      return;
+    }
+
+    // Normal click behavior
+    onClick(location);
   };
 
   // Convert display pixel deltas to PDF coordinate deltas
@@ -663,6 +729,7 @@ const PdfPageCanvas = ({
         <canvas
           ref={canvasRef}
           className="block"
+          style={{ cursor: isPlacingField ? "crosshair" : "default" }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           onClick={handleClick}
@@ -700,12 +767,36 @@ const PdfPageCanvas = ({
                     isSelected={selectedFieldId === fieldId}
                     onSelect={() => onFieldSelect?.(fieldId)}
                     onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
-                    onResize={(handle, deltaX, deltaY) => handleFieldResize(fieldId, handle, deltaX, deltaY)}
+                    onResize={(handle, deltaX, deltaY) =>
+                      handleFieldResize(fieldId, handle, deltaX, deltaY)
+                    }
                   />
                 </div>
               );
             })}
         </div>
+
+        {/* Ghost field preview during placement mode */}
+        {isPlacingField &&
+          hoverPointDuringPlacement &&
+          (() => {
+            const hoverLoc = hoverPointDuringPlacement;
+            if (!hoverLoc || hoverLoc.page !== pageNumber) return null;
+
+            const defaultSize = { w: 100, h: 40 };
+            const pos = pdfToDisplay(hoverLoc.pdfX, hoverLoc.pdfY);
+            if (!pos) return null;
+
+            return (
+              <GhostField
+                displayX={pos.displayX}
+                displayY={pos.displayY}
+                width={defaultSize.w * scale}
+                height={defaultSize.h * scale}
+                fieldType={placementFieldType}
+              />
+            );
+          })()}
 
         {/* Debug: Show click coordinates as a field-like box for reference */}
         {clickPoint && clickPoint.page === pageNumber && (

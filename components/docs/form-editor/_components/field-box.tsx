@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 
 export type FormField = {
   field: string;
@@ -30,6 +30,7 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isSelected || !onDrag) return;
     e.stopPropagation();
+    e.preventDefault();
 
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
@@ -73,6 +74,42 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
     setResizeStart({ x: e.clientX, y: e.clientY });
   };
 
+  // Global document event listeners for drag and resize
+  useEffect(() => {
+    if (!isDragging && !isResizing) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isDragging && dragStart && onDrag) {
+        const deltaX = e.clientX - dragStart.x;
+        const deltaY = e.clientY - dragStart.y;
+        onDrag(deltaX, deltaY);
+        setDragStart({ x: e.clientX, y: e.clientY });
+      }
+      if (isResizing && resizeHandle && resizeStart && onResize) {
+        const deltaX = e.clientX - resizeStart.x;
+        const deltaY = e.clientY - resizeStart.y;
+        onResize(resizeHandle, deltaX, deltaY);
+        setResizeStart({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+      setDragStart(null);
+      setIsResizing(false);
+      setResizeHandle(null);
+      setResizeStart(null);
+    };
+
+    document.addEventListener("mousemove", handleGlobalMouseMove);
+    document.addEventListener("mouseup", handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleGlobalMouseMove);
+      document.removeEventListener("mouseup", handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStart, isResizing, resizeHandle, resizeStart, onDrag, onResize]);
+
   return (
     <div
       className={cn(
@@ -92,7 +129,7 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
       tabIndex={0}
       title={field.field}
       style={{
-        cursor: isDragging ? "grabbing" : isResizing ? "default" : isSelected ? "grab" : "pointer",
+        cursor: isDragging ? "grabbing" : isResizing ? "grabbing" : isSelected ? "grab" : "pointer",
       }}
     >
       <div className="text-muted-foreground pointer-events-none px-1 py-0.5 text-xs font-semibold">
@@ -102,22 +139,42 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
       {/* Resize handles - only show when selected */}
       {isSelected && (
         <>
-          {/* Corner handles */}
+          {/* Corner handles - bigger and easier to grab */}
           <div
-            className="bg-primary absolute -top-1.5 -left-1.5 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
-            onMouseDown={(e) => handleResizeStart(e, "nw")}
+            className="bg-primary absolute -top-2 -left-2 hidden h-4 w-4 cursor-nwse-resize rounded-full group-hover:block"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleResizeStart(e, "nw");
+            }}
+            style={{ pointerEvents: "auto" }}
           />
           <div
-            className="bg-primary absolute -top-1.5 -right-1.5 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
-            onMouseDown={(e) => handleResizeStart(e, "ne")}
+            className="bg-primary absolute -top-2 -right-2 hidden h-4 w-4 cursor-nesw-resize rounded-full group-hover:block"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleResizeStart(e, "ne");
+            }}
+            style={{ pointerEvents: "auto" }}
           />
           <div
-            className="bg-primary absolute -bottom-1.5 -left-1.5 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
-            onMouseDown={(e) => handleResizeStart(e, "sw")}
+            className="bg-primary absolute -bottom-2 -left-2 hidden h-4 w-4 cursor-nesw-resize rounded-full group-hover:block"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleResizeStart(e, "sw");
+            }}
+            style={{ pointerEvents: "auto" }}
           />
           <div
-            className="bg-primary absolute -right-1.5 -bottom-1.5 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
-            onMouseDown={(e) => handleResizeStart(e, "se")}
+            className="bg-primary absolute -right-2 -bottom-2 hidden h-4 w-4 cursor-nwse-resize rounded-full group-hover:block"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleResizeStart(e, "se");
+            }}
+            style={{ pointerEvents: "auto" }}
           />
         </>
       )}
