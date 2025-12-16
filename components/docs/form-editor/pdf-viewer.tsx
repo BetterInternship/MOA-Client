@@ -434,8 +434,10 @@ const PdfPageCanvas = ({
       scaledY / outputScale
     );
 
-    // Convert from PDF bottom-left origin to top-left origin
-    const pdfY = viewport.height - pdfYBottom;
+    // Convert from PDF bottom-left origin to top-left origin -- this is for the PDF generator
+    // Use original (unzoomed) PDF height for the flip calculation
+    const actualPdfHeight = viewport.height / scale;
+    const pdfY = actualPdfHeight - pdfYBottom;
 
     return {
       page: pageNumber,
