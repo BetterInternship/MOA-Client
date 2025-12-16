@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export type FormField = {
@@ -21,6 +21,7 @@ export type FieldBoxProps = {
 };
 
 export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: FieldBoxProps) => {
+  const boxRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -31,6 +32,12 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
     if (!isSelected || !onDrag) return;
     e.stopPropagation();
     e.preventDefault();
+
+    // Capture pointer to this element so we track events even if cursor goes off-screen
+    if (boxRef.current && "setPointerCapture" in boxRef.current) {
+      const pointerEvent = e.nativeEvent as PointerEvent;
+      boxRef.current.setPointerCapture(pointerEvent.pointerId);
+    }
 
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
@@ -58,6 +65,12 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
     if (!isSelected || !onResize) return;
     e.stopPropagation();
     e.preventDefault();
+
+    // Capture pointer to this element
+    if (boxRef.current && "setPointerCapture" in boxRef.current) {
+      const pointerEvent = e.nativeEvent as PointerEvent;
+      boxRef.current.setPointerCapture(pointerEvent.pointerId);
+    }
 
     setIsResizing(true);
     setResizeHandle(handle);
@@ -112,6 +125,7 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
 
   return (
     <div
+      ref={boxRef}
       className={cn(
         "group absolute inset-0 border-2 transition-colors",
         isSelected ? "border-primary bg-primary/20" : "border-amber-500/50 bg-amber-500/15",
@@ -124,7 +138,12 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
         handleResizeMove(e);
       }}
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onMouseLeave={() => {
+        // Don't clear drag/resize on mouse leave during active drag/resize
+        if (!isDragging && !isResizing) {
+          handleMouseUp();
+        }
+      }}
       role="button"
       tabIndex={0}
       title={field.field}
