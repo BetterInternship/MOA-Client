@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 21:13:22
+ * @ Modified time: 2025-12-16 23:18:28
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -26,6 +26,9 @@ import { GhostField } from "./_components/ghost-field";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
+// Re-export for use in other components
+export type { FormField };
+
 export type PointerLocation = {
   page: number;
   pdfX: number;
@@ -43,6 +46,16 @@ type PdfViewerProps = {
   onFieldSelect?: (fieldId: string) => void;
   onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
   onFieldCreate?: (field: FormField) => void;
+  onFieldDelete?: (fieldId: string) => void;
+  onFieldDuplicate?: (fieldId: string) => void;
+  clickHistory?: PointerLocation[];
+  onClickHistoryClear?: () => void;
+  onClickRecorded?: (location: PointerLocation) => void;
+  isPlacingField?: boolean;
+  placementFieldType?: string;
+  onPlacementFieldTypeChange?: (type: string) => void;
+  onStartPlacing?: () => void;
+  onCancelPlacing?: () => void;
 };
 
 export function PdfViewer({
@@ -52,6 +65,16 @@ export function PdfViewer({
   onFieldSelect,
   onFieldUpdate,
   onFieldCreate,
+  onFieldDelete,
+  onFieldDuplicate,
+  clickHistory = [],
+  onClickHistoryClear,
+  onClickRecorded,
+  isPlacingField = false,
+  placementFieldType = "signature",
+  onPlacementFieldTypeChange,
+  onStartPlacing,
+  onCancelPlacing,
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
   const [pendingUrl, setPendingUrl] = useState<string>(
@@ -68,8 +91,6 @@ export function PdfViewer({
   const [clickPoint, setClickPoint] = useState<PointerLocation | null>(null);
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
-  const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
   const [hoverPointDuringPlacement, setHoverPointDuringPlacement] =
     useState<PointerLocation | null>(null);
 
@@ -169,212 +190,62 @@ export function PdfViewer({
   );
 
   return (
-    <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-      <Card className="border-muted h-fit border shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">PDF Canvas (pdfjs)</CardTitle>
-          <p className="text-muted-foreground text-sm">
-            Fresh pipeline with zoom, coordinates, and page awareness.
-          </p>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Load PDF
-            </label>
-            <div className="flex flex-col gap-2">
-              <Input
-                type="url"
-                value={pendingUrl}
-                placeholder="https://domain.com/document.pdf"
-                className="text-sm"
-                onChange={(e) => setPendingUrl(e.target.value)}
-              />
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={handleApplyUrl} disabled={!pendingUrl}>
-                  <Search className="mr-2 h-4 w-4" /> Load URL
-                </Button>
-                <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
-                  <FileUp className="h-4 w-4" />
-                  <span>Select file</span>
-                  <Input
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                </label>
-              </div>
-              {fileName && <p className="text-muted-foreground text-xs">Loaded: {fileName}</p>}
-            </div>
-          </div>
-
-          <div className="border-muted-foreground/30 space-y-3 rounded-md border border-dashed p-3">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <MousePointer2 className="h-4 w-4" /> Pointer
-            </div>
-            <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
-              <Badge variant="outline">Visible page {visiblePage || "-"}</Badge>
-              <Badge variant="outline">Selected page {selectedPage || "-"}</Badge>
-              <Badge variant="outline">Zoom {Math.round(scale * 100)}%</Badge>
-              {hoverPoint && (
-                <Badge variant="secondary">
-                  Hover p{hoverPoint.page}: x={hoverPoint.pdfX.toFixed(1)}, y=
-                  {hoverPoint.pdfY.toFixed(1)}
-                </Badge>
-              )}
-              {clickPoint && (
-                <Badge variant="secondary">
-                  Click p{clickPoint.page}: x={clickPoint.pdfX.toFixed(1)}, y=
-                  {clickPoint.pdfY.toFixed(1)}
-                </Badge>
-              )}
-              {selectedFieldId &&
-                fields.length > 0 &&
-                (() => {
-                  const selectedField = fields.find(
-                    (f, idx) => `${f.field}:${idx}` === selectedFieldId
-                  );
-                  return selectedField ? (
-                    <Badge variant="secondary">
-                      {selectedField.field} w={selectedField.w.toFixed(1)}, h=
-                      {selectedField.h.toFixed(1)}
-                    </Badge>
-                  ) : null;
-                })()}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Field Placement
-            </label>
-            <PlacementControl
-              isPlacing={isPlacingField}
-              fieldType={placementFieldType}
-              onFieldTypeChange={setPlacementFieldType}
-              onStartPlacing={() => setIsPlacingField(true)}
-              onCancelPlacing={() => {
-                setIsPlacingField(false);
-                setHoverPointDuringPlacement(null);
-              }}
+    <div className="flex h-full flex-col overflow-hidden bg-slate-50">
+      {/* Slim header with minimal controls */}
+      <div className="border-b bg-white px-4 py-2 flex-shrink-0">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <input
+              type="url"
+              value={pendingUrl}
+              placeholder="PDF URL or upload file"
+              className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm placeholder-muted-foreground focus:border-primary focus:outline-none"
+              onChange={(e) => setPendingUrl(e.target.value)}
             />
           </div>
+          <button
+            onClick={handleApplyUrl}
+            disabled={!pendingUrl}
+            className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Load
+          </button>
+          <label className="flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-sm hover:bg-slate-100 transition-colors">
+            <FileUp className="h-4 w-4" />
+            <input
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </label>
+        </div>
+        {fileName && <p className="text-muted-foreground text-xs mt-1">📄 {fileName}</p>}
+      </div>
 
-          <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Zoom
-            </label>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleZoom("out")}
-                aria-label="Zoom out"
-              >
-                <Minimize2 className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center gap-2 rounded-md border px-3 py-1 text-sm">
-                <Badge variant="outline">{Math.round(scale * 100)}%</Badge>
-                <span className="text-muted-foreground">Keeps coordinates stable</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleZoom("in")}
-                aria-label="Zoom in"
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Page
-            </label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={1}
-                max={pageCount || 1}
-                value={selectedPage}
-                onChange={(e) => setSelectedPage(parseInt(e.target.value) || 1)}
-                className="w-24"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleJumpToPage(selectedPage)}
-                disabled={!pageCount}
-              >
-                <RefreshCcw className="mr-2 h-4 w-4" /> Jump
-              </Button>
-            </div>
-            <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
-              {pagesArray.map((page) => (
-                <Button
-                  key={page}
-                  size="xs"
-                  variant={page === selectedPage ? "default" : "ghost"}
-                  className="h-7 px-2"
-                  onClick={() => handleJumpToPage(page)}
-                >
-                  {page}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Debug info for fields */}
-          {fields.length > 0 && (
-            <div className="space-y-2 rounded-md border border-dashed border-amber-500/50 bg-amber-50/50 p-2">
-              <p className="text-xs font-semibold text-amber-900">Field Coordinates (Debug)</p>
-              <div className="max-h-32 space-y-1 overflow-y-auto text-xs text-amber-800">
-                {fields
-                  .filter((f) => f.page === selectedPage)
-                  .map((field, idx) => (
-                    <div key={idx} className="font-mono text-[10px] text-amber-700">
-                      {field.field}: PDF ({field.x.toFixed(0)}, {field.y.toFixed(0)})
-                    </div>
-                  ))}
-              </div>
-              <p className="text-[10px] text-amber-700 italic">
-                Hover fields to see converted display coords in title
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="bg-muted/30 relative h-full overflow-hidden rounded-lg border">
+      {/* PDF Viewer Canvas */}
+      <div className="flex-1 overflow-hidden bg-white relative">
         {isLoadingDoc && (
-          <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
             <Loader>Loading PDF…</Loader>
           </div>
         )}
 
         {error && (
-          <div className="text-destructive flex h-full items-center justify-center text-sm">
+          <div className="flex h-full items-center justify-center text-sm text-destructive">
             {error}
           </div>
         )}
 
         {!error && !pdfDoc && !isLoadingDoc && (
-          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             Provide a PDF URL or upload a file to start.
           </div>
         )}
 
         {pdfDoc && (
-          <div className="relative h-full overflow-y-auto p-6" aria-live="polite">
-            <div className="text-muted-foreground mb-4 flex items-center justify-between text-xs">
-              <span>
-                Pages {pageCount} • Visible {visiblePage} • Selected {selectedPage}
-              </span>
-              <span>Zoom {Math.round(scale * 100)}%</span>
-            </div>
-            <div className="flex flex-col items-center gap-6">
+          <div className="h-full overflow-y-auto p-4" aria-live="polite">
+            <div className="flex flex-col items-center gap-4">
               {pagesArray.map((page) => (
                 <PdfPageCanvas
                   key={page}
@@ -385,7 +256,10 @@ export function PdfViewer({
                   isVisible={page === visiblePage}
                   onVisible={setVisiblePage}
                   onHover={setHoverPoint}
-                  onClick={setClickPoint}
+                  onClick={(loc) => {
+                    setClickPoint(loc);
+                    onClickRecorded?.(loc);
+                  }}
                   registerPageRef={registerPageRef}
                   fields={fields}
                   selectedFieldId={selectedFieldId}
