@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 16:28:44
+ * @ Modified time: 2025-12-16 19:39:08
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -20,6 +20,7 @@ import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { FileUp, Maximize2, Minimize2, MousePointer2, RefreshCcw, Search } from "lucide-react";
+import { FieldBox, type FormField } from "./_components/field-box";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -35,9 +36,17 @@ export type PointerLocation = {
 
 type PdfViewerProps = {
   initialUrl?: string;
+  fields?: FormField[];
+  selectedFieldId?: string;
+  onFieldSelect?: (fieldId: string) => void;
 };
 
-export function PdfViewer({ initialUrl }: PdfViewerProps) {
+export function PdfViewer({
+  initialUrl,
+  fields = [],
+  selectedFieldId,
+  onFieldSelect,
+}: PdfViewerProps) {
   const searchParams = useSearchParams();
   const [pendingUrl, setPendingUrl] = useState<string>(
     initialUrl ?? "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf"
@@ -277,6 +286,25 @@ export function PdfViewer({ initialUrl }: PdfViewerProps) {
               ))}
             </div>
           </div>
+
+          {/* Debug info for fields */}
+          {fields.length > 0 && (
+            <div className="space-y-2 rounded-md border border-dashed border-amber-500/50 bg-amber-50/50 p-2">
+              <p className="text-xs font-semibold text-amber-900">Field Coordinates (Debug)</p>
+              <div className="max-h-32 space-y-1 overflow-y-auto text-xs text-amber-800">
+                {fields
+                  .filter((f) => f.page === selectedPage)
+                  .map((field, idx) => (
+                    <div key={idx} className="font-mono text-[10px] text-amber-700">
+                      {field.field}: PDF ({field.x.toFixed(0)}, {field.y.toFixed(0)})
+                    </div>
+                  ))}
+              </div>
+              <p className="text-[10px] text-amber-700 italic">
+                Hover fields to see converted display coords in title
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -320,6 +348,10 @@ export function PdfViewer({ initialUrl }: PdfViewerProps) {
                   onHover={setHoverPoint}
                   onClick={setClickPoint}
                   registerPageRef={registerPageRef}
+                  fields={fields}
+                  selectedFieldId={selectedFieldId}
+                  onFieldSelect={onFieldSelect}
+                  clickPoint={clickPoint}
                 />
               ))}
             </div>
@@ -340,6 +372,10 @@ type PdfPageCanvasProps = {
   onHover: (loc: PointerLocation | null) => void;
   onClick: (loc: PointerLocation) => void;
   registerPageRef: (page: number, node: HTMLDivElement | null) => void;
+  fields?: FormField[];
+  selectedFieldId?: string;
+  onFieldSelect?: (fieldId: string) => void;
+  clickPoint?: PointerLocation | null;
 };
 
 const PdfPageCanvas = ({
@@ -352,6 +388,10 @@ const PdfPageCanvas = ({
   onHover,
   onClick,
   registerPageRef,
+  fields = [],
+  selectedFieldId,
+  onFieldSelect,
+  clickPoint,
 }: PdfPageCanvasProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -466,6 +506,33 @@ const PdfPageCanvas = ({
     };
   };
 
+  // Inverse of extractLocation: convert PDF coords to display position
+  const pdfToDisplay = (pdfX: number, pdfY: number) => {
+    const canvas = canvasRef.current;
+    const viewport = viewportRef.current;
+    if (!canvas || !viewport) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const containerRect = canvas.parentElement?.getBoundingClientRect();
+    if (!containerRect) return null;
+
+    const outputScale = window.devicePixelRatio || 1;
+    const actualPdfHeight = viewport.height / scale;
+    const pdfYBottom = actualPdfHeight - pdfY;
+
+    const viewportPoint = viewport.convertToViewportPoint(pdfX, pdfYBottom);
+    if (!viewportPoint) return null;
+    const [viewportX, viewportY] = viewportPoint;
+
+    const cssX = (viewportX * rect.width) / canvas.width;
+    const cssY = (viewportY * rect.height) / canvas.height;
+
+    return {
+      displayX: rect.left - containerRect.left + cssX,
+      displayY: rect.top - containerRect.top + cssY,
+    };
+  };
+
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     const location = extractLocation(event);
     setLocalHover(location);
@@ -509,6 +576,54 @@ const PdfPageCanvas = ({
             Rendering…
           </div>
         )}
+
+        {/* Render form fields */}
+        <div className="pointer-events-none absolute inset-0">
+          {fields
+            .filter((f) => f.page === pageNumber)
+            .map((field, idx) => {
+              const fieldId = `${field.field}:${idx}`;
+              const pos = pdfToDisplay(field.x, field.y);
+              if (!pos) return null;
+
+              return (
+                <div
+                  key={fieldId}
+                  className="pointer-events-auto"
+                  style={{
+                    position: "absolute",
+                    left: `${pos.displayX}px`,
+                    top: `${pos.displayY}px`,
+                    width: `${field.w * scale}px`,
+                    height: `${field.h * scale}px`,
+                  }}
+                  title={`PDF: (${field.x.toFixed(1)}, ${field.y.toFixed(1)}) → Display: (${pos.displayX.toFixed(1)}, ${pos.displayY.toFixed(1)})`}
+                >
+                  <FieldBox
+                    field={field}
+                    isSelected={selectedFieldId === fieldId}
+                    onSelect={() => onFieldSelect?.(fieldId)}
+                  />
+                </div>
+              );
+            })}
+        </div>
+
+        {/* Debug: Show click coordinates as a field-like box for reference */}
+        {clickPoint && clickPoint.page === pageNumber && (
+          <div
+            className="pointer-events-none absolute border-2 border-green-500/50 bg-green-100/20"
+            style={{
+              left: `${clickPoint.displayX - 5}px`,
+              top: `${clickPoint.displayY - 5}px`,
+              width: "10px",
+              height: "10px",
+            }}
+            title={`Clicked: PDF (${clickPoint.pdfX.toFixed(1)}, ${clickPoint.pdfY.toFixed(1)})`}
+          />
+        )}
+
+        {/* Crosshair overlay */}
         {localHover && (
           <div className="pointer-events-none absolute inset-0">
             <div
