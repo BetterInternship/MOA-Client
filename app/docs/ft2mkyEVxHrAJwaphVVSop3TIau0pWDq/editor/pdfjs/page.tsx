@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 19:42:27
+ * @ Modified time: 2025-12-16 20:46:36
  * @ Description: pdfjs-based form editor page
  */
 
@@ -16,11 +16,18 @@ import type { FormField } from "../../../../../components/docs/form-editor/_comp
 
 const PdfJsEditorPage = () => {
   const [selectedFieldId, setSelectedFieldId] = useState<string>("");
-
-  // Sample fields for testing field rendering
-  const sampleFields: FormField[] = [
+  const [fields, setFields] = useState<FormField[]>([
     { field: "signature", page: 1, x: 72.3, y: 9.7, w: 466, h: 60 },
-  ];
+  ]);
+
+  const handleFieldUpdate = (fieldId: string, updates: Partial<FormField>) => {
+    setFields((prev) =>
+      prev.map((f, idx) => {
+        const currentId = `${f.field}:${idx}`;
+        return currentId === fieldId ? { ...f, ...updates } : f;
+      })
+    );
+  };
 
   return (
     <div className="flex h-full flex-col gap-4 px-6 py-4">
@@ -33,9 +40,10 @@ const PdfJsEditorPage = () => {
       </div>
       <Suspense fallback={<Loader>Loading PDF sandbox…</Loader>}>
         <PdfViewer
-          fields={sampleFields}
+          fields={fields}
           selectedFieldId={selectedFieldId}
           onFieldSelect={setSelectedFieldId}
+          onFieldUpdate={handleFieldUpdate}
         />
       </Suspense>
     </div>

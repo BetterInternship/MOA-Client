@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 19:47:37
+ * @ Modified time: 2025-12-16 20:48:12
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -39,6 +39,7 @@ type PdfViewerProps = {
   fields?: FormField[];
   selectedFieldId?: string;
   onFieldSelect?: (fieldId: string) => void;
+  onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
 };
 
 export function PdfViewer({
@@ -46,6 +47,7 @@ export function PdfViewer({
   fields = [],
   selectedFieldId,
   onFieldSelect,
+  onFieldUpdate,
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
   const [pendingUrl, setPendingUrl] = useState<string>(
@@ -219,6 +221,17 @@ export function PdfViewer({
                   {clickPoint.pdfY.toFixed(1)}
                 </Badge>
               )}
+              {selectedFieldId && fields.length > 0 && (() => {
+                const selectedField = fields.find(
+                  (f, idx) => `${f.field}:${idx}` === selectedFieldId
+                );
+                return selectedField ? (
+                  <Badge variant="secondary">
+                    {selectedField.field} w={selectedField.w.toFixed(1)}, h=
+                    {selectedField.h.toFixed(1)}
+                  </Badge>
+                ) : null;
+              })()}
             </div>
           </div>
 
@@ -351,6 +364,7 @@ export function PdfViewer({
                   fields={fields}
                   selectedFieldId={selectedFieldId}
                   onFieldSelect={onFieldSelect}
+                  onFieldUpdate={onFieldUpdate}
                   clickPoint={clickPoint}
                 />
               ))}
@@ -375,6 +389,7 @@ type PdfPageCanvasProps = {
   fields?: FormField[];
   selectedFieldId?: string;
   onFieldSelect?: (fieldId: string) => void;
+  onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
   clickPoint?: PointerLocation | null;
 };
 
@@ -391,6 +406,7 @@ const PdfPageCanvas = ({
   fields = [],
   selectedFieldId,
   onFieldSelect,
+  onFieldUpdate,
   clickPoint,
 }: PdfPageCanvasProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -551,6 +567,84 @@ const PdfPageCanvas = ({
     if (location) onClick(location);
   };
 
+  // Convert display pixel deltas to PDF coordinate deltas
+  const displayDeltaToPdfDelta = (displayDeltaX: number, displayDeltaY: number) => {
+    const canvas = canvasRef.current;
+    const viewport = viewportRef.current;
+    if (!canvas || !viewport) return { pdfDeltaX: 0, pdfDeltaY: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    const outputScale = window.devicePixelRatio || 1;
+
+    // Convert display pixels to canvas internal pixels, then to viewport space
+    const canvasDeltaX = (displayDeltaX * canvas.width) / rect.width;
+    const canvasDeltaY = (displayDeltaY * canvas.height) / rect.height;
+
+    // Convert to viewport space
+    const viewportDeltaX = canvasDeltaX / outputScale;
+    const viewportDeltaY = canvasDeltaY / outputScale;
+
+    // Viewport space maps directly to PDF space (after zoom adjustment)
+    const pdfDeltaX = viewportDeltaX / scale;
+    const pdfDeltaY = viewportDeltaY / scale;
+
+    return { pdfDeltaX, pdfDeltaY };
+  };
+
+  const handleFieldDrag = (fieldId: string, displayDeltaX: number, displayDeltaY: number) => {
+    if (!onFieldUpdate) return;
+
+    const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
+    const field = fields.find((f) => `${f.field}:${fields.indexOf(f)}` === fieldId);
+    if (!field) return;
+
+    const newX = Math.max(0, field.x + pdfDeltaX);
+    const newY = Math.max(0, field.y + pdfDeltaY);
+
+    onFieldUpdate(fieldId, { x: newX, y: newY });
+  };
+
+  const handleFieldResize = (
+    fieldId: string,
+    handle: "nw" | "ne" | "sw" | "se",
+    displayDeltaX: number,
+    displayDeltaY: number
+  ) => {
+    if (!onFieldUpdate) return;
+
+    const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
+    const field = fields.find((f) => `${f.field}:${fields.indexOf(f)}` === fieldId);
+    if (!field) return;
+
+    const updates: Partial<FormField> = {};
+    const minSize = 10; // Minimum width/height in PDF units
+
+    // Handle corner resizes: adjust position and size based on which corner is dragged
+    if (handle === "nw") {
+      // Top-left: move position and shrink size
+      updates.x = Math.max(0, field.x + pdfDeltaX);
+      updates.y = Math.max(0, field.y + pdfDeltaY);
+      updates.w = Math.max(minSize, field.w - pdfDeltaX);
+      updates.h = Math.max(minSize, field.h - pdfDeltaY);
+    } else if (handle === "ne") {
+      // Top-right: move top, grow/shrink width and height
+      updates.y = Math.max(0, field.y + pdfDeltaY);
+      updates.w = Math.max(minSize, field.w + pdfDeltaX);
+      updates.h = Math.max(minSize, field.h - pdfDeltaY);
+    } else if (handle === "sw") {
+      // Bottom-left: move left, grow/shrink width and height
+      updates.x = Math.max(0, field.x + pdfDeltaX);
+      updates.w = Math.max(minSize, field.w - pdfDeltaX);
+      updates.h = Math.max(minSize, field.h + pdfDeltaY);
+    } else if (handle === "se") {
+      // Bottom-right: grow/shrink both dimensions
+      updates.w = Math.max(minSize, field.w + pdfDeltaX);
+      updates.h = Math.max(minSize, field.h + pdfDeltaY);
+    }
+
+    onFieldUpdate(fieldId, updates);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -605,6 +699,8 @@ const PdfPageCanvas = ({
                     field={field}
                     isSelected={selectedFieldId === fieldId}
                     onSelect={() => onFieldSelect?.(fieldId)}
+                    onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
+                    onResize={(handle, deltaX, deltaY) => handleFieldResize(fieldId, handle, deltaX, deltaY)}
                   />
                 </div>
               );
