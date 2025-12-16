@@ -176,7 +176,7 @@ export const FieldBox = ({
         <>
           {/* Corner handles - bigger and easier to grab */}
           <div
-            className="bg-primary absolute -top-2 -left-2 hidden h-4 w-4 cursor-nwse-resize rounded-full group-hover:block"
+            className="bg-primary absolute -top-2 -left-2 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -185,7 +185,7 @@ export const FieldBox = ({
             style={{ pointerEvents: "auto" }}
           />
           <div
-            className="bg-primary absolute -top-2 -right-2 hidden h-4 w-4 cursor-nesw-resize rounded-full group-hover:block"
+            className="bg-primary absolute -top-2 -right-2 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -194,7 +194,7 @@ export const FieldBox = ({
             style={{ pointerEvents: "auto" }}
           />
           <div
-            className="bg-primary absolute -bottom-2 -left-2 hidden h-4 w-4 cursor-nesw-resize rounded-full group-hover:block"
+            className="bg-primary absolute -bottom-2 -left-2 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -203,7 +203,7 @@ export const FieldBox = ({
             style={{ pointerEvents: "auto" }}
           />
           <div
-            className="bg-primary absolute -right-2 -bottom-2 hidden h-4 w-4 cursor-nwse-resize rounded-full group-hover:block"
+            className="bg-primary absolute -right-2 -bottom-2 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
