@@ -17,6 +17,7 @@ type EditorSidebarProps = {
   onFieldTypeChange: (type: string) => void;
   onStartPlacing: () => void;
   onCancelPlacing: () => void;
+  onCoordinatesChange?: (coords: { x: number; y: number; w: number; h: number }) => void;
 };
 
 export const EditorSidebar = ({
@@ -30,6 +31,7 @@ export const EditorSidebar = ({
   onFieldTypeChange,
   onStartPlacing,
   onCancelPlacing,
+  onCoordinatesChange,
 }: EditorSidebarProps) => {
   const selectedField = fields.find((f, idx) => `${f.field}:${idx}` === selectedFieldId);
 
@@ -56,6 +58,11 @@ export const EditorSidebar = ({
               onFieldTypeChange={onFieldTypeChange}
               onStartPlacing={onStartPlacing}
               onCancelPlacing={onCancelPlacing}
+              x={selectedField?.x}
+              y={selectedField?.y}
+              w={selectedField?.w}
+              h={selectedField?.h}
+              onCoordinatesChange={onCoordinatesChange}
             />
           </div>
 

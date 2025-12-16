@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 23:18:28
+ * @ Modified time: 2025-12-16 23:46:11
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -19,7 +19,18 @@ import { cn } from "@/lib/utils";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
-import { FileUp, Maximize2, Minimize2, MousePointer2, RefreshCcw, Search } from "lucide-react";
+import {
+  RotateCcw,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  FileUp,
+  Maximize2,
+  Minimize2,
+  MousePointer2,
+  RefreshCcw,
+  Search,
+} from "lucide-react";
 import { FieldBox, type FormField } from "./_components/field-box";
 import { PlacementControl } from "./_components/placement-control";
 import { GhostField } from "./_components/ghost-field";
@@ -45,6 +56,7 @@ type PdfViewerProps = {
   selectedFieldId?: string;
   onFieldSelect?: (fieldId: string) => void;
   onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
+  onFieldUpdateFinal?: (fieldId: string) => void;
   onFieldCreate?: (field: FormField) => void;
   onFieldDelete?: (fieldId: string) => void;
   onFieldDuplicate?: (fieldId: string) => void;
@@ -56,6 +68,10 @@ type PdfViewerProps = {
   onPlacementFieldTypeChange?: (type: string) => void;
   onStartPlacing?: () => void;
   onCancelPlacing?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 };
 
 export function PdfViewer({
@@ -64,6 +80,7 @@ export function PdfViewer({
   selectedFieldId,
   onFieldSelect,
   onFieldUpdate,
+  onFieldUpdateFinal,
   onFieldCreate,
   onFieldDelete,
   onFieldDuplicate,
@@ -75,6 +92,10 @@ export function PdfViewer({
   onPlacementFieldTypeChange,
   onStartPlacing,
   onCancelPlacing,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
   const [pendingUrl, setPendingUrl] = useState<string>(
@@ -191,26 +212,49 @@ export function PdfViewer({
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
-      {/* Slim header with minimal controls */}
-      <div className="border-b bg-white px-4 py-2 flex-shrink-0">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <input
-              type="url"
-              value={pendingUrl}
-              placeholder="PDF URL or upload file"
-              className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm placeholder-muted-foreground focus:border-primary focus:outline-none"
-              onChange={(e) => setPendingUrl(e.target.value)}
-            />
+      {/* Header with zoom and undo/redo controls */}
+      <div className="flex-shrink-0 border-b bg-white px-4 py-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              title="Undo"
+              className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onRedo}
+              disabled={!canRedo}
+              title="Redo"
+              className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <RotateCw className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={handleApplyUrl}
-            disabled={!pendingUrl}
-            className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Load
-          </button>
-          <label className="flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-sm hover:bg-slate-100 transition-colors">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => handleZoom("out")}
+              disabled={scale <= 0.5}
+              title="Zoom Out"
+              className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <span className="text-muted-foreground min-w-12 text-center text-xs">
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              onClick={() => handleZoom("in")}
+              disabled={scale >= 3}
+              title="Zoom In"
+              className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
+          </div>
+          <label className="flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors hover:bg-slate-100">
             <FileUp className="h-4 w-4" />
             <input
               type="file"
@@ -220,25 +264,25 @@ export function PdfViewer({
             />
           </label>
         </div>
-        {fileName && <p className="text-muted-foreground text-xs mt-1">📄 {fileName}</p>}
+        {fileName && <p className="text-muted-foreground mt-1 text-xs">📄 {fileName}</p>}
       </div>
 
       {/* PDF Viewer Canvas */}
-      <div className="flex-1 overflow-hidden bg-white relative">
+      <div className="relative flex-1 overflow-hidden bg-white">
         {isLoadingDoc && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
+          <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center">
             <Loader>Loading PDF…</Loader>
           </div>
         )}
 
         {error && (
-          <div className="flex h-full items-center justify-center text-sm text-destructive">
+          <div className="text-destructive flex h-full items-center justify-center text-sm">
             {error}
           </div>
         )}
 
         {!error && !pdfDoc && !isLoadingDoc && (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
             Provide a PDF URL or upload a file to start.
           </div>
         )}
@@ -544,6 +588,11 @@ const PdfPageCanvas = ({
     onFieldUpdate(fieldId, { x: newX, y: newY });
   };
 
+  const handleFieldDragEnd = (fieldId: string) => {
+    if (!onFieldUpdateFinal) return;
+    onFieldUpdateFinal(fieldId);
+  };
+
   const handleFieldResize = (
     fieldId: string,
     handle: "nw" | "ne" | "sw" | "se",
@@ -585,6 +634,11 @@ const PdfPageCanvas = ({
     onFieldUpdate(fieldId, updates);
   };
 
+  const handleFieldResizeEnd = (fieldId: string) => {
+    if (!onFieldUpdateFinal) return;
+    onFieldUpdateFinal(fieldId);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -616,39 +670,40 @@ const PdfPageCanvas = ({
 
         {/* Render form fields */}
         <div className="pointer-events-none absolute inset-0">
-          {fields
-            .map((field, originalIdx) => {
-              if (field.page !== pageNumber) return null;
+          {fields.map((field, originalIdx) => {
+            if (field.page !== pageNumber) return null;
 
-              const fieldId = `${field.field}:${originalIdx}`;
-              const pos = pdfToDisplay(field.x, field.y);
-              if (!pos) return null;
+            const fieldId = `${field.field}:${originalIdx}`;
+            const pos = pdfToDisplay(field.x, field.y);
+            if (!pos) return null;
 
-              return (
-                <div
-                  key={fieldId}
-                  className="pointer-events-auto"
-                  style={{
-                    position: "absolute",
-                    left: `${pos.displayX}px`,
-                    top: `${pos.displayY}px`,
-                    width: `${field.w * scale}px`,
-                    height: `${field.h * scale}px`,
-                  }}
-                  title={`PDF: (${field.x.toFixed(1)}, ${field.y.toFixed(1)}) → Display: (${pos.displayX.toFixed(1)}, ${pos.displayY.toFixed(1)})`}
-                >
-                  <FieldBox
-                    field={field}
-                    isSelected={selectedFieldId === fieldId}
-                    onSelect={() => onFieldSelect?.(fieldId)}
-                    onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
-                    onResize={(handle, deltaX, deltaY) =>
-                      handleFieldResize(fieldId, handle, deltaX, deltaY)
-                    }
-                  />
-                </div>
-              );
-            })}
+            return (
+              <div
+                key={fieldId}
+                className="pointer-events-auto"
+                style={{
+                  position: "absolute",
+                  left: `${pos.displayX}px`,
+                  top: `${pos.displayY}px`,
+                  width: `${field.w * scale}px`,
+                  height: `${field.h * scale}px`,
+                }}
+                title={`PDF: (${field.x.toFixed(1)}, ${field.y.toFixed(1)}) → Display: (${pos.displayX.toFixed(1)}, ${pos.displayY.toFixed(1)})`}
+              >
+                <FieldBox
+                  field={field}
+                  isSelected={selectedFieldId === fieldId}
+                  onSelect={() => onFieldSelect?.(fieldId)}
+                  onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
+                  onDragEnd={() => handleFieldDragEnd(fieldId)}
+                  onResize={(handle, deltaX, deltaY) =>
+                    handleFieldResize(fieldId, handle, deltaX, deltaY)
+                  }
+                  onResizeEnd={() => handleFieldResizeEnd(fieldId)}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Ghost field preview during placement mode */}

@@ -2,13 +2,13 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 23:20:39
+ * @ Modified time: 2025-12-16 23:41:54
  * @ Description: pdfjs-based form editor page
  */
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Suspense } from "react";
 import { Loader } from "@/components/ui/loader";
 import { PdfViewer } from "../../../../../components/docs/form-editor/pdf-viewer";
@@ -22,31 +22,57 @@ const PdfJsEditorPage = () => {
   ]);
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
   const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
+  const [historyState, setHistoryState] = useState({
+    history: [[{ field: "signature", page: 1, x: 72.3, y: 9.7, w: 466, h: 60 }]],
+    index: 0,
+  });
+  const dragStartStateRef = useRef<FormField[] | null>(null);
+
+  const updateFieldsWithHistory = (newFields: FormField[]) => {
+    setHistoryState((prev) => {
+      const newHistory = prev.history.slice(0, prev.index + 1);
+      newHistory.push(newFields);
+      return { history: newHistory, index: newHistory.length - 1 };
+    });
+    setFields(newFields);
+  };
 
   const handleFieldUpdate = (fieldId: string, updates: Partial<FormField>) => {
-    setFields((prev) =>
-      prev.map((f, idx) => {
-        const currentId = `${f.field}:${idx}`;
-        return currentId === fieldId ? { ...f, ...updates } : f;
-      })
-    );
+    // Direct update without history (for live dragging)
+    // On first drag, save the state before changes
+    if (!dragStartStateRef.current) {
+      dragStartStateRef.current = JSON.parse(JSON.stringify(fields)) as FormField[];
+    }
+
+    const newFields = fields.map((f, idx) => {
+      const currentId = `${f.field}:${idx}`;
+      return currentId === fieldId ? { ...f, ...updates } : f;
+    });
+    setFields(newFields);
+  };
+
+  const handleFieldUpdateFinal = () => {
+    // Only add to history if we were dragging
+    if (dragStartStateRef.current) {
+      updateFieldsWithHistory(fields);
+      dragStartStateRef.current = null;
+    }
   };
 
   const handleFieldCreate = (newField: FormField) => {
-    setFields((prev) => [...prev, newField]);
-    // Auto-select the new field: find its ID by index
-    const newFieldIndex = fields.length;
+    const newFields = [...fields, newField];
+    updateFieldsWithHistory(newFields);
+    // Auto-select the new field
+    const newFieldIndex = newFields.length - 1;
     setSelectedFieldId(`${newField.field}:${newFieldIndex}`);
     // Exit placement mode
     setIsPlacingField(false);
   };
 
   const handleFieldDelete = (fieldId: string) => {
-    // ! REFACTOR: This is a simple implementation. In a real app, you'd want to preserve indices or use UUIDs
-    setFields((prev) => {
-      const targetIdx = parseInt(fieldId.split(":")[1], 10);
-      return prev.filter((_, idx) => idx !== targetIdx);
-    });
+    const targetIdx = parseInt(fieldId.split(":")[1], 10);
+    const newFields = fields.filter((_, idx) => idx !== targetIdx);
+    updateFieldsWithHistory(newFields);
     if (selectedFieldId === fieldId) {
       setSelectedFieldId("");
     }
@@ -57,16 +83,43 @@ const PdfJsEditorPage = () => {
     const fieldToDuplicate = fields[targetIdx];
     if (!fieldToDuplicate) return;
 
-    // Create a duplicate with slightly offset position
     const duplicated: FormField = {
       ...fieldToDuplicate,
       x: fieldToDuplicate.x + 20,
       y: fieldToDuplicate.y + 20,
     };
 
-    setFields((prev) => [...prev, duplicated]);
-    const newFieldIndex = fields.length;
+    const newFields = [...fields, duplicated];
+    updateFieldsWithHistory(newFields);
+    const newFieldIndex = newFields.length - 1;
     setSelectedFieldId(`${duplicated.field}:${newFieldIndex}`);
+  };
+
+  const handleUndo = () => {
+    if (historyState.index > 0) {
+      const newIndex = historyState.index - 1;
+      setHistoryState((prev) => ({ ...prev, index: newIndex }));
+      setFields(historyState.history[newIndex]);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyState.index < historyState.history.length - 1) {
+      const newIndex = historyState.index + 1;
+      setHistoryState((prev) => ({ ...prev, index: newIndex }));
+      setFields(historyState.history[newIndex]);
+    }
+  };
+
+  const handleCoordinatesChange = (coords: { x: number; y: number; w: number; h: number }) => {
+    if (selectedFieldId) {
+      // Direct update with history (for numeric input changes)
+      const newFields = fields.map((f, idx) => {
+        const currentId = `${f.field}:${idx}`;
+        return currentId === selectedFieldId ? { ...f, ...coords } : f;
+      });
+      updateFieldsWithHistory(newFields);
+    }
   };
 
   return (
@@ -86,12 +139,17 @@ const PdfJsEditorPage = () => {
               selectedFieldId={selectedFieldId}
               onFieldSelect={setSelectedFieldId}
               onFieldUpdate={handleFieldUpdate}
+              onFieldUpdateFinal={handleFieldUpdateFinal}
               onFieldCreate={handleFieldCreate}
               isPlacingField={isPlacingField}
               placementFieldType={placementFieldType}
               onPlacementFieldTypeChange={setPlacementFieldType}
               onStartPlacing={() => setIsPlacingField(true)}
               onCancelPlacing={() => setIsPlacingField(false)}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={historyState.index > 0}
+              canRedo={historyState.index < historyState.history.length - 1}
             />
           </Suspense>
         </div>
@@ -111,6 +169,7 @@ const PdfJsEditorPage = () => {
             onCancelPlacing={() => {
               setIsPlacingField(false);
             }}
+            onCoordinatesChange={handleCoordinatesChange}
           />
         </div>
       </div>

@@ -17,10 +17,20 @@ export type FieldBoxProps = {
   isSelected?: boolean;
   onSelect?: () => void;
   onDrag?: (deltaX: number, deltaY: number) => void;
+  onDragEnd?: () => void;
   onResize?: (handle: "nw" | "ne" | "sw" | "se", deltaX: number, deltaY: number) => void;
+  onResizeEnd?: () => void;
 };
 
-export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: FieldBoxProps) => {
+export const FieldBox = ({
+  field,
+  isSelected,
+  onSelect,
+  onDrag,
+  onDragEnd,
+  onResize,
+  onResizeEnd,
+}: FieldBoxProps) => {
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
@@ -56,6 +66,12 @@ export const FieldBox = ({ field, isSelected, onSelect, onDrag, onResize }: Fiel
   const handleMouseUp = () => {
     setIsDragging(false);
     setDragStart(null);
+    if (isDragging && onDragEnd) {
+      onDragEnd();
+    }
+    if (isResizing && onResizeEnd) {
+      onResizeEnd();
+    }
     setIsResizing(false);
     setResizeHandle(null);
     setResizeStart(null);
