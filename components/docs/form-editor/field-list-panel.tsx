@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { FormField } from "./pdf-viewer";
 import { Copy, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type FieldListPanelProps = {
   fields: FormField[];
@@ -35,7 +36,7 @@ export const FieldListPanel = ({
               <div
                 key={fieldId}
                 className={cn(
-                  "flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs font-medium transition-colors",
+                  "flex cursor-pointer items-center gap-2 rounded-[0.33em] px-2 py-2 text-xs font-medium transition-colors",
                   isSelected
                     ? "bg-primary text-primary-foreground"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -47,26 +48,36 @@ export const FieldListPanel = ({
                   <div className="text-xs opacity-75">p{field.page}</div>
                 </div>
                 <div className="flex gap-0.5">
-                  <button
+                  <Button
                     onClick={(e) => {
                       e.stopPropagation();
                       onFieldDuplicate(fieldId);
                     }}
-                    className="rounded p-0.5 transition-colors hover:bg-white/20"
+                    variant="ghost"
+                    size="xs"
                     title="Duplicate field"
+                    className={cn(
+                      "cursor-pointer p-1.5 text-slate-500 hover:bg-transparent",
+                      isSelected && "text-white hover:text-slate-500"
+                    )}
                   >
-                    <Copy className="h-3 w-3" />
-                  </button>
-                  <button
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
                     onClick={(e) => {
                       e.stopPropagation();
                       onFieldDelete(fieldId);
                     }}
-                    className="rounded p-0.5 transition-colors hover:bg-white/20"
+                    variant="ghost"
+                    size="xs"
                     title="Delete field"
+                    className={cn(
+                      "hover:text-destructive cursor-pointer p-1.5 text-slate-500 hover:bg-transparent",
+                      isSelected && "text-white"
+                    )}
                   >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
             );

@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:07:53
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 23:59:49
+ * @ Modified time: 2025-12-17 00:50:34
  * @ Description: Editor sidebar component
  */
 
@@ -11,7 +11,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldListPanel } from "./field-list-panel";
 import { PlacementControl } from "./placement-control";
-import { SelectedFieldDetails } from "./selected-field-details";
+import { SelectedFieldDetails } from "../form-editor/selected-field-details";
 import type { FormField } from "./pdf-viewer";
 import { List, Settings } from "lucide-react";
 
@@ -46,12 +46,12 @@ export const EditorSidebar = ({
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden bg-slate-50/50 p-3">
-      <Tabs defaultValue="fields" className="flex flex-1 flex-col gap-2 overflow-hidden">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="fields" className="text-xs" title="Manage fields">
+      <Tabs defaultValue="fields" className="flex flex-1 flex-col overflow-hidden">
+        <TabsList>
+          <TabsTrigger value="fields" title="Manage fields">
             <List className="h-4 w-4" />
           </TabsTrigger>
-          <TabsTrigger value="settings" className="text-xs" title="Settings">
+          <TabsTrigger value="settings" title="Settings">
             <Settings className="h-4 w-4" />
           </TabsTrigger>
         </TabsList>
@@ -59,7 +59,7 @@ export const EditorSidebar = ({
         {/* Fields Tab */}
         <TabsContent value="fields" className="mt-0 flex-1 space-y-4 overflow-y-auto">
           {/* Add Field Section */}
-          <div className="space-y-2 rounded-md border border-dashed border-slate-300 bg-white p-2">
+          <div className="space-y-2 rounded-[0.33em] border border-slate-300 bg-white p-2">
             <div className="text-xs font-semibold text-slate-700">Add Field</div>
             <PlacementControl
               isPlacing={isPlacing}

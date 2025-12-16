@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 23:49:16
+ * @ Modified time: 2025-12-17 00:14:31
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -10,34 +10,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
-import {
-  RotateCcw,
-  RotateCw,
-  ZoomIn,
-  ZoomOut,
-  FileUp,
-  Maximize2,
-  Minimize2,
-  MousePointer2,
-  RefreshCcw,
-  Search,
-} from "lucide-react";
+import { RotateCcw, RotateCw, ZoomIn, ZoomOut, FileUp, Maximize2 } from "lucide-react";
 import { FieldBox, type FormField } from "./field-box";
-import { PlacementControl } from "./placement-control";
 import { GhostField } from "./ghost-field";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-// Re-export for use in other components
 export type { FormField };
 
 export type PointerLocation = {
@@ -642,15 +625,12 @@ const PdfPageCanvas = ({
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full max-w-4xl overflow-hidden rounded-md border bg-white shadow-sm transition-colors",
+        "relative w-full max-w-4xl overflow-hidden rounded-[0.33em] border bg-white shadow-sm transition-colors",
         isSelected ? "border-primary/80 ring-primary/50 ring-1" : "border-border"
       )}
     >
       <div className="text-muted-foreground flex items-center justify-between border-b px-3 py-2 text-xs">
-        <span>
-          Page {pageNumber} {isVisible && "• visible"}
-        </span>
-        <span>Scale {Math.round(scale * 100)}%</span>
+        <span>Page {pageNumber}</span>
       </div>
       <div className="relative flex justify-center bg-slate-50">
         <canvas
@@ -751,10 +731,6 @@ const PdfPageCanvas = ({
             <div
               className="border-primary/50 absolute w-full border-t"
               style={{ top: `${localHover.displayY}px` }}
-            />
-            <div
-              className="border-primary bg-primary/10 absolute h-3 w-3 -translate-x-1.5 -translate-y-1.5 rounded-full border"
-              style={{ left: `${localHover.displayX}px`, top: `${localHover.displayY}px` }}
             />
           </div>
         )}

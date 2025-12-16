@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:53:46
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 23:59:22
+ * @ Modified time: 2025-12-17 00:16:44
  * @ Description: Reusable coordinate input component
  *                Handles X, Y, Width, Height editing with validation
  */
