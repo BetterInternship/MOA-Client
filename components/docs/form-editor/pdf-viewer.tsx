@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 21:03:13
+ * @ Modified time: 2025-12-16 21:13:22
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -743,9 +743,10 @@ const PdfPageCanvas = ({
         {/* Render form fields */}
         <div className="pointer-events-none absolute inset-0">
           {fields
-            .filter((f) => f.page === pageNumber)
-            .map((field, idx) => {
-              const fieldId = `${field.field}:${idx}`;
+            .map((field, originalIdx) => {
+              if (field.page !== pageNumber) return null;
+
+              const fieldId = `${field.field}:${originalIdx}`;
               const pos = pdfToDisplay(field.x, field.y);
               if (!pos) return null;
 
