@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 19:39:08
+ * @ Modified time: 2025-12-16 19:47:37
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -524,8 +524,10 @@ const PdfPageCanvas = ({
     if (!viewportPoint) return null;
     const [viewportX, viewportY] = viewportPoint;
 
-    const cssX = (viewportX * rect.width) / canvas.width;
-    const cssY = (viewportY * rect.height) / canvas.height;
+    // Convert viewport coordinates to CSS pixels
+    // Multiply by outputScale to account for device pixel ratio (same as extractLocation does in reverse)
+    const cssX = (viewportX * outputScale * rect.width) / canvas.width;
+    const cssY = (viewportY * outputScale * rect.height) / canvas.height;
 
     return {
       displayX: rect.left - containerRect.left + cssX,
