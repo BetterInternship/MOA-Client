@@ -22,7 +22,7 @@ export const FieldBox = ({ field, isSelected, onSelect }: FieldBoxProps) => {
     <div
       className={cn(
         "absolute inset-0 cursor-pointer border-2 transition-colors",
-        isSelected ? "border-primary bg-primary/10" : "border-amber-500/50 bg-amber-50/30"
+        isSelected ? "border-primary bg-primary/30" : "border-amber-500/50 bg-amber-500/15"
       )}
       onClick={onSelect}
       role="button"
