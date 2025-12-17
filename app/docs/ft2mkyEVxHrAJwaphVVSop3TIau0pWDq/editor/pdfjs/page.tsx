@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-16 23:58:46
+ * @ Modified time: 2025-12-17 13:44:29
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management and undo/redo
  */
@@ -18,6 +18,7 @@ import { useFormHistory } from "../../../../../hooks/use-form-history";
 import { useFieldOperations } from "../../../../../hooks/use-field-operations";
 import type { FormField } from "../../../../../components/docs/form-editor/field-box";
 
+// Sample
 const INITIAL_FIELDS: FormField[] = [
   { field: "signature", page: 1, x: 72.3, y: 9.7, w: 466, h: 60 },
 ];

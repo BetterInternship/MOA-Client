@@ -12,5 +12,6 @@ export interface FieldRegistryEntry {
   name: string;
   preset: string;
   is_phantom: boolean;
+  label: string;
   type: FieldRegistryEntryType;
 }

@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:53:41
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 00:00:33
+ * @ Modified time: 2025-12-17 13:44:34
  * @ Description: Component for field type selection
  */
 
@@ -14,15 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// ! Do something about this soon
-const FIELD_TYPES = [
-  { value: "signature", label: "Signature" },
-  { value: "initials", label: "Initials" },
-  { value: "date", label: "Date" },
-  { value: "text", label: "Text" },
-  { value: "checkbox", label: "Checkbox" },
-] as const;
+import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 
 type FieldTypeSelectProps = {
   value: string;
@@ -31,7 +23,17 @@ type FieldTypeSelectProps = {
 };
 
 export const FieldTypeSelect = ({ value, onChange, disabled }: FieldTypeSelectProps) => {
-  const fieldTypes = useMemo(() => FIELD_TYPES, []);
+  const { registry } = useFieldTemplateContext();
+
+  const fieldTypes = useMemo(
+    () =>
+      registry.map((field) => ({
+        value: field.id,
+        name: field.name,
+        label: field.label,
+      })),
+    [registry]
+  );
 
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
@@ -48,5 +50,3 @@ export const FieldTypeSelect = ({ value, onChange, disabled }: FieldTypeSelectPr
     </Select>
   );
 };
-
-export { FIELD_TYPES };

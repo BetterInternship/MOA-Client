@@ -2164,9 +2164,10 @@
           "name": { "type": "string" },
           "preset": { "type": "string" },
           "is_phantom": { "type": "boolean" },
+          "label": { "type": "string" },
           "type": { "type": "string", "enum": ["text", "signature"] }
         },
-        "required": ["id", "name", "preset", "is_phantom", "type"]
+        "required": ["id", "name", "preset", "is_phantom", "label", "type"]
       },
       "FieldRegistryResponse": {
         "type": "object",
