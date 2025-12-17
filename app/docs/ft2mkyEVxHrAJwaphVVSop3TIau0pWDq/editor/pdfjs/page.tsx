@@ -2,19 +2,18 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 14:26:58
+ * @ Modified time: 2025-12-17 15:00:16
  * @ Description: PDF Form Editor Page
- *                Orchestrates form editor state with field management and undo/redo
+ *                Orchestrates form editor state with field management
  */
 
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Suspense } from "react";
 import { Loader } from "@/components/ui/loader";
 import { PdfViewer } from "../../../../../components/docs/form-editor/pdf-viewer";
 import { EditorSidebar } from "../../../../../components/docs/form-editor/editor-sidebar";
-import { useFormHistory } from "../../../../../hooks/use-form-history";
 import { useFieldOperations } from "../../../../../hooks/use-field-operations";
 import { useFormsControllerGetFieldRegistry } from "@/app/api";
 import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
@@ -33,39 +32,15 @@ const PdfJsEditorPage = () => {
   const [fields, setFields] = useState<FormField[]>(INITIAL_FIELDS);
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
   const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
-  const dragStartStateRef = useRef<FormField[] | null>(null);
 
-  const { historyState, updateFieldsWithHistory, undo, redo, canUndo, canRedo } =
-    useFormHistory(INITIAL_FIELDS);
-
-  // Callback when history state changes
-  const handleHistoryChange = useCallback(
-    (newFields: FormField[]) => {
-      updateFieldsWithHistory(newFields);
-      setFields(newFields);
-    },
-    [updateFieldsWithHistory]
-  );
-
-  // Field operations with history tracking
-  const fieldOps = useFieldOperations(
-    fields,
-    handleHistoryChange,
-    setSelectedFieldId,
-    selectedFieldId
-  );
+  // Field operations
+  const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
 
   /**
-   * Live field update during drag (no history)
-   * Saves state snapshot on first drag
+   * Live field update during drag
    */
   const handleFieldUpdate = useCallback(
     (fieldId: string, updates: Partial<FormField>) => {
-      // Save state snapshot on first drag
-      if (!dragStartStateRef.current) {
-        dragStartStateRef.current = JSON.parse(JSON.stringify(fields)) as FormField[];
-      }
-
       const newFields = fields.map((f, idx) => {
         const currentId = `${f.field}:${idx}`;
         return currentId === fieldId ? { ...f, ...updates } : f;
@@ -74,17 +49,6 @@ const PdfJsEditorPage = () => {
     },
     [fields]
   );
-
-  /**
-   * Finalize field update and add to history
-   * Called when drag or resize completes
-   */
-  const handleFieldUpdateFinal = useCallback(() => {
-    if (dragStartStateRef.current) {
-      handleHistoryChange(fields);
-      dragStartStateRef.current = null;
-    }
-  }, [fields, handleHistoryChange]);
 
   /**
    * Handle field creation with auto-selection
@@ -112,18 +76,11 @@ const PdfJsEditorPage = () => {
           const currentId = `${f.field}:${idx}`;
           return currentId === selectedFieldId ? { ...f, ...coords } : f;
         });
-        handleHistoryChange(newFields);
+        setFields(newFields);
       }
     },
-    [selectedFieldId, fields, handleHistoryChange]
+    [selectedFieldId, fields]
   );
-
-  /**
-   * Get current history state
-   */
-  const getCurrentFields = () => {
-    return historyState.history[historyState.index] || [];
-  };
 
   return (
     <div className="flex h-full flex-col gap-0 overflow-hidden">
@@ -142,17 +99,12 @@ const PdfJsEditorPage = () => {
               selectedFieldId={selectedFieldId}
               onFieldSelect={setSelectedFieldId}
               onFieldUpdate={handleFieldUpdate}
-              onFieldUpdateFinal={handleFieldUpdateFinal}
               onFieldCreate={handleFieldCreate}
               isPlacingField={isPlacingField}
               placementFieldType={placementFieldType}
               onPlacementFieldTypeChange={setPlacementFieldType}
               onStartPlacing={() => setIsPlacingField(true)}
               onCancelPlacing={() => setIsPlacingField(false)}
-              onUndo={undo}
-              onRedo={redo}
-              canUndo={canUndo}
-              canRedo={canRedo}
               registry={registry}
             />
           </Suspense>

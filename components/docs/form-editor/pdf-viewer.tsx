@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 14:18:44
+ * @ Modified time: 2025-12-17 14:37:02
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
-import { RotateCcw, RotateCw, ZoomIn, ZoomOut, FileUp, Maximize2 } from "lucide-react";
+import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
 import { FieldBox, type FormField } from "./field-box";
 import { GhostField } from "./ghost-field";
 import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
@@ -41,22 +41,14 @@ type PdfViewerProps = {
   selectedFieldId?: string;
   onFieldSelect?: (fieldId: string) => void;
   onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
-  onFieldUpdateFinal?: (fieldId: string) => void;
   onFieldCreate?: (field: FormField) => void;
   onFieldDelete?: (fieldId: string) => void;
   onFieldDuplicate?: (fieldId: string) => void;
-  clickHistory?: PointerLocation[];
-  onClickHistoryClear?: () => void;
-  onClickRecorded?: (location: PointerLocation) => void;
   isPlacingField?: boolean;
   placementFieldType?: string;
   onPlacementFieldTypeChange?: (type: string) => void;
   onStartPlacing?: () => void;
   onCancelPlacing?: () => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  canUndo?: boolean;
-  canRedo?: boolean;
   registry?: FieldRegistryEntry[];
 };
 
@@ -66,22 +58,9 @@ export function PdfViewer({
   selectedFieldId,
   onFieldSelect,
   onFieldUpdate,
-  onFieldUpdateFinal,
   onFieldCreate,
-  onFieldDelete,
-  onFieldDuplicate,
-  clickHistory = [],
-  onClickHistoryClear,
-  onClickRecorded,
   isPlacingField = false,
   placementFieldType = "signature",
-  onPlacementFieldTypeChange,
-  onStartPlacing,
-  onCancelPlacing,
-  onUndo,
-  onRedo,
-  canUndo = false,
-  canRedo = false,
   registry = [],
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
@@ -89,14 +68,13 @@ export function PdfViewer({
     initialUrl ?? "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf"
   );
   const [sourceUrl, setSourceUrl] = useState<string | null>(pendingUrl);
-  const [fileName, setFileName] = useState<string>("");
+  const [_fileName, _setFileName] = useState<string>("");
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
   const [scale, setScale] = useState<number>(1.1);
   const [visiblePage, setVisiblePage] = useState<number>(1);
   const [selectedPage, setSelectedPage] = useState<number>(1);
-  const [hoverPoint, setHoverPoint] = useState<PointerLocation | null>(null);
-  const [clickPoint, setClickPoint] = useState<PointerLocation | null>(null);
+  const [_hoverPoint, _setHoverPoint] = useState<PointerLocation | null>(null);
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [hoverPointDuringPlacement, setHoverPointDuringPlacement] =
@@ -199,27 +177,10 @@ export function PdfViewer({
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
-      {/* Header with zoom and undo/redo controls */}
+      {/* Header with zoom controls */}
       <div className="flex-shrink-0 border-b bg-white px-4 py-2">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              title="Undo"
-              className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-            <button
-              onClick={onRedo}
-              disabled={!canRedo}
-              title="Redo"
-              className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              <RotateCw className="h-4 w-4" />
-            </button>
-          </div>
+          <div className="flex items-center gap-1"></div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => handleZoom("out")}
@@ -286,16 +247,12 @@ export function PdfViewer({
                   isVisible={page === visiblePage}
                   onVisible={setVisiblePage}
                   onHover={setHoverPoint}
-                  onClick={(loc) => {
-                    setClickPoint(loc);
-                    onClickRecorded?.(loc);
-                  }}
+                  onClick={() => {}}
                   registerPageRef={registerPageRef}
                   fields={fields}
                   selectedFieldId={selectedFieldId}
                   onFieldSelect={onFieldSelect}
                   onFieldUpdate={onFieldUpdate}
-                  clickPoint={clickPoint}
                   isPlacingField={isPlacingField}
                   placementFieldType={placementFieldType}
                   hoverPointDuringPlacement={hoverPointDuringPlacement}
@@ -326,7 +283,6 @@ type PdfPageCanvasProps = {
   selectedFieldId?: string;
   onFieldSelect?: (fieldId: string) => void;
   onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
-  clickPoint?: PointerLocation | null;
   isPlacingField?: boolean;
   placementFieldType?: string;
   onHoverPlacement?: (loc: PointerLocation | null) => void;
@@ -349,7 +305,6 @@ const PdfPageCanvas = ({
   selectedFieldId,
   onFieldSelect,
   onFieldUpdate,
-  clickPoint,
   isPlacingField = false,
   placementFieldType = "signature",
   onHoverPlacement,
@@ -577,11 +532,6 @@ const PdfPageCanvas = ({
     onFieldUpdate(fieldId, { x: newX, y: newY });
   };
 
-  const handleFieldDragEnd = (fieldId: string) => {
-    if (!onFieldUpdateFinal) return;
-    onFieldUpdateFinal(fieldId);
-  };
-
   const handleFieldResize = (
     fieldId: string,
     handle: "nw" | "ne" | "sw" | "se",
@@ -621,11 +571,6 @@ const PdfPageCanvas = ({
     }
 
     onFieldUpdate(fieldId, updates);
-  };
-
-  const handleFieldResizeEnd = (fieldId: string) => {
-    if (!onFieldUpdateFinal) return;
-    onFieldUpdateFinal(fieldId);
   };
 
   return (
@@ -681,11 +626,11 @@ const PdfPageCanvas = ({
                   isSelected={selectedFieldId === fieldId}
                   onSelect={() => onFieldSelect?.(fieldId)}
                   onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
-                  onDragEnd={() => handleFieldDragEnd(fieldId)}
+                  onDragEnd={() => {}}
                   onResize={(handle, deltaX, deltaY) =>
                     handleFieldResize(fieldId, handle, deltaX, deltaY)
                   }
-                  onResizeEnd={() => handleFieldResizeEnd(fieldId)}
+                  onResizeEnd={() => {}}
                 />
               </div>
             );
@@ -716,20 +661,6 @@ const PdfPageCanvas = ({
               />
             );
           })()}
-
-        {/* Debug: Show click coordinates as a field-like box for reference */}
-        {clickPoint && clickPoint.page === pageNumber && (
-          <div
-            className="pointer-events-none absolute border-2 border-green-500/50 bg-green-100/20"
-            style={{
-              left: `${clickPoint.displayX - 5}px`,
-              top: `${clickPoint.displayY - 5}px`,
-              width: "10px",
-              height: "10px",
-            }}
-            title={`Clicked: PDF (${clickPoint.pdfX.toFixed(1)}, ${clickPoint.pdfY.toFixed(1)})`}
-          />
-        )}
 
         {/* Crosshair overlay */}
         {localHover && (

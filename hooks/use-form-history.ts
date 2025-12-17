@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:53:27
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 00:04:59
+ * @ Modified time: 2025-12-17 14:59:41
  * @ Description: Custom hook for managing form field history (undo/redo)
  *                Handles all history state mutations
  */
@@ -17,14 +17,20 @@ type HistoryState = {
 
 export const useFormHistory = (initialFields: FormField[]) => {
   const [historyState, setHistoryState] = useState<HistoryState>({
-    history: [initialFields],
+    history: [JSON.parse(JSON.stringify(initialFields))],
     index: 0,
   });
 
   const updateFieldsWithHistory = useCallback((newFields: FormField[]) => {
     setHistoryState((prev) => {
+      // Only add to history if the new state is different from current
+      const currentFields = prev.history[prev.index];
+      if (JSON.stringify(currentFields) === JSON.stringify(newFields)) {
+        return prev; // No change, don't update history
+      }
+
       const newHistory = prev.history.slice(0, prev.index + 1);
-      newHistory.push(newFields);
+      newHistory.push(JSON.parse(JSON.stringify(newFields)));
       return { history: newHistory, index: newHistory.length - 1 };
     });
   }, []);
