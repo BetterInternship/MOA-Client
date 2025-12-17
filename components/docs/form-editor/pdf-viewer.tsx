@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 14:37:02
+ * @ Modified time: 2025-12-17 15:03:53
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -68,13 +68,13 @@ export function PdfViewer({
     initialUrl ?? "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf"
   );
   const [sourceUrl, setSourceUrl] = useState<string | null>(pendingUrl);
-  const [_fileName, _setFileName] = useState<string>("");
+  const [fileName, setFileName] = useState<string>("");
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
   const [scale, setScale] = useState<number>(1.1);
   const [visiblePage, setVisiblePage] = useState<number>(1);
   const [selectedPage, setSelectedPage] = useState<number>(1);
-  const [_hoverPoint, _setHoverPoint] = useState<PointerLocation | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<PointerLocation | null>(null);
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [hoverPointDuringPlacement, setHoverPointDuringPlacement] =
