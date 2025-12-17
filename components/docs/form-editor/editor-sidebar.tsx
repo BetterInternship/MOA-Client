@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:07:53
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 01:12:01
+ * @ Modified time: 2025-12-17 14:08:22
  * @ Description: Editor sidebar component
  */
 
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldListPanel } from "./field-list-panel";
 import { PlacementControl } from "./placement-control";
 import type { FormField } from "./pdf-viewer";
+import type { FieldRegistryEntry } from "@/app/api";
 import { List, Settings } from "lucide-react";
 
 type EditorSidebarProps = {
@@ -26,6 +27,7 @@ type EditorSidebarProps = {
   onStartPlacing: () => void;
   onCancelPlacing: () => void;
   onCoordinatesChange?: (coords: { x: number; y: number; w: number; h: number }) => void;
+  registry?: FieldRegistryEntry[];
 };
 
 export const EditorSidebar = ({
@@ -40,6 +42,7 @@ export const EditorSidebar = ({
   onStartPlacing,
   onCancelPlacing,
   onCoordinatesChange,
+  registry = [],
 }: EditorSidebarProps) => {
   const selectedField = fields.find((f, idx) => `${f.field}:${idx}` === selectedFieldId);
 
@@ -71,6 +74,7 @@ export const EditorSidebar = ({
               w={selectedField?.w}
               h={selectedField?.h}
               onCoordinatesChange={onCoordinatesChange}
+              registry={registry}
             />
           </div>
 

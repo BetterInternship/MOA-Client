@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 13:44:29
+ * @ Modified time: 2025-12-17 14:26:58
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management and undo/redo
  */
@@ -16,14 +16,19 @@ import { PdfViewer } from "../../../../../components/docs/form-editor/pdf-viewer
 import { EditorSidebar } from "../../../../../components/docs/form-editor/editor-sidebar";
 import { useFormHistory } from "../../../../../hooks/use-form-history";
 import { useFieldOperations } from "../../../../../hooks/use-field-operations";
+import { useFormsControllerGetFieldRegistry } from "@/app/api";
+import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FormField } from "../../../../../components/docs/form-editor/field-box";
 
 // Sample
 const INITIAL_FIELDS: FormField[] = [
-  { field: "signature", page: 1, x: 72.3, y: 9.7, w: 466, h: 60 },
+  { field: "signature", label: "Sherwin's Signature", page: 1, x: 72.3, y: 9.7, w: 466, h: 60 },
 ];
 
 const PdfJsEditorPage = () => {
+  const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
+  const registry = fieldRegistryData?.fields ?? [];
+
   const [selectedFieldId, setSelectedFieldId] = useState<string>("");
   const [fields, setFields] = useState<FormField[]>(INITIAL_FIELDS);
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
@@ -86,10 +91,15 @@ const PdfJsEditorPage = () => {
    */
   const handleFieldCreate = useCallback(
     (newField: FormField) => {
-      fieldOps.create(newField);
+      // Look up the label from registry
+      const fieldWithLabel: FormField = {
+        ...newField,
+        label: getFieldLabel(newField.field, registry),
+      };
+      fieldOps.create(fieldWithLabel);
       setIsPlacingField(false);
     },
-    [fieldOps]
+    [fieldOps, registry]
   );
 
   /**
@@ -143,6 +153,7 @@ const PdfJsEditorPage = () => {
               onRedo={redo}
               canUndo={canUndo}
               canRedo={canRedo}
+              registry={registry}
             />
           </Suspense>
         </div>
@@ -161,6 +172,7 @@ const PdfJsEditorPage = () => {
             onStartPlacing={() => setIsPlacingField(true)}
             onCancelPlacing={() => setIsPlacingField(false)}
             onCoordinatesChange={handleCoordinatesChange}
+            registry={registry}
           />
         </div>
       </div>

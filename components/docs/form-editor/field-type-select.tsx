@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:53:41
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 13:44:34
+ * @ Modified time: 2025-12-17 14:21:26
  * @ Description: Component for field type selection
  */
 
@@ -14,22 +14,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
+import type { FieldRegistryEntry } from "@/app/api";
 
 type FieldTypeSelectProps = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  registry?: FieldRegistryEntry[];
 };
 
-export const FieldTypeSelect = ({ value, onChange, disabled }: FieldTypeSelectProps) => {
-  const { registry } = useFieldTemplateContext();
-
+export const FieldTypeSelect = ({
+  value,
+  onChange,
+  disabled,
+  registry = [],
+}: FieldTypeSelectProps) => {
   const fieldTypes = useMemo(
     () =>
       registry.map((field) => ({
         value: field.id,
-        name: field.name,
         label: field.label,
       })),
     [registry]

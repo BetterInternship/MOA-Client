@@ -14,11 +14,19 @@ import { createContext, useContext } from "react";
 // Context interface
 export interface IFieldTemplateContext {
   registry: FieldRegistryEntry[];
+  getFieldLabel: (fieldId: string) => string;
 }
 
 // Context defs
 const FieldTemplateContext = createContext<IFieldTemplateContext>({} as IFieldTemplateContext);
 export const useFieldTemplateContext = () => useContext(FieldTemplateContext);
+
+/**
+ * Utility function to get field label by ID
+ */
+export const getFieldLabel = (fieldId: string, registry: FieldRegistryEntry[]): string => {
+  return registry.find((r) => r.id === fieldId)?.label || fieldId;
+};
 
 /**
  * Gives access to data bank of field templates
@@ -28,8 +36,11 @@ export const useFieldTemplateContext = () => useContext(FieldTemplateContext);
  */
 export const FieldTemplateContextProvider = ({ children }: { children: React.ReactNode }) => {
   const { data: registry } = useFormsControllerGetFieldRegistry();
+  const registryArray = registry?.fields ?? [];
+
   const fieldTemplateContext: IFieldTemplateContext = {
-    registry: registry?.fields ?? [],
+    registry: registryArray,
+    getFieldLabel: (fieldId: string) => getFieldLabel(fieldId, registryArray),
   };
 
   return (

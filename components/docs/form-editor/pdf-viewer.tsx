@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 00:14:31
+ * @ Modified time: 2025-12-17 14:18:44
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -18,6 +18,8 @@ import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { RotateCcw, RotateCw, ZoomIn, ZoomOut, FileUp, Maximize2 } from "lucide-react";
 import { FieldBox, type FormField } from "./field-box";
 import { GhostField } from "./ghost-field";
+import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
+import type { FieldRegistryEntry } from "@/app/api";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -55,6 +57,7 @@ type PdfViewerProps = {
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  registry?: FieldRegistryEntry[];
 };
 
 export function PdfViewer({
@@ -79,6 +82,7 @@ export function PdfViewer({
   onRedo,
   canUndo = false,
   canRedo = false,
+  registry = [],
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
   const [pendingUrl, setPendingUrl] = useState<string>(
@@ -297,6 +301,7 @@ export function PdfViewer({
                   hoverPointDuringPlacement={hoverPointDuringPlacement}
                   onHoverPlacement={setHoverPointDuringPlacement}
                   onPlaceField={onFieldCreate}
+                  registry={registry}
                 />
               ))}
             </div>
@@ -327,6 +332,7 @@ type PdfPageCanvasProps = {
   onHoverPlacement?: (loc: PointerLocation | null) => void;
   hoverPointDuringPlacement?: PointerLocation | null;
   onPlaceField?: (field: FormField) => void;
+  registry?: FieldRegistryEntry[];
 };
 
 const PdfPageCanvas = ({
@@ -349,6 +355,7 @@ const PdfPageCanvas = ({
   onHoverPlacement,
   onPlaceField,
   hoverPointDuringPlacement,
+  registry = [],
 }: PdfPageCanvasProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -696,13 +703,16 @@ const PdfPageCanvas = ({
             const pos = pdfToDisplay(hoverLoc.pdfX, hoverLoc.pdfY);
             if (!pos) return null;
 
+            // Look up the label from registry
+            const label = getFieldLabel(placementFieldType, registry);
+
             return (
               <GhostField
                 displayX={pos.displayX}
                 displayY={pos.displayY}
                 width={defaultSize.w * scale}
                 height={defaultSize.h * scale}
-                fieldType={placementFieldType}
+                label={label}
               />
             );
           })()}

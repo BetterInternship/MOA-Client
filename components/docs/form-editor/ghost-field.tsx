@@ -13,10 +13,10 @@ type GhostFieldProps = {
   displayY: number;
   width: number;
   height: number;
-  fieldType: string;
+  label: string;
 };
 
-export const GhostField = ({ displayX, displayY, width, height, fieldType }: GhostFieldProps) => {
+export const GhostField = ({ displayX, displayY, width, height, label }: GhostFieldProps) => {
   return (
     <div
       className="border-primary/50 bg-primary/10 pointer-events-none absolute border-2 border-dashed"
@@ -26,10 +26,10 @@ export const GhostField = ({ displayX, displayY, width, height, fieldType }: Gho
         width: `${width}px`,
         height: `${height}px`,
       }}
-      title={`Preview: ${fieldType}`}
+      title={`Preview: ${label}`}
     >
       <div className="text-muted-foreground px-1 py-0.5 text-xs font-semibold opacity-60">
-        {fieldType}
+        {label}
       </div>
     </div>
   );

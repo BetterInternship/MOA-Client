@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 export type FormField = {
   field: string;
+  label: string;
   page: number;
   x: number;
   y: number;
@@ -162,13 +163,13 @@ export const FieldBox = ({
       }}
       role="button"
       tabIndex={0}
-      title={field.field}
+      title={field.label}
       style={{
         cursor: isDragging ? "grabbing" : isResizing ? "grabbing" : isSelected ? "grab" : "pointer",
       }}
     >
       <div className="text-muted-foreground pointer-events-none px-1 py-0.5 text-xs font-semibold">
-        {field.field}
+        {field.label}
       </div>
 
       {/* Resize handles - only show when selected */}

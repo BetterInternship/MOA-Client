@@ -41,7 +41,7 @@ export const FieldListPanel = ({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-slate-700">{field.field}</div>
+                    <div className="text-xs font-semibold text-slate-700">{field.label}</div>
                     <div className="text-muted-foreground text-xs">
                       page {field.page} • ({field.x.toFixed(1)}, {field.y.toFixed(1)},{" "}
                       {field.w.toFixed(1)}, {field.h.toFixed(1)})
