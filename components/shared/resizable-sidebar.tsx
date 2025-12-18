@@ -1,12 +1,13 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 
 export interface SidebarMenuItem {
   id: string;
   label: string;
   icon: React.ReactNode;
-  description: string;
+  description?: string;
 }
 
 interface ResizableSidebarProps {
@@ -76,18 +77,25 @@ export const ResizableSidebar = ({
             <button
               key={item.id}
               onClick={() => onItemChange(item.id)}
-              className={`w-full rounded-lg px-3 py-2.5 text-left transition-all ${
+              className={`w-full rounded-[0.33em] px-3 py-2.5 text-left transition-all ${
                 activeItem === item.id
-                  ? "bg-blue-100 text-blue-900 shadow-sm"
+                  ? "bg-blue-100 shadow-xs"
                   : "text-slate-700 hover:bg-slate-200/50"
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className={activeItem === item.id ? "text-blue-600" : "text-slate-500"}>
+                <span className={activeItem === item.id ? "text-primary" : "text-slate-500"}>
                   {item.icon}
                 </span>
                 <div className="flex-1 overflow-hidden">
-                  <p className="truncate text-sm font-medium">{item.label}</p>
+                  <p
+                    className={cn(
+                      "truncate text-sm font-medium",
+                      activeItem === item.id && "font-semibold"
+                    )}
+                  >
+                    {item.label}
+                  </p>
                   <p className="truncate text-xs text-slate-500">{item.description}</p>
                 </div>
               </div>

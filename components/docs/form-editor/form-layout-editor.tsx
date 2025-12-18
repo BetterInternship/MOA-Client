@@ -48,31 +48,26 @@ const MENU_ITEMS: SidebarMenuItem[] = [
     id: "tester",
     label: "Form Tester",
     icon: <Zap className="h-5 w-5" />,
-    description: "Test form with live preview",
   },
   {
     id: "fields",
     label: "Field Order",
     icon: <ListOrdered className="h-5 w-5" />,
-    description: "Reorder form fields",
   },
   {
     id: "parties",
     label: "Parties",
     icon: <Users className="h-5 w-5" />,
-    description: "Manage form parties",
   },
   {
     id: "parameters",
     label: "Parameters",
     icon: <Settings className="h-5 w-5" />,
-    description: "Define form variables",
   },
   {
     id: "signatories",
     label: "Signatories",
     icon: <CheckCircle className="h-5 w-5" />,
-    description: "Manage signatories",
   },
 ];
 
