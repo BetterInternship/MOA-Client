@@ -14,10 +14,13 @@ import { Suspense } from "react";
 import { Loader } from "@/components/ui/loader";
 import { PdfViewer } from "../../../../../components/docs/form-editor/pdf-viewer";
 import { EditorSidebar } from "../../../../../components/docs/form-editor/editor-sidebar";
+import { FieldRegistrationModal } from "@/components/docs/form-editor/field-registration-modal";
 import { useFieldOperations } from "../../../../../hooks/use-field-operations";
+import { useFieldRegistration } from "../../../../../hooks/use-field-registration";
 import { useFormsControllerGetFieldRegistry } from "@/app/api";
 import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FormField } from "../../../../../components/docs/form-editor/field-box";
+import type { IFormMetadata } from "@betterinternship/core/forms";
 
 // Sample
 const INITIAL_FIELDS: FormField[] = [
@@ -33,8 +36,22 @@ const PdfJsEditorPage = () => {
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
   const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
 
+  // Registration state
+  const [registrationModal, setRegistrationModal] = useState<{
+    isOpen: boolean;
+    metadata: IFormMetadata | null;
+    errors: string[];
+  }>({
+    isOpen: false,
+    metadata: null,
+    errors: [],
+  });
+
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
+
+  // Field registration
+  const { registerFields } = useFieldRegistration("Love, Joy, Hope", "LJH Form");
 
   /**
    * Live field update during drag
@@ -82,11 +99,38 @@ const PdfJsEditorPage = () => {
     [selectedFieldId, fields]
   );
 
+  /**
+   * Handle field registration - molds fields to metadata and shows modal
+   */
+  const handleRegisterFields = useCallback(() => {
+    const result = registerFields(fields);
+    setRegistrationModal({
+      isOpen: true,
+      metadata: result.metadata,
+      errors: result.errors,
+    });
+  }, [fields, registerFields]);
+
+  /**
+   * Handle registration confirmation
+   */
+  const handleConfirmRegistration = useCallback(() => {
+    // TODO: Send metadata to backend API
+    console.log("Registering metadata:", registrationModal.metadata);
+    setRegistrationModal({ isOpen: false, metadata: null, errors: [] });
+  }, [registrationModal.metadata]);
+
   return (
     <div className="flex h-full flex-col gap-0 overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 border-b bg-white px-6 py-3">
+      <div className="flex items-center justify-between border-b bg-white px-6 py-3">
         <h1 className="text-lg leading-tight font-semibold">Love, Joy, Hope</h1>
+        <button
+          onClick={handleRegisterFields}
+          className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+        >
+          Register Fields
+        </button>
       </div>
 
       {/* Main content: Sidebar + Viewer */}
@@ -128,6 +172,15 @@ const PdfJsEditorPage = () => {
           />
         </div>
       </div>
+
+      {/* Registration Modal */}
+      <FieldRegistrationModal
+        isOpen={registrationModal.isOpen}
+        metadata={registrationModal.metadata}
+        errors={registrationModal.errors}
+        onClose={() => setRegistrationModal({ isOpen: false, metadata: null, errors: [] })}
+        onConfirm={handleConfirmRegistration}
+      />
     </div>
   );
 };

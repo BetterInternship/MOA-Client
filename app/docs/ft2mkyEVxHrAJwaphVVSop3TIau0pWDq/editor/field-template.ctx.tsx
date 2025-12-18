@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:23:23
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 13:44:20
+ * @ Modified time: 2025-12-18 15:09:27
  *
  * Allows us to access field information.
  * Seems like we'll be using this a lot in the editor.
