@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/docs/forms/input";
+import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 
 type Parameter = {
   id: string;

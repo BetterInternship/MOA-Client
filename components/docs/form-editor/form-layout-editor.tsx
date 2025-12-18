@@ -173,7 +173,7 @@ export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLay
           <div className="p-4">
             {/* Section Header */}
             <div className="mb-4 flex items-center gap-2">
-              <span className="text-blue-600">
+              <span className="text-primary">
                 {MENU_ITEMS.find((item) => item.id === activeSection)?.icon}
               </span>
               <h3 className="text-base font-semibold text-slate-900">
