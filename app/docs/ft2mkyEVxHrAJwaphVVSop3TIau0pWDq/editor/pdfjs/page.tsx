@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified time: 2025-12-18 15:34:20
- * @ Modified time: 2025-12-18 15:35:03
+ * @ Modified time: 2025-12-18 15:50:33
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -117,6 +117,7 @@ const PdfJsEditorPage = () => {
         allowBackdropClick: true,
         hasClose: true,
         closeOnEsc: true,
+        panelClassName: "!w-5xl",
       }
     );
   }, [fields, registerFields, openModal, closeModal]);
