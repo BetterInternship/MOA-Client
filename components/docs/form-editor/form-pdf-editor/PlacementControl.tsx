@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 20:52:53
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 20:04:26
+ * @ Modified time: 2025-12-19 00:15:51
  * @ Description: UI for field placement mode and type selection
  *                Handles the placement workflow with visual feedback
  */
@@ -12,9 +12,9 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { FieldTypeSelect } from "./field-type-select";
-import { CoordinateInputs } from "./coordinate-inputs";
-import { AlignmentInputs } from "./alignment-inputs";
+import { FieldTypeSelect } from "./FieldTypeSelect";
+import { CoordinateInputs } from "./CoordinatorInputs";
+import { AlignmentInputs } from "./AlignmentInputs";
 import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FieldRegistryEntry } from "@/app/api";
 import { Divider } from "@/components/ui/divider";

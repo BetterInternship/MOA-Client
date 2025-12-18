@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { EditableDynamicForm } from "./form-layout/editable-dynamic-form";
-import { PartiesPanel } from "./form-layout/parties-panel";
-import { ParametersPanel } from "./form-layout/parameters-panel";
-import { SignatoriesPanel } from "./form-layout/signatories-panel";
+import { EditableDynamicForm } from "./EditableDynamicForm";
+import { PartiesPanel } from "./PartiesPanel";
+import { ParametersPanel } from "./ParametersPanel";
+import { SignatoriesPanel } from "./SignatoriesPanel";
 import { ClientField } from "@betterinternship/core/forms";
-import { FormField } from "./field-box";
+import { FormField } from "../form-pdf-editor/FieldBox";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
 import { FileText, Users, Settings, CheckCircle } from "lucide-react";
 

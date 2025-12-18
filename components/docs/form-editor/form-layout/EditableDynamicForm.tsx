@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { FieldRenderer } from "@/components/docs/forms/FieldRenderer";
-import { GripVertical } from "lucide-react";
 import { ClientField } from "@betterinternship/core/forms";
+import { GripVertical } from "lucide-react";
+import { FieldRenderer } from "@/components/docs/forms/FieldRenderer";
 
 interface EditableDynamicFormProps {
   formName: string;
@@ -132,7 +132,6 @@ export const EditableDynamicForm = ({
         <div className="pt-2 pb-1">
           <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
         </div>
-        
 
         <div className="space-y-3">
           {reducedFields.map((field, idx) => {

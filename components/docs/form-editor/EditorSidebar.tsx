@@ -8,9 +8,9 @@
 
 "use client";
 
-import { FieldListPanel } from "./field-list-panel";
-import { PlacementControl } from "./placement-control";
-import type { FormField } from "./pdf-viewer";
+import { FieldListPanel } from "./form-pdf-editor/FieldListPanel";
+import { PlacementControl } from "./form-pdf-editor/PlacementControl";
+import type { FormField } from "./form-pdf-editor/PdfViewer";
 import type { FieldRegistryEntry } from "@/app/api";
 
 type EditorSidebarProps = {

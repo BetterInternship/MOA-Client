@@ -1,6 +1,6 @@
 "use client";
 
-import { FormField } from "./pdf-viewer";
+import { FormField } from "./PdfViewer";
 import { Button } from "@/components/ui/button";
 import { Trash2, Copy } from "lucide-react";
 

@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback } from "react";
-import type { FormField } from "@/components/docs/form-editor/field-box";
+import type { FormField } from "@/components/docs/form-editor/form-pdf-editor/FieldBox";
 
 type HistoryState = {
   history: FormField[][];

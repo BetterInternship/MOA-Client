@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 16:26:59
+ * @ Modified time: 2025-12-19 00:15:34
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -16,8 +16,8 @@ import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
-import { FieldBox, type FormField } from "./field-box";
-import { GhostField } from "./ghost-field";
+import { FieldBox, type FormField } from "./FieldBox";
+import { GhostField } from "./GhostField";
 import {
   getFieldLabel,
   getFieldName,
