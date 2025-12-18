@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified time: 2025-12-18 15:34:20
- * @ Modified time: 2025-12-18 15:50:33
+ * @ Modified time: 2025-12-18 15:59:28
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -21,6 +21,7 @@ import { useFieldRegistration } from "../../../../../hooks/use-field-registratio
 import { useFormsControllerGetFieldRegistry } from "@/app/api";
 import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FormField } from "../../../../../components/docs/form-editor/field-box";
+import { Button } from "@/components/ui/button";
 
 // Sample
 const INITIAL_FIELDS: FormField[] = [
@@ -127,12 +128,7 @@ const PdfJsEditorPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-3">
         <h1 className="text-lg leading-tight font-semibold">Love, Joy, Hope</h1>
-        <button
-          onClick={handleRegisterFields}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-        >
-          Register Fields
-        </button>
+        <Button onClick={handleRegisterFields}>Register Fields</Button>
       </div>
 
       {/* Main content: Sidebar + Viewer */}
