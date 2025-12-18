@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { FormTester } from "./form-layout/form-tester";
-import { FieldOrderingPanel } from "./form-layout/field-ordering-panel";
+import { EditableDynamicForm } from "./form-layout/editable-dynamic-form";
 import { PartiesPanel } from "./form-layout/parties-panel";
 import { ParametersPanel } from "./form-layout/parameters-panel";
 import { SignatoriesPanel } from "./form-layout/signatories-panel";
-import { ResizableSidebar, type SidebarMenuItem } from "@/components/shared/resizable-sidebar";
-import { ListOrdered, Users, Settings, CheckCircle, Zap } from "lucide-react";
-import type { FormField } from "./field-box";
+import { ClientField } from "@betterinternship/core/forms";
+import { FormField } from "./field-box";
+import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
+import { FileText, Users, Settings, CheckCircle } from "lucide-react";
 
 interface Party {
   id: string;
@@ -47,12 +47,7 @@ const MENU_ITEMS: SidebarMenuItem[] = [
   {
     id: "tester",
     label: "Form Tester",
-    icon: <Zap className="h-5 w-5" />,
-  },
-  {
-    id: "fields",
-    label: "Field Order",
-    icon: <ListOrdered className="h-5 w-5" />,
+    icon: <FileText className="h-5 w-5" />,
   },
   {
     id: "parties",
@@ -71,8 +66,30 @@ const MENU_ITEMS: SidebarMenuItem[] = [
   },
 ];
 
+/**
+ * Convert FormField (PDF layout data) to ClientField (form structure data)
+ * Creates a basic ClientField structure for rendering with FieldRenderer
+ */
+const formFieldToClientField = (formField: FormField, party: string): ClientField<[]> => {
+  return {
+    field: formField.field,
+    label: formField.label,
+    type: "text",
+    section: "entity",
+    party: party as "entity" | "student-guardian" | "university" | "student",
+    source: "manual",
+    placeholder: `Enter ${formField.label.toLowerCase()}`,
+    required: false,
+    validation: [],
+  } as ClientField<[]>;
+};
+
 export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLayoutEditorProps) => {
   const [activeSection, setActiveSection] = useState<SectionType>("tester");
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [activeParty, setActiveParty] = useState<
+    "entity" | "student-guardian" | "university" | "student"
+  >("entity");
   const [parties, setParties] = useState<Party[]>([
     {
       id: "1",
@@ -128,17 +145,40 @@ export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLay
 
   const [orderedFields, setOrderedFields] = useState<FormField[]>(fields);
 
-  const handleFieldsReorder = (newFields: FormField[]) => {
-    setOrderedFields(newFields);
-    onFieldsReorder?.(newFields);
+  // Convert FormField array to ClientField array for EditableDynamicForm
+  const clientFields: ClientField<[]>[] = orderedFields.map((field) =>
+    formFieldToClientField(field, activeParty)
+  );
+
+  const handleFieldsReorder = (newFields: ClientField<[]>[]) => {
+    // Convert back to FormField
+    const reorderedFormFields = orderedFields.map((field) => {
+      const index = newFields.findIndex((cf) => cf.field === field.field);
+      return field;
+    });
+    setOrderedFields(reorderedFormFields);
+    onFieldsReorder?.(reorderedFormFields);
   };
 
   const renderContent = () => {
     switch (activeSection) {
       case "tester":
-        return <FormTester fields={orderedFields} parties={parties} parameters={parameters} />;
-      case "fields":
-        return <FieldOrderingPanel fields={orderedFields} onFieldsReorder={handleFieldsReorder} />;
+        return (
+          <EditableDynamicForm
+            formName={formLabel}
+            party={activeParty}
+            fields={clientFields}
+            values={formValues}
+            setValues={setFormValues}
+            onChange={(key, value) => {
+              setFormValues((prev) => ({
+                ...prev,
+                [key]: value,
+              }));
+            }}
+            onFieldsReorder={handleFieldsReorder}
+          />
+        );
       case "parties":
         return <PartiesPanel parties={parties} onPartiesChange={setParties} />;
       case "parameters":
@@ -157,7 +197,7 @@ export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLay
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full w-full flex-col gap-0 overflow-hidden">
       {/* Main Content with Sidebar */}
       <div className="flex flex-1 gap-0 overflow-hidden">
         {/* Resizable Sidebar */}
@@ -170,17 +210,7 @@ export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLay
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto bg-white">
-          <div className="p-4">
-            {/* Section Header */}
-            <div className="mb-4 flex items-center gap-2">
-              <span className="text-primary">
-                {MENU_ITEMS.find((item) => item.id === activeSection)?.icon}
-              </span>
-              <h3 className="text-base font-semibold text-slate-900">
-                {MENU_ITEMS.find((item) => item.id === activeSection)?.label}
-              </h3>
-            </div>
-
+          <div className="p-4 pb-12">
             {/* Section Content */}
             <div className="space-y-4">{renderContent()}</div>
           </div>
