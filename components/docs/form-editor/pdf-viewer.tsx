@@ -320,8 +320,14 @@ const PdfPageCanvas = ({
   const viewportRef = useRef<PageViewport | null>(null);
   const [rendering, setRendering] = useState<boolean>(false);
   const [localHover, setLocalHover] = useState<PointerLocation | null>(null);
+  const [forceRender, setForceRender] = useState<number>(0);
 
   useEffect(() => registerPageRef(pageNumber, containerRef.current), [pageNumber, registerPageRef]);
+
+  // Force re-render of field positions when scale changes
+  useEffect(() => {
+    setForceRender((prev) => prev + 1);
+  }, [scale]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -606,7 +612,7 @@ const PdfPageCanvas = ({
         )}
 
         {/* Render form fields */}
-        <div className="pointer-events-none absolute inset-0">
+        <div className="pointer-events-none absolute inset-0" key={forceRender}>
           {fields.map((field, originalIdx) => {
             if (field.page !== pageNumber) return null;
 
