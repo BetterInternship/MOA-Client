@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 19:12:07
+ * @ Modified time: 2025-12-18 22:01:25
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -15,6 +15,7 @@ import { Loader } from "@/components/ui/loader";
 import { useModal } from "@/app/providers/modal-provider";
 import { PdfViewer } from "../../../../../components/docs/form-editor/pdf-viewer";
 import { EditorSidebar } from "../../../../../components/docs/form-editor/editor-sidebar";
+import { FormLayoutEditor } from "../../../../../components/docs/form-editor/form-layout-editor";
 import { FieldRegistrationModalContent } from "@/components/docs/form-editor/field-registration-modal";
 import { useFieldOperations } from "../../../../../hooks/use-field-operations";
 import { useFieldRegistration } from "../../../../../hooks/use-field-registration";
@@ -22,7 +23,7 @@ import { useFormsControllerGetFieldRegistry } from "@/app/api";
 import { getFieldLabelByName } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FormField } from "../../../../../components/docs/form-editor/field-box";
 import { Button } from "@/components/ui/button";
-import { Edit2, Check, X } from "lucide-react";
+import { Edit2, Check, X, Layout } from "lucide-react";
 
 // Sample
 const INITIAL_FIELDS: FormField[] = [
@@ -46,6 +47,7 @@ const PdfJsEditorPage = () => {
   const [formLabel, setFormLabel] = useState<string>("Love, Joy, Hope");
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
+  const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
@@ -203,53 +205,88 @@ const PdfJsEditorPage = () => {
             </button>
           </div>
         )}
-        <Button onClick={handleRegisterForm}>Register Form</Button>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActiveView(activeView === "pdf" ? "layout" : "pdf")}
+            className="flex items-center gap-2"
+          >
+            {activeView === "pdf" ? (
+              <>
+                <Layout className="h-4 w-4" />
+                Switch to Form Editor
+              </>
+            ) : (
+              <>
+                <Edit2 className="h-4 w-4" />
+                Switch to PDF Editor
+              </>
+            )}
+          </Button>
+          <Button onClick={handleRegisterForm}>Register Form</Button>
+        </div>
       </div>
 
-      {/* Main content: Sidebar + Viewer */}
-      <div className="flex flex-1 gap-0 overflow-hidden">
-        {/* PDF Viewer (left, main) */}
-        <div className="flex-1 overflow-hidden">
-          <Suspense fallback={<Loader>Loading PDF…</Loader>}>
-            <PdfViewer
-              fields={fields}
-              selectedFieldId={selectedFieldId}
-              onFieldSelect={setSelectedFieldId}
-              onFieldUpdate={handleFieldUpdate}
-              onFieldCreate={handleFieldCreate}
-              isPlacingField={isPlacingField}
-              placementFieldType={placementFieldType}
-              onPlacementFieldTypeChange={setPlacementFieldType}
-              onStartPlacing={() => setIsPlacingField(true)}
-              onCancelPlacing={() => setIsPlacingField(false)}
-              registry={registry}
-            />
-          </Suspense>
-        </div>
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden">
+        {activeView === "pdf" ? (
+          // PDF Editor View
+          <div className="flex flex-1 gap-0 overflow-hidden">
+            {/* PDF Viewer (left, main) */}
+            <div className="flex-1 overflow-hidden">
+              <Suspense fallback={<Loader>Loading PDF…</Loader>}>
+                <PdfViewer
+                  fields={fields}
+                  selectedFieldId={selectedFieldId}
+                  onFieldSelect={setSelectedFieldId}
+                  onFieldUpdate={handleFieldUpdate}
+                  onFieldCreate={handleFieldCreate}
+                  isPlacingField={isPlacingField}
+                  placementFieldType={placementFieldType}
+                  onPlacementFieldTypeChange={setPlacementFieldType}
+                  onStartPlacing={() => setIsPlacingField(true)}
+                  onCancelPlacing={() => setIsPlacingField(false)}
+                  registry={registry}
+                />
+              </Suspense>
+            </div>
 
-        {/* Sidebar (right) */}
-        <div className="w-72 flex-shrink-0 overflow-y-auto border-l bg-white">
-          <EditorSidebar
+            {/* Sidebar (right) */}
+            <div className="w-72 flex-shrink-0 overflow-y-auto border-l bg-white">
+              <EditorSidebar
+                fields={fields}
+                selectedFieldId={selectedFieldId}
+                onFieldSelect={setSelectedFieldId}
+                onFieldDelete={fieldOps.delete}
+                onFieldDuplicate={fieldOps.duplicate}
+                isPlacing={isPlacingField}
+                placementFieldType={placementFieldType}
+                onFieldTypeChange={setPlacementFieldType}
+                onStartPlacing={() => setIsPlacingField(true)}
+                onCancelPlacing={() => setIsPlacingField(false)}
+                onCoordinatesChange={handleCoordinatesChange}
+                placementAlign_h={placementAlign_h}
+                placementAlign_v={placementAlign_v}
+                onAlignmentChange={(alignment) => {
+                  setPlacementAlign_h(alignment.align_h);
+                  setPlacementAlign_v(alignment.align_v);
+                }}
+                registry={registry}
+              />
+            </div>
+          </div>
+        ) : (
+          // Form Layout Editor View
+          <FormLayoutEditor
             fields={fields}
-            selectedFieldId={selectedFieldId}
-            onFieldSelect={setSelectedFieldId}
-            onFieldDelete={fieldOps.delete}
-            onFieldDuplicate={fieldOps.duplicate}
-            isPlacing={isPlacingField}
-            placementFieldType={placementFieldType}
-            onFieldTypeChange={setPlacementFieldType}
-            onStartPlacing={() => setIsPlacingField(true)}
-            onCancelPlacing={() => setIsPlacingField(false)}
-            onCoordinatesChange={handleCoordinatesChange}
-            placementAlign_h={placementAlign_h}
-            placementAlign_v={placementAlign_v}
-            onAlignmentChange={(alignment) => {
-              setPlacementAlign_h(alignment.align_h);
-              setPlacementAlign_v(alignment.align_v);
+            formLabel={formLabel}
+            onFieldsReorder={(reorderedFields) => {
+              setFields(reorderedFields);
             }}
-            registry={registry}
           />
-        </div>
+        )}
       </div>
     </div>
   );
