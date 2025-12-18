@@ -158,12 +158,6 @@ export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLay
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b bg-white px-4 py-3">
-        <h2 className="text-lg font-semibold text-slate-900">{formLabel}</h2>
-        <p className="mt-1 text-xs text-slate-500">Form Layout Configuration</p>
-      </div>
-
       {/* Main Content with Sidebar */}
       <div className="flex flex-1 gap-0 overflow-hidden">
         {/* Resizable Sidebar */}
