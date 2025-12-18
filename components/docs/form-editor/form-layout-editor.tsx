@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Settings, PenTool } from "lucide-react";
 import { FormTester } from "./form-layout/form-tester";
 import { FieldOrderingPanel } from "./form-layout/field-ordering-panel";
 import { PartiesPanel } from "./form-layout/parties-panel";
 import { ParametersPanel } from "./form-layout/parameters-panel";
 import { SignatoriesPanel } from "./form-layout/signatories-panel";
+import { ResizableSidebar, type SidebarMenuItem } from "@/components/shared/resizable-sidebar";
+import { ListOrdered, Users, Settings, CheckCircle, Zap } from "lucide-react";
 import type { FormField } from "./field-box";
 
 interface Party {
@@ -42,7 +41,43 @@ interface FormLayoutEditorProps {
   onFieldsReorder?: (reorderedFields: FormField[]) => void;
 }
 
+type SectionType = "tester" | "fields" | "parties" | "parameters" | "signatories";
+
+const MENU_ITEMS: SidebarMenuItem[] = [
+  {
+    id: "tester",
+    label: "Form Tester",
+    icon: <Zap className="h-5 w-5" />,
+    description: "Test form with live preview",
+  },
+  {
+    id: "fields",
+    label: "Field Order",
+    icon: <ListOrdered className="h-5 w-5" />,
+    description: "Reorder form fields",
+  },
+  {
+    id: "parties",
+    label: "Parties",
+    icon: <Users className="h-5 w-5" />,
+    description: "Manage form parties",
+  },
+  {
+    id: "parameters",
+    label: "Parameters",
+    icon: <Settings className="h-5 w-5" />,
+    description: "Define form variables",
+  },
+  {
+    id: "signatories",
+    label: "Signatories",
+    icon: <CheckCircle className="h-5 w-5" />,
+    description: "Manage signatories",
+  },
+];
+
 export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLayoutEditorProps) => {
+  const [activeSection, setActiveSection] = useState<SectionType>("tester");
   const [parties, setParties] = useState<Party[]>([
     {
       id: "1",
@@ -103,86 +138,64 @@ export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLay
     onFieldsReorder?.(newFields);
   };
 
+  const renderContent = () => {
+    switch (activeSection) {
+      case "tester":
+        return <FormTester fields={orderedFields} parties={parties} parameters={parameters} />;
+      case "fields":
+        return <FieldOrderingPanel fields={orderedFields} onFieldsReorder={handleFieldsReorder} />;
+      case "parties":
+        return <PartiesPanel parties={parties} onPartiesChange={setParties} />;
+      case "parameters":
+        return <ParametersPanel parameters={parameters} onParametersChange={setParameters} />;
+      case "signatories":
+        return (
+          <SignatoriesPanel
+            signatories={signatories}
+            parties={parties}
+            onSignatoriesChange={setSignatories}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 border-b bg-white px-4 py-3">
-        <h2 className="text-lg font-semibold text-slate-900">
-          {formLabel} - Form Layout Configuration
-        </h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Configure parties, parameters, signatories, and field order
-        </p>
+        <h2 className="text-lg font-semibold text-slate-900">{formLabel}</h2>
+        <p className="mt-1 text-xs text-slate-500">Form Layout Configuration</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex-1 overflow-hidden">
-        <Tabs defaultValue="tester" className="flex h-full flex-col">
-          <TabsList className="w-full justify-start gap-1 rounded-none border-b bg-white px-4 py-2">
-            <TabsTrigger
-              value="tester"
-              className="data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
-            >
-              <PenTool className="mr-2 h-4 w-4" />
-              Form Tester
-            </TabsTrigger>
-            <TabsTrigger
-              value="fields"
-              className="data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
-            >
-              <PenTool className="mr-2 h-4 w-4" />
-              Field Order
-            </TabsTrigger>
-            <TabsTrigger
-              value="parties"
-              className="data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
-            >
-              <Users className="mr-2 h-4 w-4" />
-              Parties
-            </TabsTrigger>
-            <TabsTrigger
-              value="parameters"
-              className="data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              Parameters
-            </TabsTrigger>
-            <TabsTrigger
-              value="signatories"
-              className="data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
-            >
-              <PenTool className="mr-2 h-4 w-4" />
-              Signatories
-            </TabsTrigger>
-          </TabsList>
+      {/* Main Content with Sidebar */}
+      <div className="flex flex-1 gap-0 overflow-hidden">
+        {/* Resizable Sidebar */}
+        <ResizableSidebar
+          items={MENU_ITEMS}
+          activeItem={activeSection}
+          onItemChange={(id) => setActiveSection(id as SectionType)}
+          isResizable={false}
+        />
 
-          {/* Tab Contents */}
-          <div className="flex-1 overflow-y-auto">
-            <TabsContent value="tester" className="space-y-4 p-4">
-              <FormTester fields={orderedFields} parties={parties} parameters={parameters} />
-            </TabsContent>
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto bg-white">
+          <div className="p-4">
+            {/* Section Header */}
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-blue-600">
+                {MENU_ITEMS.find((item) => item.id === activeSection)?.icon}
+              </span>
+              <h3 className="text-base font-semibold text-slate-900">
+                {MENU_ITEMS.find((item) => item.id === activeSection)?.label}
+              </h3>
+            </div>
 
-            <TabsContent value="fields" className="p-4">
-              <FieldOrderingPanel fields={orderedFields} onFieldsReorder={handleFieldsReorder} />
-            </TabsContent>
-
-            <TabsContent value="parties" className="p-4">
-              <PartiesPanel parties={parties} onPartiesChange={setParties} />
-            </TabsContent>
-
-            <TabsContent value="parameters" className="p-4">
-              <ParametersPanel parameters={parameters} onParametersChange={setParameters} />
-            </TabsContent>
-
-            <TabsContent value="signatories" className="p-4">
-              <SignatoriesPanel
-                signatories={signatories}
-                parties={parties}
-                onSignatoriesChange={setSignatories}
-              />
-            </TabsContent>
+            {/* Section Content */}
+            <div className="space-y-4">{renderContent()}</div>
           </div>
-        </Tabs>
+        </div>
       </div>
     </div>
   );
