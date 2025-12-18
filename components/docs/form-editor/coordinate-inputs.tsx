@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:53:46
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 00:16:44
+ * @ Modified time: 2025-12-18 20:07:20
  * @ Description: Reusable coordinate input component
  *                Handles X, Y, Width, Height editing with validation
  */
@@ -31,8 +31,8 @@ const CoordinateField = ({
   onChange: (newValue: number) => void;
   disabled?: boolean;
 }) => (
-  <div className="flex flex-col gap-1">
-    <Label className="text-xs font-medium text-slate-600">{label}</Label>
+  <div className="flex items-center gap-2">
+    <Label className="w-10 text-xs font-medium text-slate-600">{label}</Label>
     <Input
       type="number"
       value={Math.round(value * 10) / 10}
@@ -40,7 +40,7 @@ const CoordinateField = ({
         const newVal = parseFloat(e.target.value);
         if (!isNaN(newVal)) onChange(newVal);
       }}
-      className="h-8 text-xs"
+      className="h-7 flex-1 text-xs"
       disabled={disabled}
       step="0.1"
     />
