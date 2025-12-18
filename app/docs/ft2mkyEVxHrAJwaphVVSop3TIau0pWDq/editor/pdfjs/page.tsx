@@ -1,8 +1,8 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified by: Your name
- * @ Modified time: 2025-12-17 15:00:16
+ * @ Modified time: 2025-12-18 15:34:20
+ * @ Modified time: 2025-12-18 15:35:03
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -12,15 +12,15 @@
 import { useState, useCallback } from "react";
 import { Suspense } from "react";
 import { Loader } from "@/components/ui/loader";
+import { useModal } from "@/app/providers/modal-provider";
 import { PdfViewer } from "../../../../../components/docs/form-editor/pdf-viewer";
 import { EditorSidebar } from "../../../../../components/docs/form-editor/editor-sidebar";
-import { FieldRegistrationModal } from "@/components/docs/form-editor/field-registration-modal";
+import { FieldRegistrationModalContent } from "@/components/docs/form-editor/field-registration-modal";
 import { useFieldOperations } from "../../../../../hooks/use-field-operations";
 import { useFieldRegistration } from "../../../../../hooks/use-field-registration";
 import { useFormsControllerGetFieldRegistry } from "@/app/api";
 import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FormField } from "../../../../../components/docs/form-editor/field-box";
-import type { IFormMetadata } from "@betterinternship/core/forms";
 
 // Sample
 const INITIAL_FIELDS: FormField[] = [
@@ -30,22 +30,12 @@ const INITIAL_FIELDS: FormField[] = [
 const PdfJsEditorPage = () => {
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
   const registry = fieldRegistryData?.fields ?? [];
+  const { openModal, closeModal } = useModal();
 
   const [selectedFieldId, setSelectedFieldId] = useState<string>("");
   const [fields, setFields] = useState<FormField[]>(INITIAL_FIELDS);
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
   const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
-
-  // Registration state
-  const [registrationModal, setRegistrationModal] = useState<{
-    isOpen: boolean;
-    metadata: IFormMetadata | null;
-    errors: string[];
-  }>({
-    isOpen: false,
-    metadata: null,
-    errors: [],
-  });
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
@@ -100,25 +90,36 @@ const PdfJsEditorPage = () => {
   );
 
   /**
-   * Handle field registration - molds fields to metadata and shows modal
+   * Handle field registration - molds fields to metadata and opens global modal
    */
   const handleRegisterFields = useCallback(() => {
     const result = registerFields(fields);
-    setRegistrationModal({
-      isOpen: true,
-      metadata: result.metadata,
-      errors: result.errors,
-    });
-  }, [fields, registerFields]);
 
-  /**
-   * Handle registration confirmation
-   */
-  const handleConfirmRegistration = useCallback(() => {
-    // TODO: Send metadata to backend API
-    console.log("Registering metadata:", registrationModal.metadata);
-    setRegistrationModal({ isOpen: false, metadata: null, errors: [] });
-  }, [registrationModal.metadata]);
+    // Open modal using global modal provider
+    openModal(
+      "field-registration-modal",
+      <FieldRegistrationModalContent
+        metadata={result.metadata}
+        errors={result.errors}
+        onClose={() => closeModal("field-registration-modal")}
+        onConfirm={(editedMetadata) => {
+          console.log("Registering metadata:", editedMetadata);
+          // TODO: Send metadata to backend API
+          closeModal("field-registration-modal");
+        }}
+        onFieldsUpdate={(updatedFields) => {
+          // Update fields in real-time as JSON is edited
+          setFields(updatedFields);
+        }}
+      />,
+      {
+        title: "Field Registration",
+        allowBackdropClick: true,
+        hasClose: true,
+        closeOnEsc: true,
+      }
+    );
+  }, [fields, registerFields, openModal, closeModal]);
 
   return (
     <div className="flex h-full flex-col gap-0 overflow-hidden">
@@ -172,15 +173,6 @@ const PdfJsEditorPage = () => {
           />
         </div>
       </div>
-
-      {/* Registration Modal */}
-      <FieldRegistrationModal
-        isOpen={registrationModal.isOpen}
-        metadata={registrationModal.metadata}
-        errors={registrationModal.errors}
-        onClose={() => setRegistrationModal({ isOpen: false, metadata: null, errors: [] })}
-        onConfirm={handleConfirmRegistration}
-      />
     </div>
   );
 };
