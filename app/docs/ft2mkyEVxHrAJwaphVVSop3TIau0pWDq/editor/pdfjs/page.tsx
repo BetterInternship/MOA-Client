@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 18:41:41
+ * @ Modified time: 2025-12-18 19:12:07
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -41,6 +41,8 @@ const PdfJsEditorPage = () => {
   const [fields, setFields] = useState<FormField[]>(INITIAL_FIELDS);
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
   const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
+  const [placementAlign_h, setPlacementAlign_h] = useState<"left" | "center" | "right">("center");
+  const [placementAlign_v, setPlacementAlign_v] = useState<"top" | "middle" | "bottom">("middle");
   const [formLabel, setFormLabel] = useState<string>("Love, Joy, Hope");
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
@@ -74,11 +76,13 @@ const PdfJsEditorPage = () => {
       const fieldWithLabel: FormField = {
         ...newField,
         label: getFieldLabelByName(newField.field, registry),
+        align_h: placementAlign_h,
+        align_v: placementAlign_v,
       };
       fieldOps.create(fieldWithLabel);
       setIsPlacingField(false);
     },
-    [fieldOps, registry]
+    [fieldOps, registry, placementAlign_h, placementAlign_v]
   );
 
   /**
@@ -120,7 +124,7 @@ const PdfJsEditorPage = () => {
   /**
    * Handle field registration - molds fields to metadata and opens global modal
    */
-  const handleRegisterFields = useCallback(() => {
+  const handleRegisterForm = useCallback(() => {
     const result = registerFields(fields);
 
     openModal(
@@ -199,7 +203,7 @@ const PdfJsEditorPage = () => {
             </button>
           </div>
         )}
-        <Button onClick={handleRegisterFields}>Register Fields</Button>
+        <Button onClick={handleRegisterForm}>Register Form</Button>
       </div>
 
       {/* Main content: Sidebar + Viewer */}
@@ -237,6 +241,12 @@ const PdfJsEditorPage = () => {
             onStartPlacing={() => setIsPlacingField(true)}
             onCancelPlacing={() => setIsPlacingField(false)}
             onCoordinatesChange={handleCoordinatesChange}
+            placementAlign_h={placementAlign_h}
+            placementAlign_v={placementAlign_v}
+            onAlignmentChange={(alignment) => {
+              setPlacementAlign_h(alignment.align_h);
+              setPlacementAlign_v(alignment.align_v);
+            }}
             registry={registry}
           />
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
 
 export type FormField = {
   field: string;
@@ -11,6 +10,8 @@ export type FormField = {
   y: number;
   w: number;
   h: number;
+  align_h?: "left" | "center" | "right";
+  align_v?: "top" | "middle" | "bottom";
 };
 
 export type FieldBoxProps = {

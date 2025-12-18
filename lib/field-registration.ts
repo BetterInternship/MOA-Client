@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-18
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 15:14:10
+ * @ Modified time: 2025-12-18 19:12:22
 
 /**
  * Convert editor FormField to IFormField (metadata schema format)
@@ -18,9 +18,9 @@ export const moldFieldToMetadata = (editorField: FormField): IFormField => {
     y: editorField.y,
     w: editorField.w,
     h: editorField.h,
-    // Default alignment values
-    align_h: "center" as const,
-    align_v: "bottom" as const,
+    // Use alignment from field, with defaults
+    align_h: editorField.align_h ?? ("center" as const),
+    align_v: editorField.align_v ?? ("middle" as const),
     // Optional fields - can be populated later
     validator: "",
     prefiller: "",
