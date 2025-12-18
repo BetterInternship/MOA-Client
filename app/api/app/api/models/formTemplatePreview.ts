@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export type FormsControllerGetPendingParams = {
-  pendingFormId: string;
-};
+export interface FormTemplatePreview {
+  formDocument: string;
+  formVersion: number;
+  formName: string;
+  formLabel: string;
+}

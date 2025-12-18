@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified time: 2025-12-18 15:34:20
- * @ Modified time: 2025-12-18 15:59:28
+ * @ Modified time: 2025-12-18 16:09:24
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -30,7 +30,10 @@ const INITIAL_FIELDS: FormField[] = [
 
 const PdfJsEditorPage = () => {
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
+  console.log("Field Registry Data", fieldRegistryData);
   const registry = fieldRegistryData?.fields ?? [];
+  console.log("Registry", registry);
+
   const { openModal, closeModal } = useModal();
 
   const [selectedFieldId, setSelectedFieldId] = useState<string>("");
@@ -96,7 +99,6 @@ const PdfJsEditorPage = () => {
   const handleRegisterFields = useCallback(() => {
     const result = registerFields(fields);
 
-    // Open modal using global modal provider
     openModal(
       "field-registration-modal",
       <FieldRegistrationModalContent

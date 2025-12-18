@@ -1261,6 +1261,31 @@
         "tags": ["Forms"]
       }
     },
+    "/api/forms/form-templates": {
+      "get": {
+        "operationId": "FormsController_getFormGroupTemplates",
+        "parameters": [
+          { "name": "formGroupId", "required": true, "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FormTemplatesResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Forms"]
+      }
+    },
     "/api/forms/form-metadata": {
       "get": {
         "operationId": "FormsController_getRegistryFormMetadata",
@@ -1497,7 +1522,7 @@
         "operationId": "FormsController_getPending",
         "parameters": [
           {
-            "name": "pendingDocumentId",
+            "name": "pendingFormId",
             "required": true,
             "in": "query",
             "schema": { "type": "string" }
@@ -1942,6 +1967,28 @@
         },
         "required": ["success", "message", "registry"]
       },
+      "FormTemplatePreview": {
+        "type": "object",
+        "properties": {
+          "formDocument": { "type": "string" },
+          "formVersion": { "type": "number" },
+          "formName": { "type": "string" },
+          "formLabel": { "type": "string" }
+        },
+        "required": ["formDocument", "formVersion", "formName", "formLabel"]
+      },
+      "FormTemplatesResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "formTemplates": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FormTemplatePreview" }
+          }
+        },
+        "required": ["success", "message", "formTemplates"]
+      },
       "FormField": {
         "type": "object",
         "properties": {
@@ -2299,26 +2346,18 @@
         },
         "required": ["success", "message", "pendingInfo"]
       },
-      "SignatoryEntry": {
-        "type": "object",
-        "properties": { "name": { "type": "string" }, "title": { "type": "string" } },
-        "required": ["name", "title"]
-      },
       "ApproveSignatoryDto": {
         "type": "object",
         "properties": {
-          "pendingDocumentId": { "type": "string" },
-          "signatories": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/SignatoryEntry" }
-          },
+          "pendingFormId": { "type": "string" },
+          "signatoryId": { "type": "string" },
           "party": {
             "type": "string",
             "enum": ["student", "student-guardian", "university", "entity"]
           },
           "values": { "type": "object" }
         },
-        "required": ["pendingDocumentId", "signatories", "party"]
+        "required": ["pendingFormId", "signatoryId", "party"]
       },
       "GenerateFormDto": {
         "type": "object",
@@ -2326,11 +2365,9 @@
           "formName": { "type": "string" },
           "formVersion": { "type": "number" },
           "values": { "type": "object" },
-          "signatories": { "type": "array", "items": { "type": "string" } },
-          "disableEsign": { "type": "boolean" },
-          "parties": { "type": "object" }
+          "disableEsign": { "type": "boolean" }
         },
-        "required": ["formName", "formVersion", "values", "signatories", "disableEsign", "parties"]
+        "required": ["formName", "formVersion", "values", "disableEsign"]
       },
       "UpdateSignatoryDto": { "type": "object", "properties": {} }
     }

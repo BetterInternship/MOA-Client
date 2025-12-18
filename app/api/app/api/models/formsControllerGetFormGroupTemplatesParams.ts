@@ -6,6 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 
-export type FormsControllerGetPendingParams = {
-  pendingFormId: string;
+export type FormsControllerGetFormGroupTemplatesParams = {
+  formGroupId: string;
 };

@@ -6,13 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 import type { GenerateFormDtoValues } from "./generateFormDtoValues";
-import type { GenerateFormDtoParties } from "./generateFormDtoParties";
 
 export interface GenerateFormDto {
   formName: string;
   formVersion: number;
   values: GenerateFormDtoValues;
-  signatories: string[];
   disableEsign: boolean;
-  parties: GenerateFormDtoParties;
 }

@@ -34,7 +34,9 @@ import type {
   FormMetadataResponse,
   FormPendingResponse,
   FormRegistryResponse,
+  FormTemplatesResponse,
   FormsControllerGetFieldFromRegistryParams,
+  FormsControllerGetFormGroupTemplatesParams,
   FormsControllerGetLatestFormDocumentAndMetadataParams,
   FormsControllerGetPendingParams,
   FormsControllerGetRegistryFormDocumentParams,
@@ -234,6 +236,265 @@ export function useFormsControllerGetRegistrySuspense<
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getFormsControllerGetRegistrySuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const formsControllerGetFormGroupTemplates = (
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<FormTemplatesResponse>({
+    url: `/api/forms/form-templates`,
+    method: "GET",
+    params,
+    signal,
+  });
+};
+
+export const getFormsControllerGetFormGroupTemplatesQueryKey = (
+  params?: FormsControllerGetFormGroupTemplatesParams
+) => {
+  return [`/api/forms/form-templates`, ...(params ? [params] : [])] as const;
+};
+
+export const getFormsControllerGetFormGroupTemplatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetFormGroupTemplatesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>
+  > = ({ signal }) => formsControllerGetFormGroupTemplates(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetFormGroupTemplatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>
+>;
+export type FormsControllerGetFormGroupTemplatesQueryError = ErrorResponse;
+
+export function useFormsControllerGetFormGroupTemplates<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetFormGroupTemplatesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFormGroupTemplates<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+          TError,
+          Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFormGroupTemplates<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetFormGroupTemplates<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetFormGroupTemplatesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getFormsControllerGetFormGroupTemplatesSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getFormsControllerGetFormGroupTemplatesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>
+  > = ({ signal }) => formsControllerGetFormGroupTemplates(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FormsControllerGetFormGroupTemplatesSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>
+>;
+export type FormsControllerGetFormGroupTemplatesSuspenseQueryError = ErrorResponse;
+
+export function useFormsControllerGetFormGroupTemplatesSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params: undefined | FormsControllerGetFormGroupTemplatesParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFormGroupTemplatesSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFormsControllerGetFormGroupTemplatesSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFormsControllerGetFormGroupTemplatesSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+  TError = ErrorResponse,
+>(
+  params?: FormsControllerGetFormGroupTemplatesParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormGroupTemplates>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFormsControllerGetFormGroupTemplatesSuspenseQueryOptions(params, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,
