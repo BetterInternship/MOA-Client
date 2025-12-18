@@ -1,0 +1,7 @@
+{
+	"git": {
+		"deploymentEnabled": false
+	},
+	"installCommand": "npm i --legacy-peer-deps",
+	"buildCommand": "npm run build"
+}
