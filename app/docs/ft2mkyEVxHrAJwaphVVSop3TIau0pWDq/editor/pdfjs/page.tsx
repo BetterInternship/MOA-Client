@@ -1,8 +1,8 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified time: 2025-12-18 15:34:20
- * @ Modified time: 2025-12-18 16:09:24
+ * @ Modified by: Your name
+ * @ Modified time: 2025-12-18 16:24:33
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -19,7 +19,7 @@ import { FieldRegistrationModalContent } from "@/components/docs/form-editor/fie
 import { useFieldOperations } from "../../../../../hooks/use-field-operations";
 import { useFieldRegistration } from "../../../../../hooks/use-field-registration";
 import { useFormsControllerGetFieldRegistry } from "@/app/api";
-import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
+import { getFieldLabelByName } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FormField } from "../../../../../components/docs/form-editor/field-box";
 import { Button } from "@/components/ui/button";
 
@@ -66,10 +66,10 @@ const PdfJsEditorPage = () => {
    */
   const handleFieldCreate = useCallback(
     (newField: FormField) => {
-      // Look up the label from registry
+      // Look up the label from registry using field name
       const fieldWithLabel: FormField = {
         ...newField,
-        label: getFieldLabel(newField.field, registry),
+        label: getFieldLabelByName(newField.field, registry),
       };
       fieldOps.create(fieldWithLabel);
       setIsPlacingField(false);
@@ -112,7 +112,12 @@ const PdfJsEditorPage = () => {
         }}
         onFieldsUpdate={(updatedFields) => {
           // Update fields in real-time as JSON is edited
-          setFields(updatedFields);
+          // Enrich fields with labels from registry
+          const fieldsWithLabels = updatedFields.map((field) => ({
+            ...field,
+            label: getFieldLabelByName(field.field, registry),
+          }));
+          setFields(fieldsWithLabels);
         }}
       />,
       {

@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-17 15:03:53
+ * @ Modified time: 2025-12-18 16:26:59
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -18,7 +18,10 @@ import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
 import { FieldBox, type FormField } from "./field-box";
 import { GhostField } from "./ghost-field";
-import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
+import {
+  getFieldLabel,
+  getFieldName,
+} from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FieldRegistryEntry } from "@/app/api";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -480,8 +483,11 @@ const PdfPageCanvas = ({
     // Handle field placement mode
     if (isPlacingField && onPlaceField) {
       const defaultSize = { w: 100, h: 40 };
+      const fieldName = getFieldName(placementFieldType, registry);
+      const fieldLabel = getFieldLabel(placementFieldType, registry);
       const newField: FormField = {
-        field: placementFieldType,
+        field: fieldName,
+        label: fieldLabel,
         page: pageNumber,
         x: location.pdfX,
         y: location.pdfY,

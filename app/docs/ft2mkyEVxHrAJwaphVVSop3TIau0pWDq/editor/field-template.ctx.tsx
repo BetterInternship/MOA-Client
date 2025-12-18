@@ -25,7 +25,24 @@ export const useFieldTemplateContext = () => useContext(FieldTemplateContext);
  * Utility function to get field label by ID
  */
 export const getFieldLabel = (fieldId: string, registry: FieldRegistryEntry[]): string => {
-  return registry.find((r) => r.id === fieldId)?.label || fieldId;
+  const entry = registry.find((r) => r.id === fieldId);
+  return (entry?.label as string | undefined) ?? fieldId;
+};
+
+/**
+ * Utility function to get field name by ID
+ */
+export const getFieldName = (fieldId: string, registry: FieldRegistryEntry[]): string => {
+  const entry = registry.find((r) => r.id === fieldId);
+  return entry?.name ?? fieldId;
+};
+
+/**
+ * Utility function to get field label by name
+ */
+export const getFieldLabelByName = (fieldName: string, registry: FieldRegistryEntry[]): string => {
+  const entry = registry.find((r) => r.name === fieldName);
+  return (entry?.label as string | undefined) ?? fieldName;
 };
 
 /**
