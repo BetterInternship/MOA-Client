@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 22:01:25
+ * @ Modified time: 2025-12-18 23:35:22
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -233,9 +233,9 @@ const PdfJsEditorPage = () => {
       <div className="flex-1 overflow-hidden">
         {activeView === "pdf" ? (
           // PDF Editor View
-          <div className="flex flex-1 gap-0 overflow-hidden">
+          <div className="flex h-full gap-0">
             {/* PDF Viewer (left, main) */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1">
               <Suspense fallback={<Loader>Loading PDF…</Loader>}>
                 <PdfViewer
                   fields={fields}
