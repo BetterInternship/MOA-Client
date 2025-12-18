@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 16:24:33
+ * @ Modified time: 2025-12-18 18:41:41
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with field management
  */
@@ -22,6 +22,7 @@ import { useFormsControllerGetFieldRegistry } from "@/app/api";
 import { getFieldLabelByName } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FormField } from "../../../../../components/docs/form-editor/field-box";
 import { Button } from "@/components/ui/button";
+import { Edit2, Check, X } from "lucide-react";
 
 // Sample
 const INITIAL_FIELDS: FormField[] = [
@@ -40,12 +41,15 @@ const PdfJsEditorPage = () => {
   const [fields, setFields] = useState<FormField[]>(INITIAL_FIELDS);
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
   const [placementFieldType, setPlacementFieldType] = useState<string>("signature");
+  const [formLabel, setFormLabel] = useState<string>("Love, Joy, Hope");
+  const [isEditingName, setIsEditingName] = useState<boolean>(false);
+  const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
 
   // Field registration
-  const { registerFields } = useFieldRegistration("Love, Joy, Hope", "LJH Form");
+  const { registerFields } = useFieldRegistration("LJH Form", formLabel);
 
   /**
    * Live field update during drag
@@ -94,6 +98,26 @@ const PdfJsEditorPage = () => {
   );
 
   /**
+   * Handle form name edit
+   */
+  const handleSaveFormName = useCallback(() => {
+    if (editingNameValue.trim()) {
+      setFormLabel(editingNameValue.trim());
+      setIsEditingName(false);
+    }
+  }, [editingNameValue]);
+
+  const handleCancelNameEdit = useCallback(() => {
+    setEditingNameValue(formLabel);
+    setIsEditingName(false);
+  }, [formLabel]);
+
+  const handleStartEditName = useCallback(() => {
+    setEditingNameValue(formLabel);
+    setIsEditingName(true);
+  }, [formLabel]);
+
+  /**
    * Handle field registration - molds fields to metadata and opens global modal
    */
   const handleRegisterFields = useCallback(() => {
@@ -134,7 +158,47 @@ const PdfJsEditorPage = () => {
     <div className="flex h-full flex-col gap-0 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-3">
-        <h1 className="text-lg leading-tight font-semibold">Love, Joy, Hope</h1>
+        {isEditingName ? (
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={editingNameValue}
+              onChange={(e) => setEditingNameValue(e.target.value)}
+              onBlur={handleSaveFormName}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSaveFormName();
+                if (e.key === "Escape") handleCancelNameEdit();
+              }}
+              autoFocus
+              className="w-80 rounded border border-blue-500 px-2 py-1 text-lg font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            />
+            <button
+              onClick={handleSaveFormName}
+              className="rounded p-1 text-slate-400 transition-colors hover:bg-green-100 hover:text-green-600"
+              title="Save (Enter)"
+            >
+              <Check className="h-4 w-4" />
+            </button>
+            <button
+              onClick={handleCancelNameEdit}
+              className="rounded p-1 text-slate-400 transition-colors hover:bg-red-100 hover:text-red-600"
+              title="Cancel (Esc)"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg leading-tight font-semibold">{formLabel}</h1>
+            <button
+              onClick={handleStartEditName}
+              className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              title="Edit form name"
+            >
+              <Edit2 className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <Button onClick={handleRegisterFields}>Register Fields</Button>
       </div>
 
