@@ -2,7 +2,7 @@
 
 import { FormField } from "./pdf-viewer";
 import { Button } from "@/components/ui/button";
-import { Copy, Trash2 } from "lucide-react";
+import { Trash2, Copy } from "lucide-react";
 
 type FieldListPanelProps = {
   fields: FormField[];
@@ -20,9 +20,9 @@ export const FieldListPanel = ({
   onFieldDuplicate,
 }: FieldListPanelProps) => {
   return (
-    <div className="space-y-2">
+    <div className="flex h-full flex-col gap-2 overflow-hidden">
       <div className="text-muted-foreground text-xs font-semibold">Fields ({fields.length})</div>
-      <div className="space-y-1.5">
+      <div className="flex-1 space-y-1.5 overflow-y-scroll pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb:hover]:bg-slate-400 [&::-webkit-scrollbar-track]:bg-transparent">
         {fields.length === 0 ? (
           <div className="border-muted-foreground/30 bg-muted/30 text-muted-foreground rounded border border-dashed p-3 text-center text-xs">
             No fields yet. Use the Placement tab to add fields.

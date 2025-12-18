@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 23:07:53
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 18:45:43
+ * @ Modified time: 2025-12-18 19:24:13
  * @ Description: Editor sidebar component
  */
 
@@ -77,13 +77,15 @@ export const EditorSidebar = ({
       </div>
 
       {/* Field List */}
-      <FieldListPanel
-        fields={fields}
-        selectedFieldId={selectedFieldId}
-        onFieldSelect={onFieldSelect}
-        onFieldDelete={onFieldDelete}
-        onFieldDuplicate={onFieldDuplicate}
-      />
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <FieldListPanel
+          fields={fields}
+          selectedFieldId={selectedFieldId}
+          onFieldSelect={onFieldSelect}
+          onFieldDelete={onFieldDelete}
+          onFieldDuplicate={onFieldDuplicate}
+        />
+      </div>
     </div>
   );
 };
