@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-18
  * @ Modified time: 2025-12-18 15:30:01
- * @ Modified time: 2025-12-18 15:58:33
+ * @ Modified time: 2025-12-18 16:30:10
  * **/
 
 "use client";
@@ -134,7 +134,7 @@ export const FieldRegistrationModalContent = ({
 
           {/* Metadata JSON Editor */}
           {metadata && !errors.length && (
-            <div className="flex min-h-96 flex-col overflow-hidden">
+            <div className="flex flex-col overflow-hidden">
               <div className="mb-2 flex items-center justify-between">
                 <div className="text-sm font-semibold text-slate-700">
                   {isEditing ? "Edit Metadata JSON" : "Metadata JSON"}
@@ -147,18 +147,13 @@ export const FieldRegistrationModalContent = ({
                 <textarea
                   value={jsonText}
                   onChange={(e) => handleJsonChange(e.target.value)}
-                  className="min-h-0 flex-1 resize-none rounded border border-slate-700 bg-slate-900 p-3 font-mono text-xs text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                  className="max-h-96 min-h-96 resize-none rounded border border-slate-700 bg-slate-900 p-3 font-mono text-xs text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                   spellCheck="false"
                 />
               ) : (
-                <pre className="min-h-0 flex-1 overflow-auto rounded border border-slate-700 bg-slate-900 p-3 font-mono text-xs text-slate-100">
+                <pre className="max-h-97 overflow-auto rounded border border-slate-700 bg-slate-900 p-3 font-mono text-xs text-slate-100">
                   <code>{jsonText}</code>
                 </pre>
-              )}
-              {isEditing && (
-                <div className="mt-2 text-xs text-slate-500">
-                  Changes are reflected in the form editor in real-time
-                </div>
               )}
             </div>
           )}
