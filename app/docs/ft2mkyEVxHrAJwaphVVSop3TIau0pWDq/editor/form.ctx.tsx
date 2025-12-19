@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-11-16 07:12:11
+ * @ Modified time: 2025-12-19 14:29:07
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -17,7 +17,6 @@ import {
   FormMetadata,
   IFormField,
   IFormMetadata,
-  IFormParams,
   IFormPhantomField,
 } from "@betterinternship/core/forms";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -108,12 +107,9 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     name: "",
     label: "",
     schema_version: SCHEMA_VERSION,
-    schema: [],
-    schema_phantoms: [],
+    schema: { blocks: [] },
     subscribers: [],
-    signatories: [],
-    required_parties: [],
-    params: {},
+    parties: [],
   };
   const [formMetadata, setFormMetadata] = useState<IFormMetadata>(initialFormMetadata);
 
@@ -177,7 +173,14 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   };
 
   const refreshParams = (fields: IFormField[]) => {
-    const fm = new FormMetadata({ ...initialFormMetadata, schema: fields });
+    // Convert fields to blocks for FormMetadata
+    const blocks = fields.map((field, index) => ({
+      block_type: "form_field" as const,
+      order: index,
+      content: field,
+      party_id: "party-1", // Default party
+    }));
+    const fm = new FormMetadata({ ...initialFormMetadata, schema: { blocks } });
     setParams({
       ...fm.inferParams().reduce((acc, cur) => {
         acc[cur] = "";
