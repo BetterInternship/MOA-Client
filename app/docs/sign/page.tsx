@@ -109,6 +109,7 @@ function PageContent() {
     ? new FormMetadata(DUMMY_FORM_METADATA ?? (formRes?.formMetadata as unknown as IFormMetadata))
     : null;
   const fields = formMetadata?.getFieldsForClientService() ?? [];
+  const blocks = formMetadata?.getAllBlocks() ?? [];
 
   // local form state
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
@@ -487,6 +488,7 @@ function PageContent() {
                   <DynamicForm
                     signingPartyId={party || "student"}
                     fields={fields}
+                    blocks={blocks}
                     values={values}
                     pendingUrl={pendingUrl}
                     onChange={setField}

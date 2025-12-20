@@ -1,16 +1,17 @@
 "use client";
 
 import { cn, coerceAnyDate, formatDateWithoutTime } from "@/lib/utils";
-import { ClientField } from "@betterinternship/core/forms";
+import { ClientField, IFormBlock, IFormField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
 import { FieldRenderer } from "./FieldRenderer";
 import { useFormContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.ctx";
-import { RecipientSection } from "./RecipientSection";
+import { HeaderRenderer, ParagraphRenderer } from "./BlockrRenderer";
 
 export function DynamicForm({
   formName,
   signingPartyId,
   fields,
+  blocks,
   values,
   setValues,
   autofillValues,
@@ -23,6 +24,7 @@ export function DynamicForm({
   formName: string;
   signingPartyId?: string;
   fields: ClientField<[]>[];
+  blocks: IFormBlock[];
   values: Record<string, any>;
   autofillValues: Record<string, string>;
   errors?: Record<string, string>;
@@ -101,24 +103,12 @@ export function DynamicForm({
     <div className="space-y-4">
       <FormSection
         formKey={formName}
-        title="Entity Information"
-        fields={fields}
+        blocks={blocks}
         values={values}
         onChange={onChange}
         errors={errors}
         setSelected={setSelectedField}
         onBlurValidate={onBlurValidate}
-      />
-
-      <RecipientSection
-        formKey={formName}
-        title="Recipient Email(s) — IMPORTANT"
-        subtitle="These email fields are important. Please double-check addresses, recipients are emailed a seperate form to them to complete and sign."
-        fields={recipientFields}
-        values={values}
-        onChange={onChange}
-        onBlurValidate={onBlurValidate}
-        errors={errors}
       />
     </div>
   );
@@ -126,8 +116,7 @@ export function DynamicForm({
 
 const FormSection = function FormSection({
   formKey,
-  title,
-  fields,
+  blocks,
   values,
   onChange,
   errors,
@@ -135,46 +124,55 @@ const FormSection = function FormSection({
   onBlurValidate,
 }: {
   formKey: string;
-  title: string;
-  fields: ClientField<[]>[];
+  blocks: IFormBlock[];
   values: Record<string, string>;
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
   setSelected: (selected: string) => void;
   onBlurValidate?: (fieldKey: string) => void;
 }) {
-  if (!fields.length) return null;
-  const reducedFields = fields.reduce(
-    (acc, cur) => (acc.map((f) => f.field).includes(cur.field) ? acc : [...acc, cur]),
-    [] as ClientField<[]>[]
-  );
+  if (!blocks.length) return null;
 
   return (
     <div className="space-y-3">
-      <div className="pt-2 pb-1">
-        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
-      </div>
-
-      {reducedFields.map((field) => (
-        <div
-          className="space-between flex flex-row"
-          key={`${formKey}:${field.section}:${field.field}`}
-        >
-          <div className="flex-1" onFocus={() => setSelected(field.field)}>
-            <FieldRenderer
-              field={field}
-              value={values[field.field]}
-              onChange={(v) => onChange(field.field, v)}
-              onBlur={() => {
-                console.log("onBlur triggered for field:", field.field);
-                onBlurValidate?.(field.field);
-              }}
-              error={errors[field.field]}
-              allValues={values}
-            />
+      {blocks
+        .toSorted((a, b) => a.order - b.order)
+        .map((block) => (
+          <div
+            className="space-between flex flex-row"
+            key={`${formKey}:${block.text_content ?? JSON.stringify(block.field_schema)}`}
+          >
+            {block.field_schema && (
+              <div
+                className="flex-1"
+                onFocus={() => setSelected(block.field_schema?.field as string)}
+              >
+                <FieldRenderer
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-expect-error
+                  field={block.field_schema as IFormField}
+                  value={""}
+                  onChange={(v) => onChange(block.field_schema?.field as string, v)}
+                  onBlur={() => {
+                    onBlurValidate?.(block.field_schema?.field as string);
+                  }}
+                  error={errors[block.field_schema.field]}
+                  allValues={values}
+                />
+              </div>
+            )}
+            {block.block_type === "header" && block.text_content && (
+              <div className="flex-1">
+                <HeaderRenderer content={block.text_content} />
+              </div>
+            )}
+            {block.block_type === "paragraph" && block.text_content && (
+              <div className="flex-1">
+                <ParagraphRenderer content={block.text_content} />
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 };

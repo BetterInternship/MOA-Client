@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-12-21 04:40:53
+ * @ Modified time: 2025-12-21 05:23:32
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -179,9 +179,10 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     const blocks = fields.map((field, index) => ({
       block_type: "form_field" as const,
       order: index,
-      content: field,
-      party_id: "party-1", // Default party
+      field_schema: field,
+      signing_party_id: "party-1", // Default party
     }));
+    console.log("blocks", blocks);
     const fm = new FormMetadata({ ...initialFormMetadata, schema: { blocks } });
     setParams({
       ...fm.inferParams().reduce((acc, cur) => {
