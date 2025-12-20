@@ -37,7 +37,7 @@ export default function FormPreviewModal({
   const formMetadata = previewQuery.data?.formMetadata
     ? new FormMetadata(previewQuery.data?.formMetadata)
     : null;
-  const fields = formMetadata?.getFieldsForClient() ?? [];
+  const fields = formMetadata?.getFieldsForClientService() ?? [];
   const showableFields = useMemo(() => {
     if (!fields) return [];
     return fields.filter((f) => (selectedParty === "student" ? f.source === "manual" : true));

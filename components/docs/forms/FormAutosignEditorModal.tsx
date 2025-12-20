@@ -75,7 +75,7 @@ const FormAutosignEditorModal = React.memo(
     const formMetadata = previewQuery.data?.formMetadata
       ? new FormMetadata(previewQuery.data?.formMetadata)
       : null;
-    const fields = formMetadata?.getFieldsForClient() ?? [];
+    const fields = formMetadata?.getFieldsForClientService() ?? [];
 
     const fieldsForParty = (p: string) => fields.filter((f) => f.party === p);
 
@@ -319,7 +319,7 @@ const FormAutosignEditorModal = React.memo(
                 ) : (
                   <div className="space-y-4">
                     <DynamicForm
-                      party={party}
+                      signingPartyId={party}
                       fields={fieldsForParty(party)}
                       values={values[party] ?? {}}
                       onChange={(field, value) => setField(party, field, value)}

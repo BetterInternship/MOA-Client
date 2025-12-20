@@ -9,7 +9,7 @@ import { RecipientSection } from "./RecipientSection";
 
 export function DynamicForm({
   formName,
-  party,
+  signingPartyId,
   fields,
   values,
   setValues,
@@ -22,7 +22,7 @@ export function DynamicForm({
   onBlurValidate,
 }: {
   formName: string;
-  party?: "entity" | "student-guardian" | "university" | "student";
+  signingPartyId?: string;
   fields: ClientField<[]>[];
   values: Record<string, any>;
   autofillValues: Record<string, string>;
@@ -36,8 +36,8 @@ export function DynamicForm({
 }) {
   const form = useFormContext();
   const filteredFields = fields
-    .filter((field) => field.party === party)
-    .filter((field) => field.source === "manual" || party !== "student");
+    .filter((field) => field.signing_party_id === signingPartyId)
+    .filter((field) => field.source === "manual");
   const [selectedField, setSelectedField] = useState<string>("");
 
   // Separate recipient fields (those whose field name ends with ":recipient")
@@ -45,20 +45,6 @@ export function DynamicForm({
 
   // All non-recipient fields
   const nonRecipientFields = filteredFields.filter((f) => !String(f.field).endsWith(":recipient"));
-
-  // Group by section
-  const entitySectionFields: ClientField<[]>[] = nonRecipientFields.filter(
-    (d) => d.section === "entity"
-  );
-  const studentSectionFields: ClientField<[]>[] = nonRecipientFields.filter(
-    (d) => d.section === "student"
-  );
-  const internshipSectionFields: ClientField<[]>[] = nonRecipientFields.filter(
-    (d) => d.section === "internship"
-  );
-  const universitySectionFields: ClientField<[]>[] = nonRecipientFields.filter(
-    (d) => d.section === "university"
-  );
 
   // Seed from saved autofill
   useEffect(() => {
@@ -121,43 +107,7 @@ export function DynamicForm({
       <FormSection
         formKey={formName}
         title="Entity Information"
-        fields={entitySectionFields}
-        values={values}
-        onChange={onChange}
-        errors={errors}
-        showErrors={showErrors}
-        setSelected={setSelectedField}
-        onBlurValidate={onBlurValidate}
-      />
-
-      <FormSection
-        formKey={formName}
-        title="Internship Information"
-        fields={internshipSectionFields}
-        values={values}
-        onChange={onChange}
-        errors={errors}
-        showErrors={showErrors}
-        setSelected={setSelectedField}
-        onBlurValidate={onBlurValidate}
-      />
-
-      <FormSection
-        formKey={formName}
-        title="University Information"
-        fields={universitySectionFields}
-        values={values}
-        onChange={onChange}
-        errors={errors}
-        showErrors={showErrors}
-        setSelected={setSelectedField}
-        onBlurValidate={onBlurValidate}
-      />
-
-      <FormSection
-        formKey={formName}
-        title="Student Information"
-        fields={studentSectionFields}
+        fields={fields}
         values={values}
         onChange={onChange}
         errors={errors}

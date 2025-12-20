@@ -12,7 +12,7 @@ import {
   ApproveSignatoryRequest,
 } from "@/app/api/forms.api";
 import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
-import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
+import { DUMMY_FORM_METADATA, FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
 import { DocumentRenderer } from "@/components/docs/forms/previewer";
@@ -89,11 +89,7 @@ function PageContent() {
 
   const pendingInfo = pendingRes?.pendingInformation;
   const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url as string;
-
-  const audienceFromPending: string[] = (pendingInfo?.pendingInfo?.pending_parties ?? [])
-    .map((p) => (typeof p === "string" ? p : (p?.party ?? "")))
-    .filter(Boolean) as string[];
-  const audienceAllowed = audienceFromPending.includes(audienceParam);
+  const audienceAllowed = true;
 
   // Fetch form fields schema from API
   const {
@@ -110,9 +106,9 @@ function PageContent() {
   // Fields
   const formVersion: number | undefined = formRes?.formVersion;
   const formMetadata: FormMetadata<any> | null = formRes?.formMetadata
-    ? new FormMetadata(formRes?.formMetadata as unknown as IFormMetadata)
+    ? new FormMetadata(DUMMY_FORM_METADATA ?? (formRes?.formMetadata as unknown as IFormMetadata))
     : null;
-  const fields = formMetadata?.getFieldsForClient() ?? [];
+  const fields = formMetadata?.getFieldsForClientService() ?? [];
 
   // local form state
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
@@ -138,8 +134,10 @@ function PageContent() {
     const flatValues: Record<string, string> = {};
 
     for (const field of fields) {
-      if (field.party !== audienceParam) continue;
-
+      // ! add this back, check if field is for person signing
+      // ! note signingPartyId is sent by the server to the client, not the other way around
+      // ! the person signing should not be able to specify it in the url
+      // if (field.signing_party_id !== signingPartyId) continue;
       const value = values[field.field];
 
       if (value !== undefined && value !== null && String(value).trim() !== "") {
@@ -209,8 +207,8 @@ function PageContent() {
 
       // To save their autofill fields
       for (const field of fields) {
-        // only include fields relevant to this signing audience
-        if (field.party !== audienceParam) continue;
+        // ! put this back as well
+        // if (field.signing_party_id !== signingPartyId) continue;
 
         if (field.shared) {
           internshipMoaFieldsToSave.shared[field.field] = finalValues[field.field];
@@ -487,7 +485,7 @@ function PageContent() {
               ) : (
                 <div className="space-y-4">
                   <DynamicForm
-                    party={party || "student"}
+                    signingPartyId={party || "student"}
                     fields={fields}
                     values={values}
                     pendingUrl={pendingUrl}

@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-12-19 14:29:07
+ * @ Modified time: 2025-12-21 04:40:53
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -14,9 +14,11 @@ import {
   formsControllerGetRegistryFormMetadata,
 } from "@/app/api";
 import {
+  DUMMY_FORM_METADATA,
   FormMetadata,
   IFormField,
   IFormMetadata,
+  IFormParameters,
   IFormPhantomField,
 } from "@betterinternship/core/forms";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -34,7 +36,7 @@ export interface IFormContext {
   document: IDocument;
   fields: IFormField[];
   phantomFields: IFormPhantomField[];
-  params: IFormParams;
+  params: IFormParameters;
   keyedFields: (IFormField & { _id: string })[];
   keyedPhantomFields: (IFormPhantomField & { _id: string })[];
   previews: Record<number, React.ReactNode[]>;
@@ -86,7 +88,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   const [formVersion, setFormVersion] = useState<number>(0);
   const [fields, setFields] = useState<IFormField[]>([]);
   const [phantomFields, setPhantomFields] = useState<IFormPhantomField[]>([]);
-  const [params, setParams] = useState<IFormParams>({});
+  const [params, setParams] = useState<IFormParameters>({});
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
   const [selectedPreviewId, setSelectedPreviewId] = useState<string>("");
 
@@ -109,7 +111,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     schema_version: SCHEMA_VERSION,
     schema: { blocks: [] },
     subscribers: [],
-    parties: [],
+    signing_parties: [],
   };
   const [formMetadata, setFormMetadata] = useState<IFormMetadata>(initialFormMetadata);
 
@@ -185,8 +187,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
       ...fm.inferParams().reduce((acc, cur) => {
         acc[cur] = "";
         return acc;
-      }, {} as IFormParams),
-      ...formMetadata.params,
+      }, {} as IFormParameters),
       ...params,
     });
   };
@@ -226,7 +227,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
 
     // Refresh phantom fields too
     const newPhantomFields = await Promise.all(phantomFields.map(fieldRefresher)).then((fs) =>
-      fs.filter((f) => f !== undefined).map((f) => f as IFormPhantomField)
+      fs.filter((f) => f !== undefined).map((f) => f)
     );
 
     setFields(newFields);
@@ -272,16 +273,20 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
       // Promise for pulling metadata
       formsControllerGetRegistryFormMetadata(payload, controller.signal).then(
         ({ formMetadata }) => {
-          const fm = new FormMetadata(formMetadata);
-          setFields(formMetadata.schema);
-          setPhantomFields(formMetadata.schema_phantoms ?? []);
+          const fm = new FormMetadata(DUMMY_FORM_METADATA ?? formMetadata);
+          setFields(fm.getFields());
+          setPhantomFields(fm.getPhantomFields());
           setDocumentName(formMetadata.name);
+
+          // ! REMOVE THIS SOON - the fix is just regenerating the spec.json for client and server
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-expect-error
           setFormMetadata(formMetadata);
           setParams({
             ...fm.inferParams().reduce((acc, cur) => {
               acc[cur] = "";
               return acc;
-            }, {} as IFormParams),
+            }, {} as IFormParameters),
             ...formMetadata.params,
           });
         }
