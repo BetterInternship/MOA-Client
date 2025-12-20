@@ -11,7 +11,6 @@ export function RecipientSection({
   onChange,
   onBlurValidate,
   errors,
-  showErrors,
 }: {
   formKey: string;
   title: string;
@@ -21,7 +20,6 @@ export function RecipientSection({
   onChange: (key: string, value: any) => void;
   onBlurValidate?: (fieldKey: string) => void;
   errors: Record<string, string>;
-  showErrors: boolean;
 }) {
   if (!fields.length) return null;
   const reducedFields = fields.reduce(

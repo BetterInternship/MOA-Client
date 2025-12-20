@@ -324,7 +324,6 @@ const FormAutosignEditorModal = React.memo(
                       values={values[party] ?? {}}
                       onChange={(field, value) => setField(party, field, value)}
                       errors={errors}
-                      showErrors={true}
                       formName={formName ?? ""}
                       autofillValues={autofillValues}
                       setValues={(newVals) => setValuesForParty(party, newVals)}
@@ -389,50 +388,6 @@ const FormAutosignEditorModal = React.memo(
         </div>
       </div>
     );
-    //   <div>
-    //     <div className="space-y-3">
-    //       {previewQuery.isLoading ? (
-    //         <div className="rounded-md border p-3">
-    //           <div className="text-muted-foreground text-sm">Loading form preview...</div>
-    //         </div>
-    //       ) : (previewQuery.data?.formMetadata?.schema ?? []).length === 0 ? (
-    //         <div className="text-sm">No preview available.</div>
-    //       ) : (
-    //         <div className="rounded-md border p-3">
-    //           <div className="mb-2 flex items-center justify-between">
-    //             <div className="text-sm font-semibold">{party}</div>
-    //             <div className="text-muted-foreground text-xs">
-    //               {fieldsForParty(party).length} field{fieldsForParty(party).length !== 1 ? "s" : ""}
-    //             </div>
-    //           </div>
-
-    //           <DynamicForm
-    //             party={party}
-    //             fields={fieldsForParty(party)}
-    //             values={values[party] ?? {}}
-    //             onChange={(field, value) => setField(party, field, value)}
-    //             errors={errors}
-    //             showErrors={true}
-    //             formName={formName ?? ""}
-    //             autofillValues={autofillValues}
-    //             setValues={(newVals) => setValuesForParty(party, newVals)}
-    //             onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
-    //           />
-    //         </div>
-    //       )}
-
-    //       <div className="mt-4 flex justify-end gap-2">
-    //         <Button
-    //           type="button"
-    //           onClick={() => void handleSubmit()}
-    //           disabled={submitting || previewQuery.isLoading}
-    //         >
-    //           {submitting ? "Saving..." : "Save"}
-    //         </Button>
-    //       </div>
-    //     </div>
-    //   </div>
-    // );
   }
 );
 

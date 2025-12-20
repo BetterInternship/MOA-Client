@@ -16,7 +16,6 @@ export function DynamicForm({
   autofillValues,
   onChange,
   errors = {},
-  showErrors = false,
   setPreviews,
   pendingUrl,
   onBlurValidate,
@@ -27,7 +26,6 @@ export function DynamicForm({
   values: Record<string, any>;
   autofillValues: Record<string, string>;
   errors?: Record<string, string>;
-  showErrors?: boolean;
   pendingUrl: string;
   setValues: (values: Record<string, string>) => void;
   onChange: (key: string, value: any) => void;
@@ -42,9 +40,6 @@ export function DynamicForm({
 
   // Separate recipient fields (those whose field name ends with ":recipient")
   const recipientFields = filteredFields.filter((f) => String(f.field).endsWith(":recipient"));
-
-  // All non-recipient fields
-  const nonRecipientFields = filteredFields.filter((f) => !String(f.field).endsWith(":recipient"));
 
   // Seed from saved autofill
   useEffect(() => {
@@ -111,7 +106,6 @@ export function DynamicForm({
         values={values}
         onChange={onChange}
         errors={errors}
-        showErrors={showErrors}
         setSelected={setSelectedField}
         onBlurValidate={onBlurValidate}
       />
@@ -125,7 +119,6 @@ export function DynamicForm({
         onChange={onChange}
         onBlurValidate={onBlurValidate}
         errors={errors}
-        showErrors={showErrors}
       />
     </div>
   );
@@ -138,7 +131,6 @@ const FormSection = function FormSection({
   values,
   onChange,
   errors,
-  showErrors,
   setSelected,
   onBlurValidate,
 }: {
@@ -148,7 +140,6 @@ const FormSection = function FormSection({
   values: Record<string, string>;
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
-  showErrors: boolean;
   setSelected: (selected: string) => void;
   onBlurValidate?: (fieldKey: string) => void;
 }) {

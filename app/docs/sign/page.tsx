@@ -491,7 +491,6 @@ function PageContent() {
                     pendingUrl={pendingUrl}
                     onChange={setField}
                     errors={errors}
-                    showErrors={submitted}
                     formName={""}
                     autofillValues={autofillValues}
                     setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}

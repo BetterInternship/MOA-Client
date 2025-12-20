@@ -13,7 +13,6 @@ interface EditableDynamicFormProps {
   setValues: (values: Record<string, string>) => void;
   onChange: (key: string, value: any) => void;
   errors?: Record<string, string>;
-  showErrors?: boolean;
   onBlurValidate?: (fieldKey: string) => void;
   onFieldsReorder?: (fields: ClientField<[]>[]) => void;
 }
@@ -27,10 +26,8 @@ export const EditableDynamicForm = ({
   party,
   fields: initialFields,
   values,
-  setValues,
   onChange,
   errors = {},
-  showErrors = false,
   onBlurValidate,
   onFieldsReorder,
 }: EditableDynamicFormProps) => {
@@ -42,7 +39,7 @@ export const EditableDynamicForm = ({
   }, [initialFields]);
 
   const filteredFields = fields
-    .filter((field) => field.party === party)
+    .filter((field) => field.signing_party_id === party)
     .filter((field) => field.source === "manual" || party !== "student");
 
   // Separate recipient fields
