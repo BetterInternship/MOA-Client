@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-19 14:23:03
+ * @ Modified time: 2025-12-21 13:29:40
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with block-centric metadata management
  */
@@ -26,6 +26,7 @@ import {
   DUMMY_FORM_METADATA,
   type IFormBlock,
   type IFormField,
+  ClientBlock,
 } from "@betterinternship/core/forms";
 import type { FormField } from "../../../../../components/docs/form-editor/form-pdf-editor/FieldBox";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,9 @@ const PdfJsEditorPage = () => {
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
-  const [blocks, setBlocks] = useState<IFormBlock[]>(formMetadata.getAllBlocks());
+  const [blocks, setBlocks] = useState<ClientBlock<[]>[]>(
+    formMetadata.getAllBlocksForClientService()
+  );
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
