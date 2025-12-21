@@ -196,20 +196,6 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
             />
 
             <FormDropdown
-              label="Type"
-              value={editedBlock.field_schema.type}
-              setter={(val) => handleFieldSchemaChange("type", val as any)}
-              options={[
-                { id: "text", name: "Text" },
-                { id: "signature", name: "Signature" },
-                { id: "date", name: "Date" },
-                { id: "dropdown", name: "Dropdown" },
-                { id: "checkbox", name: "Checkbox" },
-              ]}
-              required={false}
-            />
-
-            <FormDropdown
               label="Source"
               value={editedBlock.field_schema.source}
               setter={(val) => handleFieldSchemaChange("source", val as any)}
@@ -265,20 +251,6 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               label="Label"
               value={editedBlock.phantom_field_schema.label}
               setter={(val) => handlePhantomFieldSchemaChange("label", val)}
-              required={false}
-            />
-
-            <FormDropdown
-              label="Type"
-              value={editedBlock.phantom_field_schema.type}
-              setter={(val) => handlePhantomFieldSchemaChange("type", val as any)}
-              options={[
-                { id: "text", name: "Text" },
-                { id: "signature", name: "Signature" },
-                { id: "date", name: "Date" },
-                { id: "dropdown", name: "Dropdown" },
-                { id: "checkbox", name: "Checkbox" },
-              ]}
               required={false}
             />
 
