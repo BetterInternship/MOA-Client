@@ -29,6 +29,7 @@ const ensureBlockIds = (blocks: IFormBlock[]): IFormBlock[] => {
 interface FormLayoutEditorProps {
   formLabel: string;
   metadata: IFormMetadata;
+  documentUrl?: string;
   onMetadataChange?: (metadata: IFormMetadata) => void;
 }
 
@@ -60,6 +61,7 @@ const MENU_ITEMS: SidebarMenuItem[] = [
 export const FormLayoutEditor = ({
   formLabel,
   metadata,
+  documentUrl,
   onMetadataChange,
 }: FormLayoutEditorProps) => {
   // Get blocks from metadata.schema
@@ -69,6 +71,7 @@ export const FormLayoutEditor = ({
   const [selectedBlock, setSelectedBlock] = useState<IFormBlock | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [filterPartyId, setFilterPartyId] = useState<string | null>("all");
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Initialize parties directly from metadata signing_parties
   const [parties, setParties] = useState<IFormSigningParty[]>(metadata.signing_parties);
@@ -178,6 +181,81 @@ export const FormLayoutEditor = ({
     });
   };
 
+  // Validate a field on blur
+  const handleBlurValidate = (fieldKey: string) => {
+    // Find the field in blocks to get its validator
+    const fieldBlock = orderedBlocks.find((block) => {
+      if (block.block_type === "form_field" && block.field_schema) {
+        return block.field_schema.field === fieldKey;
+      }
+      if (block.block_type === "form_phantom_field" && block.phantom_field_schema) {
+        return block.phantom_field_schema.field === fieldKey;
+      }
+      return false;
+    });
+
+    if (!fieldBlock) return;
+
+    // Get the validator string from the field schema
+    let validatorString = "";
+    if (fieldBlock.block_type === "form_field" && fieldBlock.field_schema) {
+      validatorString = fieldBlock.field_schema.validator || "";
+    } else if (fieldBlock.block_type === "form_phantom_field" && fieldBlock.phantom_field_schema) {
+      validatorString = fieldBlock.phantom_field_schema.validator || "";
+    }
+
+    // If no validator, clear any existing error
+    if (!validatorString) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldKey];
+        return newErrors;
+      });
+      return;
+    }
+
+    // Try to validate using the zod schema string
+    try {
+      const value = formValues[fieldKey];
+
+      // Simple validation logic - can be extended
+      // For now, we'll do basic checks based on common patterns
+      let error = "";
+
+      if (validatorString.includes("min(1)") || validatorString.includes("required")) {
+        if (!value || value.trim() === "") {
+          error = "This field is required";
+        }
+      }
+
+      if (validatorString.includes("email")) {
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          error = "Invalid email address";
+        }
+      }
+
+      if (error) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          [fieldKey]: error,
+        }));
+      } else {
+        setValidationErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldKey];
+          return newErrors;
+        });
+      }
+    } catch (err) {
+      // If validator parsing fails, clear any existing error
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldKey];
+        return newErrors;
+      });
+    }
+  };
+
   // Filter blocks based on selected party
   const getFilteredBlocks = () => {
     if (filterPartyId === "all") {
@@ -240,6 +318,8 @@ export const FormLayoutEditor = ({
                   [key]: value,
                 }));
               }}
+              errors={validationErrors}
+              onBlurValidate={handleBlurValidate}
               onBlocksReorder={handleBlocksReorder}
               onBlockSelect={handleBlockSelect}
               onAddBlock={handleAddBlock}
@@ -250,7 +330,14 @@ export const FormLayoutEditor = ({
           </div>
         );
       case "preview":
-        return <FormPreview formName={formLabel} blocks={orderedBlocks} signingParties={parties} />;
+        return (
+          <FormPreview
+            formName={formLabel}
+            blocks={orderedBlocks}
+            signingParties={parties}
+            documentUrl={documentUrl}
+          />
+        );
       case "parties":
         return (
           <PartiesPanel
