@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { type IFormBlock } from "@betterinternship/core/forms";
+import {
+  type IFormBlock,
+  type IFormMetadata,
+  type IFormSigningParty,
+} from "@betterinternship/core/forms";
 import { EditableDynamicForm } from "./EditableDynamicForm";
 import { BlockEditor } from "./BlockEditor";
 import { PartiesPanel } from "./PartiesPanel";
@@ -9,14 +13,6 @@ import { ParametersPanel } from "./ParametersPanel";
 import { SignatoriesPanel } from "./SignatoriesPanel";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
 import { FileText, Users, Settings, CheckCircle } from "lucide-react";
-
-interface Party {
-  id: string;
-  name: string;
-  type: "entity" | "student-guardian" | "university" | "student";
-  email?: string;
-  required: boolean;
-}
 
 interface Parameter {
   id: string;
@@ -38,6 +34,7 @@ interface Signatory {
 interface FormLayoutEditorProps {
   blocks: IFormBlock[];
   formLabel: string;
+  metadata: IFormMetadata;
   onBlocksReorder?: (reorderedBlocks: IFormBlock[]) => void;
 }
 
@@ -78,27 +75,19 @@ const formFieldToClientField = (field: string, label: string): any => {
   };
 };
 
-export const FormLayoutEditor = ({ blocks, formLabel, onBlocksReorder }: FormLayoutEditorProps) => {
+export const FormLayoutEditor = ({
+  blocks,
+  formLabel,
+  metadata,
+  onBlocksReorder,
+}: FormLayoutEditorProps) => {
   const [activeSection, setActiveSection] = useState<SectionType>("tester");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedBlock, setSelectedBlock] = useState<IFormBlock | null>(null);
   const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
-  const [parties, setParties] = useState<Party[]>([
-    {
-      id: "1",
-      name: "Entity",
-      type: "entity",
-      email: "",
-      required: true,
-    },
-    {
-      id: "2",
-      name: "University",
-      type: "university",
-      email: "",
-      required: true,
-    },
-  ]);
+
+  // Initialize parties directly from metadata signing_parties
+  const [parties, setParties] = useState<IFormSigningParty[]>(metadata.signing_parties);
 
   const [parameters, setParameters] = useState<Parameter[]>([
     {
@@ -222,7 +211,10 @@ export const FormLayoutEditor = ({ blocks, formLabel, onBlocksReorder }: FormLay
                 setSelectedBlockIndex(null);
               }}
               onUpdate={handleBlockUpdate}
-              signingParties={parties.map((p) => ({ id: p.id, name: p.name }))}
+              signingParties={parties.map((p) => ({
+                id: p._id,
+                name: p.signatory_source || `Party ${p.order}`,
+              }))}
             />
           </div>
         )}

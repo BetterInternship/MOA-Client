@@ -385,6 +385,7 @@ const PdfJsEditorPage = () => {
           <FormLayoutEditor
             blocks={blocks}
             formLabel={formLabel}
+            metadata={DUMMY_FORM_METADATA}
             onBlocksReorder={(reorderedBlocks) => {
               setBlocks(reorderedBlocks);
             }}
