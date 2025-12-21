@@ -7,6 +7,13 @@ import {
   type IFormPhantomField,
 } from "@betterinternship/core/forms";
 import { X } from "lucide-react";
+import {
+  FormInput,
+  FormTextarea,
+  FormDropdown,
+  FormCheckbox,
+} from "@/components/docs/forms/EditForm";
+import { Button } from "@/components/ui/button";
 
 interface BlockEditorProps {
   block: IFormBlock | null;
@@ -65,320 +72,214 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
   return (
     <div className="flex h-full flex-col overflow-hidden bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between border-b bg-gray-50 p-4">
+      <div className="flex items-center justify-between border-b border-gray-200 bg-white p-3">
         <h3 className="text-sm font-semibold text-gray-900">Block Editor</h3>
         <button
           onClick={onClose}
-          className="rounded p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 space-y-6 overflow-y-auto p-4">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3">
         {/* Block Type Selector */}
-        <div>
-          <label className="text-xs font-semibold text-gray-700">Block Type</label>
-          <select
-            value={editedBlock.block_type}
-            onChange={(e) => handleFieldChange("block_type", e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-          >
-            <option value="header">Header</option>
-            <option value="paragraph">Paragraph</option>
-            <option value="form_field">Form Field</option>
-            <option value="form_phantom_field">Phantom Form Field</option>
-          </select>
-        </div>
+        <FormDropdown
+          label="Block Type"
+          value={editedBlock.block_type}
+          setter={(val) => handleFieldChange("block_type", val as any)}
+          options={[
+            { id: "header", name: "Header" },
+            { id: "paragraph", name: "Paragraph" },
+            { id: "form_field", name: "Form Field" },
+            { id: "form_phantom_field", name: "Phantom Form Field" },
+          ]}
+          required={false}
+        />
 
-        {/* Common Fields */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-900">Block Properties</h4>
+        {/* Order */}
+        <FormInput
+          label="Order"
+          type="number"
+          value={editedBlock.order?.toString() || ""}
+          setter={(val) => handleFieldChange("order", parseInt(val, 10))}
+          required={false}
+        />
 
-          {/* Order */}
-          <div>
-            <label className="text-xs font-semibold text-gray-700">Order</label>
-            <input
-              type="number"
-              value={editedBlock.order}
-              onChange={(e) => handleFieldChange("order", parseInt(e.target.value, 10))}
-              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-            />
-          </div>
+        {/* Signing Party */}
+        <FormDropdown
+          label="Signing Party"
+          value={editedBlock.signing_party_id || ""}
+          setter={(val) => handleFieldChange("signing_party_id", val as string)}
+          options={[{ id: "", name: "Select a party..." }, ...signingParties]}
+          required={false}
+        />
 
-          {/* Signing Party */}
-          <div>
-            <label className="text-xs font-semibold text-gray-700">Signing Party</label>
-            <select
-              value={editedBlock.signing_party_id}
-              onChange={(e) => handleFieldChange("signing_party_id", e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-            >
-              <option value="">Select a party...</option>
-              {signingParties.map((party) => (
-                <option key={party.id} value={party.id}>
-                  {party.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Block Type Specific Fields */}
+        {/* Content Fields for Headers/Paragraphs */}
         {(editedBlock.block_type === "header" || editedBlock.block_type === "paragraph") && (
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-gray-900">Content</h4>
-            <div>
-              <label className="text-xs font-semibold text-gray-700">Text Content</label>
-              <textarea
-                value={editedBlock.text_content || ""}
-                onChange={(e) => handleFieldChange("text_content", e.target.value)}
-                rows={4}
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                placeholder="Enter text content..."
-              />
-            </div>
-          </div>
+          <FormTextarea
+            label="Text Content"
+            value={editedBlock.text_content || ""}
+            setter={(val) => handleFieldChange("text_content", val)}
+            required={false}
+          />
         )}
 
         {/* Form Field Schema */}
         {editedBlock.block_type === "form_field" && editedBlock.field_schema && (
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-gray-900">Field Schema</h4>
-            <div className="space-y-4 rounded border-l-4 border-blue-300 bg-blue-50 p-4">
-              {/* Field Name */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Field Name</label>
-                <input
-                  type="text"
-                  value={editedBlock.field_schema.field}
-                  onChange={(e) => handleFieldSchemaChange("field", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                />
-              </div>
+          <div className="space-y-3 rounded border-l-4 border-blue-300 bg-blue-50/50 p-3">
+            <div className="text-xs font-semibold text-gray-700">Field Schema</div>
 
-              {/* Label */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Label</label>
-                <input
-                  type="text"
-                  value={editedBlock.field_schema.label}
-                  onChange={(e) => handleFieldSchemaChange("label", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                />
-              </div>
+            <FormInput
+              label="Field Name"
+              value={editedBlock.field_schema.field}
+              setter={(val) => handleFieldSchemaChange("field", val)}
+              required={false}
+            />
 
-              {/* Type */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Type</label>
-                <select
-                  value={editedBlock.field_schema.type}
-                  onChange={(e) => handleFieldSchemaChange("type", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                >
-                  <option value="text">Text</option>
-                  <option value="signature">Signature</option>
-                  <option value="date">Date</option>
-                  <option value="dropdown">Dropdown</option>
-                  <option value="checkbox">Checkbox</option>
-                </select>
-              </div>
+            <FormInput
+              label="Label"
+              value={editedBlock.field_schema.label}
+              setter={(val) => handleFieldSchemaChange("label", val)}
+              required={false}
+            />
 
-              {/* Source */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Source</label>
-                <select
-                  value={editedBlock.field_schema.source}
-                  onChange={(e) => handleFieldSchemaChange("source", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                >
-                  <option value="user">User Input</option>
-                  <option value="database">Database</option>
-                  <option value="prefiller">Prefiller</option>
-                </select>
-              </div>
+            <FormDropdown
+              label="Type"
+              value={editedBlock.field_schema.type}
+              setter={(val) => handleFieldSchemaChange("type", val as any)}
+              options={[
+                { id: "text", name: "Text" },
+                { id: "signature", name: "Signature" },
+                { id: "date", name: "Date" },
+                { id: "dropdown", name: "Dropdown" },
+                { id: "checkbox", name: "Checkbox" },
+              ]}
+              required={false}
+            />
 
-              {/* Tooltip */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Tooltip Label</label>
-                <input
-                  type="text"
-                  value={editedBlock.field_schema.tooltip_label || ""}
-                  onChange={(e) => handleFieldSchemaChange("tooltip_label", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                />
-              </div>
+            <FormDropdown
+              label="Source"
+              value={editedBlock.field_schema.source}
+              setter={(val) => handleFieldSchemaChange("source", val as any)}
+              options={[
+                { id: "user", name: "User Input" },
+                { id: "database", name: "Database" },
+                { id: "prefiller", name: "Prefiller" },
+              ]}
+              required={false}
+            />
 
-              {/* Shared */}
-              <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={editedBlock.field_schema.shared}
-                    onChange={(e) => handleFieldSchemaChange("shared", e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  Shared Field
-                </label>
-              </div>
+            <FormInput
+              label="Tooltip Label"
+              value={editedBlock.field_schema.tooltip_label || ""}
+              setter={(val) => handleFieldSchemaChange("tooltip_label", val)}
+              required={false}
+            />
 
-              {/* Validator */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">
-                  Validator (Zod Schema)
-                </label>
-                <textarea
-                  value={editedBlock.field_schema.validator || ""}
-                  onChange={(e) => handleFieldSchemaChange("validator", e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900"
-                  placeholder="e.g., z.string().min(1)"
-                />
-                <p className="mt-1 text-xs text-gray-500">Enter Zod validation schema as string</p>
-              </div>
+            <FormCheckbox
+              label="Shared Field"
+              checked={editedBlock.field_schema.shared}
+              setter={(val) => handleFieldSchemaChange("shared", val)}
+            />
 
-              {/* Prefiller */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">
-                  Prefiller (JS Function)
-                </label>
-                <textarea
-                  value={editedBlock.field_schema.prefiller || ""}
-                  onChange={(e) => handleFieldSchemaChange("prefiller", e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900"
-                  placeholder="e.g., ({ user }) => user.firstName"
-                />
-                <p className="mt-1 text-xs text-gray-500">Enter function logic to prefill value</p>
-              </div>
-            </div>
+            <FormTextarea
+              label="Validator (Zod Schema)"
+              value={editedBlock.field_schema.validator || ""}
+              setter={(val) => handleFieldSchemaChange("validator", val)}
+              required={false}
+            />
+
+            <FormTextarea
+              label="Prefiller (JS Function)"
+              value={editedBlock.field_schema.prefiller || ""}
+              setter={(val) => handleFieldSchemaChange("prefiller", val)}
+              required={false}
+            />
           </div>
         )}
 
         {/* Phantom Field Schema */}
         {editedBlock.block_type === "form_phantom_field" && editedBlock.phantom_field_schema && (
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-gray-900">Phantom Field Schema</h4>
-            <div className="space-y-4 rounded border-l-4 border-amber-300 bg-amber-50 p-4">
-              {/* Field Name */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Field Name</label>
-                <input
-                  type="text"
-                  value={editedBlock.phantom_field_schema.field}
-                  onChange={(e) => handlePhantomFieldSchemaChange("field", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                />
-              </div>
+          <div className="space-y-3 rounded border-l-4 border-amber-300 bg-amber-50/50 p-3">
+            <div className="text-xs font-semibold text-gray-700">Phantom Field Schema</div>
 
-              {/* Label */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Label</label>
-                <input
-                  type="text"
-                  value={editedBlock.phantom_field_schema.label}
-                  onChange={(e) => handlePhantomFieldSchemaChange("label", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                />
-              </div>
+            <FormInput
+              label="Field Name"
+              value={editedBlock.phantom_field_schema.field}
+              setter={(val) => handlePhantomFieldSchemaChange("field", val)}
+              required={false}
+            />
 
-              {/* Type */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Type</label>
-                <select
-                  value={editedBlock.phantom_field_schema.type}
-                  onChange={(e) => handlePhantomFieldSchemaChange("type", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                >
-                  <option value="text">Text</option>
-                  <option value="signature">Signature</option>
-                  <option value="date">Date</option>
-                  <option value="dropdown">Dropdown</option>
-                  <option value="checkbox">Checkbox</option>
-                </select>
-              </div>
+            <FormInput
+              label="Label"
+              value={editedBlock.phantom_field_schema.label}
+              setter={(val) => handlePhantomFieldSchemaChange("label", val)}
+              required={false}
+            />
 
-              {/* Source */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Source</label>
-                <select
-                  value={editedBlock.phantom_field_schema.source}
-                  onChange={(e) => handlePhantomFieldSchemaChange("source", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                >
-                  <option value="user">User Input</option>
-                  <option value="database">Database</option>
-                  <option value="prefiller">Prefiller</option>
-                </select>
-              </div>
+            <FormDropdown
+              label="Type"
+              value={editedBlock.phantom_field_schema.type}
+              setter={(val) => handlePhantomFieldSchemaChange("type", val as any)}
+              options={[
+                { id: "text", name: "Text" },
+                { id: "signature", name: "Signature" },
+                { id: "date", name: "Date" },
+                { id: "dropdown", name: "Dropdown" },
+                { id: "checkbox", name: "Checkbox" },
+              ]}
+              required={false}
+            />
 
-              {/* Tooltip */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Tooltip Label</label>
-                <input
-                  type="text"
-                  value={editedBlock.phantom_field_schema.tooltip_label || ""}
-                  onChange={(e) => handlePhantomFieldSchemaChange("tooltip_label", e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
-                />
-              </div>
+            <FormDropdown
+              label="Source"
+              value={editedBlock.phantom_field_schema.source}
+              setter={(val) => handlePhantomFieldSchemaChange("source", val as any)}
+              options={[
+                { id: "user", name: "User Input" },
+                { id: "database", name: "Database" },
+                { id: "prefiller", name: "Prefiller" },
+              ]}
+              required={false}
+            />
 
-              {/* Shared */}
-              <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={editedBlock.phantom_field_schema.shared}
-                    onChange={(e) => handlePhantomFieldSchemaChange("shared", e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  Shared Field
-                </label>
-              </div>
+            <FormInput
+              label="Tooltip Label"
+              value={editedBlock.phantom_field_schema.tooltip_label || ""}
+              setter={(val) => handlePhantomFieldSchemaChange("tooltip_label", val)}
+              required={false}
+            />
 
-              {/* Validator */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">
-                  Validator (Zod Schema)
-                </label>
-                <textarea
-                  value={editedBlock.phantom_field_schema.validator || ""}
-                  onChange={(e) => handlePhantomFieldSchemaChange("validator", e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900"
-                  placeholder="e.g., z.string().min(1)"
-                />
-                <p className="mt-1 text-xs text-gray-500">Enter Zod validation schema as string</p>
-              </div>
+            <FormCheckbox
+              label="Shared Field"
+              checked={editedBlock.phantom_field_schema.shared}
+              setter={(val) => handlePhantomFieldSchemaChange("shared", val)}
+            />
 
-              {/* Prefiller */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700">
-                  Prefiller (JS Function)
-                </label>
-                <textarea
-                  value={editedBlock.phantom_field_schema.prefiller || ""}
-                  onChange={(e) => handlePhantomFieldSchemaChange("prefiller", e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900"
-                  placeholder="e.g., ({ user }) => user.firstName"
-                />
-                <p className="mt-1 text-xs text-gray-500">Enter function logic to prefill value</p>
-              </div>
-            </div>
+            <FormTextarea
+              label="Validator (Zod Schema)"
+              value={editedBlock.phantom_field_schema.validator || ""}
+              setter={(val) => handlePhantomFieldSchemaChange("validator", val)}
+              required={false}
+            />
+
+            <FormTextarea
+              label="Prefiller (JS Function)"
+              value={editedBlock.phantom_field_schema.prefiller || ""}
+              setter={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+              required={false}
+            />
           </div>
         )}
       </div>
 
-      {/* Footer - Done */}
-      <div className="border-t bg-gray-50 p-4">
-        <button
-          onClick={onClose}
-          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
+      {/* Footer */}
+      <div className="border-t border-gray-200 bg-white p-3">
+        <Button className="w-full" onClick={onClose}>
           Done
-        </button>
+        </Button>
       </div>
     </div>
   );
