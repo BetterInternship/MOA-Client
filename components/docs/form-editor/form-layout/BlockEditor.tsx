@@ -5,6 +5,8 @@ import {
   type IFormBlock,
   type IFormField,
   type IFormPhantomField,
+  BLOCK_TYPES,
+  SOURCES,
 } from "@betterinternship/core/forms";
 import { X } from "lucide-react";
 import {
@@ -14,6 +16,7 @@ import {
   FormCheckbox,
 } from "@/components/docs/forms/EditForm";
 import { Button } from "@/components/ui/button";
+import { capitalize, capitalizeWords } from "@/lib/string-utils";
 
 interface BlockEditorProps {
   block: IFormBlock | null;
@@ -67,8 +70,6 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
     onUpdate(newBlock);
   };
 
-  const blockTypeName = editedBlock.block_type.replace(/_/g, " ").toUpperCase();
-
   return (
     <div className="flex h-full flex-col overflow-hidden bg-white">
       {/* Header */}
@@ -84,17 +85,14 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
 
       {/* Content */}
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
-        {/* Block Type Selector */}
         <FormDropdown
           label="Block Type"
           value={editedBlock.block_type}
           setter={(val) => handleFieldChange("block_type", val as any)}
-          options={[
-            { id: "header", name: "Header" },
-            { id: "paragraph", name: "Paragraph" },
-            { id: "form_field", name: "Form Field" },
-            { id: "form_phantom_field", name: "Phantom Form Field" },
-          ]}
+          options={BLOCK_TYPES.map((type) => ({
+            id: type,
+            name: capitalizeWords(type),
+          }))}
           required={false}
         />
 
@@ -154,11 +152,10 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               label="Source"
               value={editedBlock.field_schema.source}
               setter={(val) => handleFieldSchemaChange("source", val as any)}
-              options={[
-                { id: "user", name: "User Input" },
-                { id: "database", name: "Database" },
-                { id: "prefiller", name: "Prefiller" },
-              ]}
+              options={SOURCES.map((source) => ({
+                id: source,
+                name: capitalizeWords(source),
+              }))}
               required={false}
             />
 
@@ -228,11 +225,10 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               label="Source"
               value={editedBlock.phantom_field_schema.source}
               setter={(val) => handlePhantomFieldSchemaChange("source", val as any)}
-              options={[
-                { id: "user", name: "User Input" },
-                { id: "database", name: "Database" },
-                { id: "prefiller", name: "Prefiller" },
-              ]}
+              options={SOURCES.map((source) => ({
+                id: source,
+                name: capitalizeWords(source),
+              }))}
               required={false}
             />
 
