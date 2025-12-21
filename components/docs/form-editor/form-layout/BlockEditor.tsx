@@ -98,15 +98,6 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
           required={false}
         />
 
-        {/* Order */}
-        <FormInput
-          label="Order"
-          type="number"
-          value={editedBlock.order?.toString() || ""}
-          setter={(val) => handleFieldChange("order", parseInt(val, 10))}
-          required={false}
-        />
-
         {/* Signing Party */}
         <FormDropdown
           label="Signing Party"
