@@ -14,6 +14,17 @@ import { SubscribersPanel } from "./SubscribersPanel";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
 import { FileText, Users, Mail } from "lucide-react";
 
+// Utility to generate unique IDs for blocks
+const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
+
+// Utility to ensure all blocks have IDs
+const ensureBlockIds = (blocks: IFormBlock[]): IFormBlock[] => {
+  return blocks.map((block) => ({
+    ...block,
+    _id: block._id || generateBlockId(),
+  }));
+};
+
 interface FormLayoutEditorProps {
   formLabel: string;
   metadata: IFormMetadata;
@@ -50,7 +61,7 @@ export const FormLayoutEditor = ({
   const [activeSection, setActiveSection] = useState<SectionType>("tester");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedBlock, setSelectedBlock] = useState<IFormBlock | null>(null);
-  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   // Initialize parties directly from metadata signing_parties
   const [parties, setParties] = useState<IFormSigningParty[]>(metadata.signing_parties);
@@ -58,7 +69,9 @@ export const FormLayoutEditor = ({
   // Initialize subscribers directly from metadata
   const [subscribers, setSubscribers] = useState<IFormSubscriber[]>(metadata.subscribers);
 
-  const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(blocks);
+  const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(() =>
+    ensureBlockIds(blocks)
+  );
 
   // Sync parties and subscribers when metadata changes
   useEffect(() => {
@@ -67,6 +80,13 @@ export const FormLayoutEditor = ({
   }, [metadata.signing_parties, metadata.subscribers]);
 
   const handleBlocksReorder = (newBlocks: IFormBlock[]) => {
+    // Keep the same block selected by ID
+    if (selectedBlockId) {
+      const selectedBlockInNewList = newBlocks.find((b) => b._id === selectedBlockId);
+      if (selectedBlockInNewList) {
+        setSelectedBlock(selectedBlockInNewList);
+      }
+    }
     setOrderedBlocks(newBlocks);
     // Update metadata with new blocks
     onMetadataChange?.({
@@ -80,12 +100,15 @@ export const FormLayoutEditor = ({
 
   const handleBlockSelect = (block: IFormBlock, blockIndex: number) => {
     setSelectedBlock(block);
-    setSelectedBlockIndex(blockIndex);
+    setSelectedBlockId(block._id || null);
   };
 
   const handleBlockUpdate = (updatedBlock: IFormBlock) => {
+    const blockIndex = orderedBlocks.findIndex((b) => b._id === updatedBlock._id);
+    if (blockIndex === -1) return;
+    
     const newBlocks = [...orderedBlocks];
-    newBlocks[selectedBlockIndex!] = updatedBlock;
+    newBlocks[blockIndex] = updatedBlock;
     setOrderedBlocks(newBlocks);
     setSelectedBlock(updatedBlock);
     onMetadataChange?.({
@@ -99,6 +122,7 @@ export const FormLayoutEditor = ({
 
   const handleAddBlock = () => {
     const newBlock: IFormBlock = {
+      _id: generateBlockId(),
       block_type: "header" as const,
       order: orderedBlocks.length,
       label: "New Block",
@@ -117,7 +141,8 @@ export const FormLayoutEditor = ({
   const handleDeleteBlock = (index: number) => {
     const newBlocks = orderedBlocks.filter((_, i) => i !== index);
     setOrderedBlocks(newBlocks);
-    setSelectedBlockIndex(null);
+    setSelectedBlockId(null);
+    setSelectedBlock(null);
     onMetadataChange?.({
       ...metadata,
       schema: {
@@ -129,7 +154,10 @@ export const FormLayoutEditor = ({
 
   const handleDuplicateBlock = (index: number) => {
     const blockToDuplicate = orderedBlocks[index];
-    const duplicatedBlock = JSON.parse(JSON.stringify(blockToDuplicate));
+    const duplicatedBlock: IFormBlock = {
+      ...JSON.parse(JSON.stringify(blockToDuplicate)),
+      _id: generateBlockId(), // Give the duplicate a new ID
+    };
     const newBlocks = [
       ...orderedBlocks.slice(0, index + 1),
       duplicatedBlock,
@@ -146,6 +174,10 @@ export const FormLayoutEditor = ({
   };
 
   const renderContent = () => {
+    const selectedBlockIndex = selectedBlockId
+      ? orderedBlocks.findIndex((b) => b._id === selectedBlockId)
+      : null;
+
     switch (activeSection) {
       case "tester":
         return (

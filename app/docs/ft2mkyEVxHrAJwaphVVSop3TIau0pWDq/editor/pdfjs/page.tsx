@@ -237,6 +237,12 @@ const PdfJsEditorPage = () => {
   const handleRegisterForm = useCallback(() => {
     const result = registerFields(fields);
 
+    // Compute final order for all blocks based on their current position
+    const blocksWithFinalOrder = metadata.schema.blocks.map((block, index) => ({
+      ...block,
+      order: index,
+    }));
+
     // Merge result metadata with current metadata to preserve all blocks, signing_parties, and subscribers
     const mergedMetadata: IFormMetadata =
       result.metadata && result.isValid
@@ -244,12 +250,18 @@ const PdfJsEditorPage = () => {
             ...result.metadata,
             schema: {
               ...result.metadata.schema,
-              blocks: metadata.schema.blocks, // Use all blocks from current metadata (includes headers, paragraphs, etc.)
+              blocks: blocksWithFinalOrder, // Use all blocks with computed order
             },
             signing_parties: metadata.signing_parties,
             subscribers: metadata.subscribers,
           }
-        : metadata;
+        : {
+            ...metadata,
+            schema: {
+              ...metadata.schema,
+              blocks: blocksWithFinalOrder,
+            },
+          };
 
     openModal(
       "field-registration-modal",
