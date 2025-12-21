@@ -46,7 +46,68 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
   }
 
   const handleFieldChange = (key: keyof IFormBlock, value: any) => {
-    const newBlock = editedBlock ? { ...editedBlock, [key]: value } : null;
+    let newBlock = editedBlock ? { ...editedBlock, [key]: value } : null;
+    if (newBlock && key === "block_type") {
+      // When changing block type, initialize appropriate schema and clear others
+      const blockType = value;
+      const currentSchema = editedBlock.field_schema || editedBlock.phantom_field_schema;
+
+      // Common properties to retain when switching between form_field and form_phantom_field
+      const commonProps = currentSchema
+        ? {
+            field: currentSchema.field || "",
+            type: currentSchema.type || "text",
+            label: currentSchema.label || "",
+            tooltip_label: currentSchema.tooltip_label || "",
+            shared: "shared" in currentSchema ? currentSchema.shared : false,
+            source: currentSchema.source || "manual",
+            signing_party_id:
+              "signing_party_id" in currentSchema ? currentSchema.signing_party_id : "",
+          }
+        : null;
+
+      if (blockType === "form_field") {
+        newBlock = {
+          ...newBlock,
+          field_schema: {
+            field: commonProps?.field || "",
+            type: commonProps?.type || "text",
+            label: commonProps?.label || "",
+            tooltip_label: commonProps?.tooltip_label || "",
+            shared: commonProps?.shared || false,
+            source: commonProps?.source || "manual",
+            signing_party_id: commonProps?.signing_party_id || "",
+            x: editedBlock.field_schema?.x || 0,
+            y: editedBlock.field_schema?.y || 0,
+            w: editedBlock.field_schema?.w || 100,
+            h: editedBlock.field_schema?.h || 20,
+            page: editedBlock.field_schema?.page || 0,
+          },
+          phantom_field_schema: undefined,
+        };
+      } else if (blockType === "form_phantom_field") {
+        newBlock = {
+          ...newBlock,
+          phantom_field_schema: {
+            field: commonProps?.field || "",
+            type: commonProps?.type || "text",
+            label: commonProps?.label || "",
+            tooltip_label: commonProps?.tooltip_label || "",
+            shared: commonProps?.shared || false,
+            source: commonProps?.source || "manual",
+            signing_party_id: commonProps?.signing_party_id || "",
+          },
+          field_schema: undefined,
+        };
+      } else {
+        // For other types (header, paragraph), clear both schemas
+        newBlock = {
+          ...newBlock,
+          field_schema: undefined,
+          phantom_field_schema: undefined,
+        };
+      }
+    }
     if (newBlock) {
       setEditedBlock(newBlock);
       onUpdate(newBlock);
