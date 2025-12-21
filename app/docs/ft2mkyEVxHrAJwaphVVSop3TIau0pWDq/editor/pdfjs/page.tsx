@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified time: 2025-12-21 17:45:05
+ * @ Modified time: 2025-12-21 18:41:26
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with block-centric metadata management
  */
@@ -25,6 +25,7 @@ import {
   DUMMY_FORM_METADATA,
   type IFormBlock,
   type IFormField,
+  type IFormMetadata,
 } from "@betterinternship/core/forms";
 import type { FormField } from "../../../../../components/docs/form-editor/form-pdf-editor/FieldBox";
 import { Button } from "@/components/ui/button";
@@ -77,12 +78,13 @@ const PdfJsEditorPage = () => {
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
   const [blocks, setBlocks] = useState<IFormBlock[]>(INITIAL_BLOCKS);
+  const [metadata, setMetadata] = useState<IFormMetadata>(DUMMY_FORM_METADATA);
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
 
   // Field registration
-  const { registerFields } = useFieldRegistration(DUMMY_FORM_METADATA.name, formLabel);
+  const { registerFields } = useFieldRegistration(metadata.name, formLabel);
 
   /**
    * Sync blocks when fields change
@@ -222,10 +224,19 @@ const PdfJsEditorPage = () => {
   const handleRegisterForm = useCallback(() => {
     const result = registerFields(fields);
 
+    // Merge result metadata with current metadata (including subscribers)
+    const mergedMetadata: IFormMetadata =
+      result.metadata && result.isValid
+        ? {
+            ...result.metadata,
+            subscribers: metadata.subscribers,
+          }
+        : metadata;
+
     openModal(
       "field-registration-modal",
       <FieldRegistrationModalContent
-        metadata={result.metadata}
+        metadata={mergedMetadata}
         errors={result.errors}
         onClose={() => closeModal("field-registration-modal")}
         onConfirm={(editedMetadata) => {
@@ -261,6 +272,7 @@ const PdfJsEditorPage = () => {
     closeModal,
     registry,
     syncBlocksWithFields,
+    metadata,
   ]);
 
   return (
@@ -385,9 +397,12 @@ const PdfJsEditorPage = () => {
           <FormLayoutEditor
             blocks={blocks}
             formLabel={formLabel}
-            metadata={DUMMY_FORM_METADATA}
+            metadata={metadata}
             onBlocksReorder={(reorderedBlocks) => {
               setBlocks(reorderedBlocks);
+            }}
+            onMetadataChange={(updatedMetadata) => {
+              setMetadata(updatedMetadata);
             }}
           />
         )}

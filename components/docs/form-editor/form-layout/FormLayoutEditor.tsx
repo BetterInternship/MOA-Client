@@ -19,6 +19,7 @@ interface FormLayoutEditorProps {
   formLabel: string;
   metadata: IFormMetadata;
   onBlocksReorder?: (reorderedBlocks: IFormBlock[]) => void;
+  onMetadataChange?: (metadata: IFormMetadata) => void;
 }
 
 type SectionType = "tester" | "fields" | "parties" | "subscribers";
@@ -46,6 +47,7 @@ export const FormLayoutEditor = ({
   formLabel,
   metadata,
   onBlocksReorder,
+  onMetadataChange,
 }: FormLayoutEditorProps) => {
   const [activeSection, setActiveSection] = useState<SectionType>("tester");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -101,7 +103,18 @@ export const FormLayoutEditor = ({
         return <PartiesPanel parties={parties} onPartiesChange={setParties} />;
 
       case "subscribers":
-        return <SubscribersPanel subscribers={subscribers} onSubscribersChange={setSubscribers} />;
+        return (
+          <SubscribersPanel
+            subscribers={subscribers}
+            onSubscribersChange={(updatedSubscribers) => {
+              setSubscribers(updatedSubscribers);
+              onMetadataChange?.({
+                ...metadata,
+                subscribers: updatedSubscribers,
+              });
+            }}
+          />
+        );
       default:
         return null;
     }
