@@ -134,7 +134,6 @@ const BlocksRenderer = ({
     <div className="space-y-3">
       {blocks
         .toSorted((a, b) => a.order - b.order)
-        .map((block) => (console.log(block), block))
         .map((block) => (
           <div
             className="space-between flex flex-row"
@@ -147,7 +146,7 @@ const BlocksRenderer = ({
               >
                 <FieldRenderer
                   field={block.field_schema}
-                  value={""}
+                  value={values[block.field_schema.field]}
                   onChange={(v) => onChange(block.field_schema?.field as string, v)}
                   onBlur={() => {
                     onBlurValidate?.(block.field_schema?.field as string);
@@ -165,7 +164,7 @@ const BlocksRenderer = ({
               >
                 <FieldRenderer
                   field={block.phantom_field_schema}
-                  value={""}
+                  value={values[block.phantom_field_schema.field]}
                   onChange={(v) => onChange(block.phantom_field_schema?.field as string, v)}
                   onBlur={() => {
                     onBlurValidate?.(block.phantom_field_schema?.field as string);
