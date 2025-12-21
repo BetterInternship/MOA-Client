@@ -114,6 +114,33 @@ export const FormLayoutEditor = ({
     });
   };
 
+  const handleDeleteBlock = (index: number) => {
+    const newBlocks = orderedBlocks.filter((_, i) => i !== index);
+    setOrderedBlocks(newBlocks);
+    setSelectedBlockIndex(null);
+    onMetadataChange?.({
+      ...metadata,
+      schema: {
+        ...metadata.schema,
+        blocks: newBlocks,
+      },
+    });
+  };
+
+  const handleDuplicateBlock = (index: number) => {
+    const blockToDuplicate = orderedBlocks[index];
+    const duplicatedBlock = JSON.parse(JSON.stringify(blockToDuplicate));
+    const newBlocks = [...orderedBlocks.slice(0, index + 1), duplicatedBlock, ...orderedBlocks.slice(index + 1)];
+    setOrderedBlocks(newBlocks);
+    onMetadataChange?.({
+      ...metadata,
+      schema: {
+        ...metadata.schema,
+        blocks: newBlocks,
+      },
+    });
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case "tester":
@@ -131,6 +158,8 @@ export const FormLayoutEditor = ({
             onBlocksReorder={handleBlocksReorder}
             onBlockSelect={handleBlockSelect}
             onAddBlock={handleAddBlock}
+            onDeleteBlock={handleDeleteBlock}
+            onDuplicateBlock={handleDuplicateBlock}
             selectedBlockIndex={selectedBlockIndex}
           />
         );

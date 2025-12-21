@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { type IFormBlock } from "@betterinternship/core/forms";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Copy, Trash2 } from "lucide-react";
 import { renderBlocks } from "@/lib/block-renderer";
 
 interface EditableDynamicFormProps {
@@ -17,6 +17,8 @@ interface EditableDynamicFormProps {
   onBlocksReorder?: (blocks: IFormBlock[]) => void;
   onBlockSelect?: (block: IFormBlock, blockIndex: number) => void;
   onAddBlock?: () => void;
+  onDeleteBlock?: (index: number) => void;
+  onDuplicateBlock?: (index: number) => void;
   selectedBlockIndex?: number | null;
 }
 
@@ -35,6 +37,8 @@ export const EditableDynamicForm = ({
   onBlocksReorder,
   onBlockSelect,
   onAddBlock,
+  onDeleteBlock,
+  onDuplicateBlock,
   selectedBlockIndex,
 }: EditableDynamicFormProps) => {
   const [blocks, setBlocks] = useState<IFormBlock[]>(initialBlocks);
@@ -70,22 +74,50 @@ export const EditableDynamicForm = ({
 
   return (
     <div className="space-y-4">
-      {/* Instruction card and Add button */}
+      {/* Instruction card and buttons */}
       <Card className="border border-slate-200 bg-slate-50/50 p-4">
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs text-slate-800">
             Drag blocks to reorder them. Edit form fields to see changes reflected in the metadata.
           </p>
-          {onAddBlock && (
-            <Button
-              onClick={onAddBlock}
-              size="sm"
-              className="flex-shrink-0 gap-2 bg-slate-600 text-white hover:bg-slate-700"
-            >
-              <Plus className="h-4 w-4" />
-              Add Block
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {selectedBlockIndex !== null && selectedBlockIndex !== undefined && (
+              <>
+                {onDuplicateBlock && (
+                  <Button
+                    onClick={() => onDuplicateBlock(selectedBlockIndex)}
+                    size="sm"
+                    variant="outline"
+                    className="flex-shrink-0 gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Duplicate
+                  </Button>
+                )}
+                {onDeleteBlock && (
+                  <Button
+                    onClick={() => onDeleteBlock(selectedBlockIndex)}
+                    size="sm"
+                    variant="outline"
+                    className="flex-shrink-0 gap-2 text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                )}
+              </>
+            )}
+            {onAddBlock && (
+              <Button
+                onClick={onAddBlock}
+                size="sm"
+                className="flex-shrink-0 gap-2 bg-slate-600 text-white hover:bg-slate-700"
+              >
+                <Plus className="h-4 w-4" />
+                Add Block
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
 

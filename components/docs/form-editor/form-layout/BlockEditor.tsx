@@ -36,30 +36,28 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
   }
 
   const handleFieldChange = (key: keyof IFormBlock, value: any) => {
-    setEditedBlock((prev) => {
-      if (!prev) return prev;
-      return { ...prev, [key]: value };
-    });
+    const newBlock = editedBlock ? { ...editedBlock, [key]: value } : null;
+    if (newBlock) {
+      setEditedBlock(newBlock);
+      onUpdate(newBlock);
+    }
   };
 
   const handleFieldSchemaChange = (key: keyof IFormField, value: any) => {
     if (editedBlock.block_type !== "form_field" || !editedBlock.field_schema) return;
     const updatedField = { ...editedBlock.field_schema, [key]: value };
-    setEditedBlock({ ...editedBlock, field_schema: updatedField });
+    const newBlock = { ...editedBlock, field_schema: updatedField };
+    setEditedBlock(newBlock);
+    onUpdate(newBlock);
   };
 
   const handlePhantomFieldSchemaChange = (key: keyof IFormPhantomField, value: any) => {
     if (editedBlock.block_type !== "form_phantom_field" || !editedBlock.phantom_field_schema)
       return;
     const updatedField = { ...editedBlock.phantom_field_schema, [key]: value };
-    setEditedBlock({ ...editedBlock, phantom_field_schema: updatedField });
-  };
-
-  const handleSave = () => {
-    if (editedBlock) {
-      onUpdate(editedBlock);
-      onClose();
-    }
+    const newBlock = { ...editedBlock, phantom_field_schema: updatedField };
+    setEditedBlock(newBlock);
+    onUpdate(newBlock);
   };
 
   const blockTypeName = editedBlock.block_type.replace(/_/g, " ").toUpperCase();
@@ -79,12 +77,19 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
 
       {/* Content */}
       <div className="flex-1 space-y-6 overflow-y-auto p-4">
-        {/* Block Type Badge */}
+        {/* Block Type Selector */}
         <div>
-          <p className="mb-2 text-xs font-semibold text-gray-600">BLOCK TYPE</p>
-          <div className="rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-900">
-            {blockTypeName}
-          </div>
+          <label className="text-xs font-semibold text-gray-700">Block Type</label>
+          <select
+            value={editedBlock.block_type}
+            onChange={(e) => handleFieldChange("block_type", e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+          >
+            <option value="header">Header</option>
+            <option value="paragraph">Paragraph</option>
+            <option value="form_field">Form Field</option>
+            <option value="form_phantom_field">Phantom Form Field</option>
+          </select>
         </div>
 
         {/* Common Fields */}
@@ -366,19 +371,13 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
         )}
       </div>
 
-      {/* Footer - Save/Cancel */}
-      <div className="flex gap-2 border-t bg-gray-50 p-4">
+      {/* Footer - Done */}
+      <div className="border-t bg-gray-50 p-4">
         <button
           onClick={onClose}
-          className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Save Changes
+          Done
         </button>
       </div>
     </div>
