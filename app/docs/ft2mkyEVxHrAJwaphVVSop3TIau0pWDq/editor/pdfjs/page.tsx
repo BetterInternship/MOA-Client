@@ -1,8 +1,8 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified by: Your name
- * @ Modified time: 2025-12-21 13:29:40
+ * @ Modified time: 2025-12-21 14:37:43
+ * @ Modified time: 2025-12-21 14:51:42
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with block-centric metadata management
  */
@@ -42,7 +42,7 @@ const PdfJsEditorPage = () => {
   // Extract initial fields from blocks
   const INITIAL_FIELDS: FormField[] = useMemo(
     () =>
-      formMetadata.getFields().map((field: IFormField) => ({
+      formMetadata.getFieldsForEditorService().map((field: IFormField) => ({
         field: field.field,
         label: field.label,
         page: field.page,
@@ -50,8 +50,8 @@ const PdfJsEditorPage = () => {
         y: field.y,
         w: field.w,
         h: field.h,
-        align_h: field.align_h ?? "left",
-        align_v: field.align_v ?? "top",
+        align_h: (field.align_h ?? "left") as "left" | "center" | "right",
+        align_v: (field.align_v ?? "top") as "top" | "middle" | "bottom",
       })),
     [formMetadata]
   );
@@ -68,9 +68,7 @@ const PdfJsEditorPage = () => {
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
-  const [blocks, setBlocks] = useState<ClientBlock<[]>[]>(
-    formMetadata.getAllBlocksForClientService()
-  );
+  const [blocks, setBlocks] = useState<IFormBlock[]>(formMetadata.getBlocksForEditorService());
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
@@ -84,14 +82,14 @@ const PdfJsEditorPage = () => {
   const syncBlocksWithFields = useCallback(
     (updatedFields: FormField[]) => {
       const newBlocks = blocks.map((block) => {
-        if (block.block_type === "form_field") {
-          const content = block.content as IFormField;
-          const updatedField = updatedFields.find((f) => f.field === content.field);
+        if (block.field_schema) {
+          const fieldSchema = block.field_schema;
+          const updatedField = updatedFields.find((f) => f.field === fieldSchema.field);
           if (updatedField) {
             return {
               ...block,
               content: {
-                ...content,
+                ...fieldSchema,
                 x: updatedField.x,
                 y: updatedField.y,
                 w: updatedField.w,
@@ -143,7 +141,7 @@ const PdfJsEditorPage = () => {
       const newBlock: IFormBlock = {
         block_type: "form_field",
         order: blocks.length,
-        content: {
+        field_schema: {
           field: newField.field,
           type: placementFieldType as "text" | "signature" | "image",
           x: newField.x,
@@ -159,7 +157,7 @@ const PdfJsEditorPage = () => {
           source: "manual",
           validator: 'z.string().min(1, "Field is required")',
         } as IFormField,
-        party_id: blocks[0]?.party_id ?? "party-1",
+        signing_party_id: blocks[0]?.signing_party_id ?? "party-1",
       };
       setBlocks([...blocks, newBlock]);
       setIsPlacingField(false);
@@ -238,6 +236,9 @@ const PdfJsEditorPage = () => {
           const fieldsWithLabels = updatedFields.map((field) => ({
             ...field,
             label: getFieldLabelByName(field.field, registry),
+            // ! export as a type from core package instead
+            align_h: field.align_h as "left" | "center" | "right",
+            align_v: field.align_h as "top" | "middle" | "bottom",
           }));
           setFields(fieldsWithLabels);
           syncBlocksWithFields(fieldsWithLabels);

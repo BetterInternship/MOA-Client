@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-12-21 05:23:32
+ * @ Modified time: 2025-12-21 14:36:29
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -275,8 +275,8 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
       formsControllerGetRegistryFormMetadata(payload, controller.signal).then(
         ({ formMetadata }) => {
           const fm = new FormMetadata(DUMMY_FORM_METADATA ?? formMetadata);
-          setFields(fm.getFields());
-          setPhantomFields(fm.getPhantomFields());
+          setFields(fm.getFieldsForEditorService());
+          setPhantomFields(fm.getPhantomFieldsForEditorService());
           setDocumentName(formMetadata.name);
 
           // ! REMOVE THIS SOON - the fix is just regenerating the spec.json for client and server
