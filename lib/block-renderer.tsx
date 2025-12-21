@@ -17,6 +17,9 @@ interface BlockRendererOptions {
   /** Whether this is editor mode (shows drag handle) */
   editorMode?: boolean;
 
+  /** Whether to strip styling for clean form view */
+  stripStyling?: boolean;
+
   /** Index of block in array (for drag operations) */
   blockIndex?: number;
 
@@ -61,6 +64,7 @@ export const renderBlock = (
 ) => {
   const {
     editorMode = false,
+    stripStyling = false,
     blockIndex = 0,
     onDragStart,
     onDragOver,
@@ -74,15 +78,18 @@ export const renderBlock = (
   const blockId = `block:${block.order}`;
 
   const isSelected = selectedIndex === blockIndex;
-  const baseClasses =
-    "flex gap-3 rounded-[0.33em] border p-2 transition-all cursor-pointer items-center";
-  const dragClasses = editorMode
-    ? draggedIndex === blockIndex
-      ? "border-blue-300 bg-blue-100 opacity-50"
-      : isSelected
-        ? "border-blue-500 bg-blue-50 shadow-md"
-        : "border-slate-200 bg-white hover:bg-slate-50"
-    : "border-slate-200 bg-white";
+  const baseClasses = stripStyling
+    ? "space-y-2"
+    : "flex gap-3 rounded-[0.33em] border p-2 transition-all cursor-pointer items-center";
+  const dragClasses = !stripStyling
+    ? editorMode
+      ? draggedIndex === blockIndex
+        ? "border-blue-300 bg-blue-100 opacity-50"
+        : isSelected
+          ? "border-blue-500 bg-blue-50 shadow-md"
+          : "border-slate-200 bg-white hover:bg-slate-50"
+      : "border-slate-200 bg-white"
+    : "";
 
   const draggableProps = editorMode
     ? {
@@ -95,6 +102,13 @@ export const renderBlock = (
 
   // Header blocks
   if (block.block_type === "header") {
+    if (stripStyling) {
+      return (
+        <h2 key={blockId} className="text-lg font-bold text-slate-800">
+          {block.text_content}
+        </h2>
+      );
+    }
     return (
       <div
         key={blockId}
@@ -116,6 +130,13 @@ export const renderBlock = (
 
   // Paragraph blocks
   if (block.block_type === "paragraph") {
+    if (stripStyling) {
+      return (
+        <p key={blockId} className="text-sm text-slate-700">
+          {block.text_content}
+        </p>
+      );
+    }
     return (
       <div
         key={blockId}
@@ -138,6 +159,33 @@ export const renderBlock = (
   // Form field blocks
   if (block.block_type === "form_field" && block.field_schema) {
     const field = block.field_schema as IFormField;
+    const fieldContent = (
+      <FieldRenderer
+        field={{
+          field: field.field,
+          label: field.label,
+          tooltip_label: field.tooltip_label,
+          type: field.type as "text" | "signature",
+          source: field.source,
+          signing_party_id: field.signing_party_id as string,
+          shared: field.shared,
+          validator: null,
+          prefiller: null,
+          options: undefined,
+          coerce: (v) => v,
+        }}
+        value={String(values[field.field] ?? "")}
+        onChange={(v) => onChange(field.field, v)}
+        onBlur={() => onBlurValidate?.(field.field)}
+        error={String(errors[field.field] ?? "")}
+        allValues={values}
+      />
+    );
+
+    if (stripStyling) {
+      return <div key={blockId}>{fieldContent}</div>;
+    }
+
     return (
       <div
         key={blockId}
@@ -150,28 +198,7 @@ export const renderBlock = (
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
           </div>
         )}
-        <div className={editorMode ? "flex-1" : "w-full"}>
-          <FieldRenderer
-            field={{
-              field: field.field,
-              label: field.label,
-              tooltip_label: field.tooltip_label,
-              type: field.type as "text" | "signature",
-              source: field.source,
-              signing_party_id: field.signing_party_id as string,
-              shared: field.shared,
-              validator: null,
-              prefiller: null,
-              options: undefined,
-              coerce: (v) => v,
-            }}
-            value={String(values[field.field] ?? "")}
-            onChange={(v) => onChange(field.field, v)}
-            onBlur={() => onBlurValidate?.(field.field)}
-            error={String(errors[field.field] ?? "")}
-            allValues={values}
-          />
-        </div>
+        <div className={editorMode ? "flex-1" : "w-full"}>{fieldContent}</div>
       </div>
     );
   }
@@ -179,13 +206,42 @@ export const renderBlock = (
   // Phantom field blocks
   if (block.block_type === "form_phantom_field" && block.phantom_field_schema) {
     const field = block.phantom_field_schema as IFormPhantomField;
-    const phantomClasses = editorMode
-      ? draggedIndex === blockIndex
-        ? "border-amber-300 bg-amber-100 opacity-50"
-        : isSelected
-          ? "border-amber-600 bg-amber-100 shadow-md"
-          : "border-amber-200 bg-amber-50 hover:bg-amber-100"
-      : "border-amber-200 bg-amber-50";
+    const phantomClasses = !stripStyling
+      ? editorMode
+        ? draggedIndex === blockIndex
+          ? "border-amber-300 bg-amber-100 opacity-50"
+          : isSelected
+            ? "border-amber-600 bg-amber-100 shadow-md"
+            : "border-amber-200 bg-amber-50 hover:bg-amber-100"
+        : "border-amber-200 bg-amber-50"
+      : "";
+
+    const fieldContent = (
+      <FieldRenderer
+        field={{
+          field: field.field,
+          label: field.label,
+          tooltip_label: field.tooltip_label,
+          type: field.type as "text" | "signature",
+          source: field.source,
+          signing_party_id: field.signing_party_id as string,
+          shared: field.shared,
+          validator: null,
+          prefiller: null,
+          options: undefined,
+          coerce: (v) => v,
+        }}
+        value={String(values[field.field] ?? "")}
+        onChange={(v) => onChange(field.field, v)}
+        onBlur={() => onBlurValidate?.(field.field)}
+        error={String(errors[field.field] ?? "")}
+        allValues={values}
+      />
+    );
+
+    if (stripStyling) {
+      return <div key={blockId}>{fieldContent}</div>;
+    }
 
     return (
       <div
@@ -199,28 +255,7 @@ export const renderBlock = (
             <GripVertical className="h-4 w-4 cursor-move text-amber-400" />
           </div>
         )}
-        <div className={editorMode ? "flex-1" : "w-full"}>
-          <FieldRenderer
-            field={{
-              field: field.field,
-              label: field.label,
-              tooltip_label: field.tooltip_label,
-              type: field.type as "text" | "signature",
-              source: field.source,
-              signing_party_id: field.signing_party_id as string,
-              shared: field.shared,
-              validator: null,
-              prefiller: null,
-              options: undefined,
-              coerce: (v) => v,
-            }}
-            value={String(values[field.field] ?? "")}
-            onChange={(v) => onChange(field.field, v)}
-            onBlur={() => onBlurValidate?.(field.field)}
-            error={String(errors[field.field] ?? "")}
-            allValues={values}
-          />
-        </div>
+        <div className={editorMode ? "flex-1" : "w-full"}>{fieldContent}</div>
       </div>
     );
   }

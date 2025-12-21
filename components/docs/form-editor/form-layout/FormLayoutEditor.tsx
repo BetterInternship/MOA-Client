@@ -11,8 +11,9 @@ import { EditableDynamicForm } from "./EditableDynamicForm";
 import { BlockEditor } from "./BlockEditor";
 import { PartiesPanel } from "./PartiesPanel";
 import { SubscribersPanel } from "./SubscribersPanel";
+import { FormPreview } from "./FormPreview";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
-import { FileText, Users, Mail } from "lucide-react";
+import { FileText, Users, Mail, Eye } from "lucide-react";
 
 // Utility to generate unique IDs for blocks
 const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
@@ -31,13 +32,18 @@ interface FormLayoutEditorProps {
   onMetadataChange?: (metadata: IFormMetadata) => void;
 }
 
-type SectionType = "tester" | "fields" | "parties" | "subscribers";
+type SectionType = "tester" | "preview" | "parties" | "subscribers";
 
 const MENU_ITEMS: SidebarMenuItem[] = [
   {
     id: "tester",
     label: "Form Editor",
     icon: <FileText className="h-5 w-5" />,
+  },
+  {
+    id: "preview",
+    label: "Form Preview",
+    icon: <Eye className="h-5 w-5" />,
   },
   {
     id: "parties",
@@ -69,9 +75,7 @@ export const FormLayoutEditor = ({
   // Initialize subscribers directly from metadata
   const [subscribers, setSubscribers] = useState<IFormSubscriber[]>(metadata.subscribers);
 
-  const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(() =>
-    ensureBlockIds(blocks)
-  );
+  const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(() => ensureBlockIds(blocks));
 
   // Sync parties and subscribers when metadata changes
   useEffect(() => {
@@ -106,7 +110,7 @@ export const FormLayoutEditor = ({
   const handleBlockUpdate = (updatedBlock: IFormBlock) => {
     const blockIndex = orderedBlocks.findIndex((b) => b._id === updatedBlock._id);
     if (blockIndex === -1) return;
-    
+
     const newBlocks = [...orderedBlocks];
     newBlocks[blockIndex] = updatedBlock;
     setOrderedBlocks(newBlocks);
@@ -199,6 +203,8 @@ export const FormLayoutEditor = ({
             selectedBlockIndex={selectedBlockIndex}
           />
         );
+      case "preview":
+        return <FormPreview formName={formLabel} blocks={orderedBlocks} signingParties={parties} />;
       case "parties":
         return (
           <PartiesPanel
