@@ -2,7 +2,12 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-18
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 19:12:22
+ * @ Modified time: 2025-12-21 17:52:51
+ */
+
+import type { FormField } from "@/components/docs/form-editor/form-pdf-editor/FieldBox";
+import type { IFormField, IFormBlock, IFormMetadata } from "@betterinternship/core/forms";
+import { SCHEMA_VERSION } from "@betterinternship/core/forms";
 
 /**
  * Convert editor FormField to IFormField (metadata schema format)
@@ -19,49 +24,65 @@ export const moldFieldToMetadata = (editorField: FormField): IFormField => {
     w: editorField.w,
     h: editorField.h,
     // Use alignment from field, with defaults
-    align_h: editorField.align_h ?? ("center" as const),
-    align_v: editorField.align_v ?? ("middle" as const),
+    align_h: editorField.align_h ?? ("left" as const),
+    align_v: editorField.align_v ?? ("top" as const),
     // Optional fields - can be populated later
     validator: "",
     prefiller: "",
-    tooltip_label: "",
+    tooltip_label: label,
     // Required fields with defaults
-    type: "text",
+    type: "text" as const,
     source: "manual" as const,
-    party: "university" as const,
-    shared: false,
+    signing_party_id: "party-1",
+    shared: true,
   };
 };
 
 /**
- * Convert multiple editor fields to metadata schema
+ * Convert multiple editor fields to metadata blocks
+ * Creates IFormBlock objects with form_field type
  */
-export const moldFieldsToMetadata = (editorFields: FormField[]): IFormField[] => {
-  return editorFields.map(moldFieldToMetadata);
+export const moldFieldsToBlocks = (editorFields: FormField[]): IFormBlock[] => {
+  return editorFields.map((field, index) => ({
+    block_type: "form_field" as const,
+    order: index,
+    signing_party_id: "party-1",
+    field_schema: moldFieldToMetadata(field),
+  }));
 };
 
 /**
  * Generate complete form metadata from fields
  * This is the structure that gets sent to the backend
+ * Uses block-centric structure matching IFormMetadata interface
  */
 export const generateFormMetadata = (
   fields: FormField[],
   formName: string = "",
   formLabel: string = ""
 ): IFormMetadata => {
-  const metadataFields = moldFieldsToMetadata(fields);
-  const schemaVersion = 0; // Default schema version
+  const blocks = moldFieldsToBlocks(fields);
 
   return {
     name: formName,
     label: formLabel || formName,
-    schema_version: schemaVersion,
-    schema: metadataFields,
-    schema_phantoms: [],
+    schema_version: SCHEMA_VERSION,
+    schema: {
+      blocks,
+    },
+    signing_parties: [
+      {
+        _id: "party-1",
+        order: 1,
+        signatory_account: {
+          account_id: "user-1",
+          name: "Student",
+          email: "student@example.com",
+        },
+        signed: false,
+      },
+    ],
     subscribers: [],
-    signatories: [],
-    required_parties: [],
-    params: {},
   };
 };
 

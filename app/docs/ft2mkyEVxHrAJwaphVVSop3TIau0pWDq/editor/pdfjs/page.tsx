@@ -1,8 +1,7 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified time: 2025-12-21 14:37:43
- * @ Modified time: 2025-12-21 14:51:42
+ * @ Modified time: 2025-12-21 17:45:05
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with block-centric metadata management
  */
@@ -26,7 +25,6 @@ import {
   DUMMY_FORM_METADATA,
   type IFormBlock,
   type IFormField,
-  ClientBlock,
 } from "@betterinternship/core/forms";
 import type { FormField } from "../../../../../components/docs/form-editor/form-pdf-editor/FieldBox";
 import { Button } from "@/components/ui/button";
@@ -37,12 +35,19 @@ const PdfJsEditorPage = () => {
   const registry = fieldRegistryData?.fields ?? [];
 
   // Initialize FormMetadata with dummy data
-  const formMetadata = useMemo(() => new FormMetadata(DUMMY_FORM_METADATA), []);
+  const formMetadata = useMemo(() => new FormMetadata<[]>(DUMMY_FORM_METADATA), []);
 
-  // Extract initial fields from blocks
-  const INITIAL_FIELDS: FormField[] = useMemo(
-    () =>
-      formMetadata.getFieldsForEditorService().map((field: IFormField) => ({
+  // Get all blocks from FormMetadata (includes headers, paragraphs, form fields, etc.)
+  // Use raw block structure for form editing
+  const ALL_BLOCKS_RAW = useMemo(() => DUMMY_FORM_METADATA.schema.blocks, []);
+
+  // Extract only form field blocks (non-phantom) for the PDF preview
+  const INITIAL_FIELDS: FormField[] = useMemo(() => {
+    return ALL_BLOCKS_RAW.filter(
+      (block) => block.block_type === "form_field" && block.field_schema
+    ).map((block) => {
+      const field = block.field_schema as IFormField;
+      return {
         field: field.field,
         label: field.label,
         page: field.page,
@@ -52,9 +57,12 @@ const PdfJsEditorPage = () => {
         h: field.h,
         align_h: (field.align_h ?? "left") as "left" | "center" | "right",
         align_v: (field.align_v ?? "top") as "top" | "middle" | "bottom",
-      })),
-    [formMetadata]
-  );
+      };
+    });
+  }, [ALL_BLOCKS_RAW]);
+
+  // All blocks for form layout (includes headers, paragraphs, form fields, etc.)
+  const INITIAL_BLOCKS = useMemo(() => ALL_BLOCKS_RAW, [ALL_BLOCKS_RAW]);
 
   const { openModal, closeModal } = useModal();
 
@@ -68,7 +76,7 @@ const PdfJsEditorPage = () => {
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
-  const [blocks, setBlocks] = useState<IFormBlock[]>(formMetadata.getBlocksForEditorService());
+  const [blocks, setBlocks] = useState<IFormBlock[]>(INITIAL_BLOCKS);
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
@@ -81,14 +89,14 @@ const PdfJsEditorPage = () => {
    */
   const syncBlocksWithFields = useCallback(
     (updatedFields: FormField[]) => {
-      const newBlocks = blocks.map((block) => {
-        if (block.field_schema) {
-          const fieldSchema = block.field_schema;
+      const newBlocks: IFormBlock[] = blocks.map((block) => {
+        if (block.block_type === "form_field" && block.field_schema) {
+          const fieldSchema = block.field_schema as IFormField;
           const updatedField = updatedFields.find((f) => f.field === fieldSchema.field);
           if (updatedField) {
             return {
               ...block,
-              content: {
+              field_schema: {
                 ...fieldSchema,
                 x: updatedField.x,
                 y: updatedField.y,
@@ -97,8 +105,8 @@ const PdfJsEditorPage = () => {
                 align_h: updatedField.align_h,
                 align_v: updatedField.align_v,
                 label: updatedField.label,
-              },
-            };
+              } as IFormField,
+            } as IFormBlock;
           }
         }
         return block;
@@ -138,9 +146,15 @@ const PdfJsEditorPage = () => {
       fieldOps.create(fieldWithLabel);
 
       // Add new block for this field
+      const signingPartyId: string =
+        blocks.length > 0 && blocks[0].signing_party_id
+          ? (blocks[0].signing_party_id as string)
+          : "party-1";
+
       const newBlock: IFormBlock = {
         block_type: "form_field",
         order: blocks.length,
+        signing_party_id: signingPartyId,
         field_schema: {
           field: newField.field,
           type: placementFieldType as "text" | "signature" | "image",
@@ -154,10 +168,10 @@ const PdfJsEditorPage = () => {
           label: fieldWithLabel.label,
           tooltip_label: fieldWithLabel.label,
           shared: true,
+          signing_party_id: signingPartyId,
           source: "manual",
           validator: 'z.string().min(1, "Field is required")',
         } as IFormField,
-        signing_party_id: blocks[0]?.signing_party_id ?? "party-1",
       };
       setBlocks([...blocks, newBlock]);
       setIsPlacingField(false);
@@ -206,16 +220,6 @@ const PdfJsEditorPage = () => {
    * Handle field registration - molds fields to metadata and opens global modal
    */
   const handleRegisterForm = useCallback(() => {
-    // Create updated metadata with current blocks
-    const updatedMetadata = {
-      ...DUMMY_FORM_METADATA,
-      label: formLabel,
-      schema: {
-        ...DUMMY_FORM_METADATA.schema,
-        blocks: blocks,
-      },
-    };
-
     const result = registerFields(fields);
 
     openModal(
@@ -232,14 +236,10 @@ const PdfJsEditorPage = () => {
         }}
         onFieldsUpdate={(updatedFields) => {
           // Update fields in real-time as JSON is edited
-          // Enrich fields with labels from registry
           const fieldsWithLabels = updatedFields.map((field) => ({
             ...field,
             label: getFieldLabelByName(field.field, registry),
-            // ! export as a type from core package instead
-            align_h: field.align_h as "left" | "center" | "right",
-            align_v: field.align_h as "top" | "middle" | "bottom",
-          }));
+          })) as FormField[];
           setFields(fieldsWithLabels);
           syncBlocksWithFields(fieldsWithLabels);
         }}
