@@ -130,7 +130,11 @@ export const FormLayoutEditor = ({
   const handleDuplicateBlock = (index: number) => {
     const blockToDuplicate = orderedBlocks[index];
     const duplicatedBlock = JSON.parse(JSON.stringify(blockToDuplicate));
-    const newBlocks = [...orderedBlocks.slice(0, index + 1), duplicatedBlock, ...orderedBlocks.slice(index + 1)];
+    const newBlocks = [
+      ...orderedBlocks.slice(0, index + 1),
+      duplicatedBlock,
+      ...orderedBlocks.slice(index + 1),
+    ];
     setOrderedBlocks(newBlocks);
     onMetadataChange?.({
       ...metadata,
