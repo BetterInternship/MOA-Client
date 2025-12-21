@@ -15,10 +15,8 @@ import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable
 import { FileText, Users, Mail } from "lucide-react";
 
 interface FormLayoutEditorProps {
-  blocks: IFormBlock[];
   formLabel: string;
   metadata: IFormMetadata;
-  onBlocksReorder?: (reorderedBlocks: IFormBlock[]) => void;
   onMetadataChange?: (metadata: IFormMetadata) => void;
 }
 
@@ -43,12 +41,12 @@ const MENU_ITEMS: SidebarMenuItem[] = [
 ];
 
 export const FormLayoutEditor = ({
-  blocks,
   formLabel,
   metadata,
-  onBlocksReorder,
   onMetadataChange,
 }: FormLayoutEditorProps) => {
+  // Get blocks from metadata.schema
+  const blocks = metadata.schema.blocks;
   const [activeSection, setActiveSection] = useState<SectionType>("tester");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedBlock, setSelectedBlock] = useState<IFormBlock | null>(null);
@@ -64,7 +62,14 @@ export const FormLayoutEditor = ({
 
   const handleBlocksReorder = (newBlocks: IFormBlock[]) => {
     setOrderedBlocks(newBlocks);
-    onBlocksReorder?.(newBlocks);
+    // Update metadata with new blocks
+    onMetadataChange?.({
+      ...metadata,
+      schema: {
+        ...metadata.schema,
+        blocks: newBlocks,
+      },
+    });
   };
 
   const handleBlockSelect = (block: IFormBlock, blockIndex: number) => {

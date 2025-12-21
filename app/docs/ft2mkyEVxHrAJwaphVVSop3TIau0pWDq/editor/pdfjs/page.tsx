@@ -62,9 +62,6 @@ const PdfJsEditorPage = () => {
     });
   }, [ALL_BLOCKS_RAW]);
 
-  // All blocks for form layout (includes headers, paragraphs, form fields, etc.)
-  const INITIAL_BLOCKS = useMemo(() => ALL_BLOCKS_RAW, [ALL_BLOCKS_RAW]);
-
   const { openModal, closeModal } = useModal();
 
   const [selectedFieldId, setSelectedFieldId] = useState<string>("");
@@ -77,8 +74,10 @@ const PdfJsEditorPage = () => {
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
-  const [blocks, setBlocks] = useState<IFormBlock[]>(INITIAL_BLOCKS);
   const [metadata, setMetadata] = useState<IFormMetadata>(DUMMY_FORM_METADATA);
+
+  // Get blocks from metadata
+  const blocks = metadata.schema.blocks;
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
@@ -113,9 +112,16 @@ const PdfJsEditorPage = () => {
         }
         return block;
       });
-      setBlocks(newBlocks);
+      // Update metadata with synced blocks
+      setMetadata({
+        ...metadata,
+        schema: {
+          ...metadata.schema,
+          blocks: newBlocks,
+        },
+      });
     },
-    [blocks]
+    [blocks, metadata]
   );
 
   /**
@@ -175,10 +181,17 @@ const PdfJsEditorPage = () => {
           validator: 'z.string().min(1, "Field is required")',
         } as IFormField,
       };
-      setBlocks([...blocks, newBlock]);
+      // Update metadata with new block
+      setMetadata({
+        ...metadata,
+        schema: {
+          ...metadata.schema,
+          blocks: [...blocks, newBlock],
+        },
+      });
       setIsPlacingField(false);
     },
-    [fieldOps, registry, placementAlign_h, placementAlign_v, blocks]
+    [fieldOps, registry, placementAlign_h, placementAlign_v, blocks, metadata]
   );
 
   /**
@@ -395,13 +408,9 @@ const PdfJsEditorPage = () => {
         ) : (
           // Form Layout Editor View
           <FormLayoutEditor
-            blocks={blocks}
             formLabel={formLabel}
             metadata={metadata}
-            onBlocksReorder={(reorderedBlocks) => {
-              setBlocks(reorderedBlocks);
-            }}
-            onMetadataChange={(updatedMetadata) => {
+            onMetadataChange={(updatedMetadata: IFormMetadata) => {
               setMetadata(updatedMetadata);
             }}
           />
