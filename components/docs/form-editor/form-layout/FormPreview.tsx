@@ -5,6 +5,7 @@ import { type IFormBlock, type IFormSigningParty } from "@betterinternship/core/
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormRenderer } from "@/components/docs/forms/FormRenderer";
+import { FormPreviewPdfDisplay } from "./FormPreviewPdfDisplay";
 
 interface FormPreviewProps {
   formName: string;
@@ -166,17 +167,13 @@ export const FormPreview = ({
         </div>
 
         {/* Right side - PDF Preview */}
-        <div className="relative flex-1 overflow-y-auto bg-slate-100">
+        <div className="relative flex-1 overflow-hidden bg-slate-100">
           {documentUrl ? (
-            <div className="h-full w-full">
-              <embed
-                src={documentUrl}
-                type="application/pdf"
-                width="100%"
-                height="100%"
-                title="Document Preview"
-              />
-            </div>
+            <FormPreviewPdfDisplay
+              documentUrl={documentUrl}
+              blocks={filteredBlocks}
+              values={values}
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <div className="text-center">
