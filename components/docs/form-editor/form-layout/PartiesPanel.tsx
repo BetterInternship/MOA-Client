@@ -15,28 +15,34 @@ interface PartiesPanelProps {
 type CredentialMode = "source" | "account";
 
 export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) => {
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<Partial<IFormSigningParty>>({});
   const [credentialMode, setCredentialMode] = useState<CredentialMode>("source");
 
-  const handleStartEdit = (party: IFormSigningParty) => {
-    setEditingId(party._id);
+  const handleStartEdit = (party: IFormSigningParty, index: number) => {
+    setEditingIndex(index);
     setEditValues(party);
     // Determine which credential mode to use
     setCredentialMode(party.signatory_account ? "account" : "source");
   };
 
   const handleSaveEdit = () => {
-    if (!editingId) return;
+    if (editingIndex === null) return;
 
-    const updatedParties = parties.map((p) => (p._id === editingId ? { ...p, ...editValues } : p));
+    const updatedParties = parties.map((p, idx) => {
+      if (idx === editingIndex) {
+        const { signed: _signed, ...partyWithoutSigned } = { ...p, ...editValues };
+        return partyWithoutSigned as IFormSigningParty;
+      }
+      return p;
+    });
     onPartiesChange(updatedParties);
-    setEditingId(null);
+    setEditingIndex(null);
     setEditValues({});
   };
 
   const handleCancelEdit = () => {
-    setEditingId(null);
+    setEditingIndex(null);
     setEditValues({});
     setCredentialMode("source");
   };
@@ -68,14 +74,14 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
       <div className="space-y-3">
         {parties
           .sort((a, b) => a.order - b.order)
-          .map((party) => (
+          .map((party, index) => (
             <Card
               key={party._id}
               className={`border p-4 ${
-                editingId === party._id ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white"
+                editingIndex === index ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white"
               }`}
             >
-              {editingId === party._id ? (
+              {editingIndex === index ? (
                 // Edit Mode
                 <div className="space-y-4">
                   {/* Party Name */}
@@ -157,7 +163,10 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                       >
                         <option value="">-- Select a party --</option>
                         {parties
-                          .filter((p) => p._id !== editingId)
+                          .filter(
+                            (p) =>
+                              p._id !== (editingIndex !== null ? parties[editingIndex]._id : null)
+                          )
                           .map((p) => (
                             <option key={p._id} value={p._id}>
                               {p._id}
@@ -174,16 +183,17 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                       <Input
                         type="email"
                         value={editValues.signatory_account?.email || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const email = e.target.value;
                           setEditValues({
                             ...editValues,
                             signatory_account: {
-                              account_id: "",
-                              name: "",
-                              email: e.target.value,
+                              account_id: email.split("@")[0] || "",
+                              name: email.split("@")[0] || "",
+                              email: email,
                             },
-                          })
-                        }
+                          });
+                        }}
                         placeholder="signatory@example.com"
                         className="h-8 text-sm"
                       />
@@ -242,7 +252,7 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleStartEdit(party)}
+                      onClick={() => handleStartEdit(party, index)}
                       className="h-8 w-8 p-0"
                     >
                       <Edit2 className="h-3.5 w-3.5" />

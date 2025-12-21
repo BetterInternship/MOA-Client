@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified time: 2025-12-21 18:41:26
+ * @ Modified time: 2025-12-21 21:08:08
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with block-centric metadata management
  */
@@ -237,11 +237,12 @@ const PdfJsEditorPage = () => {
   const handleRegisterForm = useCallback(() => {
     const result = registerFields(fields);
 
-    // Merge result metadata with current metadata (including subscribers)
+    // Merge result metadata with current metadata to preserve signing_parties and subscribers
     const mergedMetadata: IFormMetadata =
       result.metadata && result.isValid
         ? {
             ...result.metadata,
+            signing_parties: metadata.signing_parties,
             subscribers: metadata.subscribers,
           }
         : metadata;

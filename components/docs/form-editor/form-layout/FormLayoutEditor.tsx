@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   type IFormBlock,
   type IFormMetadata,
@@ -60,6 +60,12 @@ export const FormLayoutEditor = ({
 
   const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(blocks);
 
+  // Sync parties and subscribers when metadata changes
+  useEffect(() => {
+    setParties(metadata.signing_parties);
+    setSubscribers(metadata.subscribers);
+  }, [metadata.signing_parties, metadata.subscribers]);
+
   const handleBlocksReorder = (newBlocks: IFormBlock[]) => {
     setOrderedBlocks(newBlocks);
     // Update metadata with new blocks
@@ -82,7 +88,13 @@ export const FormLayoutEditor = ({
     newBlocks[selectedBlockIndex!] = updatedBlock;
     setOrderedBlocks(newBlocks);
     setSelectedBlock(updatedBlock);
-    onBlocksReorder?.(newBlocks);
+    onMetadataChange?.({
+      ...metadata,
+      schema: {
+        ...metadata.schema,
+        blocks: newBlocks,
+      },
+    });
   };
 
   const renderContent = () => {
@@ -105,7 +117,18 @@ export const FormLayoutEditor = ({
           />
         );
       case "parties":
-        return <PartiesPanel parties={parties} onPartiesChange={setParties} />;
+        return (
+          <PartiesPanel
+            parties={parties}
+            onPartiesChange={(updatedParties) => {
+              setParties(updatedParties);
+              onMetadataChange?.({
+                ...metadata,
+                signing_parties: updatedParties,
+              });
+            }}
+          />
+        );
 
       case "subscribers":
         return (
