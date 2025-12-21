@@ -25,7 +25,7 @@ type SectionType = "tester" | "fields" | "parties" | "subscribers";
 const MENU_ITEMS: SidebarMenuItem[] = [
   {
     id: "tester",
-    label: "Form Tester",
+    label: "Form Editor",
     icon: <FileText className="h-5 w-5" />,
   },
   {
