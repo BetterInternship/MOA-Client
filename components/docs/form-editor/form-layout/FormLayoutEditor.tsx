@@ -31,7 +31,7 @@ const MENU_ITEMS: SidebarMenuItem[] = [
   },
   {
     id: "parties",
-    label: "Parties",
+    label: "Signing Parties",
     icon: <Users className="h-5 w-5" />,
   },
   {
@@ -40,18 +40,6 @@ const MENU_ITEMS: SidebarMenuItem[] = [
     icon: <Mail className="h-5 w-5" />,
   },
 ];
-
-/**
- * Convert FormBlock to display-friendly structure
- * Renders all block types for editing and preview
- */
-const formFieldToClientField = (field: string, label: string): any => {
-  return {
-    field,
-    label,
-    type: "text",
-  };
-};
 
 export const FormLayoutEditor = ({
   blocks,
