@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
+import { FormRenderer } from "@/components/docs/forms/FormRenderer";
 import { getFormFields } from "@/app/api/forms.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
@@ -318,7 +318,7 @@ const FormAutosignEditorModal = React.memo(
                   <div className="text-sm text-gray-500">No fields available for this request.</div>
                 ) : (
                   <div className="space-y-4">
-                    <DynamicForm
+                    <FormRenderer
                       signingPartyId={party}
                       fields={fieldsForParty(party)}
                       values={values[party] ?? {}}

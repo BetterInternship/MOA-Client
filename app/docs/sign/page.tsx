@@ -11,7 +11,7 @@ import {
   getPendingInformation,
   ApproveSignatoryRequest,
 } from "@/app/api/forms.api";
-import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
+import { FormRenderer } from "@/components/docs/forms/FormRenderer";
 import { DUMMY_FORM_METADATA, FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
@@ -109,7 +109,7 @@ function PageContent() {
     ? new FormMetadata(DUMMY_FORM_METADATA ?? (formRes?.formMetadata as unknown as IFormMetadata))
     : null;
   const fields = formMetadata?.getFieldsForClientService() ?? [];
-  const blocks = formMetadata?.getAllBlocks() ?? [];
+  const blocks = formMetadata?.getAllBlocksForClientService() ?? [];
 
   // local form state
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
@@ -485,7 +485,7 @@ function PageContent() {
                 <div className="text-sm text-gray-500">No fields available for this request.</div>
               ) : (
                 <div className="space-y-4">
-                  <DynamicForm
+                  <FormRenderer
                     signingPartyId={party || "student"}
                     fields={fields}
                     blocks={blocks}

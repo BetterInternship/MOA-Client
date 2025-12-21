@@ -1,13 +1,13 @@
 "use client";
 
 import { cn, coerceAnyDate, formatDateWithoutTime } from "@/lib/utils";
-import { ClientField, IFormBlock, IFormField } from "@betterinternship/core/forms";
+import { ClientBlock, ClientField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
 import { FieldRenderer } from "./FieldRenderer";
 import { useFormContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.ctx";
 import { HeaderRenderer, ParagraphRenderer } from "./BlockrRenderer";
 
-export function DynamicForm({
+export function FormRenderer({
   formName,
   signingPartyId,
   fields,
@@ -24,7 +24,7 @@ export function DynamicForm({
   formName: string;
   signingPartyId?: string;
   fields: ClientField<[]>[];
-  blocks: IFormBlock[];
+  blocks: ClientBlock<[]>[];
   values: Record<string, any>;
   autofillValues: Record<string, string>;
   errors?: Record<string, string>;
@@ -39,9 +39,6 @@ export function DynamicForm({
     .filter((field) => field.signing_party_id === signingPartyId)
     .filter((field) => field.source === "manual");
   const [selectedField, setSelectedField] = useState<string>("");
-
-  // Separate recipient fields (those whose field name ends with ":recipient")
-  const recipientFields = filteredFields.filter((f) => String(f.field).endsWith(":recipient"));
 
   // Seed from saved autofill
   useEffect(() => {
@@ -101,7 +98,7 @@ export function DynamicForm({
 
   return (
     <div className="space-y-4">
-      <FormSection
+      <BlocksRenderer
         formKey={formName}
         blocks={blocks}
         values={values}
@@ -114,7 +111,7 @@ export function DynamicForm({
   );
 }
 
-const FormSection = function FormSection({
+const BlocksRenderer = ({
   formKey,
   blocks,
   values,
@@ -124,19 +121,20 @@ const FormSection = function FormSection({
   onBlurValidate,
 }: {
   formKey: string;
-  blocks: IFormBlock[];
+  blocks: ClientBlock<[]>[];
   values: Record<string, string>;
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
   setSelected: (selected: string) => void;
   onBlurValidate?: (fieldKey: string) => void;
-}) {
+}) => {
   if (!blocks.length) return null;
 
   return (
     <div className="space-y-3">
       {blocks
         .toSorted((a, b) => a.order - b.order)
+        .map((block) => (console.log(block), block))
         .map((block) => (
           <div
             className="space-between flex flex-row"
@@ -148,9 +146,7 @@ const FormSection = function FormSection({
                 onFocus={() => setSelected(block.field_schema?.field as string)}
               >
                 <FieldRenderer
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                  // @ts-expect-error
-                  field={block.field_schema as IFormField}
+                  field={block.field_schema}
                   value={""}
                   onChange={(v) => onChange(block.field_schema?.field as string, v)}
                   onBlur={() => {
@@ -161,11 +157,31 @@ const FormSection = function FormSection({
                 />
               </div>
             )}
+
+            {block.phantom_field_schema && (
+              <div
+                className="flex-1"
+                onFocus={() => setSelected(block.phantom_field_schema?.field as string)}
+              >
+                <FieldRenderer
+                  field={block.phantom_field_schema}
+                  value={""}
+                  onChange={(v) => onChange(block.phantom_field_schema?.field as string, v)}
+                  onBlur={() => {
+                    onBlurValidate?.(block.phantom_field_schema?.field as string);
+                  }}
+                  error={errors[block.phantom_field_schema.field]}
+                  allValues={values}
+                />
+              </div>
+            )}
+
             {block.block_type === "header" && block.text_content && (
               <div className="flex-1">
                 <HeaderRenderer content={block.text_content} />
               </div>
             )}
+
             {block.block_type === "paragraph" && block.text_content && (
               <div className="flex-1">
                 <ParagraphRenderer content={block.text_content} />
@@ -200,6 +216,7 @@ function isEmptyFor(field: ClientField<[]>, value: unknown) {
 /**
  * Coerces the value into the type needed by the field.
  * Useful, used outside zod schemas.
+ * // ! move this probably into the formMetadata core package
  *
  * @param field
  * @param value

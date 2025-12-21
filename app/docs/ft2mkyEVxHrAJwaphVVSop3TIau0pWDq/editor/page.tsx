@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
  * @ Modified time: 2025-12-18 15:35:50
- * @ Modified time: 2025-12-18 15:35:52
+ * @ Modified time: 2025-12-21 13:11:36
  *
  * This page will let us upload forms and define their schemas on the fly.
  */
@@ -193,15 +193,13 @@ const ContactEditor = ({
   initialContactDetails,
   updateContact,
 }: {
-  initialContactDetails: IFormSubscriber | IFormSignatory;
-  updateContact: (field: Partial<IFormSubscriber> | Partial<IFormSignatory>) => void;
+  initialContactDetails: IFormSubscriber;
+  updateContact: (field: Partial<IFormSubscriber>) => void;
 }) => {
   const { registry: _registry } = useFieldTemplateContext();
   const registry = _registry.filter((f) => f.type === "signature");
   const [fieldFullName, setFieldFullName] = useState<string>();
-  const [contactDetails, setContactDetails] = useState<IFormSubscriber | IFormSignatory>(
-    initialContactDetails
-  );
+  const [contactDetails, setContactDetails] = useState<IFormSubscriber>(initialContactDetails);
 
   // Handle change for any of the props of the field
   const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement> | string) => {
