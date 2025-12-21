@@ -1,56 +1,39 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { ClientField } from "@betterinternship/core/forms";
-import { GripVertical } from "lucide-react";
-import { FieldRenderer } from "@/components/docs/forms/FieldRenderer";
+import { type IFormBlock } from "@betterinternship/core/forms";
+import { renderBlocks } from "@/lib/block-renderer";
 
 interface EditableDynamicFormProps {
   formName: string;
-  party?: "entity" | "student-guardian" | "university" | "student";
-  fields: ClientField<[]>[];
+  blocks: IFormBlock[];
   values: Record<string, any>;
-  setValues: (values: Record<string, string>) => void;
   onChange: (key: string, value: any) => void;
   errors?: Record<string, string>;
   onBlurValidate?: (fieldKey: string) => void;
-  onFieldsReorder?: (fields: ClientField<[]>[]) => void;
+  onBlocksReorder?: (blocks: IFormBlock[]) => void;
 }
 
 /**
- * Editable variant of DynamicForm with draggable fields
- * Uses FieldRenderer to display actual form inputs with drag-to-reorder
+ * Editable variant of form display with draggable blocks
+ * Renders all block types: headers, paragraphs, form fields, phantom fields
+ * Supports drag-to-reorder and field editing
  */
 export const EditableDynamicForm = ({
-  formName,
-  party,
-  fields: initialFields,
+  formName: _formName,
+  blocks: initialBlocks,
   values,
   onChange,
   errors = {},
   onBlurValidate,
-  onFieldsReorder,
+  onBlocksReorder,
 }: EditableDynamicFormProps) => {
-  const [fields, setFields] = useState<ClientField<[]>[]>(initialFields);
+  const [blocks, setBlocks] = useState<IFormBlock[]>(initialBlocks);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    setFields(initialFields);
-  }, [initialFields]);
-
-  const filteredFields = fields
-    .filter((field) => field.signing_party_id === party)
-    .filter((field) => field.source === "manual" || party !== "student");
-
-  // Separate recipient fields
-  const recipientFields = filteredFields.filter((f) => String(f.field).endsWith(":recipient"));
-  const nonRecipientFields = filteredFields.filter((f) => !String(f.field).endsWith(":recipient"));
-
-  // Group by section
-  const entitySectionFields = nonRecipientFields.filter((d) => d.section === "entity");
-  const internshipSectionFields = nonRecipientFields.filter((d) => d.section === "internship");
-  const universitySectionFields = nonRecipientFields.filter((d) => d.section === "university");
-  const studentSectionFields = nonRecipientFields.filter((d) => d.section === "student");
+    setBlocks(initialBlocks);
+  }, [initialBlocks]);
 
   const handleDragStart = useCallback((index: number) => {
     setDraggedIndex(index);
@@ -60,100 +43,48 @@ export const EditableDynamicForm = ({
     (index: number) => {
       if (draggedIndex === null || draggedIndex === index) return;
 
-      const newFields = [...filteredFields];
-      const draggedItem = newFields[draggedIndex];
-      newFields.splice(draggedIndex, 1);
-      newFields.splice(index, 0, draggedItem);
+      const newBlocks = [...blocks];
+      const draggedItem = newBlocks[draggedIndex];
+      newBlocks.splice(draggedIndex, 1);
+      newBlocks.splice(index, 0, draggedItem);
 
       setDraggedIndex(index);
-      setFields(newFields);
+      setBlocks(newBlocks);
     },
-    [draggedIndex, filteredFields]
+    [draggedIndex, blocks]
   );
 
   const handleDragEnd = useCallback(() => {
     setDraggedIndex(null);
-    onFieldsReorder?.(fields);
-  }, [fields, onFieldsReorder]);
-
-  const renderField = (field: ClientField<[]>, index: number) => (
-    <div
-      key={`${formName}:${field.section}:${field.field}`}
-      draggable
-      onDragStart={() => handleDragStart(index)}
-      onDragOver={() => handleDragOver(index)}
-      onDragEnd={handleDragEnd}
-      className={`flex gap-3 rounded-lg border p-4 transition-all ${
-        draggedIndex === index
-          ? "border-blue-300 bg-blue-100 opacity-50"
-          : "border-slate-200 bg-white hover:bg-slate-50"
-      }`}
-    >
-      {/* Drag Handle */}
-      <div className="flex-shrink-0 pt-2">
-        <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
-      </div>
-
-      {/* Field Rendered */}
-      <div className="flex-1">
-        <FieldRenderer
-          field={field}
-          value={values[field.field]}
-          onChange={(v) => onChange(field.field, v)}
-          onBlur={() => {
-            onBlurValidate?.(field.field);
-          }}
-          error={errors[field.field]}
-          allValues={values}
-        />
-      </div>
-    </div>
-  );
-
-  const renderSection = (title: string, sectionFields: ClientField<[]>[]) => {
-    if (sectionFields.length === 0) return null;
-
-    // Deduplicate fields
-    const reducedFields = sectionFields.reduce(
-      (acc, cur) => (acc.map((f) => f.field).includes(cur.field) ? acc : [...acc, cur]),
-      [] as ClientField<[]>[]
-    );
-
-    // Get indices for fields in this section within filteredFields
-    const sectionFieldIndices = reducedFields.map((f) =>
-      filteredFields.findIndex((pf) => pf.field === f.field)
-    );
-
-    return (
-      <div key={title} className="space-y-3">
-        <div className="pt-2 pb-1">
-          <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
-        </div>
-
-        <div className="space-y-3">
-          {reducedFields.map((field, idx) => {
-            const actualIndex = sectionFieldIndices[idx];
-            return actualIndex >= 0 ? renderField(field, actualIndex) : null;
-          })}
-        </div>
-      </div>
-    );
-  };
+    onBlocksReorder?.(blocks);
+  }, [blocks, onBlocksReorder]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Info Banner */}
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
         <p className="text-xs text-blue-700">
-          ✓ Drag fields to reorder them while testing. Fill in values to see form behavior.
+          ✓ Drag blocks to reorder them. Edit form fields to see changes reflected.
         </p>
       </div>
-      {renderSection("Entity Information", entitySectionFields)}
-      {renderSection("Internship Information", internshipSectionFields)}
-      {renderSection("University Information", universitySectionFields)}
-      {renderSection("Student Information", studentSectionFields)}
-      {recipientFields.length > 0 &&
-        renderSection("Recipient Email(s) — IMPORTANT", recipientFields)}
+
+      {/* Render all blocks in order */}
+      {renderBlocks(
+        blocks,
+        {
+          values,
+          onChange,
+          errors,
+          onBlurValidate,
+        },
+        {
+          editorMode: true,
+          onDragStart: handleDragStart,
+          onDragOver: handleDragOver,
+          onDragEnd: handleDragEnd,
+          draggedIndex,
+        }
+      )}
     </div>
   );
 };

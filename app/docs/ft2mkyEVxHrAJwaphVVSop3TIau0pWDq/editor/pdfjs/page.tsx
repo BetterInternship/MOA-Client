@@ -383,11 +383,10 @@ const PdfJsEditorPage = () => {
         ) : (
           // Form Layout Editor View
           <FormLayoutEditor
-            fields={fields}
+            blocks={blocks}
             formLabel={formLabel}
-            onFieldsReorder={(reorderedFields) => {
-              setFields(reorderedFields);
-              syncBlocksWithFields(reorderedFields);
+            onBlocksReorder={(reorderedBlocks) => {
+              setBlocks(reorderedBlocks);
             }}
           />
         )}

@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { type IFormBlock } from "@betterinternship/core/forms";
 import { EditableDynamicForm } from "./EditableDynamicForm";
 import { PartiesPanel } from "./PartiesPanel";
 import { ParametersPanel } from "./ParametersPanel";
 import { SignatoriesPanel } from "./SignatoriesPanel";
-import { ClientField } from "@betterinternship/core/forms";
-import { FormField } from "../form-pdf-editor/FieldBox";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
 import { FileText, Users, Settings, CheckCircle } from "lucide-react";
 
@@ -36,9 +35,9 @@ interface Signatory {
 }
 
 interface FormLayoutEditorProps {
-  fields: FormField[];
+  blocks: IFormBlock[];
   formLabel: string;
-  onFieldsReorder?: (reorderedFields: FormField[]) => void;
+  onBlocksReorder?: (reorderedBlocks: IFormBlock[]) => void;
 }
 
 type SectionType = "tester" | "fields" | "parties" | "parameters" | "signatories";
@@ -67,29 +66,20 @@ const MENU_ITEMS: SidebarMenuItem[] = [
 ];
 
 /**
- * Convert FormField (PDF layout data) to ClientField (form structure data)
- * Creates a basic ClientField structure for rendering with FieldRenderer
+ * Convert FormBlock to display-friendly structure
+ * Renders all block types for editing and preview
  */
-const formFieldToClientField = (formField: FormField, party: string): ClientField<[]> => {
+const formFieldToClientField = (field: string, label: string): any => {
   return {
-    field: formField.field,
-    label: formField.label,
+    field,
+    label,
     type: "text",
-    section: "entity",
-    party: party as "entity" | "student-guardian" | "university" | "student",
-    source: "manual",
-    placeholder: `Enter ${formField.label.toLowerCase()}`,
-    required: false,
-    validation: [],
-  } as ClientField<[]>;
+  };
 };
 
-export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLayoutEditorProps) => {
+export const FormLayoutEditor = ({ blocks, formLabel, onBlocksReorder }: FormLayoutEditorProps) => {
   const [activeSection, setActiveSection] = useState<SectionType>("tester");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [activeParty, setActiveParty] = useState<
-    "entity" | "student-guardian" | "university" | "student"
-  >("entity");
   const [parties, setParties] = useState<Party[]>([
     {
       id: "1",
@@ -143,21 +133,11 @@ export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLay
     },
   ]);
 
-  const [orderedFields, setOrderedFields] = useState<FormField[]>(fields);
+  const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(blocks);
 
-  // Convert FormField array to ClientField array for EditableDynamicForm
-  const clientFields: ClientField<[]>[] = orderedFields.map((field) =>
-    formFieldToClientField(field, activeParty)
-  );
-
-  const handleFieldsReorder = (newFields: ClientField<[]>[]) => {
-    // Convert back to FormField
-    const reorderedFormFields = orderedFields.map((field) => {
-      const index = newFields.findIndex((cf) => cf.field === field.field);
-      return field;
-    });
-    setOrderedFields(reorderedFormFields);
-    onFieldsReorder?.(reorderedFormFields);
+  const handleBlocksReorder = (newBlocks: IFormBlock[]) => {
+    setOrderedBlocks(newBlocks);
+    onBlocksReorder?.(newBlocks);
   };
 
   const renderContent = () => {
@@ -166,17 +146,15 @@ export const FormLayoutEditor = ({ fields, formLabel, onFieldsReorder }: FormLay
         return (
           <EditableDynamicForm
             formName={formLabel}
-            party={activeParty}
-            fields={clientFields}
+            blocks={orderedBlocks}
             values={formValues}
-            setValues={setFormValues}
             onChange={(key, value) => {
               setFormValues((prev) => ({
                 ...prev,
                 [key]: value,
               }));
             }}
-            onFieldsReorder={handleFieldsReorder}
+            onBlocksReorder={handleBlocksReorder}
           />
         );
       case "parties":
