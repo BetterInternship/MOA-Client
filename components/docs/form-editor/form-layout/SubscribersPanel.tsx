@@ -4,8 +4,9 @@ import { useState } from "react";
 import { type IFormSubscriber } from "@betterinternship/core/forms";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/docs/forms/input";
+import { FormInput } from "@/components/docs/forms/EditForm";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { validateEmail } from "@/lib/validators";
 
 interface SubscribersPanelProps {
   subscribers: IFormSubscriber[];
@@ -15,14 +16,23 @@ interface SubscribersPanelProps {
 export const SubscribersPanel = ({ subscribers, onSubscribersChange }: SubscribersPanelProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<IFormSubscriber>>({});
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleStartEdit = (subscriber: IFormSubscriber) => {
     setEditingId(subscriber.account_id);
     setEditValues(subscriber);
+    setEmailError(null);
   };
 
   const handleSaveEdit = () => {
     if (!editingId) return;
+
+    // Validate email before saving
+    const validation = validateEmail(editValues.email || "");
+    if (!validation.valid) {
+      setEmailError(validation.error || "Invalid email");
+      return;
+    }
 
     const updatedSubscribers = subscribers.map((s) =>
       s.account_id === editingId ? ({ ...s, ...editValues } as IFormSubscriber) : s
@@ -30,11 +40,20 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
     onSubscribersChange(updatedSubscribers);
     setEditingId(null);
     setEditValues({});
+    setEmailError(null);
   };
 
   const handleCancelEdit = () => {
+    // If the edited subscriber has no email, remove it
+    if (editingId) {
+      const subscriber = subscribers.find((s) => s.account_id === editingId);
+      if (subscriber && !subscriber.email) {
+        handleDeleteSubscriber(editingId);
+      }
+    }
     setEditingId(null);
     setEditValues({});
+    setEmailError(null);
   };
 
   const handleDeleteSubscriber = (accountId: string) => {
@@ -90,17 +109,19 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
             >
               {editingId === subscriber.account_id ? (
                 // Edit Mode
-                <div className="space-y-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">Email</label>
-                    <Input
-                      type="email"
-                      value={editValues.email || ""}
-                      onChange={(e) => setEditValues({ ...editValues, email: e.target.value })}
-                      placeholder="subscriber@example.com"
-                      className="h-8 text-sm"
-                    />
-                  </div>
+                <div className="space-y-1 ">
+                  <FormInput
+                    label="Email"
+                    type="email"
+                    value={editValues.email || ""}
+                    setter={(value) => {
+                      setEditValues({ ...editValues, email: value });
+                      setEmailError(null); // Clear error on change
+                    }}
+                    placeholder="subscriber@example.com"
+                    required={false}
+                  />
+                  {emailError && <div className="text-xs text-red-600">{emailError}</div>}
 
                   <div className="flex justify-end gap-2">
                     <Button
