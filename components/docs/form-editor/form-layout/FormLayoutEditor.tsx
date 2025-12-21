@@ -230,8 +230,8 @@ export const FormLayoutEditor = ({
               }}
               onUpdate={handleBlockUpdate}
               signingParties={parties.map((p) => ({
-                id: p._id,
-                name: p.signatory_source || `Party ${p.order}`,
+                id: p._id || `party-${p.order}`,
+                name: p._id,
               }))}
             />
           </div>
