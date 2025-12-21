@@ -5,31 +5,14 @@ import {
   type IFormBlock,
   type IFormMetadata,
   type IFormSigningParty,
+  type IFormSubscriber,
 } from "@betterinternship/core/forms";
 import { EditableDynamicForm } from "./EditableDynamicForm";
 import { BlockEditor } from "./BlockEditor";
 import { PartiesPanel } from "./PartiesPanel";
-import { ParametersPanel } from "./ParametersPanel";
-import { SignatoriesPanel } from "./SignatoriesPanel";
+import { SubscribersPanel } from "./SubscribersPanel";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
-import { FileText, Users, Settings, CheckCircle } from "lucide-react";
-
-interface Parameter {
-  id: string;
-  key: string;
-  value: string;
-  type: "text" | "number" | "date";
-  required: boolean;
-}
-
-interface Signatory {
-  id: string;
-  name: string;
-  role: string;
-  party: string;
-  email?: string;
-  signOrder: number;
-}
+import { FileText, Users, Mail } from "lucide-react";
 
 interface FormLayoutEditorProps {
   blocks: IFormBlock[];
@@ -38,7 +21,7 @@ interface FormLayoutEditorProps {
   onBlocksReorder?: (reorderedBlocks: IFormBlock[]) => void;
 }
 
-type SectionType = "tester" | "fields" | "parties" | "parameters" | "signatories";
+type SectionType = "tester" | "fields" | "parties" | "subscribers";
 
 const MENU_ITEMS: SidebarMenuItem[] = [
   {
@@ -52,14 +35,9 @@ const MENU_ITEMS: SidebarMenuItem[] = [
     icon: <Users className="h-5 w-5" />,
   },
   {
-    id: "parameters",
-    label: "Parameters",
-    icon: <Settings className="h-5 w-5" />,
-  },
-  {
-    id: "signatories",
-    label: "Signatories",
-    icon: <CheckCircle className="h-5 w-5" />,
+    id: "subscribers",
+    label: "Subscribers",
+    icon: <Mail className="h-5 w-5" />,
   },
 ];
 
@@ -89,41 +67,8 @@ export const FormLayoutEditor = ({
   // Initialize parties directly from metadata signing_parties
   const [parties, setParties] = useState<IFormSigningParty[]>(metadata.signing_parties);
 
-  const [parameters, setParameters] = useState<Parameter[]>([
-    {
-      id: "1",
-      key: "startDate",
-      value: "",
-      type: "date",
-      required: true,
-    },
-    {
-      id: "2",
-      key: "endDate",
-      value: "",
-      type: "date",
-      required: true,
-    },
-  ]);
-
-  const [signatories, setSignatories] = useState<Signatory[]>([
-    {
-      id: "1",
-      name: "Company Director",
-      role: "Director",
-      party: "entity",
-      email: "",
-      signOrder: 1,
-    },
-    {
-      id: "2",
-      name: "University Coordinator",
-      role: "Coordinator",
-      party: "university",
-      email: "",
-      signOrder: 2,
-    },
-  ]);
+  // Initialize subscribers directly from metadata
+  const [subscribers, setSubscribers] = useState<IFormSubscriber[]>(metadata.subscribers);
 
   const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(blocks);
 
@@ -166,16 +111,9 @@ export const FormLayoutEditor = ({
         );
       case "parties":
         return <PartiesPanel parties={parties} onPartiesChange={setParties} />;
-      case "parameters":
-        return <ParametersPanel parameters={parameters} onParametersChange={setParameters} />;
-      case "signatories":
-        return (
-          <SignatoriesPanel
-            signatories={signatories}
-            parties={parties}
-            onSignatoriesChange={setSignatories}
-          />
-        );
+
+      case "subscribers":
+        return <SubscribersPanel subscribers={subscribers} onSubscribersChange={setSubscribers} />;
       default:
         return null;
     }
