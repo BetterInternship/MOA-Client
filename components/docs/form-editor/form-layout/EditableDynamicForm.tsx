@@ -73,9 +73,9 @@ export const EditableDynamicForm = ({
   }, [blocks, onBlocksReorder]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Instruction card and buttons */}
-      <Card className="border border-slate-200 bg-slate-50/50 p-4">
+      <Card className="mb-5 border border-slate-200 bg-slate-50/50 p-4">
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs text-slate-800">
             Drag blocks to reorder them. Edit form fields to see changes reflected in the metadata.

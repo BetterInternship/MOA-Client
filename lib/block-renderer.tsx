@@ -74,7 +74,8 @@ export const renderBlock = (
   const blockId = `block:${block.order}`;
 
   const isSelected = selectedIndex === blockIndex;
-  const baseClasses = "flex gap-3 rounded-lg border p-4 transition-all cursor-pointer";
+  const baseClasses =
+    "flex gap-3 rounded-[0.33em] border p-2 transition-all cursor-pointer items-center";
   const dragClasses = editorMode
     ? draggedIndex === blockIndex
       ? "border-blue-300 bg-blue-100 opacity-50"
@@ -102,7 +103,7 @@ export const renderBlock = (
         onClick={() => onBlockClick?.(blockIndex)}
       >
         {editorMode && (
-          <div className="flex-shrink-0 pt-2">
+          <div className="flex-shrink-0">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
           </div>
         )}
@@ -123,7 +124,7 @@ export const renderBlock = (
         onClick={() => onBlockClick?.(blockIndex)}
       >
         {editorMode && (
-          <div className="flex-shrink-0 pt-2">
+          <div className="flex-shrink-0">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
           </div>
         )}
@@ -145,7 +146,7 @@ export const renderBlock = (
         onClick={() => onBlockClick?.(blockIndex)}
       >
         {editorMode && (
-          <div className="flex-shrink-0 pt-2">
+          <div className="flex-shrink-0">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
           </div>
         )}
@@ -194,12 +195,11 @@ export const renderBlock = (
         onClick={() => onBlockClick?.(blockIndex)}
       >
         {editorMode && (
-          <div className="flex-shrink-0 pt-2">
+          <div className="flex-shrink-0">
             <GripVertical className="h-4 w-4 cursor-move text-amber-400" />
           </div>
         )}
         <div className={editorMode ? "flex-1" : "w-full"}>
-          <p className="mb-2 text-xs font-semibold text-amber-700">🔒 PHANTOM FIELD</p>
           <FieldRenderer
             field={{
               field: field.field,
