@@ -1,8 +1,8 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-12-21 14:36:29
- * @ Description:
+ * @ Modified time: 2025-12-21 20:36:55
+ * @ Modified time: 2025-12-21 20:37:16
  *
  * We can move this out later on so it becomes reusable in other places.
  * This allows the consumer to use information about a form within the component.
@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 export const SCHEMA_VERSION = 0;
 
 // Context interface
-export interface IFormContext {
+export interface IFormEditorContext {
   formName: string;
   formVersion: number;
   formMetadata: IFormMetadata;
@@ -68,8 +68,8 @@ interface IDocument {
 }
 
 // Context defs
-const FormContext = createContext<IFormContext>({} as IFormContext);
-export const useFormContext = () => useContext(FormContext);
+const FormEditorContext = createContext<IFormEditorContext>({} as IFormEditorContext);
+export const useFormEditorContext = () => useContext(FormEditorContext);
 
 /**
  * Gives access to form context api
@@ -77,7 +77,7 @@ export const useFormContext = () => useContext(FormContext);
  * @component
  * @provider
  */
-export const FormContextProvider = ({ children }: { children: React.ReactNode }) => {
+export const FormEditorContextProvider = ({ children }: { children: React.ReactNode }) => {
   const { registry } = useFieldTemplateContext();
 
   // Define state here
@@ -337,7 +337,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   }, [selectedPreviewId, keyedFields, registry]);
 
   // The form context
-  const formContext: IFormContext = {
+  const formContext: IFormEditorContext = {
     formName,
     formVersion,
     formMetadata,
@@ -373,7 +373,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     },
   };
 
-  return <FormContext.Provider value={formContext}>{children}</FormContext.Provider>;
+  return <FormEditorContext.Provider value={formContext}>{children}</FormEditorContext.Provider>;
 };
 
 /**

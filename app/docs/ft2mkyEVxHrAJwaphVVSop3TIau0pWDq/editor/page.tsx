@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/tabs";
 import { RegisterFormSchemaDto } from "@/app/api";
 import { useFieldTemplateContext } from "./field-template.ctx";
-import { SCHEMA_VERSION, useFormContext } from "./form.ctx";
+import { SCHEMA_VERSION, useFormEditorContext } from "./form-editor.ctx";
 import {
   DocumentHighlight,
   DocumentObjectTransform,
@@ -87,7 +87,7 @@ const FormEditorPage = () => {
  */
 const FormEditorPageContent = () => {
   const searchParams = useSearchParams();
-  const form = useFormContext();
+  const form = useFormEditorContext();
 
   // The current highlight and its transform; only need one for coordinates
   const [highlight, setHighlight] = useState<DocumentHighlight | null>(null);
@@ -296,7 +296,7 @@ const FieldEditor = ({
   fieldKey: string;
   isPhantom?: boolean;
 }) => {
-  const form = useFormContext();
+  const form = useFormEditorContext();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { registry } = useFieldTemplateContext();
   const [fieldTemplateId, setFieldTemplateId] = useState<string | null>();
@@ -593,7 +593,7 @@ const Sidebar = ({
 }) => {
   // Allows us to click the input without showing it
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const form = useFormContext();
+  const form = useFormEditorContext();
   const { registry } = useFieldTemplateContext();
   const { openModal, closeModal } = useModal();
   const [subscribers, setSubscribers] = useState<(IFormSubscriber & { id: string })[]>([]);
@@ -1034,7 +1034,7 @@ const RegisterFileModal = ({
   signatories: IFormSignatory[];
   close: () => void;
 }) => {
-  const form = useFormContext();
+  const form = useFormEditorContext();
   const router = useRouter();
   const [documentName, setDocumentName] = useState(form.formMetadata.name ?? "");
   const [documentLabel, setDocumentLabel] = useState(form.formMetadata.label ?? "");
