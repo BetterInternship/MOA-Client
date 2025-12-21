@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified time: 2025-12-22 02:43:49
+ * @ Modified time: 2025-12-22 03:01:16
  * @ Description: PDF Form Editor Page
  *                Orchestrates form editor state with block-centric metadata management
  */
@@ -10,7 +10,6 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import { useModal } from "@/app/providers/modal-provider";
 import { PdfViewer } from "../../../../../components/docs/form-editor/form-pdf-editor/PdfViewer";
@@ -34,13 +33,10 @@ import { Edit2, Check, X, Layout } from "lucide-react";
 
 const PdfJsEditorPage = () => {
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
-  const searchParams = useSearchParams();
   const registry = fieldRegistryData?.fields ?? [];
 
   // Get document URL from query params or use default
-  const documentUrl =
-    searchParams.get("url") ??
-    "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
+  const documentUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
 
   // Initialize FormMetadata with dummy data
   const formMetadata = useMemo(() => new FormMetadata<[]>(DUMMY_FORM_METADATA), []);
