@@ -12,6 +12,8 @@ interface EditableDynamicFormProps {
   errors?: Record<string, string>;
   onBlurValidate?: (fieldKey: string) => void;
   onBlocksReorder?: (blocks: IFormBlock[]) => void;
+  onBlockSelect?: (block: IFormBlock, blockIndex: number) => void;
+  selectedBlockIndex?: number | null;
 }
 
 /**
@@ -27,6 +29,8 @@ export const EditableDynamicForm = ({
   errors = {},
   onBlurValidate,
   onBlocksReorder,
+  onBlockSelect,
+  selectedBlockIndex,
 }: EditableDynamicFormProps) => {
   const [blocks, setBlocks] = useState<IFormBlock[]>(initialBlocks);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -83,6 +87,8 @@ export const EditableDynamicForm = ({
           onDragOver: handleDragOver,
           onDragEnd: handleDragEnd,
           draggedIndex,
+          onBlockClick: (index) => onBlockSelect?.(blocks[index], index),
+          selectedIndex: selectedBlockIndex,
         }
       )}
     </div>

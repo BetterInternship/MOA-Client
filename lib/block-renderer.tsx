@@ -31,6 +31,12 @@ interface BlockRendererOptions {
 
   /** Currently dragged index */
   draggedIndex?: number | null;
+
+  /** Handler for block click/selection */
+  onBlockClick?: (index: number) => void;
+
+  /** Index of selected block (for visual feedback) */
+  selectedIndex?: number | null;
 }
 
 interface BlockFieldProps {
@@ -60,16 +66,21 @@ export const renderBlock = (
     onDragOver,
     onDragEnd,
     draggedIndex,
+    onBlockClick,
+    selectedIndex,
   } = options;
 
   const { values, onChange, errors = {}, onBlurValidate } = fieldProps;
   const blockId = `block:${block.order}`;
 
-  const baseClasses = "flex gap-3 rounded-lg border p-4 transition-all";
+  const isSelected = selectedIndex === blockIndex;
+  const baseClasses = "flex gap-3 rounded-lg border p-4 transition-all cursor-pointer";
   const dragClasses = editorMode
     ? draggedIndex === blockIndex
       ? "border-blue-300 bg-blue-100 opacity-50"
-      : "border-slate-200 bg-white hover:bg-slate-50"
+      : isSelected
+        ? "border-blue-500 bg-blue-50 shadow-md"
+        : "border-slate-200 bg-white hover:bg-slate-50"
     : "border-slate-200 bg-white";
 
   const draggableProps = editorMode
@@ -84,7 +95,12 @@ export const renderBlock = (
   // Header blocks
   if (block.block_type === "header") {
     return (
-      <div key={blockId} className={`${baseClasses} ${dragClasses}`} {...draggableProps}>
+      <div
+        key={blockId}
+        className={`${baseClasses} ${dragClasses}`}
+        {...draggableProps}
+        onClick={() => onBlockClick?.(blockIndex)}
+      >
         {editorMode && (
           <div className="flex-shrink-0 pt-2">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
@@ -100,7 +116,12 @@ export const renderBlock = (
   // Paragraph blocks
   if (block.block_type === "paragraph") {
     return (
-      <div key={blockId} className={`${baseClasses} ${dragClasses}`} {...draggableProps}>
+      <div
+        key={blockId}
+        className={`${baseClasses} ${dragClasses}`}
+        {...draggableProps}
+        onClick={() => onBlockClick?.(blockIndex)}
+      >
         {editorMode && (
           <div className="flex-shrink-0 pt-2">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
@@ -117,7 +138,12 @@ export const renderBlock = (
   if (block.block_type === "form_field" && block.field_schema) {
     const field = block.field_schema as IFormField;
     return (
-      <div key={blockId} className={`${baseClasses} ${dragClasses}`} {...draggableProps}>
+      <div
+        key={blockId}
+        className={`${baseClasses} ${dragClasses}`}
+        {...draggableProps}
+        onClick={() => onBlockClick?.(blockIndex)}
+      >
         {editorMode && (
           <div className="flex-shrink-0 pt-2">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
@@ -155,11 +181,18 @@ export const renderBlock = (
     const phantomClasses = editorMode
       ? draggedIndex === blockIndex
         ? "border-amber-300 bg-amber-100 opacity-50"
-        : "border-amber-200 bg-amber-50 hover:bg-amber-100"
+        : isSelected
+          ? "border-amber-600 bg-amber-100 shadow-md"
+          : "border-amber-200 bg-amber-50 hover:bg-amber-100"
       : "border-amber-200 bg-amber-50";
 
     return (
-      <div key={blockId} className={`${baseClasses} ${phantomClasses}`} {...draggableProps}>
+      <div
+        key={blockId}
+        className={`${baseClasses} ${phantomClasses}`}
+        {...draggableProps}
+        onClick={() => onBlockClick?.(blockIndex)}
+      >
         {editorMode && (
           <div className="flex-shrink-0 pt-2">
             <GripVertical className="h-4 w-4 cursor-move text-amber-400" />

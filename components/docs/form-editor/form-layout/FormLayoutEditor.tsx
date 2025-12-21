@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { type IFormBlock } from "@betterinternship/core/forms";
 import { EditableDynamicForm } from "./EditableDynamicForm";
+import { BlockEditor } from "./BlockEditor";
 import { PartiesPanel } from "./PartiesPanel";
 import { ParametersPanel } from "./ParametersPanel";
 import { SignatoriesPanel } from "./SignatoriesPanel";
@@ -80,6 +81,8 @@ const formFieldToClientField = (field: string, label: string): any => {
 export const FormLayoutEditor = ({ blocks, formLabel, onBlocksReorder }: FormLayoutEditorProps) => {
   const [activeSection, setActiveSection] = useState<SectionType>("tester");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [selectedBlock, setSelectedBlock] = useState<IFormBlock | null>(null);
+  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
   const [parties, setParties] = useState<Party[]>([
     {
       id: "1",
@@ -140,6 +143,19 @@ export const FormLayoutEditor = ({ blocks, formLabel, onBlocksReorder }: FormLay
     onBlocksReorder?.(newBlocks);
   };
 
+  const handleBlockSelect = (block: IFormBlock, blockIndex: number) => {
+    setSelectedBlock(block);
+    setSelectedBlockIndex(blockIndex);
+  };
+
+  const handleBlockUpdate = (updatedBlock: IFormBlock) => {
+    const newBlocks = [...orderedBlocks];
+    newBlocks[selectedBlockIndex!] = updatedBlock;
+    setOrderedBlocks(newBlocks);
+    setSelectedBlock(updatedBlock);
+    onBlocksReorder?.(newBlocks);
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case "tester":
@@ -155,6 +171,8 @@ export const FormLayoutEditor = ({ blocks, formLabel, onBlocksReorder }: FormLay
               }));
             }}
             onBlocksReorder={handleBlocksReorder}
+            onBlockSelect={handleBlockSelect}
+            selectedBlockIndex={selectedBlockIndex}
           />
         );
       case "parties":
@@ -193,6 +211,21 @@ export const FormLayoutEditor = ({ blocks, formLabel, onBlocksReorder }: FormLay
             <div className="space-y-4">{renderContent()}</div>
           </div>
         </div>
+
+        {/* Right Sidebar - Block Editor (only in tester mode) */}
+        {activeSection === "tester" && (
+          <div className="flex w-80 flex-col border-l bg-gray-50">
+            <BlockEditor
+              block={selectedBlock}
+              onClose={() => {
+                setSelectedBlock(null);
+                setSelectedBlockIndex(null);
+              }}
+              onUpdate={handleBlockUpdate}
+              signingParties={parties.map((p) => ({ id: p.id, name: p.name }))}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
