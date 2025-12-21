@@ -68,6 +68,7 @@ export const FormLayoutEditor = ({
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedBlock, setSelectedBlock] = useState<IFormBlock | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [filterPartyId, setFilterPartyId] = useState<string | null>("all");
 
   // Initialize parties directly from metadata signing_parties
   const [parties, setParties] = useState<IFormSigningParty[]>(metadata.signing_parties);
@@ -177,6 +178,14 @@ export const FormLayoutEditor = ({
     });
   };
 
+  // Filter blocks based on selected party
+  const getFilteredBlocks = () => {
+    if (filterPartyId === "all") {
+      return orderedBlocks;
+    }
+    return orderedBlocks.filter((block) => block.signing_party_id === filterPartyId);
+  };
+
   const renderContent = () => {
     const selectedBlockIndex = selectedBlockId
       ? orderedBlocks.findIndex((b) => b._id === selectedBlockId)
@@ -184,24 +193,61 @@ export const FormLayoutEditor = ({
 
     switch (activeSection) {
       case "tester":
+        const filteredBlocks = getFilteredBlocks();
         return (
-          <EditableDynamicForm
-            formName={formLabel}
-            blocks={orderedBlocks}
-            values={formValues}
-            onChange={(key, value) => {
-              setFormValues((prev) => ({
-                ...prev,
-                [key]: value,
-              }));
-            }}
-            onBlocksReorder={handleBlocksReorder}
-            onBlockSelect={handleBlockSelect}
-            onAddBlock={handleAddBlock}
-            onDeleteBlock={handleDeleteBlock}
-            onDuplicateBlock={handleDuplicateBlock}
-            selectedBlockIndex={selectedBlockIndex}
-          />
+          <div className="space-y-4">
+            {/* Party Filter */}
+            <div className="rounded border border-slate-200 bg-white p-4">
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-900">Filter by Party</h3>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setFilterPartyId("all")}
+                    className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                      filterPartyId === "all"
+                        ? "bg-blue-600 text-white"
+                        : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    All Fields
+                  </button>
+                  {parties.map((party) => (
+                    <button
+                      key={party._id}
+                      onClick={() => setFilterPartyId(party._id)}
+                      className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        filterPartyId === party._id
+                          ? "bg-blue-600 text-white"
+                          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {party.signatory_account?.name || party._id}
+                      <span className="ml-2 text-xs opacity-75">({party.order})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Editable Form */}
+            <EditableDynamicForm
+              formName={formLabel}
+              blocks={filteredBlocks}
+              values={formValues}
+              onChange={(key, value) => {
+                setFormValues((prev) => ({
+                  ...prev,
+                  [key]: value,
+                }));
+              }}
+              onBlocksReorder={handleBlocksReorder}
+              onBlockSelect={handleBlockSelect}
+              onAddBlock={handleAddBlock}
+              onDeleteBlock={handleDeleteBlock}
+              onDuplicateBlock={handleDuplicateBlock}
+              selectedBlockIndex={selectedBlockIndex}
+            />
+          </div>
         );
       case "preview":
         return <FormPreview formName={formLabel} blocks={orderedBlocks} signingParties={parties} />;
