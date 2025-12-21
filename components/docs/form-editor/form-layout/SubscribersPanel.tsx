@@ -49,95 +49,114 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
       email: "",
     };
     onSubscribersChange([...subscribers, newSubscriber]);
+    setEditingId(newSubscriber.account_id);
+    setEditValues(newSubscriber);
   };
 
   return (
     <div className="space-y-4">
-      <Card className="border border-blue-200 bg-blue-50/50 p-4">
-        <p className="text-xs text-blue-700">
-          Add email subscribers who will receive notifications about this form.
-        </p>
+      {/* Instruction card and Add button */}
+      <Card className="border border-amber-200 bg-amber-50/50 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs text-amber-800">
+            Add email addresses that will receive notifications when this form is submitted or
+            signed.
+          </p>
+          <Button
+            onClick={handleAddSubscriber}
+            size="sm"
+            className="flex-shrink-0 gap-2 bg-amber-600 text-white hover:bg-amber-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
+        </div>
       </Card>
 
-      <div className="space-y-3">
-        {subscribers.map((subscriber) => (
-          <Card
-            key={subscriber.account_id}
-            className={`border p-4 ${
-              editingId === subscriber.account_id
-                ? "border-blue-300 bg-blue-50"
-                : "border-slate-200 bg-white"
-            }`}
-          >
-            {editingId === subscriber.account_id ? (
-              // Edit Mode
-              <div className="space-y-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">Email</label>
-                  <Input
-                    type="email"
-                    value={editValues.email || ""}
-                    onChange={(e) => setEditValues({ ...editValues, email: e.target.value })}
-                    placeholder="subscriber@example.com"
-                    className="h-8 text-sm"
-                  />
-                </div>
+      {subscribers.length === 0 ? (
+        <Card className="border border-dashed border-slate-300 p-8 text-center">
+          <p className="text-sm text-slate-500">No subscribers yet</p>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {subscribers.map((subscriber) => (
+            <Card
+              key={subscriber.account_id}
+              className={`border p-3 transition-colors ${
+                editingId === subscriber.account_id
+                  ? "border-amber-300 bg-amber-50"
+                  : "border-slate-200 bg-white hover:bg-slate-50/50"
+              }`}
+            >
+              {editingId === subscriber.account_id ? (
+                // Edit Mode
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Email</label>
+                    <Input
+                      type="email"
+                      value={editValues.email || ""}
+                      onChange={(e) => setEditValues({ ...editValues, email: e.target.value })}
+                      placeholder="subscriber@example.com"
+                      className="h-8 text-sm"
+                    />
+                  </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleSaveEdit}
-                    className="h-8 flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    <Check className="mr-1 h-3.5 w-3.5" />
-                    Save
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCancelEdit}
-                    className="h-8 flex-1"
-                  >
-                    <X className="mr-1 h-3.5 w-3.5" />
-                    Cancel
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      className="gap-1"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveEdit}
+                      className="gap-1 bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Save
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              // Display Mode
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-900">{subscriber.email}</p>
-                </div>
+              ) : (
+                // Display Mode
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      {subscriber.email}
+                    </p>
+                  </div>
 
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleStartEdit(subscriber)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteSubscriber(subscriber.account_id)}
-                    className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-700"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex flex-shrink-0 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStartEdit(subscriber)}
+                      className="h-8 w-8 p-0"
+                      title="Edit subscriber"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteSubscriber(subscriber.account_id)}
+                      className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-700"
+                      title="Delete subscriber"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </Card>
-        ))}
-      </div>
-
-      <Button onClick={handleAddSubscriber} className="w-full bg-blue-600 hover:bg-blue-700">
-        <Plus className="mr-2 h-4 w-4" />
-        Add Subscriber
-      </Button>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
