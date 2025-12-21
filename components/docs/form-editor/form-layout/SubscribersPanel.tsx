@@ -130,7 +130,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
                       onClick={handleCancelEdit}
                       className="gap-1"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="mt-0.5 h-3.5 w-3.5" />
                       Cancel
                     </Button>
                     <Button
@@ -138,7 +138,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
                       onClick={handleSaveEdit}
                       className="gap-1 bg-emerald-600 hover:bg-emerald-700"
                     >
-                      <Check className="h-3.5 w-3.5" />
+                      <Check className="mt-0.5 h-3.5 w-3.5" />
                       Save
                     </Button>
                   </div>
