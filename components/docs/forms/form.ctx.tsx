@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-12-21 20:38:56
+ * @ Modified time: 2025-12-21 20:49:45
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -26,10 +26,10 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
 // ? Current schema version, update if needed; tells us if out of date
-export const SCHEMA_VERSION = 0;
+export const SCHEMA_VERSION = 1;
 
 // Context interface
-export interface IFormContext {
+export interface IFormRendererContext {
   formName: string;
   formVersion: number;
   formMetadata: FormMetadata<[]>;
@@ -54,8 +54,8 @@ interface IDocument {
 }
 
 // Context defs
-const FormContext = createContext<IFormContext>({} as IFormContext);
-export const useFormContext = () => useContext(FormContext);
+const FormRendererContext = createContext<IFormRendererContext>({} as IFormRendererContext);
+export const useFormRendererContext = () => useContext(FormRendererContext);
 
 /**
  * Gives access to form context api
@@ -63,7 +63,7 @@ export const useFormContext = () => useContext(FormContext);
  * @component
  * @provider
  */
-export const FormContextProvider = ({ children }: { children: React.ReactNode }) => {
+export const FormRendererContextProvider = ({ children }: { children: React.ReactNode }) => {
   // Define state here
   const [documentName, setDocumentName] = useState<string>("");
   const [documentUrl, setDocumentUrl] = useState<string>("");
@@ -96,7 +96,6 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
 
   // Loading states
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   // Refresh previews of the different fields
   const refreshPreviews = () => {
@@ -190,7 +189,7 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
   }, [selectedPreviewId, keyedFields]);
 
   // The form context
-  const formContext: IFormContext = {
+  const formContext: IFormRendererContext = {
     formName,
     formVersion,
     formMetadata,
@@ -207,7 +206,9 @@ export const FormContextProvider = ({ children }: { children: React.ReactNode })
     refreshPreviews: refreshPreviews,
   };
 
-  return <FormContext.Provider value={formContext}>{children}</FormContext.Provider>;
+  return (
+    <FormRendererContext.Provider value={formContext}>{children}</FormRendererContext.Provider>
+  );
 };
 
 /**

@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { getSignatorySelf } from "@/app/api/signatory.api";
 import Link from "next/link";
-import { useFormContext } from "@/components/docs/forms/form.ctx";
+import { useFormRendererContext } from "@/components/docs/forms/form.ctx";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university" | "";
@@ -39,7 +39,7 @@ function PageContent() {
   const params = useSearchParams();
   const router = useRouter();
   // ! WARNING, FACTOR THIS OUT: this allows editing form, and can be an exploit in the future
-  const form = useFormContext();
+  const form = useFormRendererContext();
   const { openModal, closeModal } = useModal();
   const { update } = useSignatoryAccountActions();
 

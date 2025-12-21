@@ -5,7 +5,7 @@ import { ClientBlock, ClientField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
 import { FieldRenderer } from "./FieldRenderer";
 import { HeaderRenderer, ParagraphRenderer } from "./BlockrRenderer";
-import { useFormContext } from "./form.ctx";
+import { useFormRendererContext } from "./form.ctx";
 
 export function FormRenderer({
   formName,
@@ -34,7 +34,7 @@ export function FormRenderer({
   setPreviews?: (previews: Record<number, React.ReactNode[]>) => void;
   onBlurValidate?: (fieldKey: string) => void;
 }) {
-  const form = useFormContext();
+  const form = useFormRendererContext();
   const filteredFields = fields
     .filter((field) => field.signing_party_id === signingPartyId)
     .filter((field) => field.source === "manual");

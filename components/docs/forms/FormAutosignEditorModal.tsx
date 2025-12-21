@@ -14,7 +14,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DocumentRenderer } from "./previewer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useFormContext } from "./form.ctx";
+import { useFormRendererContext } from "./form.ctx";
 
 type Props = {
   formName: string;
@@ -28,7 +28,7 @@ type Props = {
 const FormAutosignEditorModal = React.memo(
   ({ formName, party, currentValue, valueSetter, notAsModal, errors: _errors }: Props) => {
     const queryClient = useQueryClient();
-    const form = useFormContext();
+    const form = useFormRendererContext();
     const isMobile = useIsMobile();
     const { update } = useSignatoryAccountActions();
     const { openModal, closeModal } = useModal();

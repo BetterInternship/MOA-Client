@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
  * @ Modified time: 2025-12-21 20:36:55
- * @ Modified time: 2025-12-21 20:37:16
+ * @ Modified time: 2025-12-21 20:46:59
  *
  * We can move this out later on so it becomes reusable in other places.
  * This allows the consumer to use information about a form within the component.
@@ -26,7 +26,7 @@ import { useFieldTemplateContext } from "./field-template.ctx";
 import { cn } from "@/lib/utils";
 
 // ? Current schema version, update if needed; tells us if out of date
-export const SCHEMA_VERSION = 0;
+export const SCHEMA_VERSION = 1;
 
 // Context interface
 export interface IFormEditorContext {
