@@ -87,7 +87,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
             className="flex-shrink-0 gap-2 bg-amber-600 text-white hover:bg-amber-700"
           >
             <Plus className="h-4 w-4" />
-            Add
+            Add Subscriber
           </Button>
         </div>
       </Card>
@@ -109,7 +109,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
             >
               {editingId === subscriber.account_id ? (
                 // Edit Mode
-                <div className="space-y-1 ">
+                <div className="space-y-1">
                   <FormInput
                     label="Email"
                     type="email"
