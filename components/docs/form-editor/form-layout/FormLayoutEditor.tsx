@@ -97,6 +97,23 @@ export const FormLayoutEditor = ({
     });
   };
 
+  const handleAddBlock = () => {
+    const newBlock: IFormBlock = {
+      block_type: "header" as const,
+      order: orderedBlocks.length,
+      label: "New Block",
+    };
+    const newBlocks = [...orderedBlocks, newBlock];
+    setOrderedBlocks(newBlocks);
+    onMetadataChange?.({
+      ...metadata,
+      schema: {
+        ...metadata.schema,
+        blocks: newBlocks,
+      },
+    });
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case "tester":
@@ -113,6 +130,7 @@ export const FormLayoutEditor = ({
             }}
             onBlocksReorder={handleBlocksReorder}
             onBlockSelect={handleBlockSelect}
+            onAddBlock={handleAddBlock}
             selectedBlockIndex={selectedBlockIndex}
           />
         );

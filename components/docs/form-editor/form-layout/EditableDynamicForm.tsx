@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { type IFormBlock } from "@betterinternship/core/forms";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { renderBlocks } from "@/lib/block-renderer";
 
 interface EditableDynamicFormProps {
@@ -13,6 +16,7 @@ interface EditableDynamicFormProps {
   onBlurValidate?: (fieldKey: string) => void;
   onBlocksReorder?: (blocks: IFormBlock[]) => void;
   onBlockSelect?: (block: IFormBlock, blockIndex: number) => void;
+  onAddBlock?: () => void;
   selectedBlockIndex?: number | null;
 }
 
@@ -30,6 +34,7 @@ export const EditableDynamicForm = ({
   onBlurValidate,
   onBlocksReorder,
   onBlockSelect,
+  onAddBlock,
   selectedBlockIndex,
 }: EditableDynamicFormProps) => {
   const [blocks, setBlocks] = useState<IFormBlock[]>(initialBlocks);
@@ -65,12 +70,24 @@ export const EditableDynamicForm = ({
 
   return (
     <div className="space-y-4">
-      {/* Info Banner */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-        <p className="text-xs text-blue-700">
-          ✓ Drag blocks to reorder them. Edit form fields to see changes reflected.
-        </p>
-      </div>
+      {/* Instruction card and Add button */}
+      <Card className="border border-slate-200 bg-slate-50/50 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs text-slate-800">
+            Drag blocks to reorder them. Edit form fields to see changes reflected in the metadata.
+          </p>
+          {onAddBlock && (
+            <Button
+              onClick={onAddBlock}
+              size="sm"
+              className="flex-shrink-0 gap-2 bg-slate-600 text-white hover:bg-slate-700"
+            >
+              <Plus className="h-4 w-4" />
+              Add Block
+            </Button>
+          )}
+        </div>
+      </Card>
 
       {/* Render all blocks in order */}
       {renderBlocks(
