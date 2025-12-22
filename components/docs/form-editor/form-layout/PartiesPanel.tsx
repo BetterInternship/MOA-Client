@@ -23,6 +23,9 @@ interface ValidationErrors {
 }
 
 export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) => {
+  // Safeguard against undefined parties
+  const safeParties = parties || [];
+  
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<Partial<IFormSigningParty>>({});
   const [credentialMode, setCredentialMode] = useState<CredentialMode>("source");
@@ -71,7 +74,7 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
       return;
     }
 
-    const updatedParties = parties.map((p, idx) => {
+    const updatedParties = safeParties.map((p, idx) => {
       if (idx === editingIndex) {
         const { signed: _signed, ...partyWithoutSigned } = { ...p, ...editValues };
         return partyWithoutSigned as IFormSigningParty;
@@ -92,18 +95,18 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
   };
 
   const handleDeleteParty = (id: string) => {
-    const updatedParties = parties.filter((p) => p._id !== id);
+    const updatedParties = safeParties.filter((p) => p._id !== id);
     onPartiesChange(updatedParties);
   };
 
   const handleAddParty = () => {
     const newParty: IFormSigningParty = {
       _id: `party-${Date.now()}`,
-      order: Math.max(...parties.map((p) => p.order), 0) + 1,
+      order: Math.max(...safeParties.map((p) => p.order), 0) + 1,
       signatory_source: "New Party",
     };
-    onPartiesChange([...parties, newParty]);
-    setEditingIndex(parties.length); // Auto-edit the new party
+    onPartiesChange([...safeParties, newParty]);
+    setEditingIndex(safeParties.length); // Auto-edit the new party
     setEditValues(newParty);
     setCredentialMode("source");
   };
@@ -128,13 +131,13 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
         </div>
       </Card>
 
-      {parties.length === 0 ? (
+      {safeParties.length === 0 ? (
         <Card className="border border-dashed border-slate-300 p-8 text-center">
           <p className="text-sm text-slate-500">No parties yet</p>
         </Card>
       ) : (
         <div className="space-y-2">
-          {parties
+          {safeParties
             .sort((a, b) => a.order - b.order)
             .map((party, index) => (
               <Card

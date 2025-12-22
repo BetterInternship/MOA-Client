@@ -14,6 +14,9 @@ interface SubscribersPanelProps {
 }
 
 export const SubscribersPanel = ({ subscribers, onSubscribersChange }: SubscribersPanelProps) => {
+  // Safeguard against undefined subscribers
+  const safeSubscribers = subscribers || [];
+  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<IFormSubscriber>>({});
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -34,7 +37,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
       return;
     }
 
-    const updatedSubscribers = subscribers.map((s) =>
+    const updatedSubscribers = safeSubscribers.map((s) =>
       s.account_id === editingId ? ({ ...s, ...editValues } as IFormSubscriber) : s
     );
     onSubscribersChange(updatedSubscribers);
@@ -46,7 +49,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
   const handleCancelEdit = () => {
     // If the edited subscriber has no email, remove it
     if (editingId) {
-      const subscriber = subscribers.find((s) => s.account_id === editingId);
+      const subscriber = safeSubscribers.find((s) => s.account_id === editingId);
       if (subscriber && !subscriber.email) {
         handleDeleteSubscriber(editingId);
       }
@@ -57,7 +60,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
   };
 
   const handleDeleteSubscriber = (accountId: string) => {
-    const updatedSubscribers = subscribers.filter((s) => s.account_id !== accountId);
+    const updatedSubscribers = safeSubscribers.filter((s) => s.account_id !== accountId);
     onSubscribersChange(updatedSubscribers);
   };
 
@@ -67,7 +70,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
       name: "New Subscriber",
       email: "",
     };
-    onSubscribersChange([...subscribers, newSubscriber]);
+    onSubscribersChange([...safeSubscribers, newSubscriber]);
     setEditingId(newSubscriber.account_id);
     setEditValues(newSubscriber);
   };
@@ -92,13 +95,13 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
         </div>
       </Card>
 
-      {subscribers.length === 0 ? (
+      {safeSubscribers.length === 0 ? (
         <Card className="border border-dashed border-slate-300 p-8 text-center">
           <p className="text-sm text-slate-500">No subscribers yet</p>
         </Card>
       ) : (
         <div className="space-y-2">
-          {subscribers.map((subscriber) => (
+          {safeSubscribers.map((subscriber) => (
             <Card
               key={subscriber.account_id}
               className={`border p-3 transition-colors ${

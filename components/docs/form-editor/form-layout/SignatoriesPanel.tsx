@@ -34,6 +34,10 @@ export const SignatoriesPanel = ({
   parties,
   onSignatoriesChange,
 }: SignatoriesPanelProps) => {
+  // Safeguard against undefined signatories and parties
+  const safeSignatories = signatories || [];
+  const safeParties = parties || [];
+  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Signatory>>({});
 
@@ -45,7 +49,7 @@ export const SignatoriesPanel = ({
   const handleSaveEdit = () => {
     if (!editingId) return;
 
-    const updatedSignatories = signatories.map((s) =>
+    const updatedSignatories = safeSignatories.map((s) =>
       s.id === editingId ? { ...s, ...editValues } : s
     );
     onSignatoriesChange(updatedSignatories);
@@ -59,7 +63,7 @@ export const SignatoriesPanel = ({
   };
 
   const handleDeleteSignatory = (id: string) => {
-    const updatedSignatories = signatories.filter((s) => s.id !== id);
+    const updatedSignatories = safeSignatories.filter((s) => s.id !== id);
     // Re-index sign orders
     const reindexed = updatedSignatories
       .sort((a, b) => a.signOrder - b.signOrder)
@@ -72,16 +76,16 @@ export const SignatoriesPanel = ({
       id: Date.now().toString(),
       name: "New Signatory",
       role: "",
-      party: parties[0]?.type || "entity",
+      party: safeParties[0]?.type || "entity",
       email: "",
-      signOrder: signatories.length + 1,
+      signOrder: safeSignatories.length + 1,
     };
-    onSignatoriesChange([...signatories, newSignatory]);
+    onSignatoriesChange([...safeSignatories, newSignatory]);
   };
 
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
-    const newSignatories = [...signatories];
+    const newSignatories = [...safeSignatories];
     [newSignatories[index - 1], newSignatories[index]] = [
       newSignatories[index],
       newSignatories[index - 1],
@@ -95,8 +99,8 @@ export const SignatoriesPanel = ({
   };
 
   const handleMoveDown = (index: number) => {
-    if (index === signatories.length - 1) return;
-    const newSignatories = [...signatories];
+    if (index === safeSignatories.length - 1) return;
+    const newSignatories = [...safeSignatories];
     [newSignatories[index], newSignatories[index + 1]] = [
       newSignatories[index + 1],
       newSignatories[index],
@@ -110,7 +114,7 @@ export const SignatoriesPanel = ({
   };
 
   // Sort by sign order
-  const sortedSignatories = [...signatories].sort((a, b) => a.signOrder - b.signOrder);
+  const sortedSignatories = [...safeSignatories].sort((a, b) => a.signOrder - b.signOrder);
 
   return (
     <div className="space-y-4">
