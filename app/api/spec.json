@@ -1993,91 +1993,92 @@
         "type": "object",
         "properties": {
           "field": { "type": "string" },
-          "label": { "type": "string" },
-          "party": {
-            "type": "string",
-            "enum": ["student", "student-guardian", "university", "entity"]
-          },
-          "shared": { "type": "boolean" },
-          "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
           "type": { "type": "string", "enum": ["text", "signature"] },
-          "tooltip_label": { "type": "string" },
           "x": { "type": "number" },
           "y": { "type": "number" },
           "w": { "type": "number" },
           "h": { "type": "number" },
           "page": { "type": "number" },
-          "validator": { "type": "string" },
-          "prefiller": { "type": "string" }
+          "label": { "type": "string" },
+          "tooltip_label": { "type": "string" },
+          "shared": { "type": "boolean" },
+          "signing_party_id": { "type": "string" },
+          "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
+          "prefiller": { "type": "string" },
+          "validator": { "type": "string" }
         },
         "required": [
           "field",
-          "label",
-          "party",
-          "shared",
-          "source",
           "type",
-          "tooltip_label",
           "x",
           "y",
           "w",
           "h",
           "page",
-          "validator",
-          "prefiller"
+          "label",
+          "tooltip_label",
+          "shared",
+          "signing_party_id",
+          "source",
+          "prefiller",
+          "validator"
         ]
       },
       "FormPhantomField": {
         "type": "object",
         "properties": {
           "field": { "type": "string" },
+          "type": { "type": "string", "enum": ["text", "signature"] },
           "label": { "type": "string" },
-          "party": {
-            "type": "string",
-            "enum": ["student", "student-guardian", "university", "entity"]
-          },
-          "shared": { "type": "boolean" },
-          "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
-          "type": { "type": "string", "enum": ["email", "param"] },
           "tooltip_label": { "type": "string" },
-          "validator": { "type": "string" },
-          "prefiller": { "type": "string" }
+          "shared": { "type": "boolean" },
+          "signing_party_id": { "type": "string" },
+          "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
+          "prefiller": { "type": "string" },
+          "validator": { "type": "string" }
         },
         "required": [
           "field",
-          "label",
-          "party",
-          "shared",
-          "source",
           "type",
+          "label",
           "tooltip_label",
-          "validator",
-          "prefiller"
+          "shared",
+          "signing_party_id",
+          "source",
+          "prefiller",
+          "validator"
         ]
       },
-      "FormSubscriber": {
+      "FormBlock": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
-          "honorific": { "type": "string" },
-          "title": { "type": "string" },
-          "email": { "type": "string" },
-          "party": { "type": "string" }
+          "_id": { "type": "object" },
+          "block_type": {
+            "type": "string",
+            "enum": ["header", "paragraph", "form_field", "form_phantom_field", "divider", "image"]
+          },
+          "order": { "type": "number" },
+          "signing_party_id": { "type": "string" },
+          "text_content": { "type": "object" },
+          "field_schema": { "$ref": "#/components/schemas/FormField" },
+          "phantom_field_schema": { "$ref": "#/components/schemas/FormPhantomField" }
         },
-        "required": ["name", "honorific", "title", "email", "party"]
+        "required": [
+          "_id",
+          "block_type",
+          "order",
+          "signing_party_id",
+          "text_content",
+          "field_schema",
+          "phantom_field_schema"
+        ]
       },
-      "FormSignatory": {
+      "Form": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
-          "honorific": { "type": "string" },
-          "title": { "type": "string" },
-          "email": { "type": "string" },
-          "field": { "type": "string" },
-          "status": { "type": "string" },
-          "party": { "type": "string" }
+          "blocks": { "type": "array", "items": { "$ref": "#/components/schemas/FormBlock" } }
         },
-        "required": ["name", "honorific", "title", "email", "field", "status", "party"]
+        "required": ["blocks"]
       },
       "FormMetadata": {
         "type": "object",
@@ -2086,41 +2087,10 @@
           "name": { "type": "string" },
           "label": { "type": "string" },
           "version": { "type": "number" },
-          "schema": { "type": "array", "items": { "$ref": "#/components/schemas/FormField" } },
-          "schema_phantoms": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/FormPhantomField" }
-          },
-          "params": { "type": "object", "additionalProperties": { "type": "string" } },
-          "subscribers": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/FormSubscriber" }
-          },
-          "signatories": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/FormSignatory" }
-          },
-          "required_parties": {
-            "properties": {
-              "party": { "enum": ["student", "student-guardian", "university", "entity"] },
-              "order": { "type": "number" }
-            },
-            "type": "array",
-            "items": { "type": "object" }
-          }
+          "schema": { "$ref": "#/components/schemas/Form" },
+          "subscribers": { "type": "object", "additionalProperties": { "type": "string" } }
         },
-        "required": [
-          "schema_version",
-          "name",
-          "label",
-          "version",
-          "schema",
-          "schema_phantoms",
-          "params",
-          "subscribers",
-          "signatories",
-          "required_parties"
-        ]
+        "required": ["schema_version", "name", "label", "version", "schema", "subscribers"]
       },
       "FormMetadataResponse": {
         "type": "object",
@@ -2160,10 +2130,25 @@
         },
         "required": ["success", "message", "signedDocuments"]
       },
-      "PendingParties": {
+      "FormSigningParty": {
         "type": "object",
-        "properties": { "party": { "type": "string" }, "order": { "type": "number" } },
-        "required": ["party", "order"]
+        "properties": {
+          "_id": { "type": "string" },
+          "order": { "type": "number" },
+          "signatory_account": { "type": "object" },
+          "signatory_source": { "type": "object" },
+          "signed": { "type": "boolean" }
+        },
+        "required": ["_id", "order", "signatory_account", "signatory_source", "signed"]
+      },
+      "FormSubscriber": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" }
+        },
+        "required": ["account_id", "name", "email"]
       },
       "RegisterFormSchemaDto": {
         "type": "object",
@@ -2171,37 +2156,25 @@
           "name": { "type": "string" },
           "label": { "type": "string" },
           "schema_version": { "type": "number" },
-          "schema": { "type": "array", "items": { "$ref": "#/components/schemas/FormField" } },
-          "schema_phantoms": {
+          "schema": { "$ref": "#/components/schemas/Form" },
+          "signing_parties": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/FormPhantomField" }
+            "items": { "$ref": "#/components/schemas/FormSigningParty" }
           },
-          "params": { "type": "object", "additionalProperties": { "type": "string" } },
           "subscribers": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/FormSubscriber" }
           },
-          "signatories": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/FormSignatory" }
-          },
-          "base_document": { "type": "string", "format": "binary" },
-          "required_parties": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/PendingParties" }
-          }
+          "base_document": { "type": "string", "format": "binary" }
         },
         "required": [
           "name",
           "label",
           "schema_version",
           "schema",
-          "schema_phantoms",
-          "params",
+          "signing_parties",
           "subscribers",
-          "signatories",
-          "base_document",
-          "required_parties"
+          "base_document"
         ]
       },
       "FieldRegistryEntry": {
@@ -2234,10 +2207,7 @@
           "name": { "type": "string" },
           "label": { "type": "string" },
           "type": { "type": "string" },
-          "party": {
-            "type": "string",
-            "enum": ["student", "student-guardian", "university", "entity"]
-          },
+          "party": { "type": "string" },
           "shared": { "type": "boolean" },
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
           "prefiller": { "type": "string", "nullable": true },
@@ -2268,10 +2238,7 @@
           "label": { "type": "string" },
           "type": { "type": "string" },
           "shared": { "type": "boolean" },
-          "party": {
-            "type": "string",
-            "enum": ["student", "student-guardian", "university", "entity"]
-          },
+          "party": { "type": "string" },
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
           "prefiller": { "type": "string", "nullable": true },
           "preset": { "type": "string" },
@@ -2301,10 +2268,7 @@
           "name": { "type": "string" },
           "label": { "type": "string" },
           "type": { "type": "string", "enum": ["text", "signature"] },
-          "party": {
-            "type": "string",
-            "enum": ["student", "student-guardian", "university", "entity"]
-          },
+          "party": { "type": "string" },
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
           "shared": { "type": "boolean" },
           "preset": { "type": "string" },
@@ -2351,10 +2315,7 @@
         "properties": {
           "pendingFormId": { "type": "string" },
           "signatoryId": { "type": "string" },
-          "party": {
-            "type": "string",
-            "enum": ["student", "student-guardian", "university", "entity"]
-          },
+          "party": { "type": "string" },
           "values": { "type": "object" }
         },
         "required": ["pendingFormId", "signatoryId", "party"]

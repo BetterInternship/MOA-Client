@@ -5,22 +5,16 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { FormField } from "./formField";
-import type { FormPhantomField } from "./formPhantomField";
-import type { RegisterFormSchemaDtoParams } from "./registerFormSchemaDtoParams";
+import type { Form } from "./form";
+import type { FormSigningParty } from "./formSigningParty";
 import type { FormSubscriber } from "./formSubscriber";
-import type { FormSignatory } from "./formSignatory";
-import type { PendingParties } from "./pendingParties";
 
 export interface RegisterFormSchemaDto {
   name: string;
   label: string;
   schema_version: number;
-  schema: FormField[];
-  schema_phantoms: FormPhantomField[];
-  params: RegisterFormSchemaDtoParams;
+  schema: Form;
+  signing_parties: FormSigningParty[];
   subscribers: FormSubscriber[];
-  signatories: FormSignatory[];
   base_document: Blob;
-  required_parties: PendingParties[];
 }

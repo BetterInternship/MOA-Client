@@ -5,7 +5,6 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { UpdateFieldDtoParty } from "./updateFieldDtoParty";
 import type { UpdateFieldDtoSource } from "./updateFieldDtoSource";
 
 export interface UpdateFieldDto {
@@ -14,7 +13,7 @@ export interface UpdateFieldDto {
   label: string;
   type: string;
   shared: boolean;
-  party: UpdateFieldDtoParty;
+  party: string;
   source: UpdateFieldDtoSource;
   /** @nullable */
   prefiller: string | null;

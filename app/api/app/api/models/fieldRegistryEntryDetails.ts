@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 import type { FieldRegistryEntryDetailsType } from "./fieldRegistryEntryDetailsType";
-import type { FieldRegistryEntryDetailsParty } from "./fieldRegistryEntryDetailsParty";
 import type { FieldRegistryEntryDetailsSource } from "./fieldRegistryEntryDetailsSource";
 
 export interface FieldRegistryEntryDetails {
@@ -14,7 +13,7 @@ export interface FieldRegistryEntryDetails {
   name: string;
   label: string;
   type: FieldRegistryEntryDetailsType;
-  party: FieldRegistryEntryDetailsParty;
+  party: string;
   source: FieldRegistryEntryDetailsSource;
   shared: boolean;
   preset: string;

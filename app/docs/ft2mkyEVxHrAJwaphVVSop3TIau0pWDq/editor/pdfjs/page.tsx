@@ -1,8 +1,8 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified time: 2025-12-22 03:01:16
- * @ Description: PDF Form Editor Page
+ * @ Modified by: Your name
+ * @ Modified time: 2025-12-22 12:43:52
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -30,6 +30,7 @@ import {
 import type { FormField } from "../../../../../components/docs/form-editor/form-pdf-editor/FieldBox";
 import { Button } from "@/components/ui/button";
 import { Edit2, Check, X, Layout } from "lucide-react";
+import { formsControllerRegisterForm } from "../../../../api/app/api/endpoints/forms/forms";
 
 const PdfJsEditorPage = () => {
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
@@ -78,6 +79,7 @@ const PdfJsEditorPage = () => {
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
   const [metadata, setMetadata] = useState<IFormMetadata>(DUMMY_FORM_METADATA);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
 
   // Get blocks from metadata
   const blocks = metadata.schema.blocks;
@@ -238,6 +240,11 @@ const PdfJsEditorPage = () => {
    * Handle field registration - molds fields to metadata and opens global modal
    */
   const handleRegisterForm = useCallback(() => {
+    if (!documentFile) {
+      alert("Please upload a document first.");
+      return;
+    }
+
     const result = registerFields(fields);
 
     // Compute final order for all blocks based on their current position
@@ -247,7 +254,8 @@ const PdfJsEditorPage = () => {
     }));
 
     // Merge result metadata with current metadata to preserve all blocks, signing_parties, and subscribers
-    const mergedMetadata: IFormMetadata =
+    // Add base_document to the metadata for submission
+    const baseMetadata: IFormMetadata & { base_document: File } =
       result.metadata && result.isValid
         ? {
             ...result.metadata,
@@ -257,6 +265,7 @@ const PdfJsEditorPage = () => {
             },
             signing_parties: metadata.signing_parties,
             subscribers: metadata.subscribers,
+            base_document: documentFile,
           }
         : {
             ...metadata,
@@ -264,18 +273,17 @@ const PdfJsEditorPage = () => {
               ...metadata.schema,
               blocks: blocksWithFinalOrder,
             },
+            base_document: documentFile,
           };
 
     openModal(
       "field-registration-modal",
       <FieldRegistrationModalContent
-        metadata={mergedMetadata}
+        metadata={baseMetadata}
         errors={result.errors}
         onClose={() => closeModal("field-registration-modal")}
         onConfirm={(editedMetadata) => {
-          console.log("Registering metadata:", editedMetadata);
-          console.log("Updated blocks:", blocks);
-          // TODO: Send metadata and blocks to backend API
+          formsControllerRegisterForm(editedMetadata);
           closeModal("field-registration-modal");
         }}
         onFieldsUpdate={(updatedFields) => {
@@ -306,6 +314,7 @@ const PdfJsEditorPage = () => {
     registry,
     syncBlocksWithFields,
     metadata,
+    documentFile,
   ]);
 
   return (
@@ -396,6 +405,7 @@ const PdfJsEditorPage = () => {
                   onPlacementFieldTypeChange={setPlacementFieldType}
                   onStartPlacing={() => setIsPlacingField(true)}
                   onCancelPlacing={() => setIsPlacingField(false)}
+                  onFileSelect={setDocumentFile}
                   registry={registry}
                 />
               </Suspense>

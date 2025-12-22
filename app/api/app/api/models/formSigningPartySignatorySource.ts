@@ -6,8 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface FormSubscriber {
-  account_id: string;
-  name: string;
-  email: string;
-}
+export type FormSigningPartySignatorySource = { [key: string]: unknown };

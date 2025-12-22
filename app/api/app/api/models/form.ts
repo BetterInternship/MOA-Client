@@ -5,9 +5,8 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { FormBlock } from "./formBlock";
 
-export interface FormSubscriber {
-  account_id: string;
-  name: string;
-  email: string;
+export interface Form {
+  blocks: FormBlock[];
 }

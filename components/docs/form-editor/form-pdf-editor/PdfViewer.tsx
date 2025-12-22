@@ -52,6 +52,7 @@ type PdfViewerProps = {
   onPlacementFieldTypeChange?: (type: string) => void;
   onStartPlacing?: () => void;
   onCancelPlacing?: () => void;
+  onFileSelect?: (file: File) => void;
   registry?: FieldRegistryEntry[];
 };
 
@@ -64,6 +65,7 @@ export function PdfViewer({
   onFieldCreate,
   isPlacingField = false,
   placementFieldType = "signature",
+  onFileSelect,
   registry = [],
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
@@ -166,6 +168,11 @@ export function PdfViewer({
     setFileName(file.name);
     setPendingUrl(url);
     setSourceUrl(url);
+
+    // Call the callback to notify parent about file selection
+    if (onFileSelect) {
+      onFileSelect(file);
+    }
   };
 
   const handleApplyUrl = () => {
