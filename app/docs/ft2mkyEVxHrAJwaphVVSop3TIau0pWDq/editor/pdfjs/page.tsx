@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 21:02:51
+ * @ Modified time: 2025-12-22 22:41:46
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -509,32 +509,23 @@ const PdfJsEditorPage = () => {
           <div className="flex h-full gap-0">
             {/* PDF Viewer (left, main) */}
             <div className="flex-1">
-              {documentUrl ? (
-                <Suspense fallback={<Loader>Loading PDF…</Loader>}>
-                  <PdfViewer
-                    initialUrl={documentUrl}
-                    fields={fields}
-                    selectedFieldId={selectedFieldId}
-                    onFieldSelect={setSelectedFieldId}
-                    onFieldUpdate={handleFieldUpdate}
-                    onFieldCreate={handleFieldCreate}
-                    isPlacingField={isPlacingField}
-                    placementFieldType={placementFieldType}
-                    onPlacementFieldTypeChange={setPlacementFieldType}
-                    onStartPlacing={() => setIsPlacingField(true)}
-                    onCancelPlacing={() => setIsPlacingField(false)}
-                    onFileSelect={setDocumentFile}
-                    registry={registry}
-                  />
-                </Suspense>
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-4 bg-slate-50">
-                  <div className="text-center">
-                    <p className="text-muted-foreground mb-2 text-sm">No PDF loaded</p>
-                    <p className="text-xs text-slate-500">Upload a PDF to start editing</p>
-                  </div>
-                </div>
-              )}
+              <Suspense fallback={<Loader>Loading PDF…</Loader>}>
+                <PdfViewer
+                  initialUrl={documentUrl}
+                  fields={fields}
+                  selectedFieldId={selectedFieldId}
+                  onFieldSelect={setSelectedFieldId}
+                  onFieldUpdate={handleFieldUpdate}
+                  onFieldCreate={handleFieldCreate}
+                  isPlacingField={isPlacingField}
+                  placementFieldType={placementFieldType}
+                  onPlacementFieldTypeChange={setPlacementFieldType}
+                  onStartPlacing={() => setIsPlacingField(true)}
+                  onCancelPlacing={() => setIsPlacingField(false)}
+                  onFileSelect={setDocumentFile}
+                  registry={registry}
+                />
+              </Suspense>
             </div>
 
             {/* Sidebar (right) */}
