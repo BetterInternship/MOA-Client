@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
  * @ Modified time: 2025-12-21 20:36:55
- * @ Modified time: 2025-12-21 20:46:59
+ * @ Modified time: 2025-12-22 14:51:27
  *
  * We can move this out later on so it becomes reusable in other places.
  * This allows the consumer to use information about a form within the component.
@@ -283,13 +283,12 @@ export const FormEditorContextProvider = ({ children }: { children: React.ReactN
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-expect-error
           setFormMetadata(formMetadata);
-          setParams({
-            ...fm.inferParams().reduce((acc, cur) => {
+          setParams(
+            fm.inferParams().reduce((acc, cur) => {
               acc[cur] = "";
               return acc;
-            }, {} as IFormParameters),
-            ...formMetadata.params,
-          });
+            }, {} as IFormParameters)
+          );
         }
       ),
       // Promise for retrieving the document

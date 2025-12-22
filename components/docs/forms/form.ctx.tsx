@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-12-21 20:49:45
+ * @ Modified time: 2025-12-22 14:52:01
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -139,13 +139,12 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
           setPreviewFields(fm.getFieldsForSigningService());
           setDocumentName(formMetadata.name);
           setFormMetadata(formMetadata as unknown as FormMetadata<[]>);
-          setParams({
-            ...fm.inferParams().reduce((acc, cur) => {
+          setParams(
+            fm.inferParams().reduce((acc, cur) => {
               acc[cur] = "";
               return acc;
-            }, {} as IFormParameters),
-            ...formMetadata.params,
-          });
+            }, {} as IFormParameters)
+          );
         }
       ),
 
