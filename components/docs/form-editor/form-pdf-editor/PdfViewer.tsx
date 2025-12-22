@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 20:40:55
+ * @ Modified time: 2025-12-22 22:45:45
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -23,6 +23,7 @@ import {
   getFieldName,
 } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FieldRegistryEntry } from "@/app/api";
+import { Button } from "@/components/ui/button";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -69,9 +70,7 @@ export function PdfViewer({
   registry = [],
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
-  const [pendingUrl, setPendingUrl] = useState<string>(
-    initialUrl ?? "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf"
-  );
+  const [pendingUrl, setPendingUrl] = useState<string>(initialUrl ?? "");
   const [sourceUrl, setSourceUrl] = useState<string | null>(pendingUrl);
   const [fileName, setFileName] = useState<string>("");
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
@@ -193,6 +192,45 @@ export function PdfViewer({
     [pageCount]
   );
 
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length === 0) return;
+
+    // Get the first PDF file
+    const file = Array.from(files).find((f) => f.type === "application/pdf") || files[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    objectUrlRef.current = url;
+
+    setFileName(file.name);
+    setPendingUrl(url);
+    setSourceUrl(url);
+
+    if (onFileSelect) {
+      onFileSelect(file);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
       {/* Header with zoom controls */}
@@ -247,8 +285,40 @@ export function PdfViewer({
         )}
 
         {!error && !pdfDoc && !isLoadingDoc && (
-          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-            Provide a PDF URL or upload a file to start.
+          <div className="flex h-full flex-col items-center justify-center gap-8">
+            <div className="text-center">
+              <p className="text-base font-medium text-slate-900">Drop your PDF here</p>
+              <p className="mt-1 text-sm text-slate-500">or click the button below to browse</p>
+            </div>
+
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={cn(
+                "flex h-80 w-120 cursor-pointer flex-col items-center justify-center rounded-[0.33em] border-2 border-dashed transition-colors",
+                isDragging
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-slate-300 bg-slate-50 hover:border-slate-400"
+              )}
+            >
+              <FileUp className="h-16 w-16 text-slate-400" />
+            </div>
+
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <Button asChild>
+                <span>
+                  <FileUp className="h-5 w-5" />
+                  Upload PDF
+                </span>
+              </Button>
+            </label>
           </div>
         )}
 
