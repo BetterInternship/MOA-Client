@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 20:40:28
+ * @ Modified time: 2025-12-22 20:46:04
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -318,10 +318,8 @@ const PdfJsEditorPage = () => {
    * Handle field registration - molds fields to metadata and opens global modal
    */
   const handleRegisterForm = useCallback(() => {
-    if (!documentFile) {
-      alert("Please upload a document first.");
-      return;
-    }
+    // Use uploaded file if available, otherwise use the current document URL (no file needed for update)
+    const fileToSubmit = documentFile || null;
 
     const result = registerFields(fields);
 
@@ -332,8 +330,8 @@ const PdfJsEditorPage = () => {
     }));
 
     // Merge result metadata with current metadata to preserve all blocks, signing_parties, and subscribers
-    // Add base_document to the metadata for submission
-    const baseMetadata: IFormMetadata & { base_document: File } =
+    // Add base_document to the metadata for submission (only if a new file was uploaded)
+    const baseMetadata: IFormMetadata & { base_document?: File } =
       result.metadata && result.isValid
         ? {
             ...result.metadata,
@@ -343,7 +341,7 @@ const PdfJsEditorPage = () => {
             },
             signing_parties: metadata.signing_parties,
             subscribers: metadata.subscribers,
-            base_document: documentFile,
+            ...(fileToSubmit && { base_document: fileToSubmit }),
           }
         : {
             ...metadata,
@@ -351,7 +349,7 @@ const PdfJsEditorPage = () => {
               ...metadata.schema,
               blocks: blocksWithFinalOrder,
             },
-            base_document: documentFile,
+            ...(fileToSubmit && { base_document: fileToSubmit }),
           };
 
     openModal(
@@ -361,7 +359,7 @@ const PdfJsEditorPage = () => {
         errors={result.errors}
         onClose={() => closeModal("field-registration-modal")}
         onConfirm={(editedMetadata) => {
-          // Ensure all blocks have _id and base_document is included
+          // Ensure all blocks have _id and base_document is included only if file was uploaded
           const blocksWithIds = (editedMetadata.schema.blocks as any[]).map((block: any) => ({
             ...block,
             _id: block._id || generateBlockId(),
@@ -373,7 +371,7 @@ const PdfJsEditorPage = () => {
               ...editedMetadata.schema,
               blocks: blocksWithIds,
             },
-            base_document: documentFile,
+            ...(fileToSubmit && { base_document: fileToSubmit }),
           } as any;
           formsControllerRegisterForm(metadataWithDocument);
           closeModal("field-registration-modal");

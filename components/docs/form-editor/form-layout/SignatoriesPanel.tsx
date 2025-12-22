@@ -37,7 +37,7 @@ export const SignatoriesPanel = ({
   // Safeguard against undefined signatories and parties
   const safeSignatories = signatories || [];
   const safeParties = parties || [];
-  
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Signatory>>({});
 

@@ -16,7 +16,7 @@ interface SubscribersPanelProps {
 export const SubscribersPanel = ({ subscribers, onSubscribersChange }: SubscribersPanelProps) => {
   // Safeguard against undefined subscribers
   const safeSubscribers = subscribers || [];
-  
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<IFormSubscriber>>({});
   const [emailError, setEmailError] = useState<string | null>(null);

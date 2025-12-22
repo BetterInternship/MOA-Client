@@ -25,7 +25,7 @@ interface ValidationErrors {
 export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) => {
   // Safeguard against undefined parties
   const safeParties = parties || [];
-  
+
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<Partial<IFormSigningParty>>({});
   const [credentialMode, setCredentialMode] = useState<CredentialMode>("source");
