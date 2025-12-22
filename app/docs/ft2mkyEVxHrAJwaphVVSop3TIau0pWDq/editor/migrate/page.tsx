@@ -10,15 +10,7 @@ import {
   isFormMetadataV0,
   isFormMetadataV1,
   type OldIFormMetadata,
-} from "@betterinternship/core/forms";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+} from "@/lib/legacy/form-metadata-migration";
 
 interface MigrationResult {
   name: string;
