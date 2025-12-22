@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 20:47:45
+ * @ Modified time: 2025-12-22 21:02:51
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -43,10 +43,23 @@ import {
 // Utility to generate unique IDs for blocks
 const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
 
+// Blank form metadata for new forms
+const BLANK_FORM_METADATA: IFormMetadata = {
+  name: "new-form",
+  label: "New Form",
+  schema_version: 1,
+  schema: {
+    blocks: [],
+  },
+  signing_parties: [],
+  subscribers: [],
+};
+
 const PdfJsEditorPage = () => {
   const searchParams = useSearchParams();
   const formName = searchParams.get("name");
   const formVersion = searchParams.get("version");
+  const isNewForm = !formName && !formVersion;
 
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
   const { data: registryFormMetadata, isLoading: metadataLoading } =
@@ -60,22 +73,24 @@ const PdfJsEditorPage = () => {
   const registry = fieldRegistryData?.fields ?? [];
   console.log("Field Registry Data:", registry);
 
-  // Get document URL from form metadata
-  const documentUrl = formDocumentData?.formDocument || null;
+  // Get document URL from form metadata (only for existing forms)
+  const documentUrl = isNewForm ? null : formDocumentData?.formDocument || null;
 
-  // Initialize FormMetadata with loaded data or dummy data
+  // Initialize FormMetadata with loaded data or blank data for new forms
   const formMetadata = useMemo(() => {
     const data = ((registryFormMetadata?.formMetadata as any) ||
-      DUMMY_FORM_METADATA) as IFormMetadata;
+      (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA)) as IFormMetadata;
     return new FormMetadata<[]>(data);
-  }, [registryFormMetadata]);
+  }, [registryFormMetadata, isNewForm]);
 
   // Get all blocks from FormMetadata (includes headers, paragraphs, form fields, etc.)
   // Use raw block structure for form editing
   const ALL_BLOCKS_RAW = useMemo(() => {
-    const metadataData = (registryFormMetadata?.formMetadata as any) || DUMMY_FORM_METADATA;
-    return metadataData.schema?.blocks || DUMMY_FORM_METADATA.schema.blocks;
-  }, [registryFormMetadata]);
+    const metadataData =
+      (registryFormMetadata?.formMetadata as any) ||
+      (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA);
+    return metadataData.schema?.blocks || (isNewForm ? [] : DUMMY_FORM_METADATA.schema.blocks);
+  }, [registryFormMetadata, isNewForm]);
 
   // Extract only form field blocks (non-phantom) for the PDF preview
   const INITIAL_FIELDS: FormField[] = useMemo(() => {
@@ -111,7 +126,8 @@ const PdfJsEditorPage = () => {
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
   const [metadata, setMetadata] = useState<IFormMetadata>(
-    ((registryFormMetadata?.formMetadata as any) || DUMMY_FORM_METADATA) as IFormMetadata
+    ((registryFormMetadata?.formMetadata as any) ||
+      (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA)) as IFormMetadata
   );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
 
@@ -512,8 +528,11 @@ const PdfJsEditorPage = () => {
                   />
                 </Suspense>
               ) : (
-                <div className="flex h-full items-center justify-center">
-                  <Loader>Loading PDF…</Loader>
+                <div className="flex h-full flex-col items-center justify-center gap-4 bg-slate-50">
+                  <div className="text-center">
+                    <p className="text-muted-foreground mb-2 text-sm">No PDF loaded</p>
+                    <p className="text-xs text-slate-500">Upload a PDF to start editing</p>
+                  </div>
                 </div>
               )}
             </div>

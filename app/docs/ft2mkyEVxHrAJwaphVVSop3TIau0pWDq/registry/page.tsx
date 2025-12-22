@@ -21,6 +21,7 @@ import {
  * @component
  */
 const FormRegistryPage = () => {
+  const router = useRouter();
   const formRegistry = useFormsControllerGetRegistry();
   const forms = formRegistry.data?.registry ?? [];
   const formSorted = forms.sort((a, b) => a.name.localeCompare(b.name));
@@ -29,10 +30,19 @@ const FormRegistryPage = () => {
   const isLoading = formRegistry.isLoading;
   const error = formRegistry.error;
 
+  const handleCreateForm = () => {
+    router.push("./editor/pdfjs");
+  };
+
   return (
     <div className="min-h-screen w-full p-8">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-4 text-2xl font-bold tracking-tight">Form Registry</h1>
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">Form Registry</h1>
+          <Button onClick={handleCreateForm} className="gap-2">
+            + Create Form
+          </Button>
+        </div>
 
         {error && <div className="text-destructive mb-6">Failed to load forms</div>}
 
