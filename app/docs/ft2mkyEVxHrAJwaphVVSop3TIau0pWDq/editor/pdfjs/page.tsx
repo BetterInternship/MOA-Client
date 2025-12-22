@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 20:46:04
+ * @ Modified time: 2025-12-22 20:47:45
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -558,4 +558,12 @@ const PdfJsEditorPage = () => {
   );
 };
 
-export default PdfJsEditorPage;
+function PdfJsEditorPageWrapper() {
+  return (
+    <Suspense fallback={<Loader>Loading editor…</Loader>}>
+      <PdfJsEditorPage />
+    </Suspense>
+  );
+}
+
+export default PdfJsEditorPageWrapper;
