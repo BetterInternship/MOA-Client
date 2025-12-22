@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 14:02:56
+ * @ Modified time: 2025-12-22 20:40:28
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -22,6 +22,7 @@ import { useFieldRegistration } from "../../../../../hooks/use-field-registratio
 import {
   useFormsControllerGetFieldRegistry,
   useFormsControllerGetRegistryFormMetadata,
+  useFormsControllerGetRegistryFormDocument,
 } from "@/app/api";
 import { getFieldLabelByName } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import {
@@ -52,12 +53,15 @@ const PdfJsEditorPage = () => {
     useFormsControllerGetRegistryFormMetadata(
       formName && formVersion ? { name: formName, version: parseInt(formVersion) } : undefined
     );
+  const { data: formDocumentData } = useFormsControllerGetRegistryFormDocument(
+    formName && formVersion ? { name: formName, version: parseInt(formVersion) } : undefined
+  );
 
   const registry = fieldRegistryData?.fields ?? [];
   console.log("Field Registry Data:", registry);
 
-  // Get document URL from query params or use default
-  const documentUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
+  // Get document URL from form metadata
+  const documentUrl = formDocumentData?.formDocument || null;
 
   // Initialize FormMetadata with loaded data or dummy data
   const formMetadata = useMemo(() => {
@@ -491,22 +495,29 @@ const PdfJsEditorPage = () => {
           <div className="flex h-full gap-0">
             {/* PDF Viewer (left, main) */}
             <div className="flex-1">
-              <Suspense fallback={<Loader>Loading PDF…</Loader>}>
-                <PdfViewer
-                  fields={fields}
-                  selectedFieldId={selectedFieldId}
-                  onFieldSelect={setSelectedFieldId}
-                  onFieldUpdate={handleFieldUpdate}
-                  onFieldCreate={handleFieldCreate}
-                  isPlacingField={isPlacingField}
-                  placementFieldType={placementFieldType}
-                  onPlacementFieldTypeChange={setPlacementFieldType}
-                  onStartPlacing={() => setIsPlacingField(true)}
-                  onCancelPlacing={() => setIsPlacingField(false)}
-                  onFileSelect={setDocumentFile}
-                  registry={registry}
-                />
-              </Suspense>
+              {documentUrl ? (
+                <Suspense fallback={<Loader>Loading PDF…</Loader>}>
+                  <PdfViewer
+                    initialUrl={documentUrl}
+                    fields={fields}
+                    selectedFieldId={selectedFieldId}
+                    onFieldSelect={setSelectedFieldId}
+                    onFieldUpdate={handleFieldUpdate}
+                    onFieldCreate={handleFieldCreate}
+                    isPlacingField={isPlacingField}
+                    placementFieldType={placementFieldType}
+                    onPlacementFieldTypeChange={setPlacementFieldType}
+                    onStartPlacing={() => setIsPlacingField(true)}
+                    onCancelPlacing={() => setIsPlacingField(false)}
+                    onFileSelect={setDocumentFile}
+                    registry={registry}
+                  />
+                </Suspense>
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <Loader>Loading PDF…</Loader>
+                </div>
+              )}
             </div>
 
             {/* Sidebar (right) */}

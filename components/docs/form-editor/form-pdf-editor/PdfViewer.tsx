@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 14:10:42
+ * @ Modified time: 2025-12-22 20:40:55
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -95,6 +95,14 @@ export function PdfViewer({
       setSourceUrl(urlFromQuery);
     }
   }, [searchParams]);
+
+  // Update URL when initialUrl prop changes
+  useEffect(() => {
+    if (initialUrl) {
+      setPendingUrl(initialUrl);
+      setSourceUrl(initialUrl);
+    }
+  }, [initialUrl]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
