@@ -34,14 +34,23 @@ const FormRegistryPage = () => {
     router.push("./editor/pdfjs");
   };
 
+  const handleMigrateForm = () => {
+    router.push("./editor/migrate");
+  };
+
   return (
     <div className="min-h-screen w-full p-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Form Registry</h1>
-          <Button onClick={handleCreateForm} className="gap-2">
-            + Create Form
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleMigrateForm} variant="outline" className="gap-2">
+              ↻ Migrate Form (v0 → v1)
+            </Button>
+            <Button onClick={handleCreateForm} className="gap-2">
+              + Create Form
+            </Button>
+          </div>
         </div>
 
         {error && <div className="text-destructive mb-6">Failed to load forms</div>}
