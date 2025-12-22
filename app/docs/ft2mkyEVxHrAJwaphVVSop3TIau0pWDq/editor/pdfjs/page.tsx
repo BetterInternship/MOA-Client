@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 22:41:46
+ * @ Modified time: 2025-12-23 02:10:44
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -130,6 +130,8 @@ const PdfJsEditorPage = () => {
       (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA)) as IFormMetadata
   );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [debugSchemaInput, setDebugSchemaInput] = useState<string>("");
+  const [isDebugModalOpen, setIsDebugModalOpen] = useState<boolean>(false);
 
   // Update metadata when registry data loads
   useEffect(() => {
@@ -331,6 +333,73 @@ const PdfJsEditorPage = () => {
   }, [formLabel]);
 
   /**
+   * Handle schema injection for debugging
+   */
+  const handleInjectSchema = useCallback(() => {
+    try {
+      const parsed = JSON.parse(debugSchemaInput);
+
+      if (!parsed.schema || !parsed.schema.blocks) {
+        alert("Invalid schema structure. Must have schema.blocks");
+        return;
+      }
+
+      // Extract fields from blocks - handle both field_schema (single) and fields (array) formats
+      const injectedFields: FormField[] = [];
+      parsed.schema.blocks.forEach((block: any) => {
+        if (block.field_schema) {
+          // Single field_schema format
+          const fieldSchema = block.field_schema;
+          injectedFields.push({
+            field: fieldSchema.field,
+            id: fieldSchema.field, // Use field name as id if not provided
+            label: fieldSchema.label || fieldSchema.field,
+            x: fieldSchema.x || 0,
+            y: fieldSchema.y || 0,
+            w: fieldSchema.w || 100,
+            h: fieldSchema.h || 40,
+            required: fieldSchema.required || false,
+            readonly: fieldSchema.readonly || false,
+          });
+        } else if (block.fields && Array.isArray(block.fields)) {
+          // Array of fields format
+          block.fields.forEach((field: any) => {
+            injectedFields.push({
+              field: field.field,
+              id: field.id || field.field,
+              label: field.label || field.field,
+              x: field.x || 0,
+              y: field.y || 0,
+              w: field.w || 100,
+              h: field.h || 40,
+              required: field.required || false,
+              readonly: field.readonly || false,
+            });
+          });
+        }
+      });
+
+      // Normalize metadata: ensure signing_parties and subscribers exist
+      const normalizedMetadata: IFormMetadata = {
+        name: parsed.name || "untitled",
+        label: parsed.label || "Untitled Form",
+        schema_version: parsed.schema_version || 1,
+        schema: parsed.schema,
+        signing_parties: parsed.signing_parties || parsed.signatories || [],
+        subscribers: parsed.subscribers || [],
+      };
+
+      setMetadata(normalizedMetadata);
+      setFields(injectedFields);
+      setIsDebugModalOpen(false);
+      setDebugSchemaInput("");
+      alert(`Schema injected successfully! (${injectedFields.length} fields loaded)`);
+    } catch (error) {
+      alert(`Error parsing schema: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }, [debugSchemaInput]);
+
+  /**
    * Handle field registration - molds fields to metadata and opens global modal
    */
   const handleRegisterForm = useCallback(() => {
@@ -498,6 +567,13 @@ const PdfJsEditorPage = () => {
               </>
             )}
           </Button>
+          <button
+            onClick={() => setIsDebugModalOpen(true)}
+            className="rounded bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+            title="Inject debug schema"
+          >
+            📝 Inject Schema
+          </button>
           <Button onClick={handleRegisterForm}>Register Form</Button>
         </div>
       </div>
@@ -564,6 +640,39 @@ const PdfJsEditorPage = () => {
           />
         )}
       </div>
+
+      {/* Debug Schema Injector Modal */}
+      {isDebugModalOpen && (
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="max-h-[80vh] w-[600px] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="mb-4 text-xl font-semibold">Inject Debug Schema</h2>
+            <textarea
+              value={debugSchemaInput}
+              onChange={(e) => setDebugSchemaInput(e.target.value)}
+              placeholder="Paste your schema JSON here..."
+              className="h-64 w-full rounded border border-slate-300 p-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              autoFocus
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setIsDebugModalOpen(false);
+                  setDebugSchemaInput("");
+                }}
+                className="rounded border border-slate-300 px-4 py-2 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInjectSchema}
+                className="rounded bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
+              >
+                Inject Schema
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

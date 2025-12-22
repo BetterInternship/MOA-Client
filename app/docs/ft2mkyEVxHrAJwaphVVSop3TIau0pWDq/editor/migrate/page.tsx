@@ -30,6 +30,70 @@ export default function FormMetadataMigrationPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
 
+  const handleStringify = () => {
+    if (!jsonInput.trim()) {
+      alert("Please paste a form metadata JSON");
+      return;
+    }
+
+    try {
+      const formData = JSON.parse(jsonInput);
+
+      // Normalize schema_version from string to number if needed
+      if (typeof formData.schema_version === "string") {
+        formData.schema_version = parseInt(formData.schema_version, 10);
+      }
+
+      // Handle v0 format where schema is an array of stringified field objects
+      if (Array.isArray(formData.schema)) {
+        formData.schema = {
+          blocks: formData.schema.map((fieldStr: any, idx: number) => {
+            let fieldObj: any;
+
+            // Parse if it's a string
+            if (typeof fieldStr === "string") {
+              try {
+                fieldObj = JSON.parse(fieldStr);
+              } catch {
+                fieldObj = fieldStr;
+              }
+            } else {
+              fieldObj = fieldStr;
+            }
+
+            return {
+              block_type: "form_field",
+              order: idx,
+              signing_party_id: fieldObj.party || "",
+              field_schema: fieldObj,
+            };
+          }),
+        };
+      }
+
+      // Parse stringified schema objects in blocks (if they exist)
+      if (formData.schema?.blocks && Array.isArray(formData.schema.blocks)) {
+        formData.schema.blocks = formData.schema.blocks.map((block: any) => {
+          if (block.field_schema && typeof block.field_schema === "string") {
+            try {
+              return { ...block, field_schema: JSON.parse(block.field_schema) };
+            } catch {
+              return block;
+            }
+          }
+          return block;
+        });
+      }
+
+      // Format and set the cleaned JSON
+      const formattedJson = JSON.stringify(formData, null, 2);
+      setJsonInput(formattedJson);
+      alert("Metadata stringified and normalized!");
+    } catch (error) {
+      alert(`Failed to stringify: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
   const handleMigrateSingle = async () => {
     if (!jsonInput.trim()) {
       alert("Please paste a form metadata JSON");
@@ -137,20 +201,24 @@ export default function FormMetadataMigrationPage() {
                 placeholder='{"name": "form-name", "schema_version": 0, "schema": [...], "required_parties": [...], "signatories": [...], ...}'
                 className="h-64 w-full rounded-md border border-slate-300 bg-white p-4 font-mono text-sm"
               />
-              <Button
-                onClick={handleMigrateSingle}
-                disabled={isProcessing || !jsonInput.trim()}
-                className="w-full"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader className="mr-2" />
-                    Migrating...
-                  </>
-                ) : (
-                  "Migrate Form"
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleStringify}
+                  disabled={isProcessing || !jsonInput.trim()}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Stringify & Normalize
+                </Button>
+                <Button
+                  onClick={handleMigrateSingle}
+                  disabled={isProcessing || !jsonInput.trim()}
+                  className="flex-1"
+                >
+                  {isProcessing ? <Loader className="mr-2 h-4 w-4" /> : null}
+                  Migrate Form
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

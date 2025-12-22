@@ -157,7 +157,19 @@ export class FormMetadataMigrator {
    */
   migrate(oldForm: OldIFormMetadata): IFormMetadata {
     // Step 1: Build signing parties from required_parties and signatories
-    const signingParties = this.buildSigningParties(oldForm.required_parties, oldForm.signatories);
+    let signingParties = this.buildSigningParties(oldForm.required_parties, oldForm.signatories);
+
+    // Step 1b: Ensure there's always at least a "student" signing party
+    if (signingParties.length === 0) {
+      signingParties = [
+        {
+          _id: "party-student",
+          order: 1,
+          signed: false,
+        },
+      ];
+      this.partyMap.set("student", "party-student");
+    }
 
     // Step 2: Convert fields to blocks
     const fieldBlocks = this.fieldsToBlocks(oldForm.schema);
@@ -224,6 +236,7 @@ export class FormMetadataMigrator {
 
   /**
    * Convert old fields to new block structure
+   * Note: Fields with w === 0 or h === 0 are treated as phantom fields
    */
   private fieldsToBlocks(oldFields: OldIFormField[]): IFormBlock[] {
     return oldFields
@@ -236,6 +249,32 @@ export class FormMetadataMigrator {
       .map((field, index) => {
         const partyId = this.getOrGeneratePartyId(field.party);
 
+        // Check if this is a phantom field (0 width or height)
+        if (field.w === 0 || field.h === 0) {
+          const newPhantomField: IFormPhantomField = {
+            field: field.field,
+            type: field.type,
+            label: field.label,
+            tooltip_label: field.tooltip_label,
+            shared: field.shared,
+            signing_party_id: partyId,
+            source: field.source as any,
+            validator: field.validator,
+            prefiller: field.prefiller,
+          };
+
+          const block: IFormBlock = {
+            _id: this.generateBlockId("phantom", index),
+            block_type: "form_phantom_field",
+            order: index,
+            signing_party_id: partyId,
+            phantom_field_schema: newPhantomField,
+          };
+
+          return block;
+        }
+
+        // Regular form field
         const newField: IFormField = {
           field: field.field,
           type: field.type,
