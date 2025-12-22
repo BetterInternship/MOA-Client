@@ -8,17 +8,21 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Suspense } from "react";
 import { Loader } from "@/components/ui/loader";
 import { useModal } from "@/app/providers/modal-provider";
+import { useSearchParams } from "next/navigation";
 import { PdfViewer } from "../../../../../components/docs/form-editor/form-pdf-editor/PdfViewer";
 import { EditorSidebar } from "../../../../../components/docs/form-editor/EditorSidebar";
 import { FormLayoutEditor } from "../../../../../components/docs/form-editor/form-layout/FormLayoutEditor";
 import { FieldRegistrationModalContent } from "@/components/docs/form-editor/FieldRegistrationModalContent";
 import { useFieldOperations } from "../../../../../hooks/use-field-operations";
 import { useFieldRegistration } from "../../../../../hooks/use-field-registration";
-import { useFormsControllerGetFieldRegistry } from "@/app/api";
+import {
+  useFormsControllerGetFieldRegistry,
+  useFormsControllerGetRegistryFormMetadata,
+} from "@/app/api";
 import { getFieldLabelByName } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import {
   FormMetadata,
@@ -35,28 +39,48 @@ import {
   formsControllerGetFieldFromRegistry,
 } from "../../../../api/app/api/endpoints/forms/forms";
 
+// Utility to generate unique IDs for blocks
+const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
+
 const PdfJsEditorPage = () => {
+  const searchParams = useSearchParams();
+  const formName = searchParams.get("name");
+  const formVersion = searchParams.get("version");
+
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
+  const { data: registryFormMetadata, isLoading: metadataLoading } =
+    useFormsControllerGetRegistryFormMetadata(
+      formName && formVersion ? { name: formName, version: parseInt(formVersion) } : undefined
+    );
+
   const registry = fieldRegistryData?.fields ?? [];
   console.log("Field Registry Data:", registry);
 
   // Get document URL from query params or use default
   const documentUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
 
-  // Initialize FormMetadata with dummy data
-  const formMetadata = useMemo(() => new FormMetadata<[]>(DUMMY_FORM_METADATA), []);
+  // Initialize FormMetadata with loaded data or dummy data
+  const formMetadata = useMemo(() => {
+    const data = ((registryFormMetadata?.formMetadata as any) ||
+      DUMMY_FORM_METADATA) as IFormMetadata;
+    return new FormMetadata<[]>(data);
+  }, [registryFormMetadata]);
 
   // Get all blocks from FormMetadata (includes headers, paragraphs, form fields, etc.)
   // Use raw block structure for form editing
-  const ALL_BLOCKS_RAW = useMemo(() => DUMMY_FORM_METADATA.schema.blocks, []);
+  const ALL_BLOCKS_RAW = useMemo(() => {
+    const metadataData = (registryFormMetadata?.formMetadata as any) || DUMMY_FORM_METADATA;
+    return metadataData.schema?.blocks || DUMMY_FORM_METADATA.schema.blocks;
+  }, [registryFormMetadata]);
 
   // Extract only form field blocks (non-phantom) for the PDF preview
   const INITIAL_FIELDS: FormField[] = useMemo(() => {
     return ALL_BLOCKS_RAW.filter(
-      (block) => block.block_type === "form_field" && block.field_schema
-    ).map((block) => {
+      (block: any) => block.block_type === "form_field" && block.field_schema
+    ).map((block: any) => {
       const field = block.field_schema as IFormField;
       return {
+        id: "", // Will be populated from registry
         field: field.field,
         label: field.label,
         page: field.page,
@@ -82,8 +106,42 @@ const PdfJsEditorPage = () => {
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
-  const [metadata, setMetadata] = useState<IFormMetadata>(DUMMY_FORM_METADATA);
+  const [metadata, setMetadata] = useState<IFormMetadata>(
+    ((registryFormMetadata?.formMetadata as any) || DUMMY_FORM_METADATA) as IFormMetadata
+  );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+
+  // Update metadata when registry data loads
+  useEffect(() => {
+    if (registryFormMetadata?.formMetadata) {
+      const metadataData = registryFormMetadata.formMetadata as any as IFormMetadata;
+      setMetadata(metadataData);
+      const newFormMetadata = new FormMetadata(metadataData);
+      setFormLabel(newFormMetadata.getLabel());
+      setEditingNameValue(newFormMetadata.getLabel());
+
+      // Update fields from loaded metadata
+      const blocksData = metadataData.schema.blocks;
+      const fieldsFromMetadata: FormField[] = blocksData
+        .filter((block: any) => block.block_type === "form_field" && block.field_schema)
+        .map((block: any) => {
+          const field = block.field_schema as IFormField;
+          return {
+            id: "",
+            field: field.field,
+            label: field.label,
+            page: field.page,
+            x: field.x,
+            y: field.y,
+            w: field.w,
+            h: field.h,
+            align_h: (field.align_h ?? "left") as "left" | "center" | "right",
+            align_v: (field.align_v ?? "top") as "top" | "middle" | "bottom",
+          };
+        });
+      setFields(fieldsFromMetadata);
+    }
+  }, [registryFormMetadata]);
 
   // Get blocks from metadata
   const blocks = metadata.schema.blocks;
@@ -299,13 +357,28 @@ const PdfJsEditorPage = () => {
         errors={result.errors}
         onClose={() => closeModal("field-registration-modal")}
         onConfirm={(editedMetadata) => {
-          formsControllerRegisterForm(editedMetadata);
+          // Ensure all blocks have _id and base_document is included
+          const blocksWithIds = (editedMetadata.schema.blocks as any[]).map((block: any) => ({
+            ...block,
+            _id: block._id || generateBlockId(),
+          }));
+
+          const metadataWithDocument = {
+            ...editedMetadata,
+            schema: {
+              ...editedMetadata.schema,
+              blocks: blocksWithIds,
+            },
+            base_document: documentFile,
+          } as any;
+          formsControllerRegisterForm(metadataWithDocument);
           closeModal("field-registration-modal");
         }}
         onFieldsUpdate={(updatedFields) => {
           // Update fields in real-time as JSON is edited
-          const fieldsWithLabels = updatedFields.map((field) => ({
+          const fieldsWithLabels = updatedFields.map((field: any) => ({
             ...field,
+            id: field.id || "",
             label: getFieldLabelByName(field.field, registry),
           })) as FormField[];
           setFields(fieldsWithLabels);
@@ -332,6 +405,15 @@ const PdfJsEditorPage = () => {
     metadata,
     documentFile,
   ]);
+
+  // Show loading state while form metadata is being fetched
+  if (metadataLoading && !metadata) {
+    return (
+      <div className="flex h-full items-center justify-center bg-slate-50">
+        <Loader>Loading form...</Loader>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col gap-0 overflow-hidden">

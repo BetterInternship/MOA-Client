@@ -11,4 +11,5 @@ export interface FormTemplatePreview {
   formVersion: number;
   formName: string;
   formLabel: string;
+  time_generated: string;
 }

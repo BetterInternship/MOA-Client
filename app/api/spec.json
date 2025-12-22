@@ -1952,8 +1952,12 @@
       },
       "FormRegistryEntry": {
         "type": "object",
-        "properties": { "name": { "type": "string" }, "version": { "type": "number" } },
-        "required": ["name", "version"]
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "number" },
+          "time_generated": { "format": "date-time", "type": "string" }
+        },
+        "required": ["name", "version", "time_generated"]
       },
       "FormRegistryResponse": {
         "type": "object",
@@ -1973,9 +1977,10 @@
           "formDocument": { "type": "string" },
           "formVersion": { "type": "number" },
           "formName": { "type": "string" },
-          "formLabel": { "type": "string" }
+          "formLabel": { "type": "string" },
+          "time_generated": { "format": "date-time", "type": "string" }
         },
-        "required": ["formDocument", "formVersion", "formName", "formLabel"]
+        "required": ["formDocument", "formVersion", "formName", "formLabel", "time_generated"]
       },
       "FormTemplatesResponse": {
         "type": "object",
