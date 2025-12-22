@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 12:43:52
+ * @ Modified time: 2025-12-22 14:02:56
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -30,11 +30,15 @@ import {
 import type { FormField } from "../../../../../components/docs/form-editor/form-pdf-editor/FieldBox";
 import { Button } from "@/components/ui/button";
 import { Edit2, Check, X, Layout } from "lucide-react";
-import { formsControllerRegisterForm } from "../../../../api/app/api/endpoints/forms/forms";
+import {
+  formsControllerRegisterForm,
+  formsControllerGetFieldFromRegistry,
+} from "../../../../api/app/api/endpoints/forms/forms";
 
 const PdfJsEditorPage = () => {
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
   const registry = fieldRegistryData?.fields ?? [];
+  console.log("Field Registry Data:", registry);
 
   // Get document URL from query params or use default
   const documentUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
@@ -148,7 +152,18 @@ const PdfJsEditorPage = () => {
    * Handle field creation with auto-selection
    */
   const handleFieldCreate = useCallback(
-    (newField: FormField) => {
+    async (newField: FormField) => {
+      // Fetch full field details from registry including validator and prefiller
+      let fullFieldData: any = null;
+      console.log("Fetching field details for:", newField.field, newField.id);
+
+      try {
+        const { field } = await formsControllerGetFieldFromRegistry({ id: newField.id });
+        fullFieldData = field;
+      } catch (error) {
+        console.error("Failed to fetch field details:", error);
+      }
+
       // Look up the label from registry using field name
       const fieldWithLabel: FormField = {
         ...newField,
@@ -183,7 +198,8 @@ const PdfJsEditorPage = () => {
           shared: true,
           signing_party_id: signingPartyId,
           source: "manual",
-          validator: 'z.string().min(1, "Field is required")',
+          validator: fullFieldData?.validator || "",
+          prefiller: fullFieldData?.prefiller || "",
         } as IFormField,
       };
       // Update metadata with new block

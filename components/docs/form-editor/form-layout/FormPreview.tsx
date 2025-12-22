@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { type IFormBlock, type IFormSigningParty } from "@betterinternship/core/forms";
+import {
+  type IFormBlock,
+  type IFormSigningParty,
+  type IFormMetadata,
+} from "@betterinternship/core/forms";
+import { validateFieldWithZod } from "@/lib/form-validation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormRenderer } from "@/components/docs/forms/FormRenderer";
@@ -12,6 +17,7 @@ interface FormPreviewProps {
   blocks: IFormBlock[];
   signingParties: IFormSigningParty[];
   documentUrl?: string;
+  metadata?: IFormMetadata;
 }
 
 /**
@@ -23,6 +29,7 @@ export const FormPreview = ({
   blocks,
   signingParties,
   documentUrl,
+  metadata,
 }: FormPreviewProps) => {
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(
     signingParties.length > 0 ? signingParties[0]._id : null
@@ -37,69 +44,19 @@ export const FormPreview = ({
 
   const selectedParty = signingParties.find((p) => p._id === selectedPartyId);
 
-  // Handle blur validation
+  // Handle blur validation using centralized validator
   const handleBlurValidate = (fieldKey: string) => {
-    // Find the field in blocks to get its validator
-    const fieldBlock = filteredBlocks.find((block) => {
-      if (block.block_type === "form_field" && block.field_schema) {
-        return block.field_schema.field === fieldKey;
-      }
-      if (block.block_type === "form_phantom_field" && block.phantom_field_schema) {
-        return block.phantom_field_schema.field === fieldKey;
-      }
-      return false;
-    });
+    if (!metadata) return;
 
-    if (!fieldBlock) return;
+    const value = values[fieldKey];
+    const error = validateFieldWithZod(fieldKey, value, metadata);
 
-    // Get the validator string from the field schema
-    let validatorString = "";
-    if (fieldBlock.block_type === "form_field" && fieldBlock.field_schema) {
-      validatorString = fieldBlock.field_schema.validator || "";
-    } else if (fieldBlock.block_type === "form_phantom_field" && fieldBlock.phantom_field_schema) {
-      validatorString = fieldBlock.phantom_field_schema.validator || "";
-    }
-
-    // If no validator, clear any existing error
-    if (!validatorString) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldKey];
-        return newErrors;
-      });
-      return;
-    }
-
-    // Try to validate
-    try {
-      const value = values[fieldKey];
-      let error = "";
-
-      if (validatorString.includes("min(1)") || validatorString.includes("required")) {
-        if (!value || value.trim() === "") {
-          error = "This field is required";
-        }
-      }
-
-      if (validatorString.includes("email")) {
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          error = "Invalid email address";
-        }
-      }
-
-      if (error) {
-        setErrors((prev) => ({
-          ...prev,
-          [fieldKey]: error,
-        }));
-      } else {
-        setErrors((prev) => {
-          const newErrors = { ...prev };
-          delete newErrors[fieldKey];
-          return newErrors;
-        });
-      }
-    } catch (err) {
+    if (error) {
+      setErrors((prev) => ({
+        ...prev,
+        [fieldKey]: error,
+      }));
+    } else {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[fieldKey];

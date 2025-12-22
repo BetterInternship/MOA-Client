@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import {
+  FormMetadata,
   type IFormBlock,
   type IFormMetadata,
   type IFormSigningParty,
   type IFormSubscriber,
 } from "@betterinternship/core/forms";
+import { validateFieldWithZod } from "@/lib/form-validation";
 import { EditableDynamicForm } from "./EditableDynamicForm";
 import { BlockEditor } from "./BlockEditor";
 import { PartiesPanel } from "./PartiesPanel";
@@ -181,73 +183,17 @@ export const FormLayoutEditor = ({
     });
   };
 
-  // Validate a field on blur
+  // Validate a field on blur using centralized validation
   const handleBlurValidate = (fieldKey: string) => {
-    // Find the field in blocks to get its validator
-    const fieldBlock = orderedBlocks.find((block) => {
-      if (block.block_type === "form_field" && block.field_schema) {
-        return block.field_schema.field === fieldKey;
-      }
-      if (block.block_type === "form_phantom_field" && block.phantom_field_schema) {
-        return block.phantom_field_schema.field === fieldKey;
-      }
-      return false;
-    });
+    const value = formValues[fieldKey];
+    const error = validateFieldWithZod(fieldKey, value, metadata);
 
-    if (!fieldBlock) return;
-
-    // Get the validator string from the field schema
-    let validatorString = "";
-    if (fieldBlock.block_type === "form_field" && fieldBlock.field_schema) {
-      validatorString = fieldBlock.field_schema.validator || "";
-    } else if (fieldBlock.block_type === "form_phantom_field" && fieldBlock.phantom_field_schema) {
-      validatorString = fieldBlock.phantom_field_schema.validator || "";
-    }
-
-    // If no validator, clear any existing error
-    if (!validatorString) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldKey];
-        return newErrors;
-      });
-      return;
-    }
-
-    // Try to validate using the zod schema string
-    try {
-      const value = formValues[fieldKey];
-
-      // Simple validation logic - can be extended
-      // For now, we'll do basic checks based on common patterns
-      let error = "";
-
-      if (validatorString.includes("min(1)") || validatorString.includes("required")) {
-        if (!value || value.trim() === "") {
-          error = "This field is required";
-        }
-      }
-
-      if (validatorString.includes("email")) {
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          error = "Invalid email address";
-        }
-      }
-
-      if (error) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          [fieldKey]: error,
-        }));
-      } else {
-        setValidationErrors((prev) => {
-          const newErrors = { ...prev };
-          delete newErrors[fieldKey];
-          return newErrors;
-        });
-      }
-    } catch (err) {
-      // If validator parsing fails, clear any existing error
+    if (error) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        [fieldKey]: error,
+      }));
+    } else {
       setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[fieldKey];
@@ -336,6 +282,7 @@ export const FormLayoutEditor = ({
             blocks={orderedBlocks}
             signingParties={parties}
             documentUrl={documentUrl}
+            metadata={metadata}
           />
         );
       case "parties":

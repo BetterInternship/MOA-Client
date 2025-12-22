@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-19 00:15:34
+ * @ Modified time: 2025-12-22 14:10:42
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -499,6 +499,7 @@ const PdfPageCanvas = ({
       const fieldName = getFieldName(placementFieldType, registry);
       const fieldLabel = getFieldLabel(placementFieldType, registry);
       const newField: FormField = {
+        id: placementFieldType,
         field: fieldName,
         label: fieldLabel,
         page: pageNumber,

@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export type FormField = {
+  id: string;
   field: string;
   label: string;
   page: number;
