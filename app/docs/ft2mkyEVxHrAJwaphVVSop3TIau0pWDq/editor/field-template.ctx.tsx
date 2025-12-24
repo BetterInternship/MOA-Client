@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:23:23
  * @ Modified by: Your name
- * @ Modified time: 2025-12-18 15:09:27
+ * @ Modified time: 2025-12-24 22:14:40
  *
  * Allows us to access field information.
  * Seems like we'll be using this a lot in the editor.
@@ -26,7 +26,7 @@ export const useFieldTemplateContext = () => useContext(FieldTemplateContext);
  */
 export const getFieldLabel = (fieldId: string, registry: FieldRegistryEntry[]): string => {
   const entry = registry.find((r) => r.id === fieldId);
-  return (entry?.label as string | undefined) ?? fieldId;
+  return entry?.label ?? fieldId;
 };
 
 /**
@@ -42,7 +42,7 @@ export const getFieldName = (fieldId: string, registry: FieldRegistryEntry[]): s
  */
 export const getFieldLabelByName = (fieldName: string, registry: FieldRegistryEntry[]): string => {
   const entry = registry.find((r) => r.name === fieldName);
-  return (entry?.label as string | undefined) ?? fieldName;
+  return entry?.label ?? fieldName;
 };
 
 /**

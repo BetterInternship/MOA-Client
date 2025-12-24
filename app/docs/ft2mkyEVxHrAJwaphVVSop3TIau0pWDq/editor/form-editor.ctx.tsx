@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
  * @ Modified time: 2025-12-21 20:36:55
- * @ Modified time: 2025-12-22 14:51:27
+ * @ Modified time: 2025-12-24 22:13:57
  *
  * We can move this out later on so it becomes reusable in other places.
  * This allows the consumer to use information about a form within the component.
@@ -182,7 +182,6 @@ export const FormEditorContextProvider = ({ children }: { children: React.ReactN
       field_schema: field,
       signing_party_id: "party-1", // Default party
     }));
-    console.log("blocks", blocks);
     const fm = new FormMetadata({ ...initialFormMetadata, schema: { blocks } });
     setParams({
       ...fm.inferParams().reduce((acc, cur) => {
