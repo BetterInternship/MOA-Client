@@ -76,17 +76,17 @@ export const FormLayoutEditor = ({
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Initialize parties directly from metadata signing_parties
-  const [parties, setParties] = useState<IFormSigningParty[]>(metadata.signing_parties);
+  const [parties, setParties] = useState<IFormSigningParty[]>(metadata.signing_parties ?? []);
 
   // Initialize subscribers directly from metadata
-  const [subscribers, setSubscribers] = useState<IFormSubscriber[]>(metadata.subscribers);
+  const [subscribers, setSubscribers] = useState<IFormSubscriber[]>(metadata.subscribers ?? []);
 
   const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(() => ensureBlockIds(blocks));
 
   // Sync parties and subscribers when metadata changes
   useEffect(() => {
-    setParties(metadata.signing_parties);
-    setSubscribers(metadata.subscribers);
+    setParties(metadata.signing_parties ?? []);
+    setSubscribers(metadata.subscribers ?? []);
   }, [metadata.signing_parties, metadata.subscribers]);
 
   const handleBlocksReorder = (newBlocks: IFormBlock[]) => {
