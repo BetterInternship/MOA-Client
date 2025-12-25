@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-22 22:45:45
+ * @ Modified time: 2025-12-26 01:29:23
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -742,7 +742,7 @@ const PdfPageCanvas = ({
             const hoverLoc = hoverPointDuringPlacement;
             if (!hoverLoc || hoverLoc.page !== pageNumber) return null;
 
-            const defaultSize = { w: 100, h: 40 };
+            const defaultSize = { w: 100, h: 12 };
             const pos = pdfToDisplay(hoverLoc.pdfX, hoverLoc.pdfY);
             if (!pos) return null;
 
