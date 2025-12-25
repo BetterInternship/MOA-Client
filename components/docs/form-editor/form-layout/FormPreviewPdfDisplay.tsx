@@ -26,7 +26,7 @@ export const FormPreviewPdfDisplay = ({
   documentUrl,
   blocks,
   values,
-  scale: initialScale = 1.1,
+  scale: initialScale = 1.0,
 }: FormPreviewPdfDisplayProps) => {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
@@ -118,7 +118,7 @@ export const FormPreviewPdfDisplay = ({
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-slate-100">
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-[0.33em] border border-slate-300">
       {/* Top Controls */}
       <div className="flex-shrink-0 border-b border-slate-300 bg-white px-4 py-3">
         <div className="flex items-center justify-between">

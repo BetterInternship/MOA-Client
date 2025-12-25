@@ -90,7 +90,7 @@ export const FormPreview = ({
       </Card>
 
       {/* Main content with split layout - Form on left, PDF on right */}
-      <div className="flex min-h-[72dvh] flex-1 gap-5 overflow-hidden">
+      <div className="flex max-h-[73dvh] min-h-[73dvh] flex-1 gap-5 overflow-hidden">
         {/* Left side - Form */}
         <div className="relative flex-1">
           <div className="">
