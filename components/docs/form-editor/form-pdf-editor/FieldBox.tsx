@@ -147,8 +147,8 @@ export const FieldBox = ({
     <div
       ref={boxRef}
       className={cn(
-        "group absolute inset-0 border-2 transition-colors",
-        isSelected ? "border-primary bg-primary/20" : "border-amber-500/50 bg-amber-500/15",
+        "group absolute inset-0 border transition-colors",
+        isSelected ? "border-primary bg-primary/20" : "border-amber-400 bg-amber-400/15",
         isDragging && "bg-primary/30"
       )}
       onClick={onSelect}
@@ -171,7 +171,16 @@ export const FieldBox = ({
         cursor: isDragging ? "grabbing" : isResizing ? "grabbing" : isSelected ? "grab" : "pointer",
       }}
     >
-      <div className="text-muted-foreground pointer-events-none px-1 py-0.5 text-xs font-semibold">
+      <div
+        className="text-muted-foreground pointer-events-none overflow-hidden font-semibold"
+        style={{
+          fontSize: `clamp(7px, ${Math.min(field.h * 0.75, 16)}px, 12px)`,
+          lineHeight: 1.2,
+          wordWrap: "break-word",
+          whiteSpace: "normal",
+          padding: "2px 2px",
+        }}
+      >
         {field.label}
       </div>
 

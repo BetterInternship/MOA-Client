@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
- * @ Modified time: 2025-12-26 01:29:23
+ * @ Modified time: 2025-12-26 01:41:33
  * @ Description: pdf viewer component using pdfjs
  */
 
@@ -180,11 +180,6 @@ export function PdfViewer({
     if (onFileSelect) {
       onFileSelect(file);
     }
-  };
-
-  const handleApplyUrl = () => {
-    if (!pendingUrl?.trim()) return;
-    setSourceUrl(pendingUrl.trim());
   };
 
   const pagesArray = useMemo(
