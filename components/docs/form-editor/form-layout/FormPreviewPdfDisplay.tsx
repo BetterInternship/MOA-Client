@@ -337,28 +337,47 @@ const PdfPageWithFields = ({
           const value = values[schema.field] || "";
           const isFilled = value.trim().length > 0;
 
+          // Calculate dynamic font size based on box dimensions
+          const baseFontSize = Math.min(
+            Math.max(heightPixels * 0.6, 6), // Use 60% of box height, min 6px
+            14 // Max 14px
+          );
+
           return (
             <div
               key={block._id}
-              className={`absolute border-2 ${
+              className={`absolute border ${
                 isFilled
-                  ? "bg-opacity-20 border-green-500 bg-green-100"
-                  : "bg-opacity-30 border-dashed border-blue-500 bg-blue-50"
+                  ? "border-green-400 bg-green-50"
+                  : "border-dashed border-blue-400 bg-blue-50"
               }`}
               style={{
                 left: `${displayPos.displayX}px`,
                 top: `${displayPos.displayY}px`,
                 width: `${Math.max(widthPixels, 10)}px`,
                 height: `${Math.max(heightPixels, 10)}px`,
-                padding: "2px",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
+                display: "flex",
+                alignItems: "center",
+                paddingLeft: "2px",
               }}
               title={`${schema.label}: ${value}`}
             >
               {isFilled && (
-                <div className="line-clamp-1 text-xs font-semibold text-green-700">{value}</div>
+                <div
+                  className="font-semibold text-green-700"
+                  style={{
+                    fontSize: `${baseFontSize}px`,
+                    lineHeight: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {value}
+                </div>
               )}
             </div>
           );
