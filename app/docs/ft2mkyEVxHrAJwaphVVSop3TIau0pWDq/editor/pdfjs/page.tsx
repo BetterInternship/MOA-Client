@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-23 02:10:44
+ * @ Modified time: 2025-12-26 01:11:39
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -73,9 +73,6 @@ const PdfJsEditorPage = () => {
   const registry = fieldRegistryData?.fields ?? [];
   console.log("Field Registry Data:", registry);
 
-  // Get document URL from form metadata (only for existing forms)
-  const documentUrl = isNewForm ? null : formDocumentData?.formDocument || null;
-
   // Initialize FormMetadata with loaded data or blank data for new forms
   const formMetadata = useMemo(() => {
     const data = ((registryFormMetadata?.formMetadata as any) ||
@@ -130,8 +127,21 @@ const PdfJsEditorPage = () => {
       (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA)) as IFormMetadata
   );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [uploadedPdfUrl, setUploadedPdfUrl] = useState<string | null>(null);
   const [debugSchemaInput, setDebugSchemaInput] = useState<string>("");
   const [isDebugModalOpen, setIsDebugModalOpen] = useState<boolean>(false);
+
+  // Get document URL from form metadata (only for existing forms) or from uploaded PDF
+  const documentUrl = uploadedPdfUrl || (isNewForm ? null : formDocumentData?.formDocument || null);
+
+  // Cleanup object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (uploadedPdfUrl) {
+        URL.revokeObjectURL(uploadedPdfUrl);
+      }
+    };
+  }, []);
 
   // Update metadata when registry data loads
   useEffect(() => {
@@ -173,6 +183,16 @@ const PdfJsEditorPage = () => {
 
   // Field registration
   const { registerFields } = useFieldRegistration(metadata.name, formLabel);
+
+  /**
+   * Handle PDF file upload - preserve URL for view switching
+   */
+  const handlePdfFileSelect = useCallback((file: File) => {
+    setDocumentFile(file);
+    // Create and store object URL so PDF persists across view changes
+    const objectUrl = URL.createObjectURL(file);
+    setUploadedPdfUrl(objectUrl);
+  }, []);
 
   /**
    * Sync blocks when fields change
@@ -598,7 +618,7 @@ const PdfJsEditorPage = () => {
                   onPlacementFieldTypeChange={setPlacementFieldType}
                   onStartPlacing={() => setIsPlacingField(true)}
                   onCancelPlacing={() => setIsPlacingField(false)}
-                  onFileSelect={setDocumentFile}
+                  onFileSelect={handlePdfFileSelect}
                   registry={registry}
                 />
               </Suspense>
