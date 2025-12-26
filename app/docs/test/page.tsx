@@ -31,7 +31,11 @@ export default function EmailTestPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ apiKey: process.env.NEXT_PUBLIC_MOA_SERVER_API_KEY_EMAIL, email }),
+          body: JSON.stringify({
+            apiKey: process.env.NEXT_PUBLIC_MOA_SERVER_API_KEY_EMAIL,
+            "cf-token": token,
+            email,
+          }),
         }
       );
       const data = (await res.json()) as Response;
