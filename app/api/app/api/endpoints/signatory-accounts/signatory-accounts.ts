@@ -23,10 +23,93 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import type { BaseResponse, ErrorResponse, UpdateSignatoryDto } from "../../models";
+import type {
+  BaseResponse,
+  CreateSignatoryDto,
+  CreateSignatoryResponse,
+  ErrorResponse,
+  UpdateSignatoryDto,
+} from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
+export const signatoryAccountsControllerCreateAccount = (
+  createSignatoryDto: CreateSignatoryDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<CreateSignatoryResponse>({
+    url: `/api/signatory-accounts/create`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: createSignatoryDto,
+    signal,
+  });
+};
+
+export const getSignatoryAccountsControllerCreateAccountMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signatoryAccountsControllerCreateAccount>>,
+    TError,
+    { data: CreateSignatoryDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signatoryAccountsControllerCreateAccount>>,
+  TError,
+  { data: CreateSignatoryDto },
+  TContext
+> => {
+  const mutationKey = ["signatoryAccountsControllerCreateAccount"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signatoryAccountsControllerCreateAccount>>,
+    { data: CreateSignatoryDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return signatoryAccountsControllerCreateAccount(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignatoryAccountsControllerCreateAccountMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryAccountsControllerCreateAccount>>
+>;
+export type SignatoryAccountsControllerCreateAccountMutationBody = CreateSignatoryDto;
+export type SignatoryAccountsControllerCreateAccountMutationError = ErrorResponse;
+
+export const useSignatoryAccountsControllerCreateAccount = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signatoryAccountsControllerCreateAccount>>,
+      TError,
+      { data: CreateSignatoryDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof signatoryAccountsControllerCreateAccount>>,
+  TError,
+  { data: CreateSignatoryDto },
+  TContext
+> => {
+  const mutationOptions = getSignatoryAccountsControllerCreateAccountMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const signatoryAccountsControllerGetSelf = (signal?: AbortSignal) => {
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/signatory-accounts/me`,

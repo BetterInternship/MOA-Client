@@ -183,3 +183,5 @@ export * from "./updateFieldDtoSource";
 export * from "./updateFieldDtoTooltipLabel";
 export * from "./updateFieldDtoValidator";
 export * from "./updateSignatoryDto";
+export * from "./createSignatoryDto";
+export * from "./createSignatoryResponse";

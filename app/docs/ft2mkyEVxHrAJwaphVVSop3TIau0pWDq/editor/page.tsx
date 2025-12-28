@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
  * @ Modified time: 2025-12-18 15:35:50
- * @ Modified time: 2025-12-21 13:11:36
+ * @ Modified time: 2025-12-28 12:43:50
  *
  * This page will let us upload forms and define their schemas on the fly.
  */
@@ -1122,14 +1122,37 @@ const RegisterFileModal = ({
 
   // Handle submitting form to registry
   const handleSubmit = async () => {
-    if (!form.document.file) return;
+    if (!form.document.file && !form.document.url) {
+      return alert("Please select a PDF document.");
+    }
     if (!documentLabel) return alert("Please specify a label for the form.");
+    if (!requiredParties || requiredParties.length === 0) {
+      return alert("Please add at least one signing party.");
+    }
 
     console.log("Submitting form with metadata:", formMetadataDraft);
 
+    // Ensure subscribers and signing_parties are arrays
+    const dataToSubmit = {
+      ...formMetadataDraft,
+      subscribers: Array.isArray(formMetadataDraft.subscribers)
+        ? formMetadataDraft.subscribers
+        : [],
+      signing_parties: Array.isArray(formMetadataDraft.signing_parties)
+        ? formMetadataDraft.signing_parties
+        : [],
+    };
+
+    // If we have a URL but no file, load the PDF from the URL first
+    let documentToSubmit = dataToSubmit;
+    if (!dataToSubmit.base_document && form.document.url) {
+      const file = await loadPdfAsFile(form.document.url, form.document.name);
+      documentToSubmit = { ...dataToSubmit, base_document: file };
+    }
+
     // After submitting, redirect to new version
     setSubmitting(true);
-    await formsControllerRegisterForm(formMetadataDraft as unknown as RegisterFormSchemaDto);
+    await formsControllerRegisterForm(documentToSubmit as unknown as RegisterFormSchemaDto);
     router.push(`/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/registry`);
     setSubmitting(false);
     close();

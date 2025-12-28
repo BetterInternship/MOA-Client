@@ -5,15 +5,18 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
   UseSuspenseQueryOptions,
@@ -210,3 +213,67 @@ export function useAppControllerGetApiSuspense<
 
   return query;
 }
+
+export const appControllerTestEmail = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<null>({ url: `/api/email-test`, method: "POST", signal });
+};
+
+export const getAppControllerTestEmailMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof appControllerTestEmail>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof appControllerTestEmail>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["appControllerTestEmail"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof appControllerTestEmail>>,
+    void
+  > = () => {
+    return appControllerTestEmail();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AppControllerTestEmailMutationResult = NonNullable<
+  Awaited<ReturnType<typeof appControllerTestEmail>>
+>;
+
+export type AppControllerTestEmailMutationError = unknown;
+
+export const useAppControllerTestEmail = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof appControllerTestEmail>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof appControllerTestEmail>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getAppControllerTestEmailMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};

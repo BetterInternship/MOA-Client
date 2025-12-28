@@ -9,6 +9,14 @@
         "tags": ["App"]
       }
     },
+    "/api/email-test": {
+      "post": {
+        "operationId": "AppController_testEmail",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "tags": ["App"]
+      }
+    },
     "/api/auth/self": {
       "post": {
         "operationId": "AuthController_entitySelf",
@@ -1601,6 +1609,35 @@
         "tags": ["Forms"]
       }
     },
+    "/api/signatory-accounts/create": {
+      "post": {
+        "operationId": "SignatoryAccountsController_createAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateSignatoryDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CreateSignatoryResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["SignatoryAccounts"]
+      }
+    },
     "/api/signatory-accounts/me": {
       "get": {
         "operationId": "SignatoryAccountsController_getSelf",
@@ -2317,13 +2354,8 @@
       },
       "ApproveSignatoryDto": {
         "type": "object",
-        "properties": {
-          "pendingFormId": { "type": "string" },
-          "signatoryId": { "type": "string" },
-          "party": { "type": "string" },
-          "values": { "type": "object" }
-        },
-        "required": ["pendingFormId", "signatoryId", "party"]
+        "properties": { "pendingFormId": { "type": "string" }, "values": { "type": "object" } },
+        "required": ["pendingFormId"]
       },
       "GenerateFormDto": {
         "type": "object",
@@ -2334,6 +2366,12 @@
           "disableEsign": { "type": "boolean" }
         },
         "required": ["formName", "formVersion", "values", "disableEsign"]
+      },
+      "CreateSignatoryDto": { "type": "object", "properties": {} },
+      "CreateSignatoryResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } },
+        "required": ["success", "message"]
       },
       "UpdateSignatoryDto": { "type": "object", "properties": {} }
     }

@@ -5,9 +5,8 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { ApproveSignatoryDtoValues } from "./approveSignatoryDtoValues";
 
-export interface ApproveSignatoryDto {
-  pendingFormId: string;
-  values?: ApproveSignatoryDtoValues;
+export interface CreateSignatoryResponse {
+  success: boolean;
+  message: string;
 }
