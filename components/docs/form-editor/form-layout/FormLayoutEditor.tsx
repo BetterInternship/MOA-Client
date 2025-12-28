@@ -17,6 +17,7 @@ import { FormPreview } from "./FormPreview";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
 import { FileText, Users, Mail, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 // Utility to generate unique IDs for blocks
 const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
@@ -73,7 +74,6 @@ export const FormLayoutEditor = ({
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedBlock, setSelectedBlock] = useState<IFormBlock | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [filterPartyId, setFilterPartyId] = useState<string | null>("all");
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Initialize parties directly from metadata signing_parties
@@ -207,10 +207,7 @@ export const FormLayoutEditor = ({
 
   // Filter blocks based on selected party
   const getFilteredBlocks = () => {
-    if (filterPartyId === "all") {
-      return orderedBlocks;
-    }
-    return orderedBlocks.filter((block) => block.signing_party_id === filterPartyId);
+    return orderedBlocks;
   };
 
   const renderContent = () => {
@@ -223,39 +220,7 @@ export const FormLayoutEditor = ({
         const filteredBlocks = getFilteredBlocks();
         return (
           <div className="space-y-4">
-            {/* Party Filter */}
-            <div className="rounded border border-slate-200 bg-white p-4">
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900">Filter by Party</h3>
-                <p className="text-xs text-slate-600">
-                  {filterPartyId === "all"
-                    ? "All fields grouped by party. Drag to reorder or move blocks between parties."
-                    : "Showing fields for selected party only."}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => setFilterPartyId("all")}
-                    variant={filterPartyId === "all" ? "default" : "outline"}
-                    size="sm"
-                  >
-                    All Fields
-                  </Button>
-                  {parties.map((party) => (
-                    <Button
-                      key={party._id}
-                      onClick={() => setFilterPartyId(party._id)}
-                      variant={filterPartyId === party._id ? "default" : "outline"}
-                      size="sm"
-                    >
-                      {party.signatory_account?.name || party._id}
-                      <span className="ml-2 text-xs opacity-75">({party.order})</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Editable Form */}
+            {/* Editable Form with party grouping */}
             <EditableDynamicForm
               formName={formLabel}
               blocks={filteredBlocks}
@@ -274,7 +239,7 @@ export const FormLayoutEditor = ({
               onDeleteBlock={handleDeleteBlock}
               onDuplicateBlock={handleDuplicateBlock}
               selectedBlockIndex={selectedBlockIndex}
-              signingParties={filterPartyId === "all" ? parties : undefined}
+              signingParties={parties}
             />
           </div>
         );
