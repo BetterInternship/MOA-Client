@@ -2212,14 +2212,7 @@
           },
           "base_document": { "type": "string", "format": "binary" }
         },
-        "required": [
-          "name",
-          "label",
-          "schema_version",
-          "schema",
-          "signing_parties",
-          "base_document"
-        ]
+        "required": ["name", "label", "schema_version", "schema", "signing_parties"]
       },
       "FieldRegistryEntry": {
         "type": "object",
