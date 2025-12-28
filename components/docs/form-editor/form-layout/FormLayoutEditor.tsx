@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  FormMetadata,
   type IFormBlock,
   type IFormMetadata,
   type IFormSigningParty,
@@ -16,8 +15,6 @@ import { SubscribersPanel } from "./SubscribersPanel";
 import { FormPreview } from "./FormPreview";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
 import { FileText, Users, Mail, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 // Utility to generate unique IDs for blocks
 const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
@@ -27,6 +24,14 @@ const ensureBlockIds = (blocks: IFormBlock[]): IFormBlock[] => {
   return blocks.map((block) => ({
     ...block,
     _id: block._id || generateBlockId(),
+  }));
+};
+
+// Utility to add order values based on array position
+const addOrderToBlocks = (blocks: IFormBlock[]): IFormBlock[] => {
+  return blocks.map((block, index) => ({
+    ...block,
+    order: index,
   }));
 };
 
@@ -101,17 +106,24 @@ export const FormLayoutEditor = ({
       }
     }
     setOrderedBlocks(newBlocks);
-    // Update metadata with new blocks
+
+    // Add order values based on array position
+    const blocksWithOrder = newBlocks.map((block, index) => ({
+      ...block,
+      order: index,
+    }));
+
+    // Update metadata with blocks that have proper order values
     onMetadataChange?.({
       ...metadata,
       schema: {
         ...metadata.schema,
-        blocks: newBlocks,
+        blocks: blocksWithOrder,
       },
     });
   };
 
-  const handleBlockSelect = (block: IFormBlock, blockIndex: number) => {
+  const handleBlockSelect = (block: IFormBlock, _blockIndex: number) => {
     setSelectedBlock(block);
     setSelectedBlockId(block._id || null);
   };
@@ -124,11 +136,14 @@ export const FormLayoutEditor = ({
     newBlocks[blockIndex] = updatedBlock;
     setOrderedBlocks(newBlocks);
     setSelectedBlock(updatedBlock);
+
+    // Add order values based on array position
+    const blocksWithOrder = addOrderToBlocks(newBlocks);
     onMetadataChange?.({
       ...metadata,
       schema: {
         ...metadata.schema,
-        blocks: newBlocks,
+        blocks: blocksWithOrder,
       },
     });
   };
@@ -138,15 +153,18 @@ export const FormLayoutEditor = ({
       _id: generateBlockId(),
       block_type: "header" as const,
       order: orderedBlocks.length,
-      label: "New Block",
+      signing_party_id: "",
     };
     const newBlocks = [...orderedBlocks, newBlock];
     setOrderedBlocks(newBlocks);
+
+    // Add order values based on array position
+    const blocksWithOrder = addOrderToBlocks(newBlocks);
     onMetadataChange?.({
       ...metadata,
       schema: {
         ...metadata.schema,
-        blocks: newBlocks,
+        blocks: blocksWithOrder,
       },
     });
   };
@@ -156,11 +174,14 @@ export const FormLayoutEditor = ({
     setOrderedBlocks(newBlocks);
     setSelectedBlockId(null);
     setSelectedBlock(null);
+
+    // Add order values based on array position
+    const blocksWithOrder = addOrderToBlocks(newBlocks);
     onMetadataChange?.({
       ...metadata,
       schema: {
         ...metadata.schema,
-        blocks: newBlocks,
+        blocks: blocksWithOrder,
       },
     });
   };
@@ -168,7 +189,7 @@ export const FormLayoutEditor = ({
   const handleDuplicateBlock = (index: number) => {
     const blockToDuplicate = orderedBlocks[index];
     const duplicatedBlock: IFormBlock = {
-      ...JSON.parse(JSON.stringify(blockToDuplicate)),
+      ...(JSON.parse(JSON.stringify(blockToDuplicate)) as IFormBlock),
       _id: generateBlockId(), // Give the duplicate a new ID
     };
     const newBlocks = [
@@ -177,11 +198,14 @@ export const FormLayoutEditor = ({
       ...orderedBlocks.slice(index + 1),
     ];
     setOrderedBlocks(newBlocks);
+
+    // Add order values based on array position
+    const blocksWithOrder = addOrderToBlocks(newBlocks);
     onMetadataChange?.({
       ...metadata,
       schema: {
         ...metadata.schema,
-        blocks: newBlocks,
+        blocks: blocksWithOrder,
       },
     });
   };
@@ -216,7 +240,7 @@ export const FormLayoutEditor = ({
       : null;
 
     switch (activeSection) {
-      case "tester":
+      case "tester": {
         const filteredBlocks = getFilteredBlocks();
         return (
           <div className="space-y-4">
@@ -225,7 +249,7 @@ export const FormLayoutEditor = ({
               formName={formLabel}
               blocks={filteredBlocks}
               values={formValues}
-              onChange={(key, value) => {
+              onChange={(key: string, value: string) => {
                 setFormValues((prev) => ({
                   ...prev,
                   [key]: value,
@@ -243,6 +267,7 @@ export const FormLayoutEditor = ({
             />
           </div>
         );
+      }
       case "preview":
         return (
           <FormPreview

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { type IFormBlock, type IFormSigningParty } from "@betterinternship/core/forms";
-import { Card } from "@/components/ui/card";
+ * @ Modified by: Your name
+ * @ Modified time: 2025-12-28 16:09:33
 import { Button } from "@/components/ui/button";
 import { Plus, Copy, Trash2 } from "lucide-react";
 import { renderBlocks } from "@/lib/block-renderer";
@@ -24,9 +24,8 @@ interface EditableDynamicFormProps {
 }
 
 /**
- * Editable variant of form display with draggable blocks
- * Supports drag-to-reorder and field editing
- * Can optionally display blocks grouped by signing parties with cross-party dragging
+ * Editable form with draggable blocks using array-based ordering.
+
  */
 export const EditableDynamicForm = ({
   formName: _formName,
@@ -63,9 +62,12 @@ export const EditableDynamicForm = ({
       const newBlocks = [...blocks];
       const draggedItem = newBlocks[draggedIndex];
 
-      // If dragging between parties, update the block's signing_party_id
-      if (targetPartyId && draggedFromPartyId !== targetPartyId) {
+      // If dragging to a party section, update the block's signing_party_id
+      if (targetPartyId) {
         draggedItem.signing_party_id = targetPartyId;
+      } else if (targetPartyId === undefined && draggedFromPartyId) {
+        // Dragging to unassigned section - clear the party ID
+        draggedItem.signing_party_id = "";
       }
 
       newBlocks.splice(draggedIndex, 1);
@@ -133,8 +135,18 @@ export const EditableDynamicForm = ({
                   },
                   {
                     editorMode: true,
-                    onDragStart: (index) => handleDragStart(index),
-                    onDragOver: (index) => handleDragOver(index),
+                    onDragStart: (index) => {
+                      const globalIndex = blocks.findIndex(
+                        (b) => b === groupedBlocks.unassigned[index]
+                      );
+                      handleDragStart(globalIndex);
+                    },
+                    onDragOver: (index) => {
+                      const globalIndex = blocks.findIndex(
+                        (b) => b === groupedBlocks.unassigned[index]
+                      );
+                      handleDragOver(globalIndex);
+                    },
                     onDragEnd: handleDragEnd,
                     draggedIndex,
                     onBlockClick: (index) => {
@@ -181,8 +193,14 @@ export const EditableDynamicForm = ({
                   },
                   {
                     editorMode: true,
-                    onDragStart: (index) => handleDragStart(index, party._id),
-                    onDragOver: (index) => handleDragOver(index, party._id),
+                    onDragStart: (index) => {
+                      const globalIndex = blocks.findIndex((b) => b === partyBlocks[index]);
+                      handleDragStart(globalIndex, party._id);
+                    },
+                    onDragOver: (index) => {
+                      const globalIndex = blocks.findIndex((b) => b === partyBlocks[index]);
+                      handleDragOver(globalIndex, party._id);
+                    },
                     onDragEnd: handleDragEnd,
                     draggedIndex,
                     onBlockClick: (index) => {
@@ -207,8 +225,8 @@ export const EditableDynamicForm = ({
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs text-slate-800">
             {signingParties.length > 0
-              ? "Drag blocks to reorder or move between parties. Edit form fields to see changes reflected in the metadata."
-              : "Drag blocks to reorder them. Edit form fields to see changes reflected in the metadata."}
+              ? "Drag blocks to reorder or move between parties. Array position determines order."
+              : "Drag blocks to reorder them. Array position determines order."}
           </p>
           <div className="flex gap-2">
             {selectedBlockIndex !== null && selectedBlockIndex !== undefined && (

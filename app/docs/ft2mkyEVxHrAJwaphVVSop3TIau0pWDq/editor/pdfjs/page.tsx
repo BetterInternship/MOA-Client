@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-28 14:16:31
+ * @ Modified time: 2025-12-28 16:10:45
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -464,26 +464,29 @@ const PdfJsEditorPage = () => {
         errors={result.errors}
         onClose={() => closeModal("field-registration-modal")}
         onConfirm={(editedMetadata) => {
-          // Ensure all blocks have _id and base_document is included only if file was uploaded
-          const blocksWithIds = (editedMetadata.schema.blocks as any[]).map((block: any) => ({
-            ...block,
-            _id: block._id || generateBlockId(),
-          }));
+          // Ensure all blocks have _id and set order values based on array position
+          const blocksWithIdsAndOrder = (editedMetadata.schema.blocks as any[]).map(
+            (block: any, index: number) => ({
+              ...block,
+              _id: block._id || generateBlockId(),
+              order: index, // Array position becomes the order
+            })
+          );
 
           const metadataWithDocument = {
             ...editedMetadata,
             schema: {
               ...editedMetadata.schema,
-              blocks: blocksWithIds,
+              blocks: blocksWithIdsAndOrder,
             },
             ...(fileToSubmit && { base_document: fileToSubmit }),
-          } as any;
+          };
           formsControllerRegisterForm(metadataWithDocument);
           closeModal("field-registration-modal");
         }}
         onFieldsUpdate={(updatedFields) => {
           // Update fields in real-time as JSON is edited
-          const fieldsWithLabels = updatedFields.map((field: any) => ({
+          const fieldsWithLabels = updatedFields.map((field) => ({
             ...field,
             id: field.id || "",
             label: getFieldLabelByName(field.field, registry),
