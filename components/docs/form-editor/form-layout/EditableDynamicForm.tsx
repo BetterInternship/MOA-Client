@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
- * @ Modified by: Your name
- * @ Modified time: 2025-12-28 16:09:33
+import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
 import { Plus, Copy, Trash2 } from "lucide-react";
 import { renderBlocks } from "@/lib/block-renderer";
+import { Card } from "@/components/ui/card";
 
 interface EditableDynamicFormProps {
   formName: string;
