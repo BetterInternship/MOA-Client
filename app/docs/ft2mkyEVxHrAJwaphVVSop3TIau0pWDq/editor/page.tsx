@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-25 04:12:44
  * @ Modified time: 2025-12-18 15:35:50
- * @ Modified time: 2025-12-28 12:43:50
+ * @ Modified time: 2025-12-28 13:39:11
  *
  * This page will let us upload forms and define their schemas on the fly.
  */
@@ -1106,7 +1106,7 @@ const RegisterFileModal = ({
       schema: resizedFields,
       schema_phantoms: fixedPhantomFields,
       signatories: signatories,
-      subscribers: subscribers,
+      subscribers: subscribers.map((s) => ({ email: s.email })),
       params: form.params,
     };
   }, [
@@ -1132,22 +1132,11 @@ const RegisterFileModal = ({
 
     console.log("Submitting form with metadata:", formMetadataDraft);
 
-    // Ensure subscribers and signing_parties are arrays
-    const dataToSubmit = {
-      ...formMetadataDraft,
-      subscribers: Array.isArray(formMetadataDraft.subscribers)
-        ? formMetadataDraft.subscribers
-        : [],
-      signing_parties: Array.isArray(formMetadataDraft.signing_parties)
-        ? formMetadataDraft.signing_parties
-        : [],
-    };
-
     // If we have a URL but no file, load the PDF from the URL first
-    let documentToSubmit = dataToSubmit;
-    if (!dataToSubmit.base_document && form.document.url) {
+    let documentToSubmit = formMetadataDraft;
+    if (!formMetadataDraft.base_document && form.document.url) {
       const file = await loadPdfAsFile(form.document.url, form.document.name);
-      documentToSubmit = { ...dataToSubmit, base_document: file };
+      documentToSubmit = { ...formMetadataDraft, base_document: file };
     }
 
     // After submitting, redirect to new version

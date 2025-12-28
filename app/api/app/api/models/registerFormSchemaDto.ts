@@ -15,6 +15,6 @@ export interface RegisterFormSchemaDto {
   schema_version: number;
   schema: Form;
   signing_parties: FormSigningParty[];
-  subscribers: FormSubscriber[];
+  subscribers?: FormSubscriber[];
   base_document: Blob;
 }

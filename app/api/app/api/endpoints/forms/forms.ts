@@ -1546,9 +1546,11 @@ export const formsControllerRegisterForm = (
   registerFormSchemaDto.signing_parties.forEach((value) =>
     formData.append(`signing_parties`, JSON.stringify(value))
   );
-  registerFormSchemaDto.subscribers.forEach((value) =>
-    formData.append(`subscribers`, JSON.stringify(value))
-  );
+  if (registerFormSchemaDto.subscribers !== undefined) {
+    registerFormSchemaDto.subscribers.forEach((value) =>
+      formData.append(`subscribers`, JSON.stringify(value))
+    );
+  }
   formData.append(`base_document`, registerFormSchemaDto.base_document);
 
   return preconfiguredAxiosFunction<BaseResponse>({
