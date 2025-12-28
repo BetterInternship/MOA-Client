@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-26 01:11:39
+ * @ Modified time: 2025-12-28 14:16:31
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -71,7 +71,6 @@ const PdfJsEditorPage = () => {
   );
 
   const registry = fieldRegistryData?.fields ?? [];
-  console.log("Field Registry Data:", registry);
 
   // Initialize FormMetadata with loaded data or blank data for new forms
   const formMetadata = useMemo(() => {
@@ -132,7 +131,8 @@ const PdfJsEditorPage = () => {
   const [isDebugModalOpen, setIsDebugModalOpen] = useState<boolean>(false);
 
   // Get document URL from form metadata (only for existing forms) or from uploaded PDF
-  const documentUrl = uploadedPdfUrl || (isNewForm ? null : formDocumentData?.formDocument || null);
+  const documentUrl =
+    uploadedPdfUrl || (isNewForm ? undefined : formDocumentData?.formDocument || undefined);
 
   // Cleanup object URLs on unmount to prevent memory leaks
   useEffect(() => {

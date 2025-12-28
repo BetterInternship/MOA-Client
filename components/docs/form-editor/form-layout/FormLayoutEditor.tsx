@@ -346,7 +346,7 @@ export const FormLayoutEditor = ({
               block={selectedBlock}
               onClose={() => {
                 setSelectedBlock(null);
-                setSelectedBlockIndex(null);
+                setSelectedBlockId(null);
               }}
               onUpdate={handleBlockUpdate}
               signingParties={parties.map((p) => ({
