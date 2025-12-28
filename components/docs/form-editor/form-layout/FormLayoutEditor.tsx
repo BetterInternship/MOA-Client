@@ -16,6 +16,7 @@ import { SubscribersPanel } from "./SubscribersPanel";
 import { FormPreview } from "./FormPreview";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
 import { FileText, Users, Mail, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Utility to generate unique IDs for blocks
 const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
@@ -226,30 +227,29 @@ export const FormLayoutEditor = ({
             <div className="rounded border border-slate-200 bg-white p-4">
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-gray-900">Filter by Party</h3>
+                <p className="text-xs text-slate-600">
+                  {filterPartyId === "all"
+                    ? "All fields grouped by party. Drag to reorder or move blocks between parties."
+                    : "Showing fields for selected party only."}
+                </p>
                 <div className="flex flex-wrap gap-2">
-                  <button
+                  <Button
                     onClick={() => setFilterPartyId("all")}
-                    className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                      filterPartyId === "all"
-                        ? "bg-blue-600 text-white"
-                        : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
+                    variant={filterPartyId === "all" ? "default" : "outline"}
+                    size="sm"
                   >
                     All Fields
-                  </button>
+                  </Button>
                   {parties.map((party) => (
-                    <button
+                    <Button
                       key={party._id}
                       onClick={() => setFilterPartyId(party._id)}
-                      className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                        filterPartyId === party._id
-                          ? "bg-blue-600 text-white"
-                          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
+                      variant={filterPartyId === party._id ? "default" : "outline"}
+                      size="sm"
                     >
                       {party.signatory_account?.name || party._id}
                       <span className="ml-2 text-xs opacity-75">({party.order})</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -274,6 +274,7 @@ export const FormLayoutEditor = ({
               onDeleteBlock={handleDeleteBlock}
               onDuplicateBlock={handleDuplicateBlock}
               selectedBlockIndex={selectedBlockIndex}
+              signingParties={filterPartyId === "all" ? parties : undefined}
             />
           </div>
         );
