@@ -14,8 +14,8 @@ interface SubscribersPanelProps {
 }
 
 export const SubscribersPanel = ({ subscribers, onSubscribersChange }: SubscribersPanelProps) => {
-  // Safeguard against undefined subscribers
-  const safeSubscribers = subscribers || [];
+  // Safeguard against undefined or non-array subscribers
+  const safeSubscribers = Array.isArray(subscribers) ? subscribers : [];
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<IFormSubscriber>>({});
