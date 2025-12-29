@@ -313,8 +313,23 @@ export const EditableDynamicForm = ({
       {/* Left side - Toolbar + Form */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Editor toolbar */}
-        <div className="sticky top-0 z-50 flex items-center justify-end border-b border-slate-200 bg-white px-4 py-2.5">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
+          <div>
+            {onAddBlock && (
+              <Button
+                onClick={onAddBlock}
+                size="sm"
+                variant="outline"
+                className=""
+                title="Add new block"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="text-xs">Add</span>
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-0.5">
             {selectedBlockIndex !== null && selectedBlockIndex !== undefined && (
               <>
                 <Button
@@ -322,7 +337,7 @@ export const EditableDynamicForm = ({
                   size="sm"
                   variant="ghost"
                   disabled={selectedBlockIndex === 0}
-                  className="text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                  className="text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   title="Move field up"
                 >
                   <ArrowUp className="h-4 w-4" />
@@ -332,18 +347,17 @@ export const EditableDynamicForm = ({
                   size="sm"
                   variant="ghost"
                   disabled={selectedBlockIndex === blocks.length - 1}
-                  className="text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                  className="text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   title="Move field down"
                 >
                   <ArrowDown className="h-4 w-4" />
                 </Button>
-                <div className="mx-1 h-7 w-px bg-slate-300"></div>
                 {onDuplicateBlock && (
                   <Button
                     onClick={() => onDuplicateBlock(selectedBlockIndex)}
                     size="sm"
                     variant="ghost"
-                    className="text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                    className="text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     title="Duplicate field"
                   >
                     <Copy className="h-4 w-4" />
@@ -354,27 +368,13 @@ export const EditableDynamicForm = ({
                     onClick={() => onDeleteBlock(selectedBlockIndex)}
                     size="sm"
                     variant="ghost"
-                    className="text-red-600 hover:bg-slate-200 hover:text-red-700"
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
                     title="Delete field"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
-                <div className="mx-3 h-7 w-px bg-slate-300"></div>
               </>
-            )}
-          </div>
-
-          <div>
-            {onAddBlock && (
-              <Button
-                onClick={onAddBlock}
-                size="sm"
-                className="gap-2 bg-slate-800 font-medium text-white hover:bg-slate-900"
-              >
-                <Plus className="h-4 w-4" />
-                Add Block
-              </Button>
             )}
           </div>
         </div>
