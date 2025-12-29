@@ -5,14 +5,13 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { _FormBlockId } from "./_formBlockId";
 import type { FormBlockBlockType } from "./formBlockBlockType";
 import type { FormBlockTextContent } from "./formBlockTextContent";
 import type { FormField } from "./formField";
 import type { FormPhantomField } from "./formPhantomField";
 
 export interface FormBlock {
-  _id: _FormBlockId;
+  _id: string;
   block_type: FormBlockBlockType;
   order: number;
   signing_party_id: string;

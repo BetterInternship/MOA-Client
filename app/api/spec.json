@@ -1371,29 +1371,6 @@
         "tags": ["Forms"]
       }
     },
-    "/api/forms/signed-by": {
-      "get": {
-        "operationId": "FormsController_getSignedDocumentsBySignatory",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SignedDocumentsResponse" }
-              }
-            }
-          },
-          "400": {
-            "description": "Error Response",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
-        },
-        "tags": ["Forms"]
-      }
-    },
     "/api/forms/register-form": {
       "post": {
         "operationId": "FormsController_registerForm",
@@ -1582,9 +1559,9 @@
         "tags": ["Forms"]
       }
     },
-    "/api/forms/generate": {
+    "/api/forms/initiate": {
       "post": {
-        "operationId": "FormsController_generateForm",
+        "operationId": "FormsController_initiateFormProcess",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1609,9 +1586,36 @@
         "tags": ["Forms"]
       }
     },
-    "/api/signatory-accounts/create": {
+    "/api/forms/fillout": {
       "post": {
-        "operationId": "SignatoryAccountsController_createAccount",
+        "operationId": "FormsController_filloutFormProcess",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/GenerateFormDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Forms"]
+      }
+    },
+    "/api/signatory/create": {
+      "post": {
+        "operationId": "SignatoryController_createAccount",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1635,12 +1639,12 @@
             }
           }
         },
-        "tags": ["SignatoryAccounts"]
+        "tags": ["Signatory"]
       }
     },
-    "/api/signatory-accounts/me": {
+    "/api/signatory/me": {
       "get": {
-        "operationId": "SignatoryAccountsController_getSelf",
+        "operationId": "SignatoryController_getSelf",
         "parameters": [],
         "responses": {
           "200": {
@@ -1656,10 +1660,10 @@
             }
           }
         },
-        "tags": ["SignatoryAccounts"]
+        "tags": ["Signatory"]
       },
       "put": {
-        "operationId": "SignatoryAccountsController_updateSelf",
+        "operationId": "SignatoryController_updateSelf",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1681,7 +1685,30 @@
             }
           }
         },
-        "tags": ["SignatoryAccounts"]
+        "tags": ["Signatory"]
+      }
+    },
+    "/api/signatory/me/forms": {
+      "get": {
+        "operationId": "SignatoryController_getSignedDocumentsBySignatory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SignatorySignedFormsResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Signatory"]
       }
     }
   },
@@ -2094,7 +2121,7 @@
       "FormBlock": {
         "type": "object",
         "properties": {
-          "_id": { "type": "object" },
+          "_id": { "type": "string" },
           "block_type": {
             "type": "string",
             "enum": ["header", "paragraph", "form_field", "form_phantom_field", "divider", "image"]
@@ -2175,15 +2202,6 @@
           "formUrl": { "type": "string" }
         },
         "required": ["success", "message", "formMetadata", "formDocument", "formVersion", "formUrl"]
-      },
-      "SignedDocumentsResponse": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean" },
-          "message": { "type": "string" },
-          "signedDocuments": { "type": "array", "items": { "type": "object" } }
-        },
-        "required": ["success", "message", "signedDocuments"]
       },
       "FormSigningParty": {
         "type": "object",
@@ -2368,6 +2386,15 @@
         "type": "object",
         "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } },
         "required": ["success", "message"]
+      },
+      "SignatorySignedFormsResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "signedDocuments": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["success", "message", "signedDocuments"]
       },
       "UpdateSignatoryDto": { "type": "object", "properties": {} }
     }

@@ -185,3 +185,5 @@ export * from "./updateFieldDtoSource";
 export * from "./updateFieldDtoTooltipLabel";
 export * from "./updateFieldDtoValidator";
 export * from "./updateSignatoryDto";
+export * from "./signatorySignedFormsResponse";
+export * from "./signatorySignedFormsResponseSignedDocumentsItem";
