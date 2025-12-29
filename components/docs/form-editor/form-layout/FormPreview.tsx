@@ -88,9 +88,9 @@ export const FormPreview = ({
       </Card>
 
       {/* Main content with split layout - Form on left, PDF on right */}
-      <div className="flex max-h-[73dvh] min-h-[73dvh] flex-1 gap-5 overflow-hidden">
+      <div className="flex flex-1 gap-5 overflow-hidden">
         {/* Left side - Form */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 overflow-y-auto bg-white">
           <div className="">
             {filteredBlocks.length > 0 ? (
               <FormRenderer
