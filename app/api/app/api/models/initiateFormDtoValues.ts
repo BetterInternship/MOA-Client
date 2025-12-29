@@ -6,6 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export type FormsControllerGetPendingParams = {
-  formProcessId: string;
-};
+export type InitiateFormDtoValues = { [key: string]: unknown };

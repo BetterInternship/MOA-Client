@@ -25,7 +25,6 @@ import type {
 
 import type {
   BaseResponse,
-  CreateSignatoryDto,
   CreateSignatoryResponse,
   ErrorResponse,
   SignatorySignedFormsResponse,
@@ -34,36 +33,31 @@ import type {
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
-export const signatoryControllerCreateAccount = (
-  createSignatoryDto: CreateSignatoryDto,
-  signal?: AbortSignal
-) => {
+export const signatoryControllerCreateAccountInternally = (signal?: AbortSignal) => {
   return preconfiguredAxiosFunction<CreateSignatoryResponse>({
-    url: `/api/signatory/create`,
+    url: `/api/signatory/create/__internal`,
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: createSignatoryDto,
     signal,
   });
 };
 
-export const getSignatoryControllerCreateAccountMutationOptions = <
+export const getSignatoryControllerCreateAccountInternallyMutationOptions = <
   TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof signatoryControllerCreateAccount>>,
+    Awaited<ReturnType<typeof signatoryControllerCreateAccountInternally>>,
     TError,
-    { data: CreateSignatoryDto },
+    void,
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof signatoryControllerCreateAccount>>,
+  Awaited<ReturnType<typeof signatoryControllerCreateAccountInternally>>,
   TError,
-  { data: CreateSignatoryDto },
+  void,
   TContext
 > => {
-  const mutationKey = ["signatoryControllerCreateAccount"];
+  const mutationKey = ["signatoryControllerCreateAccountInternally"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -71,40 +65,41 @@ export const getSignatoryControllerCreateAccountMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof signatoryControllerCreateAccount>>,
-    { data: CreateSignatoryDto }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return signatoryControllerCreateAccount(data);
+    Awaited<ReturnType<typeof signatoryControllerCreateAccountInternally>>,
+    void
+  > = () => {
+    return signatoryControllerCreateAccountInternally();
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type SignatoryControllerCreateAccountMutationResult = NonNullable<
-  Awaited<ReturnType<typeof signatoryControllerCreateAccount>>
+export type SignatoryControllerCreateAccountInternallyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerCreateAccountInternally>>
 >;
-export type SignatoryControllerCreateAccountMutationBody = CreateSignatoryDto;
-export type SignatoryControllerCreateAccountMutationError = ErrorResponse;
 
-export const useSignatoryControllerCreateAccount = <TError = ErrorResponse, TContext = unknown>(
+export type SignatoryControllerCreateAccountInternallyMutationError = ErrorResponse;
+
+export const useSignatoryControllerCreateAccountInternally = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof signatoryControllerCreateAccount>>,
+      Awaited<ReturnType<typeof signatoryControllerCreateAccountInternally>>,
       TError,
-      { data: CreateSignatoryDto },
+      void,
       TContext
     >;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof signatoryControllerCreateAccount>>,
+  Awaited<ReturnType<typeof signatoryControllerCreateAccountInternally>>,
   TError,
-  { data: CreateSignatoryDto },
+  void,
   TContext
 > => {
-  const mutationOptions = getSignatoryControllerCreateAccountMutationOptions(options);
+  const mutationOptions = getSignatoryControllerCreateAccountInternallyMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

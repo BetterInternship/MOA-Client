@@ -5,7 +5,10 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { InitiateFormDtoValues } from "./initiateFormDtoValues";
 
-export type FormsControllerGetPendingParams = {
-  formProcessId: string;
-};
+export interface InitiateFormDto {
+  formName: string;
+  formVersion: number;
+  values: InitiateFormDtoValues;
+}

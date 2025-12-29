@@ -1502,12 +1502,12 @@
         "tags": ["Forms"]
       }
     },
-    "/api/forms/pending": {
+    "/api/forms/process": {
       "get": {
         "operationId": "FormsController_getPending",
         "parameters": [
           {
-            "name": "pendingFormId",
+            "name": "formProcessId",
             "required": true,
             "in": "query",
             "schema": { "type": "string" }
@@ -1518,7 +1518,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/FormPendingResponse" }
+                "schema": { "$ref": "#/components/schemas/FormProcessResponse" }
               }
             }
           },
@@ -1566,9 +1566,30 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/GenerateFormDto" } }
+            "application/json": { "schema": { "$ref": "#/components/schemas/InitiateFormDto" } }
           }
         },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Forms"]
+      }
+    },
+    "/api/forms/initiate/__internal": {
+      "post": {
+        "operationId": "FormsController_initiateFormProcessInternally",
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",
@@ -1593,7 +1614,7 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/GenerateFormDto" } }
+            "application/json": { "schema": { "$ref": "#/components/schemas/InitiateFormDto" } }
           }
         },
         "responses": {
@@ -1613,16 +1634,31 @@
         "tags": ["Forms"]
       }
     },
-    "/api/signatory/create": {
+    "/api/forms/fillout/__internal": {
       "post": {
-        "operationId": "SignatoryController_createAccount",
+        "operationId": "FormsController_filloutFormProcessInternally",
         "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/CreateSignatoryDto" } }
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
           }
         },
+        "tags": ["Forms"]
+      }
+    },
+    "/api/signatory/create/__internal": {
+      "post": {
+        "operationId": "SignatoryController_createAccountInternally",
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",
@@ -2357,7 +2393,7 @@
         },
         "required": ["success", "message", "field"]
       },
-      "FormPendingResponse": {
+      "FormProcessResponse": {
         "type": "object",
         "properties": {
           "success": { "type": "boolean" },
@@ -2371,17 +2407,15 @@
         "properties": { "pendingFormId": { "type": "string" }, "values": { "type": "object" } },
         "required": ["pendingFormId"]
       },
-      "GenerateFormDto": {
+      "InitiateFormDto": {
         "type": "object",
         "properties": {
           "formName": { "type": "string" },
           "formVersion": { "type": "number" },
-          "values": { "type": "object" },
-          "disableEsign": { "type": "boolean" }
+          "values": { "type": "object" }
         },
-        "required": ["formName", "formVersion", "values", "disableEsign"]
+        "required": ["formName", "formVersion", "values"]
       },
-      "CreateSignatoryDto": { "type": "object", "properties": {} },
       "CreateSignatoryResponse": {
         "type": "object",
         "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } },
