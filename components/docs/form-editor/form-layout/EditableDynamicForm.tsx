@@ -167,6 +167,14 @@ export const EditableDynamicForm = ({
           const partyBlocks = groupedBlocks[party._id] || [];
           if (partyBlocks.length === 0) return null;
 
+          // Separate manual and non-manual blocks within the party
+          const manualBlocks = partyBlocks.filter(
+            (b) => b.field_schema?.source === "manual" || !b.field_schema?.source
+          );
+          const autoBlocks = partyBlocks.filter(
+            (b) => b.field_schema && b.field_schema.source !== "manual" && b.field_schema.source
+          );
+
           return (
             <div key={party._id}>
               <div className="mb-3 flex items-center gap-3 pb-2">
@@ -182,35 +190,78 @@ export const EditableDynamicForm = ({
                   {partyBlocks.length} block{partyBlocks.length !== 1 ? "s" : ""}
                 </span>
               </div>
-              <div className="space-y-1.5">
-                {renderBlocks(
-                  partyBlocks,
-                  {
-                    values,
-                    onChange,
-                    errors,
-                    onBlurValidate,
-                  },
-                  {
-                    editorMode: true,
-                    onDragStart: (index) => {
-                      const globalIndex = blocks.findIndex((b) => b === partyBlocks[index]);
-                      handleDragStart(globalIndex, party._id);
+
+              {/* Manual fields subsection */}
+              {manualBlocks.length > 0 && (
+                <div className="mb-4 space-y-1.5 pl-3 border-l-2 border-slate-300">
+                  <p className="text-xs font-medium text-slate-600 mb-2">Manual Fields</p>
+                  {renderBlocks(
+                    manualBlocks,
+                    {
+                      values,
+                      onChange,
+                      errors,
+                      onBlurValidate,
                     },
-                    onDragOver: (index) => {
-                      const globalIndex = blocks.findIndex((b) => b === partyBlocks[index]);
-                      handleDragOver(globalIndex, party._id);
-                    },
-                    onDragEnd: handleDragEnd,
-                    draggedIndex,
-                    onBlockClick: (index) => {
-                      const blockIndex = blocks.findIndex((b) => b === partyBlocks[index]);
-                      onBlockSelect?.(partyBlocks[index], blockIndex);
-                    },
-                    selectedIndex: selectedBlockIndex,
-                  }
-                )}
-              </div>
+                    {
+                      editorMode: true,
+                      onDragStart: (index) => {
+                        const globalIndex = blocks.findIndex((b) => b === manualBlocks[index]);
+                        handleDragStart(globalIndex, party._id);
+                      },
+                      onDragOver: (index) => {
+                        const globalIndex = blocks.findIndex((b) => b === manualBlocks[index]);
+                        handleDragOver(globalIndex, party._id);
+                      },
+                      onDragEnd: handleDragEnd,
+                      draggedIndex,
+                      onBlockClick: (index) => {
+                        const blockIndex = blocks.findIndex((b) => b === manualBlocks[index]);
+                        onBlockSelect?.(manualBlocks[index], blockIndex);
+                      },
+                      selectedIndex: selectedBlockIndex,
+                    }
+                  )}
+                </div>
+              )}
+
+              {/* Auto-populated fields subsection */}
+              {autoBlocks.length > 0 && (
+                <div className="space-y-1.5 pl-3 border-l-2 border-blue-300 bg-blue-50/30">
+                  <p className="text-xs font-medium text-blue-700 mb-2 pt-2 pl-2">
+                    Non-Manual   Fields
+                  </p>
+                  <div className="px-2 pb-2">
+                    {renderBlocks(
+                      autoBlocks,
+                      {
+                        values,
+                        onChange,
+                        errors,
+                        onBlurValidate,
+                      },
+                      {
+                        editorMode: true,
+                        onDragStart: (index) => {
+                          const globalIndex = blocks.findIndex((b) => b === autoBlocks[index]);
+                          handleDragStart(globalIndex, party._id);
+                        },
+                        onDragOver: (index) => {
+                          const globalIndex = blocks.findIndex((b) => b === autoBlocks[index]);
+                          handleDragOver(globalIndex, party._id);
+                        },
+                        onDragEnd: handleDragEnd,
+                        draggedIndex,
+                        onBlockClick: (index) => {
+                          const blockIndex = blocks.findIndex((b) => b === autoBlocks[index]);
+                          onBlockSelect?.(autoBlocks[index], blockIndex);
+                        },
+                        selectedIndex: selectedBlockIndex,
+                      }
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
