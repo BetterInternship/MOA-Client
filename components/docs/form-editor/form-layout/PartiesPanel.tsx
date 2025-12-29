@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,19 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
   const [credentialMode, setCredentialMode] = useState<CredentialMode>("source");
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
+  // Ensure at least one initiator party (order=1) always exists
+  useEffect(() => {
+    const hasInitiator = safeParties.some((p) => p.order === 1);
+    if (!hasInitiator) {
+      const newParty: IFormSigningParty = {
+        _id: "initiator",
+        order: 1,
+        signatory_source: "initiator",
+      };
+      onPartiesChange([newParty, ...safeParties]);
+    }
+  }, []);
+
   const handleStartEdit = (party: IFormSigningParty, index: number) => {
     setEditingIndex(index);
     setEditValues(party);
@@ -49,6 +62,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     // Validate order
     if (!editValues.order || editValues.order < 1) {
       errors.order = "Order must be at least 1";
+    }
+
+    // Order 1 must be Initiator
+    if (editValues.order === 1 && editValues.signatory_source?.toLowerCase() !== "initiator") {
+      errors.source = "Order 1 must always be initiator";
     }
 
     // Validate based on credential mode
@@ -95,6 +113,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
   };
 
   const handleDeleteParty = (id: string) => {
+    // Prevent deletion of the Initiator party (order=1)
+    const partyToDelete = safeParties.find((p) => p._id === id);
+    if (partyToDelete?.order === 1) {
+      return;
+    }
     const updatedParties = safeParties.filter((p) => p._id !== id);
     onPartiesChange(updatedParties);
   };
@@ -110,6 +133,8 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     setEditValues(newParty);
     setCredentialMode("source");
   };
+
+  const isInitiatorParty = (order?: number) => order === 1;
 
   return (
     <div className="space-y-4">
@@ -171,18 +196,31 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
 
                     {/* Order */}
                     <div>
-                      <FormInput
-                        label="Order"
-                        type="number"
-                        value={editValues.order?.toString() || "1"}
-                        setter={(value) => {
-                          setEditValues({ ...editValues, order: parseInt(value) });
-                          setValidationErrors({ ...validationErrors, order: undefined });
-                        }}
-                        required={false}
-                      />
-                      {validationErrors.order && (
-                        <p className="mt-1 text-xs text-red-600">{validationErrors.order}</p>
+                      {isInitiatorParty(editValues.order) ? (
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-600">
+                            Order
+                          </label>
+                          <div className="flex h-8 items-center rounded-[0.33em] border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-600">
+                            1 (Initiator - Fixed)
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <FormInput
+                            label="Order"
+                            type="number"
+                            value={editValues.order?.toString() || "1"}
+                            setter={(value) => {
+                              setEditValues({ ...editValues, order: parseInt(value) });
+                              setValidationErrors({ ...validationErrors, order: undefined });
+                            }}
+                            required={false}
+                          />
+                          {validationErrors.order && (
+                            <p className="mt-1 text-xs text-red-600">{validationErrors.order}</p>
+                          )}
+                        </>
                       )}
                     </div>
 
@@ -229,28 +267,35 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                         <label className="mb-1 block text-xs font-medium text-slate-600">
                           Select Party Source
                         </label>
-                        <select
-                          value={editValues.signatory_source || ""}
-                          onChange={(e) => {
-                            setEditValues({ ...editValues, signatory_source: e.target.value });
-                            setValidationErrors({ ...validationErrors, source: undefined });
-                          }}
-                          className={`h-8 w-full rounded-[0.33em] border px-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:outline-none ${
-                            validationErrors.source ? "border-red-500" : "border-slate-300"
-                          }`}
-                        >
-                          <option value="">-- Select a party --</option>
-                          {parties
-                            .filter(
-                              (p) =>
-                                p._id !== (editingIndex !== null ? parties[editingIndex]._id : null)
-                            )
-                            .map((p) => (
-                              <option key={p._id} value={p._id}>
-                                {p._id}
-                              </option>
-                            ))}
-                        </select>
+                        {isInitiatorParty(editValues.order) ? (
+                          <div className="flex h-8 items-center rounded-[0.33em] border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-600">
+                            Initiator (Fixed)
+                          </div>
+                        ) : (
+                          <select
+                            value={editValues.signatory_source || ""}
+                            onChange={(e) => {
+                              setEditValues({ ...editValues, signatory_source: e.target.value });
+                              setValidationErrors({ ...validationErrors, source: undefined });
+                            }}
+                            className={`h-8 w-full rounded-[0.33em] border px-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:outline-none ${
+                              validationErrors.source ? "border-red-500" : "border-slate-300"
+                            }`}
+                          >
+                            <option value="">-- Select a party --</option>
+                            {parties
+                              .filter(
+                                (p) =>
+                                  p._id !==
+                                  (editingIndex !== null ? parties[editingIndex]._id : null)
+                              )
+                              .map((p) => (
+                                <option key={p._id} value={p._id}>
+                                  {p._id}
+                                </option>
+                              ))}
+                          </select>
+                        )}
                         {validationErrors.source && (
                           <p className="mt-1 text-xs text-red-600">{validationErrors.source}</p>
                         )}
@@ -337,15 +382,17 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteParty(party._id)}
-                        className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-700"
-                        title="Delete party"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      {!isInitiatorParty(party.order) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteParty(party._id)}
+                          className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-700"
+                          title="Delete party"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
