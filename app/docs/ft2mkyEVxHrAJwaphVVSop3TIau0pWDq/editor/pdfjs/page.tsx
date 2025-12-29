@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-28 16:10:45
+ * @ Modified time: 2025-12-29 14:25:48
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -10,9 +10,11 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { Suspense } from "react";
+import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
 import { useModal } from "@/app/providers/modal-provider";
 import { useSearchParams } from "next/navigation";
+import { toastPresets } from "@/components/sonner-toaster";
 import { PdfViewer } from "../../../../../components/docs/form-editor/form-pdf-editor/PdfViewer";
 import { EditorSidebar } from "../../../../../components/docs/form-editor/EditorSidebar";
 import { FormLayoutEditor } from "../../../../../components/docs/form-editor/form-layout/FormLayoutEditor";
@@ -34,7 +36,7 @@ import {
 } from "@betterinternship/core/forms";
 import type { FormField } from "../../../../../components/docs/form-editor/form-pdf-editor/FieldBox";
 import { Button } from "@/components/ui/button";
-import { Edit2, Check, X, Layout } from "lucide-react";
+import { Edit2, Check, X, Layout, CheckCircle } from "lucide-react";
 import {
   formsControllerRegisterForm,
   formsControllerGetFieldFromRegistry,
@@ -483,6 +485,11 @@ const PdfJsEditorPage = () => {
           };
           formsControllerRegisterForm(metadataWithDocument);
           closeModal("field-registration-modal");
+
+          // Show success toast with preset
+          toast.success(`Form registered successfully!`, {
+            ...toastPresets.success,
+          });
         }}
         onFieldsUpdate={(updatedFields) => {
           // Update fields in real-time as JSON is edited

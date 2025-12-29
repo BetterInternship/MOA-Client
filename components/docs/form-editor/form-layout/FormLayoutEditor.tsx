@@ -330,7 +330,7 @@ export const FormLayoutEditor = ({
           </div>
         </div>
 
-        {/* Right Sidebar - Block Editor (only in tester mode) */}
+        {/* Right Sidebar - Block Editor */}
         {activeSection === "tester" && (
           <div className="flex w-80 flex-col border-l bg-gray-50">
             <BlockEditor
