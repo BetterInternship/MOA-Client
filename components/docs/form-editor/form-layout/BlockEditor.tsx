@@ -133,19 +133,8 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white p-3">
-        <h3 className="text-sm font-semibold text-gray-900">Block Editor</h3>
-        <button
-          onClick={onClose}
-          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
       {/* Content */}
-      <div className="flex-1 space-y-3 overflow-y-auto p-3">
+      <div className="flex-1 space-y-3 overflow-y-auto px-3 py-2">
         <FormDropdown
           label="Block Type"
           value={editedBlock.block_type}

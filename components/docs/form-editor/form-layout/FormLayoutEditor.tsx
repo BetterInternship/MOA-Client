@@ -9,7 +9,6 @@ import {
 } from "@betterinternship/core/forms";
 import { validateFieldWithZod } from "@/lib/form-validation";
 import { EditableDynamicForm } from "./EditableDynamicForm";
-import { BlockEditor } from "./BlockEditor";
 import { PartiesPanel } from "./PartiesPanel";
 import { SubscribersPanel } from "./SubscribersPanel";
 import { FormPreview } from "./FormPreview";
@@ -243,29 +242,28 @@ export const FormLayoutEditor = ({
       case "tester": {
         const filteredBlocks = getFilteredBlocks();
         return (
-          <div className="space-y-4">
-            {/* Editable Form with party grouping */}
-            <EditableDynamicForm
-              formName={formLabel}
-              blocks={filteredBlocks}
-              values={formValues}
-              onChange={(key: string, value: string) => {
-                setFormValues((prev) => ({
-                  ...prev,
-                  [key]: value,
-                }));
-              }}
-              errors={validationErrors}
-              onBlurValidate={handleBlurValidate}
-              onBlocksReorder={handleBlocksReorder}
-              onBlockSelect={handleBlockSelect}
-              onAddBlock={handleAddBlock}
-              onDeleteBlock={handleDeleteBlock}
-              onDuplicateBlock={handleDuplicateBlock}
-              selectedBlockIndex={selectedBlockIndex}
-              signingParties={parties}
-            />
-          </div>
+          <EditableDynamicForm
+            formName={formLabel}
+            blocks={filteredBlocks}
+            values={formValues}
+            onChange={(key: string, value: string) => {
+              setFormValues((prev) => ({
+                ...prev,
+                [key]: value,
+              }));
+            }}
+            errors={validationErrors}
+            onBlurValidate={handleBlurValidate}
+            onBlocksReorder={handleBlocksReorder}
+            onBlockSelect={handleBlockSelect}
+            onAddBlock={handleAddBlock}
+            onDeleteBlock={handleDeleteBlock}
+            onDuplicateBlock={handleDuplicateBlock}
+            onBlockUpdate={handleBlockUpdate}
+            selectedBlockIndex={selectedBlockIndex}
+            selectedBlock={selectedBlock}
+            signingParties={parties}
+          />
         );
       }
       case "preview":
@@ -323,30 +321,14 @@ export const FormLayoutEditor = ({
         />
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto bg-white">
-          <div className="p-4 pb-12">
+        <div className="flex-1 overflow-hidden bg-white">
+          <div className="h-full" data-section={activeSection}>
             {/* Section Content */}
-            <div className="space-y-4">{renderContent()}</div>
+            <div className={`h-full ${activeSection === "tester" ? "" : "overflow-auto p-4"}`}>
+              {renderContent()}
+            </div>
           </div>
         </div>
-
-        {/* Right Sidebar - Block Editor */}
-        {activeSection === "tester" && (
-          <div className="flex w-80 flex-col border-l bg-gray-50">
-            <BlockEditor
-              block={selectedBlock}
-              onClose={() => {
-                setSelectedBlock(null);
-                setSelectedBlockId(null);
-              }}
-              onUpdate={handleBlockUpdate}
-              signingParties={parties.map((p) => ({
-                id: p._id || `party-${p.order}`,
-                name: p._id,
-              }))}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

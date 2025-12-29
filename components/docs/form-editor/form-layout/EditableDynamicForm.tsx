@@ -3,9 +3,10 @@
 import { useState, useCallback, useEffect } from "react";
 import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
-import { Plus, Copy, Trash2 } from "lucide-react";
+import { Plus, Copy, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { renderBlocks } from "@/lib/block-renderer";
 import { Card } from "@/components/ui/card";
+import { BlockEditor } from "./BlockEditor";
 
 interface EditableDynamicFormProps {
   formName: string;
@@ -19,7 +20,9 @@ interface EditableDynamicFormProps {
   onAddBlock?: () => void;
   onDeleteBlock?: (index: number) => void;
   onDuplicateBlock?: (index: number) => void;
+  onBlockUpdate?: (block: IFormBlock) => void;
   selectedBlockIndex?: number | null;
+  selectedBlock?: IFormBlock | null;
   signingParties?: IFormSigningParty[];
 }
 
@@ -39,7 +42,9 @@ export const EditableDynamicForm = ({
   onAddBlock,
   onDeleteBlock,
   onDuplicateBlock,
+  onBlockUpdate,
   selectedBlockIndex,
+  selectedBlock,
   signingParties = [],
 }: EditableDynamicFormProps) => {
   const [blocks, setBlocks] = useState<IFormBlock[]>(initialBlocks);
@@ -84,6 +89,40 @@ export const EditableDynamicForm = ({
     setDraggedFromPartyId(null);
     onBlocksReorder?.(blocks);
   }, [blocks, onBlocksReorder]);
+
+  const handleMoveUp = useCallback(() => {
+    if (
+      selectedBlockIndex === null ||
+      selectedBlockIndex === undefined ||
+      selectedBlockIndex === 0
+    ) {
+      return;
+    }
+    const newBlocks = [...blocks];
+    [newBlocks[selectedBlockIndex - 1], newBlocks[selectedBlockIndex]] = [
+      newBlocks[selectedBlockIndex],
+      newBlocks[selectedBlockIndex - 1],
+    ];
+    setBlocks(newBlocks);
+    onBlocksReorder?.(newBlocks);
+  }, [blocks, selectedBlockIndex, onBlocksReorder]);
+
+  const handleMoveDown = useCallback(() => {
+    if (
+      selectedBlockIndex === null ||
+      selectedBlockIndex === undefined ||
+      selectedBlockIndex === blocks.length - 1
+    ) {
+      return;
+    }
+    const newBlocks = [...blocks];
+    [newBlocks[selectedBlockIndex], newBlocks[selectedBlockIndex + 1]] = [
+      newBlocks[selectedBlockIndex + 1],
+      newBlocks[selectedBlockIndex],
+    ];
+    setBlocks(newBlocks);
+    onBlocksReorder?.(newBlocks);
+  }, [blocks, selectedBlockIndex, onBlocksReorder]);
 
   // Group blocks by party if signingParties is provided
   const getGroupedBlocks = () => {
@@ -193,8 +232,8 @@ export const EditableDynamicForm = ({
 
               {/* Manual fields subsection */}
               {manualBlocks.length > 0 && (
-                <div className="mb-4 space-y-1.5 pl-3 border-l-2 border-slate-300">
-                  <p className="text-xs font-medium text-slate-600 mb-2">Manual Fields</p>
+                <div className="mb-4 space-y-1.5 border-l-2 border-slate-300 pl-3">
+                  <p className="mb-2 text-xs font-medium text-slate-600">Manual Fields</p>
                   {renderBlocks(
                     manualBlocks,
                     {
@@ -227,9 +266,9 @@ export const EditableDynamicForm = ({
 
               {/* Auto-populated fields subsection */}
               {autoBlocks.length > 0 && (
-                <div className="space-y-1.5 pl-3 border-l-2 border-blue-300 bg-blue-50/30">
-                  <p className="text-xs font-medium text-blue-700 mb-2 pt-2 pl-2">
-                    Non-Manual   Fields
+                <div className="space-y-1.5 border-l-2 border-blue-300 bg-blue-50/30 pl-3">
+                  <p className="mb-2 pt-2 pl-2 text-xs font-medium text-blue-700">
+                    Non-Manual Fields
                   </p>
                   <div className="px-2 pb-2">
                     {renderBlocks(
@@ -270,47 +309,68 @@ export const EditableDynamicForm = ({
   };
 
   return (
-    <div className="space-y-2">
-      {/* Instruction card and buttons */}
-      <Card className="mb-5 border border-slate-200 bg-slate-50/50 p-4">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-xs text-slate-800">
-            {signingParties.length > 0
-              ? "Drag blocks to reorder or move between parties. Array position determines order."
-              : "Drag blocks to reorder them. Array position determines order."}
-          </p>
-          <div className="flex gap-2">
+    <div className="flex h-full gap-0 overflow-hidden">
+      {/* Left side - Toolbar + Form */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Editor toolbar */}
+        <div className="sticky top-0 z-50 flex items-center justify-end border-b border-slate-200 bg-white px-4 py-2.5">
+          <div className="flex items-center gap-1">
             {selectedBlockIndex !== null && selectedBlockIndex !== undefined && (
               <>
+                <Button
+                  onClick={handleMoveUp}
+                  size="sm"
+                  variant="ghost"
+                  disabled={selectedBlockIndex === 0}
+                  className="text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                  title="Move field up"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={handleMoveDown}
+                  size="sm"
+                  variant="ghost"
+                  disabled={selectedBlockIndex === blocks.length - 1}
+                  className="text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                  title="Move field down"
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+                <div className="mx-1 h-7 w-px bg-slate-300"></div>
                 {onDuplicateBlock && (
                   <Button
                     onClick={() => onDuplicateBlock(selectedBlockIndex)}
                     size="sm"
-                    variant="outline"
-                    className="flex-shrink-0 gap-2"
+                    variant="ghost"
+                    className="text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                    title="Duplicate field"
                   >
                     <Copy className="h-4 w-4" />
-                    Duplicate
                   </Button>
                 )}
                 {onDeleteBlock && (
                   <Button
                     onClick={() => onDeleteBlock(selectedBlockIndex)}
                     size="sm"
-                    variant="outline"
-                    className="flex-shrink-0 gap-2 text-red-600 hover:text-red-700"
+                    variant="ghost"
+                    className="text-red-600 hover:bg-slate-200 hover:text-red-700"
+                    title="Delete field"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete
                   </Button>
                 )}
+                <div className="mx-3 h-7 w-px bg-slate-300"></div>
               </>
             )}
+          </div>
+
+          <div>
             {onAddBlock && (
               <Button
                 onClick={onAddBlock}
                 size="sm"
-                className="flex-shrink-0 gap-2 bg-slate-600 text-white hover:bg-slate-700"
+                className="gap-2 bg-slate-800 font-medium text-white hover:bg-slate-900"
               >
                 <Plus className="h-4 w-4" />
                 Add Block
@@ -318,29 +378,55 @@ export const EditableDynamicForm = ({
             )}
           </div>
         </div>
-      </Card>
 
-      {/* Render blocks */}
-      {signingParties.length > 0
-        ? renderBlocksWithGroups()
-        : renderBlocks(
-            blocks,
-            {
-              values,
-              onChange,
-              errors,
-              onBlurValidate,
-            },
-            {
-              editorMode: true,
-              onDragStart: handleDragStart,
-              onDragOver: handleDragOver,
-              onDragEnd: handleDragEnd,
-              draggedIndex,
-              onBlockClick: (index) => onBlockSelect?.(blocks[index], index),
-              selectedIndex: selectedBlockIndex,
-            }
-          )}
+        {/* Form scrollable area */}
+        <div className="flex-1 overflow-y-auto bg-white">
+          <div className="space-y-4 p-4 pb-12">
+            {/* Render blocks */}
+            {signingParties.length > 0
+              ? renderBlocksWithGroups()
+              : renderBlocks(
+                  blocks,
+                  {
+                    values,
+                    onChange,
+                    errors,
+                    onBlurValidate,
+                  },
+                  {
+                    editorMode: true,
+                    onDragStart: handleDragStart,
+                    onDragOver: handleDragOver,
+                    onDragEnd: handleDragEnd,
+                    draggedIndex,
+                    onBlockClick: (index) => onBlockSelect?.(blocks[index], index),
+                    selectedIndex: selectedBlockIndex,
+                  }
+                )}
+          </div>
+        </div>
+      </div>
+
+      {/* Block Editor Sidebar */}
+      <div className="w-80 overflow-y-auto border-l bg-gray-50">
+        {selectedBlock ? (
+          <BlockEditor
+            block={selectedBlock}
+            onClose={() => {
+              // Clear selection through parent
+            }}
+            onUpdate={onBlockUpdate}
+            signingParties={signingParties.map((p) => ({
+              id: p._id || `party-${p.order}`,
+              name: p._id,
+            }))}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-slate-500">
+            <p>Select a block to edit</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
