@@ -80,7 +80,7 @@ export const FormPreview = ({
                 size="sm"
               >
                 <span className="text-sm font-medium">
-                  {party.signatory_account?.name || party.signatory_source}
+                  {party._id}
                 </span>
                 <span className="ml-2 text-xs opacity-75">({party.order})</span>
               </Button>
