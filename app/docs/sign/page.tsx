@@ -12,16 +12,16 @@ import {
   ApproveSignatoryRequest,
 } from "@/app/api/forms.api";
 import { FormRenderer } from "@/components/docs/forms/FormRenderer";
-import { DUMMY_FORM_METADATA, FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
+import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
 import { DocumentRenderer } from "@/components/docs/forms/previewer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
-import { getSignatorySelf } from "@/app/api/signatory.api";
 import Link from "next/link";
 import { useFormRendererContext } from "@/components/docs/forms/form.ctx";
+import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 
 type Audience = "entity" | "student-guardian" | "university";
 type Party = "entity" | "student-guardian" | "university" | "";
@@ -40,6 +40,7 @@ function PageContent() {
   const router = useRouter();
   // ! WARNING, FACTOR THIS OUT: this allows editing form, and can be an exploit in the future
   const form = useFormRendererContext();
+  const profile = useSignatoryProfile();
   const { openModal, closeModal } = useModal();
   const { update } = useSignatoryAccountActions();
 
@@ -66,15 +67,9 @@ function PageContent() {
     enabled: !!pendingDocumentId,
   });
 
-  const profile = useQuery({
-    queryKey: ["signatory-self"],
-    queryFn: async () => await getSignatorySelf(),
-    staleTime: 60_000,
-  });
-
   // Saved autofill
   const autofillValues = useMemo(() => {
-    const profileAutofill = profile.data?.autofill as Record<string, Record<string, string>>;
+    const profileAutofill = profile.autofill as Record<string, Record<string, string>>;
     if (!profileAutofill) return;
 
     // Destructure to isolate only shared fields or fields for that form
@@ -109,7 +104,7 @@ function PageContent() {
     ? new FormMetadata(DUMMY_FORM_METADATA ?? (formRes?.formMetadata as unknown as IFormMetadata))
     : null;
   const fields = formMetadata?.getFieldsForClientService() ?? [];
-  const blocks = formMetadata?.getAllBlocksForClientService() ?? [];
+  const blocks = formMetadata?.getBlocksForClientService() ?? [];
 
   // local form state
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
@@ -440,7 +435,7 @@ function PageContent() {
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
+                            onClick={() => void handleAuthorizeChoice(flatValues ?? {})}
                             className="w-full"
                           >
                             No, I’ll sign manually for now
@@ -448,7 +443,7 @@ function PageContent() {
 
                           <Button
                             type="button"
-                            onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
+                            onClick={() => void handleAuthorizeChoice(flatValues ?? {})}
                             className="w-full"
                           >
                             Yes, auto-fill & auto-sign

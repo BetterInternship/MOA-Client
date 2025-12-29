@@ -8,13 +8,14 @@ import { getFormFields } from "@/app/api/forms.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
-import { getSignatorySelf, useSignatoryAccountActions } from "@/app/api/signatory.api";
+import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DocumentRenderer } from "./previewer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFormRendererContext } from "./form.ctx";
+import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 
 type Props = {
   formName: string;
@@ -29,6 +30,7 @@ const FormAutosignEditorModal = React.memo(
   ({ formName, party, currentValue, valueSetter, notAsModal, errors: _errors }: Props) => {
     const queryClient = useQueryClient();
     const form = useFormRendererContext();
+    const profile = useSignatoryProfile();
     const isMobile = useIsMobile();
     const { update } = useSignatoryAccountActions();
     const { openModal, closeModal } = useModal();
@@ -51,15 +53,9 @@ const FormAutosignEditorModal = React.memo(
       enabled: !!formName,
     });
 
-    const profile = useQuery({
-      queryKey: ["signatory-self"],
-      queryFn: async () => await getSignatorySelf(),
-      staleTime: 60_000,
-    });
-
     // Saved autofill
     const autofillValues = useMemo(() => {
-      const profileAutofill = profile.data?.autofill as Record<string, Record<string, string>>;
+      const profileAutofill = profile.autofill as Record<string, Record<string, string>>;
       if (!profileAutofill) return;
 
       // Destructure to isolate only shared fields or fields for that form
@@ -329,6 +325,8 @@ const FormAutosignEditorModal = React.memo(
                       setValues={(newVals) => setValuesForParty(party, newVals)}
                       setPreviews={setPreviews}
                       onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
+                      blocks={[]}
+                      pendingUrl={""}
                     />
 
                     <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
