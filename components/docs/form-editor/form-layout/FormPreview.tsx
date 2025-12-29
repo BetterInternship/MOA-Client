@@ -79,9 +79,7 @@ export const FormPreview = ({
                 variant={selectedPartyId === party._id ? "default" : "outline"}
                 size="sm"
               >
-                <span className="text-sm font-medium">
-                  {party._id}
-                </span>
+                <span className="text-sm font-medium">{party._id}</span>
                 <span className="ml-2 text-xs opacity-75">({party.order})</span>
               </Button>
             ))}
