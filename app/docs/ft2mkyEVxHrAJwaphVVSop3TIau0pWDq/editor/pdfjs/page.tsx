@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-29 14:42:21
+ * @ Modified time: 2025-12-29 17:25:43
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -13,7 +13,7 @@ import { Suspense } from "react";
 import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
 import { useModal } from "@/app/providers/modal-provider";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toastPresets } from "@/components/sonner-toaster";
 import { PdfViewer } from "../../../../../components/docs/form-editor/form-pdf-editor/PdfViewer";
 import { EditorSidebar } from "../../../../../components/docs/form-editor/EditorSidebar";
@@ -40,6 +40,7 @@ import { Edit2, Check, X, Layout, CheckCircle } from "lucide-react";
 import {
   formsControllerRegisterForm,
   formsControllerGetFieldFromRegistry,
+  useFormsControllerGetLatestFormDocumentAndMetadata,
 } from "../../../../api/app/api/endpoints/forms/forms";
 
 // Utility to generate unique IDs for blocks
@@ -59,36 +60,31 @@ const BLANK_FORM_METADATA: IFormMetadata = {
 
 const PdfJsEditorPage = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const formName = searchParams.get("name");
-  const formVersion = searchParams.get("version");
-  const isNewForm = !formName && !formVersion;
+  const isNewForm = !formName;
+
+  const { data: formData } = useFormsControllerGetLatestFormDocumentAndMetadata({
+    name: formName || "",
+  });
 
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
-  const { data: registryFormMetadata, isLoading: metadataLoading } =
-    useFormsControllerGetRegistryFormMetadata(
-      formName && formVersion ? { name: formName, version: parseInt(formVersion) } : undefined
-    );
-  const { data: formDocumentData } = useFormsControllerGetRegistryFormDocument(
-    formName && formVersion ? { name: formName, version: parseInt(formVersion) } : undefined
-  );
-
   const registry = fieldRegistryData?.fields ?? [];
 
   // Initialize FormMetadata with loaded data or blank data for new forms
   const formMetadata = useMemo(() => {
-    const data = ((registryFormMetadata?.formMetadata as any) ||
+    const data = ((formData?.formMetadata as any) ||
       (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA)) as IFormMetadata;
     return new FormMetadata<[]>(data);
-  }, [registryFormMetadata, isNewForm]);
+  }, [formData, isNewForm]);
 
   // Get all blocks from FormMetadata (includes headers, paragraphs, form fields, etc.)
   // Use raw block structure for form editing
   const ALL_BLOCKS_RAW = useMemo(() => {
     const metadataData =
-      (registryFormMetadata?.formMetadata as any) ||
-      (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA);
+      (formData?.formMetadata as any) || (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA);
     return metadataData.schema?.blocks || (isNewForm ? [] : DUMMY_FORM_METADATA.schema.blocks);
-  }, [registryFormMetadata, isNewForm]);
+  }, [formData, isNewForm]);
 
   // Extract only form field blocks (non-phantom) for the PDF preview
   const INITIAL_FIELDS: FormField[] = useMemo(() => {
@@ -124,7 +120,7 @@ const PdfJsEditorPage = () => {
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
   const [metadata, setMetadata] = useState<IFormMetadata>(
-    ((registryFormMetadata?.formMetadata as any) ||
+    ((formData?.formMetadata as any) ||
       (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA)) as IFormMetadata
   );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
@@ -133,8 +129,7 @@ const PdfJsEditorPage = () => {
   const [isDebugModalOpen, setIsDebugModalOpen] = useState<boolean>(false);
 
   // Get document URL from form metadata (only for existing forms) or from uploaded PDF
-  const documentUrl =
-    uploadedPdfUrl || (isNewForm ? undefined : formDocumentData?.formDocument || undefined);
+  const documentUrl = uploadedPdfUrl || (isNewForm ? undefined : formData?.formUrl || undefined);
 
   // Cleanup object URLs on unmount to prevent memory leaks
   useEffect(() => {
@@ -147,8 +142,8 @@ const PdfJsEditorPage = () => {
 
   // Update metadata when registry data loads
   useEffect(() => {
-    if (registryFormMetadata?.formMetadata) {
-      const metadataData = registryFormMetadata.formMetadata as any as IFormMetadata;
+    if (formData?.formMetadata) {
+      const metadataData = formData.formMetadata as any as IFormMetadata;
       setMetadata(metadataData);
       const newFormMetadata = new FormMetadata(metadataData);
       setFormLabel(newFormMetadata.getLabel());
@@ -175,7 +170,7 @@ const PdfJsEditorPage = () => {
         });
       setFields(fieldsFromMetadata);
     }
-  }, [registryFormMetadata]);
+  }, [formData]);
 
   // Get blocks from metadata
   const blocks = metadata.schema.blocks;
@@ -486,13 +481,26 @@ const PdfJsEditorPage = () => {
               : [editedMetadata.signing_parties],
             ...(fileToSubmit && { base_document: fileToSubmit }),
           };
-          formsControllerRegisterForm(metadataWithDocument);
-          closeModal("field-registration-modal");
 
-          // Show success toast with preset
-          toast.success(`Form registered successfully!`, {
-            ...toastPresets.success,
-          });
+          // Register the form and handle success/error
+          formsControllerRegisterForm(metadataWithDocument)
+            .then(() => {
+              // Show success toast
+              toast.success(`Form registered successfully!`, {
+                ...toastPresets.success,
+              });
+
+              // Refetch the form data without version param to get latest
+              // This will trigger a refresh of all form data
+              router.refresh();
+            })
+            .catch((error) => {
+              toast.error("Failed to register form", {
+                description: error instanceof Error ? error.message : "An error occurred",
+              });
+            });
+
+          closeModal("field-registration-modal");
         }}
         onFieldsUpdate={(updatedFields) => {
           // Update fields in real-time as JSON is edited
@@ -527,7 +535,7 @@ const PdfJsEditorPage = () => {
   ]);
 
   // Show loading state while form metadata is being fetched
-  if (metadataLoading && !metadata) {
+  if (!formData && !isNewForm && formName) {
     return (
       <div className="flex h-full items-center justify-center bg-slate-50">
         <Loader>Loading form...</Loader>

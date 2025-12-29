@@ -2171,9 +2171,10 @@
           "message": { "type": "string" },
           "formMetadata": { "$ref": "#/components/schemas/FormMetadata" },
           "formDocument": { "type": "string" },
-          "formVersion": { "type": "number" }
+          "formVersion": { "type": "number" },
+          "formUrl": { "type": "string" }
         },
-        "required": ["success", "message", "formMetadata", "formDocument", "formVersion"]
+        "required": ["success", "message", "formMetadata", "formDocument", "formVersion", "formUrl"]
       },
       "SignedDocumentsResponse": {
         "type": "object",

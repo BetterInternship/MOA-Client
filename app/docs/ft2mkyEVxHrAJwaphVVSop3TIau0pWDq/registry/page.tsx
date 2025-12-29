@@ -113,8 +113,7 @@ const FormRegistryRow = ({
   // Navigate to the PDF editor with form metadata state
   const handleEdit = () => {
     const encodedName = encodeURIComponent(name);
-    const encodedVersion = encodeURIComponent(version);
-    router.push(`./editor/pdfjs?name=${encodedName}&version=${encodedVersion}&edit=true`);
+    router.push(`./editor/pdfjs?name=${encodedName}&edit=true`);
   };
 
   return (

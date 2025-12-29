@@ -1543,9 +1543,13 @@ export const formsControllerRegisterForm = (
   formData.append(`label`, registerFormSchemaDto.label);
   formData.append(`schema_version`, registerFormSchemaDto.schema_version.toString());
   formData.append(`schema`, JSON.stringify(registerFormSchemaDto.schema));
-  formData.append(`signing_parties`, JSON.stringify(registerFormSchemaDto.signing_parties));
+  registerFormSchemaDto.signing_parties.forEach((value) =>
+    formData.append(`signing_parties`, JSON.stringify(value))
+  );
   if (registerFormSchemaDto.subscribers !== undefined) {
-    formData.append(`subscribers`, JSON.stringify(registerFormSchemaDto.subscribers));
+    registerFormSchemaDto.subscribers.forEach((value) =>
+      formData.append(`subscribers`, JSON.stringify(value))
+    );
   }
   if (registerFormSchemaDto.base_document !== undefined) {
     formData.append(`base_document`, registerFormSchemaDto.base_document);
