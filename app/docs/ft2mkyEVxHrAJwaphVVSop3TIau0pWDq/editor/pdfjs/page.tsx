@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified time: 2025-12-29 17:38:44
- * @ Modified time: 2025-12-29 17:51:50
+ * @ Modified time: 2025-12-29 17:54:03
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -574,24 +574,24 @@ const PdfJsEditorPage = () => {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col">
+          <div>
+            <div className="flex items-center gap-2">
               <h1 className="text-lg leading-tight font-semibold">{formLabel}</h1>
-              {/* @ts-expect-error - TODO:formDocument not be typed */}
-              {formData?.formDocument?.time_generated && (
-                <p className="text-xs text-slate-500">
-                  {/* @ts-expect-error - TODO: formDocument  not be typed */}
-                  Saved: {new Date(formData.formDocument.time_generated).toLocaleString()}
-                </p>
-              )}
+              <button
+                onClick={handleStartEditName}
+                className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                title="Edit form name"
+              >
+                <Edit2 className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={handleStartEditName}
-              className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-              title="Edit form name"
-            >
-              <Edit2 className="h-4 w-4" />
-            </button>
+            {/* @ts-expect-error - TODO:formDocument not be typed */}
+            {formData?.formDocument?.time_generated && (
+              <p className="text-xs text-slate-500">
+                {/* @ts-expect-error - TODO: formDocument  not be typed */}
+                Last Registered: {new Date(formData.formDocument.time_generated).toLocaleString()}
+              </p>
+            )}
           </div>
         )}
 
