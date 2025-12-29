@@ -178,22 +178,6 @@ const PdfJsEditorPage = () => {
   // Track previous field count to detect additions/deletions
   const prevFieldCountRef = useRef<number>(fields.length);
   const blocksMapRef = useRef<Map<string, IFormBlock>>(new Map());
-  const blocksRef = useRef(blocks);
-  const metadataRef = useRef(metadata);
-  const fieldsRef = useRef(fields);
-
-  // Keep refs up to date
-  useEffect(() => {
-    blocksRef.current = blocks;
-  }, [blocks]);
-
-  useEffect(() => {
-    metadataRef.current = metadata;
-  }, [metadata]);
-
-  useEffect(() => {
-    fieldsRef.current = fields;
-  }, [fields]);
 
   // Update block map whenever blocks change
   useEffect(() => {
@@ -204,132 +188,88 @@ const PdfJsEditorPage = () => {
   }, [blocks]);
 
   /**
-   * Sync blocks with fields: add blocks for new fields, remove blocks for deleted fields
-   * ONLY depends on fields.length to avoid interference with coordinate syncing
+   * Auto-sync metadata whenever fields change (with 100ms debounce)
+   * Handles: field additions, deletions, and coordinate updates
+   * Single effect consolidates ALL field-to-metadata synchronization
    */
   useEffect(() => {
-    const currentFieldCount = fields.length;
-    const prevFieldCount = prevFieldCountRef.current;
-    let newBlocks = [...blocksRef.current];
-    let hasChanges = false;
+    const syncTimer = setTimeout(() => {
+      const currentFieldCount = fields.length;
+      const prevFieldCount = prevFieldCountRef.current;
+      let newBlocks = [...blocks];
+      let hasChanges = false;
 
-    // Handle field additions
-    if (currentFieldCount > prevFieldCount) {
-      const existingBlockIds = new Set(blocksRef.current.map((b) => b._id).filter(Boolean));
-      const fieldsNeedingBlocks = fields.filter((f) => f._id && !existingBlockIds.has(f._id));
+      // Handle field additions
+      if (currentFieldCount > prevFieldCount) {
+        const existingBlockIds = new Set(blocks.map((b) => b._id).filter(Boolean));
+        const fieldsNeedingBlocks = fields.filter((f) => f._id && !existingBlockIds.has(f._id));
 
-      if (fieldsNeedingBlocks.length > 0) {
-        fieldsNeedingBlocks.forEach((field) => {
-          // Find the original block to copy properties like validator and prefiller
-          const originalBlock = blocksRef.current.find(
-            (b) =>
-              b.block_type === "form_field" &&
-              b.field_schema &&
-              (b.field_schema as any).field === field.field &&
-              (b.field_schema as any).page === field.page
-          );
+        if (fieldsNeedingBlocks.length > 0) {
+          fieldsNeedingBlocks.forEach((field) => {
+            const originalBlock = blocks.find(
+              (b) =>
+                b.block_type === "form_field" &&
+                b.field_schema &&
+                (b.field_schema as any).field === field.field &&
+                (b.field_schema as any).page === field.page
+            );
 
-          const originalFieldSchema = originalBlock?.field_schema as IFormField | undefined;
-          const storedMetadata = fieldMetadataRef.current.get(field._id!);
-          const signingPartyId =
-            blocksRef.current.length > 0 && blocksRef.current[0].signing_party_id
-              ? (blocksRef.current[0].signing_party_id as string)
-              : "party-1";
+            const originalFieldSchema = originalBlock?.field_schema as IFormField | undefined;
+            const storedMetadata = fieldMetadataRef.current.get(field._id!);
+            const signingPartyId =
+              blocks.length > 0 && blocks[0].signing_party_id
+                ? (blocks[0].signing_party_id as string)
+                : "party-1";
 
-          const newBlock: IFormBlock = {
-            block_type: "form_field",
-            _id: field._id!,
-            order: newBlocks.length,
-            signing_party_id: signingPartyId,
-            field_schema: {
-              field: field.field,
-              type: (storedMetadata?.type || originalFieldSchema?.type || "text") as const,
-              x: field.x,
-              y: field.y,
-              w: field.w,
-              h: field.h,
-              page: field.page,
-              align_h: field.align_h ?? ("left" as const),
-              align_v: field.align_v ?? ("top" as const),
-              label: field.label,
-              tooltip_label:
-                (storedMetadata?.label || originalFieldSchema?.tooltip_label) ?? field.label,
-              shared: originalFieldSchema?.shared ?? true,
+            const newBlock: IFormBlock = {
+              block_type: "form_field",
+              _id: field._id!,
+              order: newBlocks.length,
               signing_party_id: signingPartyId,
-              source: originalFieldSchema?.source ?? ("manual" as const),
-              validator: (storedMetadata?.validator || originalFieldSchema?.validator) ?? "",
-              prefiller: (storedMetadata?.prefiller || originalFieldSchema?.prefiller) ?? "",
-            } as IFormField,
-          };
-          newBlocks = [...newBlocks, newBlock];
-          fieldMetadataRef.current.delete(field._id!);
+              field_schema: {
+                field: field.field,
+                type: (storedMetadata?.type || originalFieldSchema?.type || "text") as const,
+                x: field.x,
+                y: field.y,
+                w: field.w,
+                h: field.h,
+                page: field.page,
+                align_h: field.align_h ?? ("left" as const),
+                align_v: field.align_v ?? ("top" as const),
+                label: field.label,
+                tooltip_label:
+                  (storedMetadata?.label || originalFieldSchema?.tooltip_label) ?? field.label,
+                shared: originalFieldSchema?.shared ?? true,
+                signing_party_id: signingPartyId,
+                source: originalFieldSchema?.source ?? ("manual" as const),
+                validator: (storedMetadata?.validator || originalFieldSchema?.validator) ?? "",
+                prefiller: (storedMetadata?.prefiller || originalFieldSchema?.prefiller) ?? "",
+              } as IFormField,
+            };
+            newBlocks = [...newBlocks, newBlock];
+            fieldMetadataRef.current.delete(field._id!);
+          });
+          hasChanges = true;
+        }
+      }
+
+      // Handle field deletions
+      if (currentFieldCount < prevFieldCount) {
+        const fieldIds = new Set(fields.map((f) => f._id));
+        newBlocks = newBlocks.filter((b) => {
+          if (b.block_type !== "form_field") return true;
+          return fieldIds.has(b._id);
         });
-        hasChanges = true;
+        if (newBlocks.length < blocks.length) hasChanges = true;
       }
-    }
 
-    // Handle field deletions
-    if (currentFieldCount < prevFieldCount) {
-      const fieldIds = new Set(fields.map((f) => f._id));
-      const filteredBlocks = newBlocks.filter((b) => {
-        if (b.block_type !== "form_field") return true;
-        return fieldIds.has(b._id);
-      });
-
-      if (filteredBlocks.length < newBlocks.length) {
-        newBlocks = filteredBlocks;
-        hasChanges = true;
-      }
-    }
-
-    // Update metadata if there were changes
-    if (hasChanges) {
-      setMetadata({
-        ...metadataRef.current,
-        schema: {
-          ...metadataRef.current.schema,
-          blocks: newBlocks,
-        },
-      });
-    }
-
-    prevFieldCountRef.current = currentFieldCount;
-  }, [fields.length]);
-
-  // Field operations
-  const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
-
-  // Field registration
-  const { registerFields } = useFieldRegistration(metadata.name, formLabel);
-
-  /**
-   * Handle PDF file upload - preserve URL for view switching
-   */
-  const handlePdfFileSelect = useCallback((file: File) => {
-    setDocumentFile(file);
-    // Create and store object URL so PDF persists across view changes
-    const objectUrl = URL.createObjectURL(file);
-    setUploadedPdfUrl(objectUrl);
-  }, []);
-
-  /**
-   * Sync blocks when fields change
-   * ONLY updates existing blocks - do NOT add new blocks here
-   * New blocks are added ONLY in handleFieldCreate
-   * Uses refs to always have current blocks/metadata without stale closures
-   */
-  const syncBlocksWithFields = useCallback(
-    (updatedFields: FormField[]) => {
-      const fieldMap = new Map(updatedFields.map((f) => [f._id, f]));
-      const currentBlocks = blocksRef.current;
-      const currentMetadata = metadataRef.current;
-
-      const newBlocks: IFormBlock[] = currentBlocks.map((block) => {
+      // Sync coordinates for all fields
+      const fieldMap = new Map(fields.map((f) => [f._id, f]));
+      newBlocks = newBlocks.map((block) => {
         if (block.block_type === "form_field" && block.field_schema && block._id) {
-          const fieldSchema = block.field_schema as IFormField;
           const updatedField = fieldMap.get(block._id);
-
           if (updatedField) {
+            const fieldSchema = block.field_schema as IFormField;
             return {
               ...block,
               field_schema: {
@@ -348,43 +288,50 @@ const PdfJsEditorPage = () => {
         return block;
       });
 
-      // Update metadata with synced blocks
-      setMetadata({
-        ...currentMetadata,
-        schema: {
-          ...currentMetadata.schema,
-          blocks: newBlocks,
-        },
-      });
-    },
-    // Empty deps because we use refs for current values
-    []
-  );
+      // Only update if there were actual changes
+      if (hasChanges || JSON.stringify(newBlocks) !== JSON.stringify(blocks)) {
+        setMetadata({
+          ...metadata,
+          schema: {
+            ...metadata.schema,
+            blocks: newBlocks,
+          },
+        });
+      }
+
+      prevFieldCountRef.current = currentFieldCount;
+    }, 100); // Debounce updates
+
+    return () => clearTimeout(syncTimer);
+  }, [fields, blocks, metadata]);
+
+  // Field operations
+  const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
+
+  // Field registration
+  const { registerFields } = useFieldRegistration(metadata.name, formLabel);
 
   /**
-   * Live field update during drag - only updates UI state, NOT metadata
-   * Metadata is synced on drag/resize completion only (mouseup)
+   * Handle PDF file upload - preserve URL for view switching
    */
-  const handleFieldUpdate = useCallback(
-    (fieldId: string, updates: Partial<FormField>) => {
-      const newFields = fields.map((f) => {
-        // Use stable _id for field identification
+  const handlePdfFileSelect = useCallback((file: File) => {
+    setDocumentFile(file);
+    // Create and store object URL so PDF persists across view changes
+    const objectUrl = URL.createObjectURL(file);
+    setUploadedPdfUrl(objectUrl);
+  }, []);
+
+  /**
+   * Single callback for all field changes (drag, resize, edit)
+   * Metadata syncs automatically via useEffect above with 100ms debounce
+   */
+  const handleFieldsChange = useCallback((fieldId: string, updates: Partial<FormField>) => {
+    setFields((prevFields) =>
+      prevFields.map((f) => {
         const currentId = f._id || `${f.field}:${f.page}`;
         return currentId === fieldId ? { ...f, ...updates } : f;
-      });
-      setFields(newFields);
-      // Do NOT sync metadata here - only on mouseup
-    },
-    [fields]
-  );
-
-  /**
-   * Handle field drag/resize completion - syncs metadata with final field state
-   * This is called on mouseup, not on every movement
-   * Uses fieldsRef to always have the current fields
-   */
-  const handleFieldUpdateComplete = useCallback(() => {
-    syncBlocksWithFields(fieldsRef.current);
+      })
+    );
   }, []);
 
   /**
@@ -434,56 +381,15 @@ const PdfJsEditorPage = () => {
   );
 
   /**
-   * Handle coordinate input changes
+   * Handle coordinate input changes from sidebar
    */
   const handleCoordinatesChange = useCallback(
     (coords: { x: number; y: number; w: number; h: number }) => {
       if (selectedFieldId) {
-        const newFields = fieldsRef.current.map((f) => {
-          // Use stable _id for field identification
-          const currentId = f._id || `${f.field}:${f.page}`;
-          return currentId === selectedFieldId ? { ...f, ...coords } : f;
-        });
-        setFields(newFields);
-        // Call sync with the new fields
-        const fieldMap = new Map(newFields.map((f) => [f._id, f]));
-        const currentBlocks = blocksRef.current;
-        const currentMetadata = metadataRef.current;
-
-        const newBlocks: IFormBlock[] = currentBlocks.map((block) => {
-          if (block.block_type === "form_field" && block.field_schema && block._id) {
-            const fieldSchema = block.field_schema as IFormField;
-            const updatedField = fieldMap.get(block._id);
-
-            if (updatedField) {
-              return {
-                ...block,
-                field_schema: {
-                  ...fieldSchema,
-                  x: updatedField.x,
-                  y: updatedField.y,
-                  w: updatedField.w,
-                  h: updatedField.h,
-                  align_h: updatedField.align_h ?? fieldSchema.align_h,
-                  align_v: updatedField.align_v ?? fieldSchema.align_v,
-                  label: updatedField.label ?? fieldSchema.label,
-                } as IFormField,
-              } as IFormBlock;
-            }
-          }
-          return block;
-        });
-
-        setMetadata({
-          ...currentMetadata,
-          schema: {
-            ...currentMetadata.schema,
-            blocks: newBlocks,
-          },
-        });
+        handleFieldsChange(selectedFieldId, coords);
       }
     },
-    [selectedFieldId]
+    [selectedFieldId, handleFieldsChange]
   );
 
   /**
@@ -663,49 +569,13 @@ const PdfJsEditorPage = () => {
         }}
         onFieldsUpdate={(updatedFields) => {
           // Update fields in real-time as JSON is edited
+          // Metadata will auto-sync via the global useEffect
           const fieldsWithLabels = updatedFields.map((field) => ({
             ...field,
             id: field.id || "",
             label: getFieldLabelByName(field.field, registry),
           })) as FormField[];
           setFields(fieldsWithLabels);
-
-          // Sync blocks using refs to avoid dependency
-          const fieldMap = new Map(fieldsWithLabels.map((f) => [f._id, f]));
-          const currentBlocks = blocksRef.current;
-          const currentMetadata = metadataRef.current;
-
-          const newBlocks: IFormBlock[] = currentBlocks.map((block) => {
-            if (block.block_type === "form_field" && block.field_schema && block._id) {
-              const fieldSchema = block.field_schema as IFormField;
-              const updatedField = fieldMap.get(block._id);
-
-              if (updatedField) {
-                return {
-                  ...block,
-                  field_schema: {
-                    ...fieldSchema,
-                    x: updatedField.x,
-                    y: updatedField.y,
-                    w: updatedField.w,
-                    h: updatedField.h,
-                    align_h: updatedField.align_h ?? fieldSchema.align_h,
-                    align_v: updatedField.align_v ?? fieldSchema.align_v,
-                    label: updatedField.label ?? fieldSchema.label,
-                  } as IFormField,
-                } as IFormBlock;
-              }
-            }
-            return block;
-          });
-
-          setMetadata({
-            ...currentMetadata,
-            schema: {
-              ...currentMetadata.schema,
-              blocks: newBlocks,
-            },
-          });
         }}
       />,
       {
@@ -836,8 +706,7 @@ const PdfJsEditorPage = () => {
                   fields={fields}
                   selectedFieldId={selectedFieldId}
                   onFieldSelect={setSelectedFieldId}
-                  onFieldUpdate={handleFieldUpdate}
-                  onFieldUpdateComplete={handleFieldUpdateComplete}
+                  onFieldChange={handleFieldsChange}
                   onFieldCreate={handleFieldCreate}
                   isPlacingField={isPlacingField}
                   placementFieldType={placementFieldType}

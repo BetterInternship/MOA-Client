@@ -44,8 +44,7 @@ type PdfViewerProps = {
   fields?: FormField[];
   selectedFieldId?: string;
   onFieldSelect?: (fieldId: string) => void;
-  onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
-  onFieldUpdateComplete?: () => void; // Called on drag/resize end
+  onFieldChange?: (fieldId: string, updates: Partial<FormField>) => void;
   onFieldCreate?: (field: FormField) => void;
   onFieldDelete?: (fieldId: string) => void;
   onFieldDuplicate?: (fieldId: string) => void;
@@ -63,8 +62,7 @@ export function PdfViewer({
   fields = [],
   selectedFieldId,
   onFieldSelect,
-  onFieldUpdate,
-  onFieldUpdateComplete,
+  onFieldChange,
   onFieldCreate,
   isPlacingField = false,
   placementFieldType = "signature",
@@ -337,8 +335,7 @@ export function PdfViewer({
                   fields={fields}
                   selectedFieldId={selectedFieldId}
                   onFieldSelect={onFieldSelect}
-                  onFieldUpdate={onFieldUpdate}
-                  onFieldUpdateComplete={onFieldUpdateComplete}
+                  onFieldChange={onFieldChange}
                   isPlacingField={isPlacingField}
                   placementFieldType={placementFieldType}
                   hoverPointDuringPlacement={hoverPointDuringPlacement}
@@ -368,8 +365,7 @@ type PdfPageCanvasProps = {
   fields?: FormField[];
   selectedFieldId?: string;
   onFieldSelect?: (fieldId: string) => void;
-  onFieldUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
-  onFieldUpdateComplete?: () => void;
+  onFieldChange?: (fieldId: string, updates: Partial<FormField>) => void;
   isPlacingField?: boolean;
   placementFieldType?: string;
   onHoverPlacement?: (loc: PointerLocation | null) => void;
@@ -391,8 +387,7 @@ const PdfPageCanvas = ({
   fields = [],
   selectedFieldId,
   onFieldSelect,
-  onFieldUpdate,
-  onFieldUpdateComplete,
+  onFieldChange,
   isPlacingField = false,
   placementFieldType = "signature",
   onHoverPlacement,
@@ -618,7 +613,7 @@ const PdfPageCanvas = ({
   };
 
   const handleFieldDrag = (fieldId: string, displayDeltaX: number, displayDeltaY: number) => {
-    if (!onFieldUpdate) return;
+    if (!onFieldChange) return;
 
     const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
     // Find field by stable _id or fallback to old format for legacy fields
@@ -628,7 +623,7 @@ const PdfPageCanvas = ({
     const newX = Math.max(0, field.x + pdfDeltaX);
     const newY = Math.max(0, field.y + pdfDeltaY);
 
-    onFieldUpdate(fieldId, { x: newX, y: newY });
+    onFieldChange(fieldId, { x: newX, y: newY });
   };
 
   const handleFieldResize = (
@@ -637,7 +632,7 @@ const PdfPageCanvas = ({
     displayDeltaX: number,
     displayDeltaY: number
   ) => {
-    if (!onFieldUpdate) return;
+    if (!onFieldChange) return;
 
     const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
     // Find field by stable _id or fallback to old format for legacy fields
@@ -670,7 +665,7 @@ const PdfPageCanvas = ({
       updates.h = Math.max(minSize, field.h + pdfDeltaY);
     }
 
-    onFieldUpdate(fieldId, updates);
+    onFieldChange?.(fieldId, updates);
   };
 
   return (
@@ -727,11 +722,11 @@ const PdfPageCanvas = ({
                   isSelected={selectedFieldId === fieldId}
                   onSelect={() => onFieldSelect?.(fieldId)}
                   onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
-                  onDragEnd={onFieldUpdateComplete ? () => onFieldUpdateComplete() : undefined}
+                  onDragEnd={() => {}}
                   onResize={(handle, deltaX, deltaY) =>
                     handleFieldResize(fieldId, handle, deltaX, deltaY)
                   }
-                  onResizeEnd={onFieldUpdateComplete ? () => onFieldUpdateComplete() : undefined}
+                  onResizeEnd={() => {}}
                 />
               </div>
             );
