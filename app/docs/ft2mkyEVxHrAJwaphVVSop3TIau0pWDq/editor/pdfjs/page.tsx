@@ -1,8 +1,8 @@
 /**
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
- * @ Modified by: Your name
- * @ Modified time: 2025-12-29 17:25:43
+ * @ Modified time: 2025-12-29 17:38:44
+ * @ Modified time: 2025-12-29 17:51:50
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -23,8 +23,9 @@ import { useFieldOperations } from "../../../../../hooks/use-field-operations";
 import { useFieldRegistration } from "../../../../../hooks/use-field-registration";
 import {
   useFormsControllerGetFieldRegistry,
-  useFormsControllerGetRegistryFormMetadata,
-  useFormsControllerGetRegistryFormDocument,
+  formsControllerRegisterForm,
+  formsControllerGetFieldFromRegistry,
+  useFormsControllerGetLatestFormDocumentAndMetadata,
 } from "@/app/api";
 import { getFieldLabelByName } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import {
@@ -36,12 +37,7 @@ import {
 } from "@betterinternship/core/forms";
 import type { FormField } from "../../../../../components/docs/form-editor/form-pdf-editor/FieldBox";
 import { Button } from "@/components/ui/button";
-import { Edit2, Check, X, Layout, CheckCircle } from "lucide-react";
-import {
-  formsControllerRegisterForm,
-  formsControllerGetFieldFromRegistry,
-  useFormsControllerGetLatestFormDocumentAndMetadata,
-} from "../../../../api/app/api/endpoints/forms/forms";
+import { Edit2, Check, X, Layout } from "lucide-react";
 
 // Utility to generate unique IDs for blocks
 const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
@@ -64,10 +60,11 @@ const PdfJsEditorPage = () => {
   const formName = searchParams.get("name");
   const isNewForm = !formName;
 
-  const { data: formData } = useFormsControllerGetLatestFormDocumentAndMetadata({
-    name: formName || "",
-  });
-
+  const { data: formData, refetch: refetchFormData } =
+    useFormsControllerGetLatestFormDocumentAndMetadata({
+      name: formName || "",
+    });
+  console.log("Loaded form data for editor:", formData);
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
   const registry = fieldRegistryData?.fields ?? [];
 
@@ -411,7 +408,7 @@ const PdfJsEditorPage = () => {
       setIsDebugModalOpen(false);
       setDebugSchemaInput("");
       alert(`Schema injected successfully! (${injectedFields.length} fields loaded)`);
-    } catch (error) {
+    } catch (error: unknown) {
       alert(`Error parsing schema: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }, [debugSchemaInput]);
@@ -490,9 +487,8 @@ const PdfJsEditorPage = () => {
                 ...toastPresets.success,
               });
 
-              // Refetch the form data without version param to get latest
-              // This will trigger a refresh of all form data
-              router.refresh();
+              // Refetch the form data to get the latest version
+              refetchFormData();
             })
             .catch((error) => {
               toast.error("Failed to register form", {
@@ -532,6 +528,7 @@ const PdfJsEditorPage = () => {
     syncBlocksWithFields,
     metadata,
     documentFile,
+    refetchFormData,
   ]);
 
   // Show loading state while form metadata is being fetched
@@ -578,7 +575,16 @@ const PdfJsEditorPage = () => {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <h1 className="text-lg leading-tight font-semibold">{formLabel}</h1>
+            <div className="flex flex-col">
+              <h1 className="text-lg leading-tight font-semibold">{formLabel}</h1>
+              {/* @ts-expect-error - TODO:formDocument not be typed */}
+              {formData?.formDocument?.time_generated && (
+                <p className="text-xs text-slate-500">
+                  {/* @ts-expect-error - TODO: formDocument  not be typed */}
+                  Saved: {new Date(formData.formDocument.time_generated).toLocaleString()}
+                </p>
+              )}
+            </div>
             <button
               onClick={handleStartEditName}
               className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
