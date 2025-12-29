@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Suspense } from "react";
 import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
@@ -87,10 +87,11 @@ const PdfJsEditorPage = () => {
   const INITIAL_FIELDS: FormField[] = useMemo(() => {
     return ALL_BLOCKS_RAW.filter(
       (block: any) => block.block_type === "form_field" && block.field_schema
-    ).map((block: any) => {
+    ).map((block: any, idx) => {
       const field = block.field_schema as IFormField;
       return {
         id: "", // Will be populated from registry
+        _id: block._id || `field-${idx}-${Math.random().toString(36).substr(2, 9)}`, // Use block._id or generate
         field: field.field,
         label: field.label,
         page: field.page,
@@ -146,7 +147,7 @@ const PdfJsEditorPage = () => {
       setFormLabel(newFormMetadata.getLabel());
       setEditingNameValue(newFormMetadata.getLabel());
 
-      // Update fields from loaded metadata
+      // Update fields from loaded metadata - MUST include _id from blocks
       const blocksData = metadataData.schema.blocks;
       const fieldsFromMetadata: FormField[] = blocksData
         .filter((block: any) => block.block_type === "form_field" && block.field_schema)
@@ -154,6 +155,7 @@ const PdfJsEditorPage = () => {
           const field = block.field_schema as IFormField;
           return {
             id: "",
+            _id: block._id, // CRITICAL: Get _id from block to maintain consistency
             field: field.field,
             label: field.label,
             page: field.page,
@@ -170,7 +172,129 @@ const PdfJsEditorPage = () => {
   }, [formData]);
 
   // Get blocks from metadata
+  // Get blocks from metadata
   const blocks = metadata.schema.blocks;
+
+  // Track previous field count to detect additions/deletions
+  const prevFieldCountRef = useRef<number>(fields.length);
+  const blocksMapRef = useRef<Map<string, IFormBlock>>(new Map());
+  const blocksRef = useRef(blocks);
+  const metadataRef = useRef(metadata);
+  const fieldsRef = useRef(fields);
+
+  // Keep refs up to date
+  useEffect(() => {
+    blocksRef.current = blocks;
+  }, [blocks]);
+
+  useEffect(() => {
+    metadataRef.current = metadata;
+  }, [metadata]);
+
+  useEffect(() => {
+    fieldsRef.current = fields;
+  }, [fields]);
+
+  // Update block map whenever blocks change
+  useEffect(() => {
+    blocksMapRef.current.clear();
+    blocks.forEach((block) => {
+      blocksMapRef.current.set(block._id, block);
+    });
+  }, [blocks]);
+
+  /**
+   * Sync blocks with fields: add blocks for new fields, remove blocks for deleted fields
+   * ONLY depends on fields.length to avoid interference with coordinate syncing
+   */
+  useEffect(() => {
+    const currentFieldCount = fields.length;
+    const prevFieldCount = prevFieldCountRef.current;
+    let newBlocks = [...blocksRef.current];
+    let hasChanges = false;
+
+    // Handle field additions
+    if (currentFieldCount > prevFieldCount) {
+      const existingBlockIds = new Set(blocksRef.current.map((b) => b._id).filter(Boolean));
+      const fieldsNeedingBlocks = fields.filter((f) => f._id && !existingBlockIds.has(f._id));
+
+      if (fieldsNeedingBlocks.length > 0) {
+        fieldsNeedingBlocks.forEach((field) => {
+          // Find the original block to copy properties like validator and prefiller
+          const originalBlock = blocksRef.current.find(
+            (b) =>
+              b.block_type === "form_field" &&
+              b.field_schema &&
+              (b.field_schema as any).field === field.field &&
+              (b.field_schema as any).page === field.page
+          );
+
+          const originalFieldSchema = originalBlock?.field_schema as IFormField | undefined;
+          const storedMetadata = fieldMetadataRef.current.get(field._id!);
+          const signingPartyId =
+            blocksRef.current.length > 0 && blocksRef.current[0].signing_party_id
+              ? (blocksRef.current[0].signing_party_id as string)
+              : "party-1";
+
+          const newBlock: IFormBlock = {
+            block_type: "form_field",
+            _id: field._id!,
+            order: newBlocks.length,
+            signing_party_id: signingPartyId,
+            field_schema: {
+              field: field.field,
+              type: (storedMetadata?.type || originalFieldSchema?.type || "text") as const,
+              x: field.x,
+              y: field.y,
+              w: field.w,
+              h: field.h,
+              page: field.page,
+              align_h: field.align_h ?? ("left" as const),
+              align_v: field.align_v ?? ("top" as const),
+              label: field.label,
+              tooltip_label:
+                (storedMetadata?.label || originalFieldSchema?.tooltip_label) ?? field.label,
+              shared: originalFieldSchema?.shared ?? true,
+              signing_party_id: signingPartyId,
+              source: originalFieldSchema?.source ?? ("manual" as const),
+              validator: (storedMetadata?.validator || originalFieldSchema?.validator) ?? "",
+              prefiller: (storedMetadata?.prefiller || originalFieldSchema?.prefiller) ?? "",
+            } as IFormField,
+          };
+          newBlocks = [...newBlocks, newBlock];
+          fieldMetadataRef.current.delete(field._id!);
+        });
+        hasChanges = true;
+      }
+    }
+
+    // Handle field deletions
+    if (currentFieldCount < prevFieldCount) {
+      const fieldIds = new Set(fields.map((f) => f._id));
+      const filteredBlocks = newBlocks.filter((b) => {
+        if (b.block_type !== "form_field") return true;
+        return fieldIds.has(b._id);
+      });
+
+      if (filteredBlocks.length < newBlocks.length) {
+        newBlocks = filteredBlocks;
+        hasChanges = true;
+      }
+    }
+
+    // Update metadata if there were changes
+    if (hasChanges) {
+      setMetadata({
+        ...metadataRef.current,
+        schema: {
+          ...metadataRef.current.schema,
+          blocks: newBlocks,
+        },
+      });
+    }
+
+    prevFieldCountRef.current = currentFieldCount;
+  }, [fields.length]);
 
   // Field operations
   const fieldOps = useFieldOperations(fields, setFields, setSelectedFieldId, selectedFieldId);
@@ -190,13 +314,21 @@ const PdfJsEditorPage = () => {
 
   /**
    * Sync blocks when fields change
+   * ONLY updates existing blocks - do NOT add new blocks here
+   * New blocks are added ONLY in handleFieldCreate
+   * Uses refs to always have current blocks/metadata without stale closures
    */
   const syncBlocksWithFields = useCallback(
     (updatedFields: FormField[]) => {
-      const newBlocks: IFormBlock[] = blocks.map((block) => {
-        if (block.block_type === "form_field" && block.field_schema) {
+      const fieldMap = new Map(updatedFields.map((f) => [f._id, f]));
+      const currentBlocks = blocksRef.current;
+      const currentMetadata = metadataRef.current;
+
+      const newBlocks: IFormBlock[] = currentBlocks.map((block) => {
+        if (block.block_type === "form_field" && block.field_schema && block._id) {
           const fieldSchema = block.field_schema as IFormField;
-          const updatedField = updatedFields.find((f) => f.field === fieldSchema.field);
+          const updatedField = fieldMap.get(block._id);
+
           if (updatedField) {
             return {
               ...block,
@@ -206,45 +338,61 @@ const PdfJsEditorPage = () => {
                 y: updatedField.y,
                 w: updatedField.w,
                 h: updatedField.h,
-                align_h: updatedField.align_h,
-                align_v: updatedField.align_v,
-                label: updatedField.label,
+                align_h: updatedField.align_h ?? fieldSchema.align_h,
+                align_v: updatedField.align_v ?? fieldSchema.align_v,
+                label: updatedField.label ?? fieldSchema.label,
               } as IFormField,
             } as IFormBlock;
           }
         }
         return block;
       });
+
       // Update metadata with synced blocks
       setMetadata({
-        ...metadata,
+        ...currentMetadata,
         schema: {
-          ...metadata.schema,
+          ...currentMetadata.schema,
           blocks: newBlocks,
         },
       });
     },
-    [blocks, metadata]
+    // Empty deps because we use refs for current values
+    []
   );
 
   /**
-   * Live field update during drag
+   * Live field update during drag - only updates UI state, NOT metadata
+   * Metadata is synced on drag/resize completion only (mouseup)
    */
   const handleFieldUpdate = useCallback(
     (fieldId: string, updates: Partial<FormField>) => {
-      const newFields = fields.map((f, idx) => {
-        const currentId = `${f.field}:${idx}`;
+      const newFields = fields.map((f) => {
+        // Use stable _id for field identification
+        const currentId = f._id || `${f.field}:${f.page}`;
         return currentId === fieldId ? { ...f, ...updates } : f;
       });
       setFields(newFields);
-      syncBlocksWithFields(newFields);
+      // Do NOT sync metadata here - only on mouseup
     },
-    [fields, syncBlocksWithFields]
+    [fields]
   );
+
+  /**
+   * Handle field drag/resize completion - syncs metadata with final field state
+   * This is called on mouseup, not on every movement
+   * Uses fieldsRef to always have the current fields
+   */
+  const handleFieldUpdateComplete = useCallback(() => {
+    syncBlocksWithFields(fieldsRef.current);
+  }, []);
 
   /**
    * Handle field creation with auto-selection
    */
+  // Store field metadata temporarily for the block creation useEffect to use
+  const fieldMetadataRef = useRef<Map<string, any>>(new Map());
+
   const handleFieldCreate = useCallback(
     async (newField: FormField) => {
       // Fetch full field details from registry including validator and prefiller
@@ -258,55 +406,31 @@ const PdfJsEditorPage = () => {
         console.error("Failed to fetch field details:", error);
       }
 
+      // Generate stable _id for this field if not present
+      const fieldId = newField._id || generateBlockId();
+
       // Look up the label from registry using field name
       const fieldWithLabel: FormField = {
         ...newField,
+        _id: fieldId,
         label: getFieldLabelByName(newField.field, registry),
         align_h: placementAlign_h,
         align_v: placementAlign_v,
       };
-      fieldOps.create(fieldWithLabel);
 
-      // Add new block for this field
-      const signingPartyId: string =
-        blocks.length > 0 && blocks[0].signing_party_id
-          ? (blocks[0].signing_party_id as string)
-          : "party-1";
-
-      const newBlock: IFormBlock = {
-        block_type: "form_field",
-        order: blocks.length,
-        signing_party_id: signingPartyId,
-        field_schema: {
-          field: newField.field,
-          type: placementFieldType as "text" | "signature" | "image",
-          x: newField.x,
-          y: newField.y,
-          w: newField.w,
-          h: newField.h,
-          page: newField.page,
-          align_h: placementAlign_h,
-          align_v: placementAlign_v,
-          label: fieldWithLabel.label,
-          tooltip_label: fieldWithLabel.label,
-          shared: true,
-          signing_party_id: signingPartyId,
-          source: "manual",
-          validator: fullFieldData?.validator || "",
-          prefiller: fullFieldData?.prefiller || "",
-        } as IFormField,
-      };
-      // Update metadata with new block
-      setMetadata({
-        ...metadata,
-        schema: {
-          ...metadata.schema,
-          blocks: [...blocks, newBlock],
-        },
+      // Store metadata for this field so the useEffect can use it when creating the block
+      fieldMetadataRef.current.set(fieldId, {
+        type: placementFieldType,
+        validator: fullFieldData?.validator || "",
+        prefiller: fullFieldData?.prefiller || "",
+        label: fieldWithLabel.label,
       });
+
+      // Only create the field - let the useEffect create the block
+      fieldOps.create(fieldWithLabel);
       setIsPlacingField(false);
     },
-    [fieldOps, registry, placementAlign_h, placementAlign_v, blocks, metadata]
+    [fieldOps, registry, placementAlign_h, placementAlign_v]
   );
 
   /**
@@ -315,15 +439,51 @@ const PdfJsEditorPage = () => {
   const handleCoordinatesChange = useCallback(
     (coords: { x: number; y: number; w: number; h: number }) => {
       if (selectedFieldId) {
-        const newFields = fields.map((f, idx) => {
-          const currentId = `${f.field}:${idx}`;
+        const newFields = fieldsRef.current.map((f) => {
+          // Use stable _id for field identification
+          const currentId = f._id || `${f.field}:${f.page}`;
           return currentId === selectedFieldId ? { ...f, ...coords } : f;
         });
         setFields(newFields);
-        syncBlocksWithFields(newFields);
+        // Call sync with the new fields
+        const fieldMap = new Map(newFields.map((f) => [f._id, f]));
+        const currentBlocks = blocksRef.current;
+        const currentMetadata = metadataRef.current;
+
+        const newBlocks: IFormBlock[] = currentBlocks.map((block) => {
+          if (block.block_type === "form_field" && block.field_schema && block._id) {
+            const fieldSchema = block.field_schema as IFormField;
+            const updatedField = fieldMap.get(block._id);
+
+            if (updatedField) {
+              return {
+                ...block,
+                field_schema: {
+                  ...fieldSchema,
+                  x: updatedField.x,
+                  y: updatedField.y,
+                  w: updatedField.w,
+                  h: updatedField.h,
+                  align_h: updatedField.align_h ?? fieldSchema.align_h,
+                  align_v: updatedField.align_v ?? fieldSchema.align_v,
+                  label: updatedField.label ?? fieldSchema.label,
+                } as IFormField,
+              } as IFormBlock;
+            }
+          }
+          return block;
+        });
+
+        setMetadata({
+          ...currentMetadata,
+          schema: {
+            ...currentMetadata.schema,
+            blocks: newBlocks,
+          },
+        });
       }
     },
-    [selectedFieldId, fields, syncBlocksWithFields]
+    [selectedFieldId]
   );
 
   /**
@@ -360,34 +520,36 @@ const PdfJsEditorPage = () => {
 
       // Extract fields from blocks - handle both field_schema (single) and fields (array) formats
       const injectedFields: FormField[] = [];
-      parsed.schema.blocks.forEach((block: any) => {
+      parsed.schema.blocks.forEach((block: any, blockIdx: number) => {
         if (block.field_schema) {
           // Single field_schema format
           const fieldSchema = block.field_schema;
           injectedFields.push({
             field: fieldSchema.field,
-            id: fieldSchema.field, // Use field name as id if not provided
+            id: fieldSchema.field,
+            _id: block._id || `field-${blockIdx}-${Math.random().toString(36).substr(2, 9)}`,
             label: fieldSchema.label || fieldSchema.field,
+            page: fieldSchema.page || 1,
             x: fieldSchema.x || 0,
             y: fieldSchema.y || 0,
             w: fieldSchema.w || 100,
             h: fieldSchema.h || 40,
-            required: fieldSchema.required || false,
-            readonly: fieldSchema.readonly || false,
           });
         } else if (block.fields && Array.isArray(block.fields)) {
           // Array of fields format
-          block.fields.forEach((field: any) => {
+          block.fields.forEach((field: any, fieldIdx: number) => {
             injectedFields.push({
               field: field.field,
               id: field.id || field.field,
+              _id:
+                field._id ||
+                `field-${blockIdx}-${fieldIdx}-${Math.random().toString(36).substr(2, 9)}`,
               label: field.label || field.field,
+              page: field.page || 1,
               x: field.x || 0,
               y: field.y || 0,
               w: field.w || 100,
               h: field.h || 40,
-              required: field.required || false,
-              readonly: field.readonly || false,
             });
           });
         }
@@ -479,6 +641,7 @@ const PdfJsEditorPage = () => {
             ...(fileToSubmit && { base_document: fileToSubmit }),
           };
 
+          console.log("Form ");
           // Register the form and handle success/error
           formsControllerRegisterForm(metadataWithDocument)
             .then(() => {
@@ -506,7 +669,43 @@ const PdfJsEditorPage = () => {
             label: getFieldLabelByName(field.field, registry),
           })) as FormField[];
           setFields(fieldsWithLabels);
-          syncBlocksWithFields(fieldsWithLabels);
+
+          // Sync blocks using refs to avoid dependency
+          const fieldMap = new Map(fieldsWithLabels.map((f) => [f._id, f]));
+          const currentBlocks = blocksRef.current;
+          const currentMetadata = metadataRef.current;
+
+          const newBlocks: IFormBlock[] = currentBlocks.map((block) => {
+            if (block.block_type === "form_field" && block.field_schema && block._id) {
+              const fieldSchema = block.field_schema as IFormField;
+              const updatedField = fieldMap.get(block._id);
+
+              if (updatedField) {
+                return {
+                  ...block,
+                  field_schema: {
+                    ...fieldSchema,
+                    x: updatedField.x,
+                    y: updatedField.y,
+                    w: updatedField.w,
+                    h: updatedField.h,
+                    align_h: updatedField.align_h ?? fieldSchema.align_h,
+                    align_v: updatedField.align_v ?? fieldSchema.align_v,
+                    label: updatedField.label ?? fieldSchema.label,
+                  } as IFormField,
+                } as IFormBlock;
+              }
+            }
+            return block;
+          });
+
+          setMetadata({
+            ...currentMetadata,
+            schema: {
+              ...currentMetadata.schema,
+              blocks: newBlocks,
+            },
+          });
         }}
       />,
       {
@@ -525,7 +724,6 @@ const PdfJsEditorPage = () => {
     openModal,
     closeModal,
     registry,
-    syncBlocksWithFields,
     metadata,
     documentFile,
     refetchFormData,
@@ -639,6 +837,7 @@ const PdfJsEditorPage = () => {
                   selectedFieldId={selectedFieldId}
                   onFieldSelect={setSelectedFieldId}
                   onFieldUpdate={handleFieldUpdate}
+                  onFieldUpdateComplete={handleFieldUpdateComplete}
                   onFieldCreate={handleFieldCreate}
                   isPlacingField={isPlacingField}
                   placementFieldType={placementFieldType}

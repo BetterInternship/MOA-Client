@@ -51,7 +51,8 @@ export const EditorSidebar = ({
   onAlignmentChange,
   registry = [],
 }: EditorSidebarProps) => {
-  const selectedField = fields.find((f, idx) => `${f.field}:${idx}` === selectedFieldId);
+  // Find selected field by _id
+  const selectedField = fields.find((f) => (f._id || `${f.field}:${f.page}`) === selectedFieldId);
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden bg-slate-50/50 p-3">

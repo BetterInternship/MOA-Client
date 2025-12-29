@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 export type FormField = {
   id: string;
+  _id?: string; // Unique block ID for stable field identification
   field: string;
   label: string;
   page: number;

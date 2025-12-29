@@ -28,8 +28,9 @@ export const FieldListPanel = ({
             No fields yet. Use the Placement tab to add fields.
           </div>
         ) : (
-          fields.map((field, idx) => {
-            const fieldId = `${field.field}:${idx}`;
+          fields.map((field) => {
+            // Use stable _id if available, fallback to field:page composite key
+            const fieldId = field._id || `${field.field}:${field.page}`;
             const isSelected = selectedFieldId === fieldId;
             return (
               <div
