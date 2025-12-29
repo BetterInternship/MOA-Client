@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified by: Your name
- * @ Modified time: 2025-12-29 14:25:48
+ * @ Modified time: 2025-12-29 14:42:21
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -481,6 +481,9 @@ const PdfJsEditorPage = () => {
               ...editedMetadata.schema,
               blocks: blocksWithIdsAndOrder,
             },
+            signing_parties: Array.isArray(editedMetadata.signing_parties)
+              ? editedMetadata.signing_parties
+              : [editedMetadata.signing_parties],
             ...(fileToSubmit && { base_document: fileToSubmit }),
           };
           formsControllerRegisterForm(metadataWithDocument);
