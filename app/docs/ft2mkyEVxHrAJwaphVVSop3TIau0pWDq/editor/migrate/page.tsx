@@ -10,8 +10,8 @@ import {
   isFormMetadataV0,
   isFormMetadataV1,
   OldIFormMetadata,
-  IFormMetadata,
-} from "@betterinternship/core/forms";
+} from "@/lib/legacy/form-metadata-migration";
+import { IFormMetadata } from "@betterinternship/core/forms";
 
 interface MigrationResult {
   name: string;
