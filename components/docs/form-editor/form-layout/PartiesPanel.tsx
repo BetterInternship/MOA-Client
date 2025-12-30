@@ -30,6 +30,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
   const [editValues, setEditValues] = useState<Partial<IFormSigningParty>>({});
   const [credentialMode, setCredentialMode] = useState<CredentialMode>("source");
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [sourceErrors, setSourceErrors] = useState<{
+    sourceId?: string;
+    sourceFieldLabel?: string;
+    sourceFieldTooltip?: string;
+  }>({});
 
   // Ensure at least one initiator party (order=1) always exists
   useEffect(() => {
@@ -49,6 +54,7 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     setEditValues(party);
     setCredentialMode(party.signatory_account ? "account" : "source");
     setValidationErrors({});
+    setSourceErrors({});
   };
 
   const validateForm = (): boolean => {
@@ -64,20 +70,21 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
       errors.order = "Order must be at least 1";
     }
 
-    // Order 1 must be Initiator
-    if (editValues.order === 1 && editValues.signatory_source?.toLowerCase() !== "initiator") {
-      errors.source = "Order 1 must always be initiator";
-    }
-
-    // Validate based on credential mode
-    if (credentialMode === "source") {
-      if (!editValues.signatory_source || editValues.signatory_source.trim() === "") {
-        errors.source = "Please select a party source";
-      }
-    } else if (credentialMode === "account") {
-      const emailValidation = validateEmail(editValues.signatory_account?.email || "");
-      if (!emailValidation.valid) {
-        errors.email = emailValidation.error;
+    // Order 1 (Initiator) doesn't need signatory fields, skip validation
+    if (editValues.order !== 1) {
+      // Validate based on credential mode
+      if (credentialMode === "source") {
+        if (!editValues.signatory_source?._id || editValues.signatory_source._id.trim() === "") {
+          errors.source = "Source ID is required";
+        }
+        if (!editValues.signatory_source?.label || editValues.signatory_source.label.trim() === "") {
+          errors.source = "Source label is required";
+        }
+      } else if (credentialMode === "account") {
+        const emailValidation = validateEmail(editValues.signatory_account?.email || "");
+        if (!emailValidation.valid) {
+          errors.email = emailValidation.error;
+        }
       }
     }
 
@@ -94,7 +101,13 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
 
     const updatedParties = safeParties.map((p, idx) => {
       if (idx === editingIndex) {
-        const { signed: _signed, ...partyWithoutSigned } = { ...p, ...editValues };
+        let party = { ...p, ...editValues } as IFormSigningParty;
+        // Clear signatory fields for order 1 (Initiator)
+        if (party.order === 1) {
+          party.signatory_account = undefined;
+          party.signatory_source = undefined;
+        }
+        const { signed: _signed, ...partyWithoutSigned } = party;
         return partyWithoutSigned as IFormSigningParty;
       }
       return p;
@@ -110,6 +123,7 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     setEditValues({});
     setCredentialMode("source");
     setValidationErrors({});
+    setSourceErrors({});
   };
 
   const handleDeleteParty = (id: string) => {
@@ -126,7 +140,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     const newParty: IFormSigningParty = {
       _id: `party-${Date.now()}`,
       order: Math.max(...safeParties.map((p) => p.order), 0) + 1,
-      signatory_source: "New Party",
+      signatory_source: {
+        _id: "",
+        label: "",
+        tooltip_label: "",
+      },
     };
     onPartiesChange([...safeParties, newParty]);
     setEditingIndex(safeParties.length); // Auto-edit the new party
@@ -224,86 +242,146 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                       )}
                     </div>
 
-                    {/* Credential Mode Selector */}
-                    <div>
-                      <div className="mb-2 flex items-center gap-3">
-                        <label className="text-xs font-medium text-slate-600">
-                          How will this party provide credentials?
-                        </label>
-                        <div className="flex gap-1.5">
-                          <Button
-                            size="sm"
-                            variant={credentialMode === "source" ? "default" : "outline"}
-                            onClick={() => {
-                              setCredentialMode("source");
-                              setEditValues({ ...editValues, signatory_account: undefined });
-                            }}
-                            className={
-                              credentialMode === "source" ? "bg-blue-600 hover:bg-blue-700" : ""
-                            }
-                          >
-                            By Source
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={credentialMode === "account" ? "default" : "outline"}
-                            onClick={() => {
-                              setCredentialMode("account");
-                              setEditValues({ ...editValues, signatory_source: undefined });
-                            }}
-                            className={
-                              credentialMode === "account" ? "bg-blue-600 hover:bg-blue-700" : ""
-                            }
-                          >
-                            By Email
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Source-based Mode */}
-                    {credentialMode === "source" && (
+                    {/* Credential Mode Selector - only for non-initiator parties */}
+                    {!isInitiatorParty(editValues.order) && (
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-slate-600">
-                          Select Party Source
-                        </label>
-                        {isInitiatorParty(editValues.order) ? (
-                          <div className="flex h-8 items-center rounded-[0.33em] border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-600">
-                            Initiator (Fixed)
+                        <div className="mb-2 flex items-center gap-3">
+                          <label className="text-xs font-medium text-slate-600">
+                            How will this party provide credentials?
+                          </label>
+                          <div className="flex gap-1.5">
+                            <Button
+                              size="sm"
+                              variant={credentialMode === "source" ? "default" : "outline"}
+                              onClick={() => {
+                                setCredentialMode("source");
+                                setEditValues({ ...editValues, signatory_account: undefined });
+                              }}
+                              className={
+                                credentialMode === "source" ? "bg-blue-600 hover:bg-blue-700" : ""
+                              }
+                            >
+                              By Source
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={credentialMode === "account" ? "default" : "outline"}
+                              onClick={() => {
+                                setCredentialMode("account");
+                                setEditValues({ ...editValues, signatory_source: undefined });
+                              }}
+                              className={
+                                credentialMode === "account" ? "bg-blue-600 hover:bg-blue-700" : ""
+                              }
+                            >
+                              By Email
+                            </Button>
                           </div>
-                        ) : (
-                          <select
-                            value={editValues.signatory_source || ""}
-                            onChange={(e) => {
-                              setEditValues({ ...editValues, signatory_source: e.target.value });
-                              setValidationErrors({ ...validationErrors, source: undefined });
-                            }}
-                            className={`h-8 w-full rounded-[0.33em] border px-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:outline-none ${
-                              validationErrors.source ? "border-red-500" : "border-slate-300"
-                            }`}
-                          >
-                            <option value="">-- Select a party --</option>
-                            {parties
-                              .filter(
-                                (p) =>
-                                  p._id !==
-                                  (editingIndex !== null ? parties[editingIndex]._id : null)
-                              )
-                              .map((p) => (
-                                <option key={p._id} value={p._id}>
-                                  {p._id}
-                                </option>
-                              ))}
-                          </select>
-                        )}
-                        {validationErrors.source && (
-                          <p className="mt-1 text-xs text-red-600">{validationErrors.source}</p>
-                        )}
+                        </div>
                       </div>
                     )}
 
-                    {/* Account-based Mode */}
-                    {credentialMode === "account" && (
+                    {/* Source-based Mode - only for non-initiator parties */}
+                    {!isInitiatorParty(editValues.order) && credentialMode === "source" && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-600">
+                            Select Party Source
+                          </label>
+                          {isInitiatorParty(editValues.order) ? (
+                            <div className="flex h-8 items-center rounded-[0.33em] border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-600">
+                              Initiator (Fixed)
+                            </div>
+                          ) : (
+                            <>
+                              <select
+                                value={editValues.signatory_source?._id || ""}
+                                onChange={(e) => {
+                                  setEditValues({
+                                    ...editValues,
+                                    signatory_source: {
+                                      _id: e.target.value,
+                                      label: editValues.signatory_source?.label || "",
+                                      tooltip_label: editValues.signatory_source?.tooltip_label || "",
+                                    },
+                                  });
+                                  setSourceErrors({ ...sourceErrors, sourceId: undefined });
+                                }}
+                                className={`h-8 w-full rounded-[0.33em] border px-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:outline-none ${
+                                  sourceErrors.sourceId ? "border-red-500" : "border-slate-300"
+                                }`}
+                              >
+                                <option value="">-- Select a party --</option>
+                                {safeParties
+                                  .filter(
+                                    (p) =>
+                                      p._id !==
+                                      (editingIndex !== null ? safeParties[editingIndex]._id : null)
+                                  )
+                                  .map((p) => (
+                                    <option key={p._id} value={p._id}>
+                                      {p._id}
+                                    </option>
+                                  ))}
+                              </select>
+                              {sourceErrors.sourceId && (
+                                <p className="mt-1 text-xs text-red-600">{sourceErrors.sourceId}</p>
+                              )}
+                            </>
+                          )}
+                        </div>
+
+                        <div>
+                          <FormInput
+                            label="Source Field Label"
+                            type="text"
+                            value={editValues.signatory_source?.label || ""}
+                            setter={(value) => {
+                              setEditValues({
+                                ...editValues,
+                                signatory_source: {
+                                  _id: editValues.signatory_source?._id || "",
+                                  label: value,
+                                  tooltip_label: editValues.signatory_source?.tooltip_label || "",
+                                },
+                              });
+                              setSourceErrors({ ...sourceErrors, sourceFieldLabel: undefined });
+                            }}
+                            placeholder="e.g., Student"
+                            required={false}
+                          />
+                          {sourceErrors.sourceFieldLabel && (
+                            <p className="mt-1 text-xs text-red-600">
+                              {sourceErrors.sourceFieldLabel}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <FormInput
+                            label="Source Field Tooltip (Optional)"
+                            type="text"
+                            value={editValues.signatory_source?.tooltip_label || ""}
+                            setter={(value) => {
+                              setEditValues({
+                                ...editValues,
+                                signatory_source: {
+                                  _id: editValues.signatory_source?._id || "",
+                                  label: editValues.signatory_source?.label || "",
+                                  tooltip_label: value,
+                                },
+                              });
+                              setSourceErrors({ ...sourceErrors, sourceFieldTooltip: undefined });
+                            }}
+                            placeholder="e.g., The student or applicant signing the form"
+                            required={false}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Account-based Mode - only for non-initiator parties */}
+                    {!isInitiatorParty(editValues.order) && credentialMode === "account" && (
                       <div>
                         <FormInput
                           label="Email"
@@ -360,9 +438,17 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                           #{party.order}
                         </span>
                         {party.signatory_source && (
-                          <span className="inline-flex items-center rounded-[0.33em] bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700">
-                            {party.signatory_source}
-                          </span>
+                          <>
+                            <span className="inline-flex items-center rounded-[0.33em] bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700">
+                              {party.signatory_source.label}
+                            </span>
+                            <span
+                              title={party.signatory_source.tooltip_label}
+                              className="inline-flex items-center rounded-[0.33em] bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700"
+                            >
+                              {party.signatory_source._id}
+                            </span>
+                          </>
                         )}
                         {party.signatory_account?.email && (
                           <span className="inline-flex items-center truncate rounded-[0.33em] bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
