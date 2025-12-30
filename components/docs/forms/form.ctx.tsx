@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-12-22 14:52:01
+ * @ Modified time: 2025-12-30 11:49:08
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -17,7 +17,6 @@ import {
   ClientField,
   ClientPhantomField,
   ServerField,
-  DUMMY_FORM_METADATA,
   FormMetadata,
   IFormMetadata,
   IFormParameters,
@@ -134,7 +133,7 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
       // Promise for pulling metadata
       formsControllerGetRegistryFormMetadata(payload, controller.signal).then(
         ({ formMetadata }) => {
-          const fm = new FormMetadata(DUMMY_FORM_METADATA ?? formMetadata);
+          const fm = new FormMetadata(formMetadata as unknown as IFormMetadata);
           setFields(fm.getFieldsForClientService());
           setPreviewFields(fm.getFieldsForSigningService());
           setDocumentName(formMetadata.name);

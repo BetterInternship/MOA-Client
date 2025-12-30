@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
  * @ Modified time: 2025-12-21 20:36:55
- * @ Modified time: 2025-12-24 22:13:57
+ * @ Modified time: 2025-12-30 11:46:37
  *
  * We can move this out later on so it becomes reusable in other places.
  * This allows the consumer to use information about a form within the component.
@@ -14,7 +14,6 @@ import {
   formsControllerGetRegistryFormMetadata,
 } from "@/app/api";
 import {
-  DUMMY_FORM_METADATA,
   FormMetadata,
   IFormField,
   IFormMetadata,
@@ -273,7 +272,7 @@ export const FormEditorContextProvider = ({ children }: { children: React.ReactN
       // Promise for pulling metadata
       formsControllerGetRegistryFormMetadata(payload, controller.signal).then(
         ({ formMetadata }) => {
-          const fm = new FormMetadata(DUMMY_FORM_METADATA ?? formMetadata);
+          const fm = new FormMetadata(formMetadata as unknown as IFormMetadata);
           setFields(fm.getFieldsForEditorService());
           setPhantomFields(fm.getPhantomFieldsForEditorService());
           setDocumentName(formMetadata.name);

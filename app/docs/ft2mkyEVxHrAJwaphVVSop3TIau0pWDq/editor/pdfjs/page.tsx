@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified time: 2025-12-29 18:33:21
- * @ Modified time: 2025-12-29 18:33:22
+ * @ Modified time: 2025-12-30 11:48:47
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -30,7 +30,6 @@ import {
 import { getFieldLabelByName } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import {
   FormMetadata,
-  DUMMY_FORM_METADATA,
   type IFormBlock,
   type IFormField,
   type IFormMetadata,
@@ -70,17 +69,15 @@ const PdfJsEditorPage = () => {
 
   // Initialize FormMetadata with loaded data or blank data for new forms
   const formMetadata = useMemo(() => {
-    const data = ((formData?.formMetadata as any) ||
-      (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA)) as IFormMetadata;
+    const data = ((formData?.formMetadata as any) || BLANK_FORM_METADATA) as IFormMetadata;
     return new FormMetadata<[]>(data);
   }, [formData, isNewForm]);
 
   // Get all blocks from FormMetadata (includes headers, paragraphs, form fields, etc.)
   // Use raw block structure for form editing
   const ALL_BLOCKS_RAW = useMemo(() => {
-    const metadataData =
-      (formData?.formMetadata as any) || (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA);
-    return metadataData.schema?.blocks || (isNewForm ? [] : DUMMY_FORM_METADATA.schema.blocks);
+    const metadataData = formData?.formMetadata || BLANK_FORM_METADATA;
+    return metadataData.schema?.blocks || [];
   }, [formData, isNewForm]);
 
   // Extract only form field blocks (non-phantom) for the PDF preview
@@ -118,8 +115,7 @@ const PdfJsEditorPage = () => {
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
   const [activeView, setActiveView] = useState<"pdf" | "layout">("pdf");
   const [metadata, setMetadata] = useState<IFormMetadata>(
-    ((formData?.formMetadata as any) ||
-      (isNewForm ? BLANK_FORM_METADATA : DUMMY_FORM_METADATA)) as IFormMetadata
+    (formData?.formMetadata || BLANK_FORM_METADATA) as IFormMetadata
   );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [uploadedPdfUrl, setUploadedPdfUrl] = useState<string | null>(null);
@@ -214,11 +210,11 @@ const PdfJsEditorPage = () => {
                 (b.field_schema as any).page === field.page
             );
 
-            const originalFieldSchema = originalBlock?.field_schema as IFormField | undefined;
+            const originalFieldSchema = originalBlock?.field_schema;
             const storedMetadata = fieldMetadataRef.current.get(field._id!);
             const signingPartyId =
               blocks.length > 0 && blocks[0].signing_party_id
-                ? (blocks[0].signing_party_id as string)
+                ? blocks[0].signing_party_id
                 : "party-1";
 
             const newBlock: IFormBlock = {
@@ -269,7 +265,7 @@ const PdfJsEditorPage = () => {
         if (block.block_type === "form_field" && block.field_schema && block._id) {
           const updatedField = fieldMap.get(block._id);
           if (updatedField) {
-            const fieldSchema = block.field_schema as IFormField;
+            const fieldSchema = block.field_schema;
             return {
               ...block,
               field_schema: {
