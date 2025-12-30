@@ -138,10 +138,12 @@ export const renderBlock = (
           </div>
         )}
         <div
-          className={editorMode ? "flex-1" : "w-full"}
+          className={`${editorMode ? "flex-1" : "w-full"} cursor-pointer`}
           onClick={() => onBlockClick?.(blockIndex)}
         >
-          <h2 className="text-lg font-bold text-slate-800">{block.text_content}</h2>
+          <h2 className="text-lg font-bold text-slate-800">
+            {block.text_content || (editorMode ? "  " : "")}
+          </h2>
         </div>
       </div>
     );
@@ -177,10 +179,12 @@ export const renderBlock = (
           </div>
         )}
         <div
-          className={editorMode ? "flex-1" : "w-full"}
+          className={`${editorMode ? "flex-1" : "w-full"} min-h-[2rem] cursor-pointer`}
           onClick={() => onBlockClick?.(blockIndex)}
         >
-          <p className="text-sm text-slate-700">{block.text_content}</p>
+          <p className="text-sm text-slate-700">
+            {block.text_content || (editorMode ? "(Empty paragraph)" : "")}
+          </p>
         </div>
       </div>
     );

@@ -157,6 +157,23 @@ export const EditableDynamicForm = ({
     [blocks, selectedBlockIndex, onBlockSelect, onBlockUpdate]
   );
 
+  /**
+   * Helper: Find a block by ID and call the onBlockSelect callback
+   * This ensures consistent _id-based block selection across all code paths
+   */
+  const selectBlockById = useCallback(
+    (blockId: string | undefined) => {
+      if (!blockId) return;
+
+      const block = blocks.find((b) => b._id === blockId);
+      if (!block) return;
+
+      const index = blocks.findIndex((b) => b._id === blockId);
+      onBlockSelect?.(block, index);
+    },
+    [blocks, onBlockSelect]
+  );
+
   const handleSelectBlock = useCallback(
     (blockId: string) => {
       const newSelected = new Set(selectedBlockIds);
@@ -267,10 +284,8 @@ export const EditableDynamicForm = ({
                     onDragEnd: handleDragEnd,
                     draggedIndex,
                     onBlockClick: (index) => {
-                      const blockIndex = blocks.findIndex(
-                        (b) => b === groupedBlocks.unassigned[index]
-                      );
-                      onBlockSelect?.(groupedBlocks.unassigned[index], blockIndex);
+                      const blockId = groupedBlocks.unassigned[index]?._id;
+                      selectBlockById(blockId);
                     },
                     selectedIndex: selectedBlockIndex,
                     selectedBlockIds,
@@ -335,8 +350,8 @@ export const EditableDynamicForm = ({
                       onDragEnd: handleDragEnd,
                       draggedIndex,
                       onBlockClick: (index) => {
-                        const blockIndex = blocks.findIndex((b) => b === manualBlocks[index]);
-                        onBlockSelect?.(manualBlocks[index], blockIndex);
+                        const blockId = manualBlocks[index]?._id;
+                        selectBlockById(blockId);
                       },
                       selectedIndex: selectedBlockIndex,
                       selectedBlockIds,
@@ -374,8 +389,8 @@ export const EditableDynamicForm = ({
                         onDragEnd: handleDragEnd,
                         draggedIndex,
                         onBlockClick: (index) => {
-                          const blockIndex = blocks.findIndex((b) => b === autoBlocks[index]);
-                          onBlockSelect?.(autoBlocks[index], blockIndex);
+                          const blockId = autoBlocks[index]?._id;
+                          selectBlockById(blockId);
                         },
                         selectedIndex: selectedBlockIndex,
                         selectedBlockIds,
@@ -535,7 +550,10 @@ export const EditableDynamicForm = ({
                     onDragOver: handleDragOver,
                     onDragEnd: handleDragEnd,
                     draggedIndex,
-                    onBlockClick: (index) => onBlockSelect?.(blocks[index], index),
+                    onBlockClick: (index) => {
+                      const blockId = blocks[index]?._id;
+                      selectBlockById(blockId);
+                    },
                     selectedIndex: selectedBlockIndex,
                     selectedBlockIds,
                     onBlockToggle: handleSelectBlock,
