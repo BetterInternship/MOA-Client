@@ -408,7 +408,7 @@ export const EditableDynamicForm = ({
       </div>
 
       {/* Block Editor Sidebar */}
-      <div className="w-80 overflow-y-auto border-l bg-gray-50">
+      <div className="w-100 overflow-y-auto border-l bg-gray-50">
         {selectedBlock ? (
           <BlockEditor
             block={selectedBlock}
