@@ -123,7 +123,23 @@ export const EditableDynamicForm = ({
     setBlocks(newBlocks);
     onBlocksReorder?.(newBlocks);
   }, [blocks, selectedBlockIndex, onBlocksReorder]);
+  const handleBlockUpdate = useCallback(
+    (updatedBlock: IFormBlock) => {
+      // Update local blocks state when a block is edited
+      const newBlocks = blocks.map((b) => (b._id === updatedBlock._id ? updatedBlock : b));
+      setBlocks(newBlocks);
 
+      // If the updated block is currently selected, also update selectedBlock reference
+      // This ensures the BlockEditor gets the fresh block with updated validator
+      if (selectedBlockIndex !== null && selectedBlockIndex !== undefined) {
+        onBlockSelect?.(updatedBlock, selectedBlockIndex);
+      }
+
+      // Also call parent's onBlockUpdate if provided
+      onBlockUpdate?.(updatedBlock);
+    },
+    [blocks, selectedBlockIndex, onBlockSelect, onBlockUpdate]
+  );
   // Group blocks by party if signingParties is provided
   const getGroupedBlocks = () => {
     if (signingParties.length === 0) {
@@ -415,7 +431,7 @@ export const EditableDynamicForm = ({
             onClose={() => {
               // Clear selection through parent
             }}
-            onUpdate={onBlockUpdate}
+            onUpdate={handleBlockUpdate}
             signingParties={signingParties.map((p) => ({
               id: p._id || `party-${p.order}`,
               name: p._id,
