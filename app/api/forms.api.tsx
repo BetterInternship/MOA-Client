@@ -22,16 +22,7 @@ export const getFormFields = async (name: string) => {
 export type Party = "student" | "entity" | "student-guardian" | "university";
 
 export type ApproveSignatoryRequest = {
-  pendingDocumentId: string;
-  signatories: {
-    name: string;
-    title: string;
-    party: string;
-    status?: string;
-    email?: string;
-    honorific?: string;
-  }[];
-  party: Party;
+  pendingFormId: string;
   values?: Record<string, string>;
 };
 

@@ -3,29 +3,22 @@
 import React, { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, Info } from "lucide-react";
-import {
-  getFormFields,
-  approveSignatory,
-  getPendingInformation,
-  ApproveSignatoryRequest,
-} from "@/app/api/forms.api";
-import { FormRenderer } from "@/components/docs/forms/FormRenderer";
-import { DUMMY_FORM_METADATA, FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
+import Link from "next/link";
 import z from "zod";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
+import { FormRenderer } from "@/components/docs/forms/FormRenderer";
+import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import { useModal } from "@/app/providers/modal-provider";
 import { DocumentRenderer } from "@/components/docs/forms/previewer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
-import { useSignatoryAccountActions } from "@/app/api/signatory.api";
-import { getSignatorySelf } from "@/app/api/signatory.api";
-import Link from "next/link";
 import { useFormRendererContext } from "@/components/docs/forms/form.ctx";
-
-type Audience = "entity" | "student-guardian" | "university";
-type Party = "entity" | "student-guardian" | "university" | "";
-type Role = "entity" | "student-guardian" | "university" | "";
+import { getClientAudit } from "@/lib/audit";
+import { useSignatoryAccountActions } from "@/app/api/signatory.api";
+import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 
 const Page = () => {
   return (
@@ -40,6 +33,7 @@ function PageContent() {
   const router = useRouter();
   // ! WARNING, FACTOR THIS OUT: this allows editing form, and can be an exploit in the future
   const form = useFormRendererContext();
+  const profile = useSignatoryProfile();
   const { openModal, closeModal } = useModal();
   const { update } = useSignatoryAccountActions();
 
@@ -47,34 +41,23 @@ function PageContent() {
   const isMobile = useIsMobile();
   const [mobileStage, setMobileStage] = useState<"preview" | "form" | "confirm">("preview");
   const [lastFlatValues, setLastFlatValues] = useState<Record<string, string> | null>(null);
-
-  // URL params
-  const audienceParam = (params.get("for") || "entity").trim() as Audience;
-  const { party } = mapAudienceToRoleAndParty(audienceParam);
-
   const formName = (params.get("form") || "").trim();
-  const pendingDocumentId = (params.get("pending") || "").trim();
+  const formProcessId = (params.get("pending") || "").trim();
 
   // Optional header bits
   const studentName = params.get("student") || "The student";
 
   // Pending document preview
   const { data: pendingRes } = useQuery({
-    queryKey: ["pending-info", pendingDocumentId],
-    queryFn: () => getPendingInformation(pendingDocumentId),
+    queryKey: ["pending-info", formProcessId],
+    queryFn: () => getPendingInformation(formProcessId),
     staleTime: 60_000,
-    enabled: !!pendingDocumentId,
-  });
-
-  const profile = useQuery({
-    queryKey: ["signatory-self"],
-    queryFn: async () => await getSignatorySelf(),
-    staleTime: 60_000,
+    enabled: !!formProcessId,
   });
 
   // Saved autofill
   const autofillValues = useMemo(() => {
-    const profileAutofill = profile.data?.autofill as Record<string, Record<string, string>>;
+    const profileAutofill = profile.autofill as Record<string, Record<string, string>>;
     if (!profileAutofill) return;
 
     // Destructure to isolate only shared fields or fields for that form
@@ -106,10 +89,10 @@ function PageContent() {
   // Fields
   const formVersion: number | undefined = formRes?.formVersion;
   const formMetadata: FormMetadata<any> | null = formRes?.formMetadata
-    ? new FormMetadata(DUMMY_FORM_METADATA ?? (formRes?.formMetadata as unknown as IFormMetadata))
+    ? new FormMetadata(formRes?.formMetadata as unknown as IFormMetadata)
     : null;
   const fields = formMetadata?.getFieldsForClientService() ?? [];
-  const blocks = formMetadata?.getAllBlocksForClientService() ?? [];
+  const blocks = formMetadata?.getBlocksForClientService() ?? [];
 
   // local form state
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
@@ -194,13 +177,10 @@ function PageContent() {
 
   async function submitWithAuthorization(flatValuesParam?: Record<string, string>) {
     const flatValues = flatValuesParam ?? lastFlatValues;
-    if (!formName || !pendingDocumentId || !party || !flatValues) return;
+    if (!formName || !formProcessId || !flatValues) return;
     try {
       setBusy(true);
-      const clientSigningInfo = getClientSigningInfo();
-
-      const signatories: Record<string, ApproveSignatoryRequest["signatories"]> = {};
-
+      const clientAudit = getClientAudit();
       const finalValues = flatValues ?? {};
       const internshipMoaFieldsToSave: Record<string, Record<string, string>> = {
         shared: {},
@@ -208,9 +188,6 @@ function PageContent() {
 
       // To save their autofill fields
       for (const field of fields) {
-        // ! put this back as well
-        // if (field.signing_party_id !== signingPartyId) continue;
-
         if (field.shared) {
           internshipMoaFieldsToSave.shared[field.field] = finalValues[field.field];
         } else {
@@ -226,17 +203,14 @@ function PageContent() {
         auto_form_permissions: {
           [formName]: {
             enabled: false,
-            party: party,
           },
         },
       });
 
       const payload = {
-        pendingDocumentId,
-        signatories: signatories[audienceParam],
-        party,
+        pendingFormId: formProcessId,
         values: flatValues,
-        clientSigningInfo,
+        clientSigningInfo: clientAudit,
       };
 
       const res = await approveSignatory(payload);
@@ -440,7 +414,7 @@ function PageContent() {
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => void handleAuthorizeChoice("no", flatValues ?? {})}
+                            onClick={() => void handleAuthorizeChoice(flatValues ?? {})}
                             className="w-full"
                           >
                             No, I’ll sign manually for now
@@ -448,7 +422,7 @@ function PageContent() {
 
                           <Button
                             type="button"
-                            onClick={() => void handleAuthorizeChoice("yes", flatValues ?? {})}
+                            onClick={() => void handleAuthorizeChoice(flatValues ?? {})}
                             className="w-full"
                           >
                             Yes, auto-fill & auto-sign
@@ -486,7 +460,7 @@ function PageContent() {
               ) : (
                 <div className="space-y-4">
                   <FormRenderer
-                    signingPartyId={party || "student"}
+                    signingPartyId={""}
                     fields={fields}
                     blocks={blocks}
                     values={values}
@@ -629,74 +603,6 @@ function SignAuthModalContent({
       </div>
     </div>
   );
-}
-
-// Helpers
-function mapAudienceToRoleAndParty(aud: Audience): { role: Role; party: Party } {
-  switch (aud) {
-    case "entity":
-      return { role: "entity", party: "entity" };
-    case "student-guardian":
-      return { role: "student-guardian", party: "student-guardian" };
-    case "university":
-      return { role: "university", party: "university" };
-    default:
-      return { role: "", party: "" };
-  }
-}
-
-function getClientSigningInfo() {
-  if (typeof window === "undefined") return {};
-  const nav = typeof navigator !== "undefined" ? navigator : ({} as Navigator);
-  const scr = typeof screen !== "undefined" ? screen : ({} as Screen);
-
-  let webglVendor: string | undefined;
-  let webglRenderer: string | undefined;
-  try {
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-    if (gl) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const dbgInfo = gl.getExtension("WEBGL_debug_renderer_info");
-      if (dbgInfo) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        webglVendor = gl.getParameter(dbgInfo.UNMASKED_VENDOR_WEBGL);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        webglRenderer = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
-      }
-    }
-  } catch {
-    // ignore
-  }
-
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const info = {
-    timestamp: new Date().toISOString(),
-    timezone: tz,
-    tzOffsetMinutes: new Date().getTimezoneOffset(),
-    languages: (nav.languages || []).slice(0, 5),
-    userAgent: nav.userAgent,
-    platform: nav.platform,
-    vendor: nav.vendor,
-    deviceMemory: (nav as any).deviceMemory ?? null,
-    hardwareConcurrency: nav.hardwareConcurrency ?? null,
-    doNotTrack: (nav as any).doNotTrack ?? null,
-    referrer: document.referrer || null,
-    viewport: {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio || 1,
-    },
-    screen: {
-      width: scr.width,
-      height: scr.height,
-      availWidth: scr.availWidth,
-      availHeight: scr.availHeight,
-      colorDepth: scr.colorDepth,
-    },
-    webgl: webglVendor || webglRenderer ? { vendor: webglVendor, renderer: webglRenderer } : null,
-  };
-  return info;
 }
 
 export default Page;
