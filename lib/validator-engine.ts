@@ -122,12 +122,15 @@ const RULE_DEFINITIONS: Record<
 
 /**
  * Get all available rules for the UI dropdown
+ * Excludes 'trim' since it's applied by default
  */
 export function getAvailableRules() {
-  return Object.entries(RULE_DEFINITIONS).map(([type, def]) => ({
-    type: type as ValidatorRuleType,
-    ...def,
-  }));
+  return Object.entries(RULE_DEFINITIONS)
+    .filter(([type]) => type !== "trim") // Hide trim - it's always applied
+    .map(([type, def]) => ({
+      type: type as ValidatorRuleType,
+      ...def,
+    }));
 }
 
 /**
@@ -254,9 +257,18 @@ function generatePreprocessedStringValidator(config: ValidatorConfig): string {
   // For non-number types, wrap in preprocess
   if (!zodCode.includes("z.number()")) {
     // Apply all validations to core string validator
-    const validationRules = config.rules.filter(
-      (r) => r.type !== "number" && r.type !== "enum" && r.type !== "array" && r.type !== "trim"
-    );
+    // Filter out invalid rules (those that need values but don't have them)
+    const validationRules = config.rules.filter((r) => {
+      if (r.type === "number" || r.type === "enum" || r.type === "array" || r.type === "trim") {
+        return false; // Skip these, handled elsewhere
+      }
+      // Skip rules that need values but don't have them
+      const def = getRuleDefinition(r.type);
+      if (def.needsValue && (!r.params?.value || r.params.value === "")) {
+        return false;
+      }
+      return true;
+    });
 
     // Add required error if needed
     if (config.rules.some((r) => r.type === "required")) {
@@ -282,9 +294,19 @@ function generatePreprocessedStringValidator(config: ValidatorConfig): string {
   }
 
   // For number types, don't wrap in preprocess
-  for (const rule of config.rules.filter(
-    (r) => r.type !== "enum" && r.type !== "array" && r.type !== "trim"
-  )) {
+  // Filter out invalid rules
+  const validNumberRules = config.rules.filter((r) => {
+    if (r.type === "enum" || r.type === "array" || r.type === "trim") {
+      return false;
+    }
+    const def = getRuleDefinition(r.type);
+    if (def.needsValue && (!r.params?.value || r.params.value === "")) {
+      return false;
+    }
+    return true;
+  });
+
+  for (const rule of validNumberRules) {
     zodCode += getRuleZodChain(rule);
   }
 
@@ -346,7 +368,7 @@ export function createValidatorRule(type: ValidatorRuleType): ValidatorRule {
   return {
     id: `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     type,
-    params: getRuleDefinition(type).needsValue ? { value: "" } : undefined,
+    params: {}, // Always initialize params, even for rules that don't need values
   };
 }
 
@@ -356,7 +378,7 @@ export function createValidatorRule(type: ValidatorRuleType): ValidatorRule {
 export function isRuleValid(rule: ValidatorRule): boolean {
   const def = getRuleDefinition(rule.type);
   if (!def.needsValue) return true;
-  return rule.params?.value !== undefined && rule.params.value !== "";
+  return rule.params?.value !== undefined && rule.params.value !== "" && rule.params.value !== null;
 }
 
 /**
@@ -421,14 +443,11 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
   // ===== Parse PREPROCESS wrapper =====
   // Extract the inner z.string() validator from preprocess
   let coreValidator = sanitized;
-  const preprocessMatch = sanitized.match(
-    /z\.preprocess\(\s*[\s\S]*?,\s*(z\.string\(\{[\s\S]*?\}?\)[\s\S]*?)\s*\)/
-  );
+  const preprocessMatch = sanitized.match(/z\.preprocess\(\s*[\s\S]*?,\s*(z\..*)\s*\)$/m);
   if (preprocessMatch) {
     // We found a preprocess wrapper, extract the core validator
     coreValidator = preprocessMatch[1];
-    // Mark that trim might be applied (preprocess often does trimming)
-    rules.push(createValidatorRule("trim"));
+    // Don't add trim rule to UI - it's always applied by default
   }
 
   // ===== Parse STRING validators =====
@@ -451,10 +470,10 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     rules.push(createValidatorRule("required"));
   }
 
-  // Trim
-  if (coreValidator.includes(".trim()") && !rules.some((r) => r.type === "trim")) {
-    rules.push(createValidatorRule("trim"));
-  }
+  // Don't add trim rule - it's always applied by default
+  // if (coreValidator.includes(".trim()") && !rules.some((r) => r.type === "trim")) {
+  //   rules.push(createValidatorRule("trim"));
+  // }
 
   // Min length/value with message
   const minMatch = coreValidator.match(/\.min\((\d+),\s*\{\s*message\s*:\s*"([^"]+)"\}/);

@@ -57,18 +57,22 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
 
   useEffect(() => {
     setEditedBlock(block);
-    // Reset validator config when block changes
-    if (block?.field_schema?.validator) {
-      setValidatorConfig(zodCodeToValidatorConfig(block.field_schema.validator));
-      setRawZodCode(block.field_schema.validator);
-    } else if (block?.phantom_field_schema?.validator) {
-      setValidatorConfig(zodCodeToValidatorConfig(block.phantom_field_schema.validator));
-      setRawZodCode(block.phantom_field_schema.validator);
-    } else {
+    // Only reset validator config if the validator code actually changed
+    // This prevents losing incomplete rules when we just sent the validator ourselves
+    const newValidator =
+      block?.field_schema?.validator || block?.phantom_field_schema?.validator || "";
+
+    // Only re-parse if validator changed and it's different from what we currently have
+    if (newValidator && newValidator !== rawZodCode) {
+      const parsedConfig = zodCodeToValidatorConfig(newValidator);
+      setValidatorConfig(parsedConfig);
+      setRawZodCode(newValidator);
+    } else if (!newValidator && rawZodCode !== "") {
+      // Validator was cleared
       setValidatorConfig({ rules: [] });
       setRawZodCode("");
     }
-  }, [block]);
+  }, [block?.field_schema?.validator, block?.phantom_field_schema?.validator]);
 
   if (!editedBlock) {
     return (

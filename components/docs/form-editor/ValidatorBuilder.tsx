@@ -198,8 +198,30 @@ function RuleCard({
   onRemove: () => void;
 }) {
   const definition = getRuleDefinition(rule.type);
+
+  // All useState hooks must be at the top level, before any conditionals
+  const optionsArray = Array.isArray(rule.params?.value) ? rule.params.value : [];
   const [localValue, setLocalValue] = useState(rule.params?.value || "");
   const [localMessage, setLocalMessage] = useState(rule.params?.message || "");
+  const [optionsText, setOptionsText] = useState(optionsArray.join("\n"));
+
+  // Sync local state when rule changes
+  useEffect(() => {
+    setLocalValue(rule.params?.value || "");
+    setLocalMessage(rule.params?.message || "");
+    const opts = Array.isArray(rule.params?.value) ? rule.params.value : [];
+    setOptionsText(opts.join("\n"));
+  }, [rule.params?.value, rule.params?.message]);
+
+  // Safety check - if no definition found, show error state (after hooks)
+  if (!definition) {
+    console.log("No definition - showing error");
+    return (
+      <div className="rounded border border-red-200 bg-red-50 p-2">
+        <div className="text-xs text-red-600">Unknown rule type: {rule.type}</div>
+      </div>
+    );
+  }
 
   const handleBlur = () => {
     // Only update parent when user is done editing (blur)
@@ -217,9 +239,7 @@ function RuleCard({
 
   // Special handling for enum/array options
   if (rule.type === "enum" || rule.type === "array") {
-    const optionsArray = Array.isArray(rule.params?.value) ? rule.params.value : [];
-    const [optionsText, setOptionsText] = useState(optionsArray.join("\n"));
-
+    console.log("Rendering enum/array card");
     const handleOptionsBlur = () => {
       const newOptions = optionsText
         .split("\n")
