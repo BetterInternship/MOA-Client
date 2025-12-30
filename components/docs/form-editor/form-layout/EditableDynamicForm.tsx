@@ -52,7 +52,23 @@ export const EditableDynamicForm = ({
   const [draggedFromPartyId, setDraggedFromPartyId] = useState<string | null>(null);
 
   useEffect(() => {
-    setBlocks(initialBlocks);
+    // Only reset blocks if the structure fundamentally changed (different IDs)
+    // This prevents losing local updates that haven't been synced back yet
+    const initialBlockIds = initialBlocks.map((b) => b._id).join(",");
+    const currentBlockIds = blocks.map((b) => b._id).join(",");
+    
+    if (initialBlockIds !== currentBlockIds) {
+      // Block structure changed, reset
+      setBlocks(initialBlocks);
+    } else {
+      // Structure is the same, but update each block's content to latest from parent
+      // This ensures we get parent updates while preserving local state
+      const updatedBlocks = blocks.map((block) => {
+        const parentBlock = initialBlocks.find((b) => b._id === block._id);
+        return parentBlock || block;
+      });
+      setBlocks(updatedBlocks);
+    }
   }, [initialBlocks]);
 
   const handleDragStart = useCallback((index: number, partyId?: string) => {

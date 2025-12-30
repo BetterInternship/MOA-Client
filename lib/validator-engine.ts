@@ -345,7 +345,8 @@ function getRuleZodChain(rule: ValidatorRule): string {
     case "regex":
       const pattern = rule.params?.value || "";
       const flags = rule.params?.flags || "";
-      const flagsStr = flags ? `/${flags}` : "";
+      // Flags are appended directly after the closing /, e.g., /pattern/u not /pattern//u
+      const flagsStr = flags || "";
       return `.regex(/${pattern}/${flagsStr}${messageObj})`;
     case "email":
       return `.email()`;
@@ -391,7 +392,11 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
   }
 
   const rules: ValidatorRule[] = [];
-  const sanitized = zodCode.trim();
+  // Normalize whitespace: collapse to single spaces, but preserve structure
+  const sanitized = zodCode
+    .replace(/\n\s*/g, " ") // Replace newlines with space
+    .replace(/\s+/g, " ") // Collapse multiple spaces
+    .trim();
 
   // ===== Parse ENUM =====
   const enumMatch = sanitized.match(/z\.enum\(\s*\[([^\]]+)\]\s*,\s*\{message\s*:\s*"([^"]+)"\}/);
@@ -498,7 +503,17 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
   }
 
   // Regex with message
-  const regexMatch = coreValidator.match(/\.regex\(\s*\/([^/]+)\/([gimuy]*),\s*"([^"]+)"\s*\)/);
+  // Handles both formats:
+  // .regex(/pattern/flags, { message: "..." })
+  // .regex(/pattern/flags, "message")
+  let regexMatch = coreValidator.match(
+    /\.regex\(\s*\/(.*?)\/([gimuy]*),?\s*\{?\s*message\s*:\s*"([^"]+)"\s*\}?\s*\)/
+  );
+  if (!regexMatch) {
+    // Try the simpler format with message as direct string
+    regexMatch = coreValidator.match(/\.regex\(\s*\/(.*?)\/([gimuy]*),?\s*"([^"]+)"\s*\)/);
+  }
+
   if (regexMatch) {
     const rule = createValidatorRule("regex");
     rule.params = {
