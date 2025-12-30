@@ -40,6 +40,12 @@ interface BlockRendererOptions {
 
   /** Index of selected block (for visual feedback) */
   selectedIndex?: number | null;
+
+  /** Set of selected block IDs for mass selection */
+  selectedBlockIds?: Set<string>;
+
+  /** Handler for toggling block selection */
+  onBlockToggle?: (blockId: string) => void;
 }
 
 interface BlockFieldProps {
@@ -72,6 +78,8 @@ export const renderBlock = (
     draggedIndex,
     onBlockClick,
     selectedIndex,
+    selectedBlockIds,
+    onBlockToggle,
   } = options;
 
   const { values, onChange, errors = {}, onBlurValidate } = fieldProps;
@@ -109,19 +117,30 @@ export const renderBlock = (
         </h2>
       );
     }
+    const isChecked = block._id ? selectedBlockIds?.has(block._id) : false;
+    const inSelectMode = selectedBlockIds && selectedBlockIds.size > 0;
     return (
-      <div
-        key={blockId}
-        className={`${baseClasses} ${dragClasses}`}
-        {...draggableProps}
-        onClick={() => onBlockClick?.(blockIndex)}
-      >
-        {editorMode && (
+      <div key={blockId} className={`${baseClasses} ${dragClasses}`} {...draggableProps}>
+        {editorMode && inSelectMode && block._id && (
+          <div className="flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={isChecked || false}
+              onChange={() => onBlockToggle?.(block._id!)}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 cursor-pointer"
+            />
+          </div>
+        )}
+        {editorMode && !inSelectMode && (
           <div className="flex-shrink-0">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
           </div>
         )}
-        <div className={editorMode ? "flex-1" : "w-full"}>
+        <div
+          className={editorMode ? "flex-1" : "w-full"}
+          onClick={() => onBlockClick?.(blockIndex)}
+        >
           <h2 className="text-lg font-bold text-slate-800">{block.text_content}</h2>
         </div>
       </div>
@@ -137,19 +156,30 @@ export const renderBlock = (
         </p>
       );
     }
+    const isChecked = block._id ? selectedBlockIds?.has(block._id) : false;
+    const inSelectMode = selectedBlockIds && selectedBlockIds.size > 0;
     return (
-      <div
-        key={blockId}
-        className={`${baseClasses} ${dragClasses}`}
-        {...draggableProps}
-        onClick={() => onBlockClick?.(blockIndex)}
-      >
-        {editorMode && (
+      <div key={blockId} className={`${baseClasses} ${dragClasses}`} {...draggableProps}>
+        {editorMode && inSelectMode && block._id && (
+          <div className="flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={isChecked || false}
+              onChange={() => onBlockToggle?.(block._id!)}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 cursor-pointer"
+            />
+          </div>
+        )}
+        {editorMode && !inSelectMode && (
           <div className="flex-shrink-0">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
           </div>
         )}
-        <div className={editorMode ? "flex-1" : "w-full"}>
+        <div
+          className={editorMode ? "flex-1" : "w-full"}
+          onClick={() => onBlockClick?.(blockIndex)}
+        >
           <p className="text-sm text-slate-700">{block.text_content}</p>
         </div>
       </div>
@@ -186,19 +216,32 @@ export const renderBlock = (
       return <div key={blockId}>{fieldContent}</div>;
     }
 
+    const isChecked = block._id ? selectedBlockIds?.has(block._id) : false;
+    const inSelectMode = selectedBlockIds && selectedBlockIds.size > 0;
     return (
-      <div
-        key={blockId}
-        className={`${baseClasses} ${dragClasses}`}
-        {...draggableProps}
-        onClick={() => onBlockClick?.(blockIndex)}
-      >
-        {editorMode && (
+      <div key={blockId} className={`${baseClasses} ${dragClasses}`} {...draggableProps}>
+        {editorMode && inSelectMode && block._id && (
+          <div className="flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={isChecked || false}
+              onChange={() => onBlockToggle?.(block._id!)}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 cursor-pointer"
+            />
+          </div>
+        )}
+        {editorMode && !inSelectMode && (
           <div className="flex-shrink-0">
             <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
           </div>
         )}
-        <div className={editorMode ? "flex-1" : "w-full"}>{fieldContent}</div>
+        <div
+          className={editorMode ? "flex-1" : "w-full"}
+          onClick={() => onBlockClick?.(blockIndex)}
+        >
+          {fieldContent}
+        </div>
       </div>
     );
   }
@@ -243,19 +286,32 @@ export const renderBlock = (
       return <div key={blockId}>{fieldContent}</div>;
     }
 
+    const isChecked = block._id ? selectedBlockIds?.has(block._id) : false;
+    const inSelectMode = selectedBlockIds && selectedBlockIds.size > 0;
     return (
-      <div
-        key={blockId}
-        className={`${baseClasses} ${phantomClasses}`}
-        {...draggableProps}
-        onClick={() => onBlockClick?.(blockIndex)}
-      >
-        {editorMode && (
+      <div key={blockId} className={`${baseClasses} ${phantomClasses}`} {...draggableProps}>
+        {editorMode && inSelectMode && block._id && (
           <div className="flex-shrink-0">
-            <GripVertical className="h-4 w-4 cursor-move text-amber-400" />
+            <input
+              type="checkbox"
+              checked={isChecked || false}
+              onChange={() => onBlockToggle?.(block._id!)}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 cursor-pointer"
+            />
           </div>
         )}
-        <div className={editorMode ? "flex-1" : "w-full"}>{fieldContent}</div>
+        {editorMode && !inSelectMode && (
+          <div className="flex-shrink-0">
+            <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
+          </div>
+        )}
+        <div
+          className={editorMode ? "flex-1" : "w-full"}
+          onClick={() => onBlockClick?.(blockIndex)}
+        >
+          {fieldContent}
+        </div>
       </div>
     );
   }

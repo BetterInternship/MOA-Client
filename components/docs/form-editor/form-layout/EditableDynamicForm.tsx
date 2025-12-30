@@ -3,9 +3,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
-import { Plus, Copy, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Copy, Trash2, ArrowUp, ArrowDown, CheckSquare, Square } from "lucide-react";
 import { renderBlocks } from "@/lib/block-renderer";
-import { Card } from "@/components/ui/card";
 import { BlockEditor } from "./BlockEditor";
 
 interface EditableDynamicFormProps {
@@ -50,13 +49,14 @@ export const EditableDynamicForm = ({
   const [blocks, setBlocks] = useState<IFormBlock[]>(initialBlocks);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [draggedFromPartyId, setDraggedFromPartyId] = useState<string | null>(null);
+  const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Only reset blocks if the structure fundamentally changed (different IDs)
     // This prevents losing local updates that haven't been synced back yet
     const initialBlockIds = initialBlocks.map((b) => b._id).join(",");
     const currentBlockIds = blocks.map((b) => b._id).join(",");
-    
+
     if (initialBlockIds !== currentBlockIds) {
       // Block structure changed, reset
       setBlocks(initialBlocks);
@@ -156,6 +156,52 @@ export const EditableDynamicForm = ({
     },
     [blocks, selectedBlockIndex, onBlockSelect, onBlockUpdate]
   );
+
+  const handleSelectBlock = useCallback(
+    (blockId: string) => {
+      const newSelected = new Set(selectedBlockIds);
+      if (newSelected.has(blockId)) {
+        newSelected.delete(blockId);
+      } else {
+        newSelected.add(blockId);
+      }
+      setSelectedBlockIds(newSelected);
+    },
+    [selectedBlockIds]
+  );
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedBlockIds.size === blocks.length) {
+      setSelectedBlockIds(new Set());
+    } else {
+      setSelectedBlockIds(new Set(blocks.map((b) => b._id).filter((id): id is string => !!id)));
+    }
+  }, [blocks, selectedBlockIds]);
+
+  const handleSelectByType = useCallback(
+    (blockType: string) => {
+      const blockIdsOfType = blocks
+        .filter((b) => b.block_type === blockType)
+        .map((b) => b._id)
+        .filter((id): id is string => !!id);
+      setSelectedBlockIds(new Set(blockIdsOfType));
+    },
+    [blocks]
+  );
+
+  const handleBulkAssignParty = useCallback(
+    (partyId: string) => {
+      const newBlocks = blocks.map((block) =>
+        block._id && selectedBlockIds.has(block._id)
+          ? { ...block, signing_party_id: partyId }
+          : block
+      );
+      setBlocks(newBlocks);
+      onBlocksReorder?.(newBlocks);
+      setSelectedBlockIds(new Set());
+    },
+    [blocks, selectedBlockIds, onBlocksReorder]
+  );
   // Group blocks by party if signingParties is provided
   const getGroupedBlocks = () => {
     if (signingParties.length === 0) {
@@ -227,6 +273,8 @@ export const EditableDynamicForm = ({
                       onBlockSelect?.(groupedBlocks.unassigned[index], blockIndex);
                     },
                     selectedIndex: selectedBlockIndex,
+                    selectedBlockIds,
+                    onBlockToggle: handleSelectBlock,
                   }
                 )}
               </div>
@@ -291,6 +339,8 @@ export const EditableDynamicForm = ({
                         onBlockSelect?.(manualBlocks[index], blockIndex);
                       },
                       selectedIndex: selectedBlockIndex,
+                      selectedBlockIds,
+                      onBlockToggle: handleSelectBlock,
                     }
                   )}
                 </div>
@@ -328,6 +378,8 @@ export const EditableDynamicForm = ({
                           onBlockSelect?.(autoBlocks[index], blockIndex);
                         },
                         selectedIndex: selectedBlockIndex,
+                        selectedBlockIds,
+                        onBlockToggle: handleSelectBlock,
                       }
                     )}
                   </div>
@@ -346,7 +398,27 @@ export const EditableDynamicForm = ({
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Editor toolbar */}
         <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
-          <div>
+          <div className="flex items-center gap-3">
+            {blocks.length > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleSelectAll}
+                className="gap-1.5 text-xs"
+              >
+                {selectedBlockIds.size === blocks.length ? (
+                  <>
+                    <CheckSquare className="h-4 w-4" />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <Square className="h-4 w-4" />
+                    Select All
+                  </>
+                )}
+              </Button>
+            )}
             {onAddBlock && (
               <Button
                 onClick={onAddBlock}
@@ -411,6 +483,38 @@ export const EditableDynamicForm = ({
           </div>
         </div>
 
+        {/* Bulk Actions Panel */}
+        {selectedBlockIds.size > 0 && (
+          <div className="flex items-center gap-3 border-b border-amber-300 bg-amber-50 px-7 py-2">
+            <span className="text-xs font-medium text-amber-900">
+              {selectedBlockIds.size} selected
+            </span>
+            {signingParties.length > 0 && (
+              <>
+                <span className="text-xs text-amber-400">|</span>
+                <label className="text-xs font-medium text-amber-900">Assign to:</label>
+                <select
+                  onChange={(e) => {
+                    if (e.target.value !== "") {
+                      handleBulkAssignParty(e.target.value);
+                    }
+                  }}
+                  className="h-7 rounded border border-amber-300 bg-white px-2 text-xs"
+                  defaultValue=""
+                >
+                  <option value="">-- Party --</option>
+                  <option value="">Unassign</option>
+                  {signingParties.map((party) => (
+                    <option key={party._id} value={party._id}>
+                      {party._id}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Form scrollable area */}
         <div className="flex-1 overflow-y-auto bg-white">
           <div className="space-y-4 p-4 pb-12">
@@ -433,6 +537,8 @@ export const EditableDynamicForm = ({
                     draggedIndex,
                     onBlockClick: (index) => onBlockSelect?.(blocks[index], index),
                     selectedIndex: selectedBlockIndex,
+                    selectedBlockIds,
+                    onBlockToggle: handleSelectBlock,
                   }
                 )}
           </div>
