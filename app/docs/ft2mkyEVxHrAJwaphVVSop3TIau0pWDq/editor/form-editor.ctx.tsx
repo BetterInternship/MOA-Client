@@ -2,7 +2,7 @@
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
  * @ Modified time: 2025-12-21 20:36:55
- * @ Modified time: 2025-12-30 11:46:37
+ * @ Modified time: 2026-01-01 00:23:19
  *
  * We can move this out later on so it becomes reusable in other places.
  * This allows the consumer to use information about a form within the component.
@@ -176,10 +176,11 @@ export const FormEditorContextProvider = ({ children }: { children: React.ReactN
   const refreshParams = (fields: IFormField[]) => {
     // Convert fields to blocks for FormMetadata
     const blocks = fields.map((field, index) => ({
+      _id: "",
       block_type: "form_field" as const,
       order: index,
       field_schema: field,
-      signing_party_id: "party-1", // Default party
+      signing_party_id: "initiator", // Default party
     }));
     const fm = new FormMetadata({ ...initialFormMetadata, schema: { blocks } });
     setParams({

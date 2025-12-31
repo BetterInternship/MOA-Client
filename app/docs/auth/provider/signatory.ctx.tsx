@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-30 07:06:04
- * @ Modified time: 2025-12-31 22:19:48
+ * @ Modified time: 2026-01-01 00:27:18
  * @ Description:
  *
  * Makes it easier to manage signatory account state across files.
@@ -42,7 +42,7 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
         loading: signatoryProfile.isLoading,
       });
     }
-  }, [signatoryProfile]);
+  }, [signatoryProfile.data]);
 
   return (
     <SignatoryProfileContext.Provider value={signatoryContext}>

@@ -41,6 +41,7 @@ export function LinkLogin() {
         // Session established successfully, redirect to sign page
         setStatus("ok");
         setMessage("Session established. Redirecting...");
+        router.push(res.redirect);
       } catch (e) {
         setStatus("error");
         setMessage(e instanceof Error ? e.message : "Failed to establish session.");

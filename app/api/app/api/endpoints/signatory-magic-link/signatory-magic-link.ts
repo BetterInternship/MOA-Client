@@ -20,7 +20,11 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import type { SignatoryMagicLinkControllerMagicLinkLoginParams } from "../../models";
+import type {
+  ErrorResponse,
+  MagicLinkResponse,
+  SignatoryMagicLinkControllerMagicLinkLoginParams,
+} from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
@@ -28,7 +32,7 @@ export const signatoryMagicLinkControllerMagicLinkLogin = (
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<null>({
+  return preconfiguredAxiosFunction<MagicLinkResponse>({
     url: `/api/docs/auth/magic-link`,
     method: "GET",
     params,
@@ -44,7 +48,7 @@ export const getSignatoryMagicLinkControllerMagicLinkLoginQueryKey = (
 
 export const getSignatoryMagicLinkControllerMagicLinkLoginQueryOptions = <
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   options?: {
@@ -76,11 +80,11 @@ export const getSignatoryMagicLinkControllerMagicLinkLoginQueryOptions = <
 export type SignatoryMagicLinkControllerMagicLinkLoginQueryResult = NonNullable<
   Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>
 >;
-export type SignatoryMagicLinkControllerMagicLinkLoginQueryError = unknown;
+export type SignatoryMagicLinkControllerMagicLinkLoginQueryError = ErrorResponse;
 
 export function useSignatoryMagicLinkControllerMagicLinkLogin<
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params: undefined | SignatoryMagicLinkControllerMagicLinkLoginParams,
   options: {
@@ -104,7 +108,7 @@ export function useSignatoryMagicLinkControllerMagicLinkLogin<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSignatoryMagicLinkControllerMagicLinkLogin<
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   options?: {
@@ -128,7 +132,7 @@ export function useSignatoryMagicLinkControllerMagicLinkLogin<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSignatoryMagicLinkControllerMagicLinkLogin<
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   options?: {
@@ -145,7 +149,7 @@ export function useSignatoryMagicLinkControllerMagicLinkLogin<
 
 export function useSignatoryMagicLinkControllerMagicLinkLogin<
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   options?: {
@@ -172,7 +176,7 @@ export function useSignatoryMagicLinkControllerMagicLinkLogin<
 
 export const getSignatoryMagicLinkControllerMagicLinkLoginSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   options?: {
@@ -204,11 +208,11 @@ export const getSignatoryMagicLinkControllerMagicLinkLoginSuspenseQueryOptions =
 export type SignatoryMagicLinkControllerMagicLinkLoginSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>
 >;
-export type SignatoryMagicLinkControllerMagicLinkLoginSuspenseQueryError = unknown;
+export type SignatoryMagicLinkControllerMagicLinkLoginSuspenseQueryError = ErrorResponse;
 
 export function useSignatoryMagicLinkControllerMagicLinkLoginSuspense<
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params: undefined | SignatoryMagicLinkControllerMagicLinkLoginParams,
   options: {
@@ -224,7 +228,7 @@ export function useSignatoryMagicLinkControllerMagicLinkLoginSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSignatoryMagicLinkControllerMagicLinkLoginSuspense<
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   options?: {
@@ -240,7 +244,7 @@ export function useSignatoryMagicLinkControllerMagicLinkLoginSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useSignatoryMagicLinkControllerMagicLinkLoginSuspense<
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   options?: {
@@ -257,7 +261,7 @@ export function useSignatoryMagicLinkControllerMagicLinkLoginSuspense<
 
 export function useSignatoryMagicLinkControllerMagicLinkLoginSuspense<
   TData = Awaited<ReturnType<typeof signatoryMagicLinkControllerMagicLinkLogin>>,
-  TError = unknown,
+  TError = ErrorResponse,
 >(
   params?: SignatoryMagicLinkControllerMagicLinkLoginParams,
   options?: {
