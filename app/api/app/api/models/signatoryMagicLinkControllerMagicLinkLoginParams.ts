@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface RegisterEntityDto {
-  [key: string]: unknown;
-}
+export type SignatoryMagicLinkControllerMagicLinkLoginParams = {
+  id: string;
+  hash: string;
+  redirect: string;
+};

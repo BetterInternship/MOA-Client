@@ -55,6 +55,7 @@ function PageContent() {
 
   // Saved autofill
   const autofillValues = useMemo(() => {
+    // ! fix this, right now self() only returns jwt payload
     const profileAutofill = profile.autofill as Record<string, Record<string, string>>;
     if (!profileAutofill) return;
 

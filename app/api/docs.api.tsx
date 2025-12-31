@@ -1,5 +1,5 @@
-import { docsLinkLoginControllerLinkLogin } from "./app/api/endpoints/docs-link-login/docs-link-login";
 import { docsControllerGetEntityForms } from "./app/api/endpoints/docs/docs";
+import { signatoryMagicLinkControllerMagicLinkLogin } from "./app/api/endpoints/signatory-magic-link/signatory-magic-link";
 import {
   authControllerSignatoryLoginRequest,
   authControllerSignatoryLoginVerify,
@@ -19,25 +19,8 @@ export const getSignatorySelf = async () => {
   return await authControllerSignatorySelf();
 };
 
-export const autoLogin = async (params: {
-  email: string;
-  id?: string;
-  name?: string;
-  form?: string;
-  aud: string;
-  pending?: string;
-  student?: string;
-}) => {
-  const { id, email, name, form, aud, pending, student } = params;
-  return await docsLinkLoginControllerLinkLogin({
-    id: id!,
-    email,
-    name: name!,
-    form: form!,
-    for: aud,
-    pending: pending!,
-    student: student!,
-  });
+export const magicLinkLogin = async (params: { id: string; hash: string; redirect: string }) => {
+  return await signatoryMagicLinkControllerMagicLinkLogin(params);
 };
 
 export const logoutSignatory = async () => {
@@ -45,5 +28,6 @@ export const logoutSignatory = async () => {
 };
 
 export const getViewableForms = async () => {
+  // ! refactor, this route doesn't exist anymore
   return await docsControllerGetEntityForms();
 };

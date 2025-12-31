@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { autoLogin } from "@/app/api/docs.api";
+import { magicLinkLogin } from "@/app/api/docs.api";
 import { Suspense } from "react";
 
 export default function LinkLoginPage() {
@@ -15,35 +15,24 @@ export default function LinkLoginPage() {
 export function LinkLogin() {
   const search = useSearchParams();
   const router = useRouter();
-  const [status, setStatus] = useState<"pending" | "ok" | "error">("pending");
+  const [status, setStatus] = useState<string>();
   const [message, setMessage] = useState<string>("Establishing secure session...");
 
   useEffect(() => {
     const id = search.get("id") || "";
-    const email = search.get("email") || "";
-    const form = search.get("form") || "";
-    const aud = search.get("for");
-    const pending = search.get("pending") || "";
-    const student = search.get("student") || "";
+    const hash = search.get("hash") || "";
+    const redirect = search.get("redirect") || "";
 
-    if (!email) {
+    if (!id || !hash) {
       setStatus("error");
-      setMessage("Missing email parameter.");
+      setMessage("Missing parameters.");
       return;
     }
 
     const attempt = async () => {
       try {
         // Use the generated API client which sets cookie properly
-        const res = await autoLogin({
-          email,
-          id: id,
-          name: "",
-          form,
-          aud: aud!,
-          pending,
-          student,
-        });
+        const res = await magicLinkLogin({ id, hash, redirect });
 
         if (!res) {
           throw new Error("Failed to establish session");
@@ -52,7 +41,6 @@ export function LinkLogin() {
         // Session established successfully, redirect to sign page
         setStatus("ok");
         setMessage("Session established. Redirecting...");
-        router.push(res.url);
       } catch (e) {
         setStatus("error");
         setMessage(e instanceof Error ? e.message : "Failed to establish session.");

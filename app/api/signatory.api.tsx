@@ -1,12 +1,12 @@
-import { signatoryAccountsControllerUpdateSelf } from "./app/api/endpoints/signatory-accounts/signatory-accounts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { signatoryControllerUpdateSelf } from "./app/api/endpoints/signatory/signatory";
 
 export const useSignatoryAccountActions = () => {
   const queryClient = useQueryClient();
 
   const actions = {
     update: useMutation({
-      mutationFn: signatoryAccountsControllerUpdateSelf,
+      mutationFn: signatoryControllerUpdateSelf,
       onSettled: () => queryClient.invalidateQueries({ queryKey: ["my-profile"] }),
     }),
   };
