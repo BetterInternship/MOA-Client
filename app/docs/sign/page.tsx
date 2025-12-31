@@ -18,6 +18,7 @@ import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ct
 import { getClientAudit } from "@/lib/audit";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
+import { useMyAutofill } from "@/hooks/use-my-autofill";
 
 const Page = () => {
   return (
@@ -32,6 +33,7 @@ function PageContent() {
   const router = useRouter();
   const form = useFormRendererContext();
   const profile = useSignatoryProfile();
+  const autofillValues = useMyAutofill();
   const { openModal, closeModal } = useModal();
   const { update } = useSignatoryAccountActions();
 
@@ -39,11 +41,11 @@ function PageContent() {
   const isMobile = useIsMobile();
   const [mobileStage, setMobileStage] = useState<"preview" | "form" | "confirm">("preview");
   const [lastFlatValues, setLastFlatValues] = useState<Record<string, string> | null>(null);
-  const formName = (params.get("form") || "").trim();
-  const formProcessId = (params.get("pending") || "").trim();
+  const formProcessId = (params.get("form-process-id") || "").trim();
 
-  // Optional header bits
-  const studentName = params.get("student") || "The student";
+  // ! Pull these info from the form process, which you should request directly from the server on page mount
+  const formName = "Form";
+  const studentName = "The student";
 
   // Pending document preview
   const { data: pendingRes } = useQuery({
@@ -52,21 +54,6 @@ function PageContent() {
     staleTime: 60_000,
     enabled: !!formProcessId,
   });
-
-  // Saved autofill
-  const autofillValues = useMemo(() => {
-    const profileAutofill = profile.autofill;
-    if (!profileAutofill) return;
-
-    // Destructure to isolate only shared fields or fields for that form
-    const autofillValues = {
-      ...(profileAutofill.base ?? {}),
-      ...profileAutofill.shared,
-      ...(profileAutofill[formName] ?? {}),
-    };
-
-    return autofillValues;
-  }, [profile, formName]) as Record<string, string>;
 
   const pendingInfo = pendingRes?.pendingInformation;
   const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url as string;
@@ -96,6 +83,13 @@ function PageContent() {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
   };
 
+  // !
+  // !
+  // !
+  // ! COPY OVER COMPONENTS AND UTILS FROM BI CLIENT FOR FORM FILLING AND SHIT
+  // !
+  // !
+  // !
   const validateAndCollect = () => {
     const nextErrors: Record<string, string> = {};
     const flatValues: Record<string, string> = {};
