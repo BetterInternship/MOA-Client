@@ -9,13 +9,12 @@ import z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getFormFields, approveSignatory, getPendingInformation } from "@/app/api/forms.api";
+import { approveSignatory, getPendingInformation } from "@/app/api/forms.api";
 import { FormRenderer } from "@/components/docs/forms/FormRenderer";
-import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import { useModal } from "@/app/providers/modal-provider";
 import { DocumentRenderer } from "@/components/docs/forms/previewer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useFormRendererContext } from "@/components/docs/forms/form.ctx";
+import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
 import { getClientAudit } from "@/lib/audit";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
@@ -31,7 +30,6 @@ const Page = () => {
 function PageContent() {
   const params = useSearchParams();
   const router = useRouter();
-  // ! WARNING, FACTOR THIS OUT: this allows editing form, and can be an exploit in the future
   const form = useFormRendererContext();
   const profile = useSignatoryProfile();
   const { openModal, closeModal } = useModal();
@@ -74,31 +72,16 @@ function PageContent() {
   const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url as string;
   const audienceAllowed = true;
 
-  // Fetch form fields schema from API
-  const {
-    data: formRes,
-    isLoading: loadingForm,
-    error: formErr,
-  } = useQuery({
-    queryKey: ["form-fields", formName],
-    queryFn: () => getFormFields(formName),
-    enabled: !!formName,
-    staleTime: 1000,
-  });
-
   // Fields
-  const formVersion: number | undefined = formRes?.formVersion;
-  const formMetadata: FormMetadata<any> | null = formRes?.formMetadata
-    ? new FormMetadata(formRes?.formMetadata as unknown as IFormMetadata)
-    : null;
-  const fields = formMetadata?.getFieldsForClientService() ?? [];
-  const blocks = formMetadata?.getBlocksForClientService() ?? [];
+  const fields = form.formMetadata?.getFieldsForClientService() ?? [];
+  const blocks = form.formMetadata?.getBlocksForClientService() ?? [];
 
   // local form state
   const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [loadingForm, setLoadingForm] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -333,11 +316,8 @@ function PageContent() {
 
   // Update form data if ever
   useEffect(() => {
-    if (!!formName && (!!formVersion || formVersion === 0)) {
-      form.updateFormName(formName);
-      form.updateFormVersion(formVersion);
-    }
-  }, [formName, formVersion, formRes]);
+    if (formName) form.updateFormName(formName);
+  }, [formName]);
 
   return (
     <div className="relative mx-auto flex h-[100%] max-h-[100%] flex-col items-center space-y-4 overflow-y-hidden px-4 py-8">
@@ -448,8 +428,6 @@ function PageContent() {
                     Loading form…
                   </span>
                 </div>
-              ) : formErr ? (
-                <div className="text-sm text-rose-600">Failed to load fields.</div>
               ) : !audienceAllowed ? (
                 <>
                   This form is not available. If you believe this is an error, please contact

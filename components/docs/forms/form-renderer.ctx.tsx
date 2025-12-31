@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2025-12-30 11:49:08
+ * @ Modified time: 2025-12-31 18:58:54
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -10,30 +10,32 @@
  */
 
 import {
-  formsControllerGetRegistryFormDocument,
-  formsControllerGetRegistryFormMetadata,
-} from "@/app/api";
-import {
   ClientField,
   ClientPhantomField,
   ServerField,
   FormMetadata,
   IFormMetadata,
   IFormParameters,
+  ClientBlock,
 } from "@betterinternship/core/forms";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+  formsControllerGetLatestFormDocumentAndMetadata,
+  useFormsControllerGetLatestFormDocumentAndMetadata,
+} from "@/app/api";
 
 // ? Current schema version, update if needed; tells us if out of date
 export const SCHEMA_VERSION = 1;
 
 // Context interface
-export interface IFormRendererContext {
+export interface IFormRendererContext<T extends any[]> {
   formName: string;
   formVersion: number;
-  formMetadata: FormMetadata<[]>;
+  formMetadata: FormMetadata<T>;
   document: IDocument;
-  fields: (ClientField<[]> | ClientPhantomField<[]>)[];
+  fields: (ClientField<T> | ClientPhantomField<T>)[];
+  blocks: ClientBlock<T>[];
   params: IFormParameters;
   keyedFields: (ServerField & { _id: string })[];
   previews: Record<number, React.ReactNode[]>;
@@ -43,7 +45,6 @@ export interface IFormRendererContext {
 
   // Setters
   updateFormName: (newFormName: string) => void;
-  updateFormVersion: (newFormVersion: number) => void;
   refreshPreviews: () => void;
 }
 
@@ -53,7 +54,9 @@ interface IDocument {
 }
 
 // Context defs
-const FormRendererContext = createContext<IFormRendererContext>({} as IFormRendererContext);
+const FormRendererContext = createContext<IFormRendererContext<[any]>>(
+  {} as IFormRendererContext<[any]>
+);
 export const useFormRendererContext = () => useContext(FormRendererContext);
 
 /**
@@ -63,23 +66,6 @@ export const useFormRendererContext = () => useContext(FormRendererContext);
  * @provider
  */
 export const FormRendererContextProvider = ({ children }: { children: React.ReactNode }) => {
-  // Define state here
-  const [documentName, setDocumentName] = useState<string>("");
-  const [documentUrl, setDocumentUrl] = useState<string>("");
-  const [formName, setFormName] = useState<string>("");
-  const [formVersion, setFormVersion] = useState<number>(0);
-  const [previewFields, setPreviewFields] = useState<ServerField[]>([]);
-  const [fields, setFields] = useState<ClientField<[]>[]>([]);
-  const [params, setParams] = useState<IFormParameters>({});
-  const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
-  const [selectedPreviewId, setSelectedPreviewId] = useState<string>("");
-
-  // Used in the ui for selecting / distinguishing fields
-  const keyedFields = useMemo(
-    () => previewFields.map((field) => ({ _id: Math.random().toString(), ...field })),
-    [previewFields]
-  );
-
   // Default form metadata
   const initialFormMetadata: IFormMetadata = {
     name: "",
@@ -89,8 +75,29 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
     subscribers: [],
     signing_parties: [],
   };
-  const [formMetadata, setFormMetadata] = useState<FormMetadata<[]>>(
+
+  const [formMetadata, setFormMetadata] = useState<FormMetadata<[any]>>(
     new FormMetadata(initialFormMetadata)
+  );
+  const [documentName, setDocumentName] = useState<string>("");
+  const [documentUrl, setDocumentUrl] = useState<string>("");
+  const [formName, setFormName] = useState<string>("");
+  const [formVersion, setFormVersion] = useState<number>(0);
+  const [previewFields, setPreviewFields] = useState<ServerField[]>([]);
+  const [blocks, setBlocks] = useState<ClientBlock<[any]>[]>([]);
+  const [fields, setFields] = useState<ClientField<[any]>[]>([]);
+  const [params, setParams] = useState<IFormParameters>({});
+  const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
+  const [selectedPreviewId, setSelectedPreviewId] = useState<string>("");
+
+  // Used in the ui for selecting / distinguishing fields
+  const keyedFields = useMemo(
+    () =>
+      previewFields.map((field) => ({
+        _id: Math.random().toString(),
+        ...field,
+      })),
+    [previewFields]
   );
 
   // Loading states
@@ -124,50 +131,32 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
   useEffect(() => {
     if (!formName || (!formVersion && formVersion !== 0)) return;
     const controller = new AbortController();
-    const payload = {
-      name: formName,
-      version: formVersion,
-    };
 
-    const promises = [
-      // Promise for pulling metadata
-      formsControllerGetRegistryFormMetadata(payload, controller.signal).then(
-        ({ formMetadata }) => {
-          const fm = new FormMetadata(formMetadata as unknown as IFormMetadata);
-          setFields(fm.getFieldsForClientService());
-          setPreviewFields(fm.getFieldsForSigningService());
-          setDocumentName(formMetadata.name);
-          setFormMetadata(formMetadata as unknown as FormMetadata<[]>);
-          setParams(
-            fm.inferParams().reduce((acc, cur) => {
-              acc[cur] = "";
-              return acc;
-            }, {} as IFormParameters)
-          );
-        }
-      ),
+    formsControllerGetLatestFormDocumentAndMetadata({ name: formName })
+      .then((form) => {
+        const fm = new FormMetadata(form.formMetadata as unknown as IFormMetadata);
+        const newFormName = form.formMetadata.name;
+        const newFormVersion = form.formDocument.version;
 
-      // Promise for retrieving the document
-      formsControllerGetRegistryFormDocument(payload, controller.signal).then(
-        ({ formDocument }) => {
-          setDocumentUrl(formDocument);
-        }
-      ),
-    ];
-
-    setLoading(true);
-    let rejector: (reason?: any) => void;
-    void new Promise((resolve, reject) => {
-      rejector = reject;
-      void Promise.all(promises).then(resolve);
-    })
+        // Only update form if it's new
+        setFormMetadata(fm);
+        setFormName(newFormName);
+        setFormVersion(newFormVersion);
+        setDocumentName(form.formDocument.name);
+        setDocumentUrl(form.documentUrl);
+        setFields(fm.getFieldsForClientService("initiator"));
+        setBlocks(fm.getBlocksForClientService("initiator"));
+        setPreviewFields(fm.getFieldsForSigningService());
+      })
       .then(() => setLoading(false))
       .catch((e) => {
         alert(e);
         setLoading(false);
       });
 
-    return () => (controller.abort(), rejector?.("Rejecting request."));
+    setLoading(true);
+    console.log("UPDATING FORM", formName);
+    return () => controller.abort();
   }, [formName, formVersion]);
 
   // Clear fields on refresh?
@@ -187,11 +176,12 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
   }, [selectedPreviewId, keyedFields]);
 
   // The form context
-  const formContext: IFormRendererContext = {
+  const formContext: IFormRendererContext<[any]> = {
     formName,
     formVersion,
     formMetadata,
     fields,
+    blocks,
     params,
     keyedFields,
     previews,
@@ -200,7 +190,6 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
     setSelectedPreviewId: (id: string | null) => setSelectedPreviewId(id ?? ""),
     document: { name: documentName, url: documentUrl },
     updateFormName: (newFormName: string) => setFormName(newFormName),
-    updateFormVersion: (newFormVersion: number) => setFormVersion(newFormVersion),
     refreshPreviews: refreshPreviews,
   };
 
@@ -214,8 +203,9 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
  *
  * @component
  */
-const FieldPreview = ({
+export const FieldPreview = ({
   field,
+  value,
   x,
   y,
   w,
@@ -224,12 +214,13 @@ const FieldPreview = ({
   onClick,
 }: {
   field: string;
+  value?: string;
   x: number;
   y: number;
   w: number;
   h: number;
   selected: boolean;
-  onClick: () => void;
+  onClick?: () => void;
 }) => {
   return (
     <div
@@ -237,8 +228,8 @@ const FieldPreview = ({
         "absolute top-0 left-0 border-0!",
         selected ? "bg-supportive/50!" : "bg-warning/50!"
       )}
-      onClick={() => onClick()}
-      onMouseDown={onClick}
+      onClick={() => onClick?.()}
+      onMouseDown={() => onClick?.()}
       style={{
         userSelect: "auto",
         display: "inline-block",
@@ -251,7 +242,7 @@ const FieldPreview = ({
         flexShrink: "0",
       }}
     >
-      {field}
+      {value ?? field}
     </div>
   );
 };

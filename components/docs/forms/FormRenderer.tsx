@@ -5,7 +5,7 @@ import { ClientBlock, ClientField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
 import { FieldRenderer } from "./FieldRenderer";
 import { HeaderRenderer, ParagraphRenderer } from "./BlockrRenderer";
-import { useFormRendererContext } from "./form.ctx";
+import { useFormRendererContext } from "./form-renderer.ctx";
 
 export function FormRenderer({
   formName,
@@ -23,8 +23,8 @@ export function FormRenderer({
 }: {
   formName: string;
   signingPartyId?: string;
-  fields: ClientField<[]>[];
-  blocks: ClientBlock<[]>[];
+  fields: ClientField<[any]>[];
+  blocks: ClientBlock<[any]>[];
   values: Record<string, any>;
   autofillValues: Record<string, string>;
   errors?: Record<string, string>;
@@ -121,7 +121,7 @@ const BlocksRenderer = ({
   onBlurValidate,
 }: {
   formKey: string;
-  blocks: ClientBlock<[]>[];
+  blocks: ClientBlock<[any]>[];
   values: Record<string, string>;
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
@@ -140,7 +140,7 @@ const BlocksRenderer = ({
         {/* Render field blocks (manual fields only) */}
         {isBlockField(block) && field?.source === "manual" && (
           <div className="space-between flex flex-row">
-            <div className="flex-1" onFocus={() => setSelected(field.field as string)}>
+            <div className="flex-1" onFocus={() => setSelected(field.field)}>
               <FieldRenderer
                 field={field}
                 value={values[field.field]}
@@ -192,7 +192,7 @@ const isBlockField = (block: ClientBlock<any>): boolean => {
  * @param value
  * @returns
  */
-function isEmptyFor(field: ClientField<[]>, value: unknown) {
+function isEmptyFor(field: ClientField<[any]>, value: unknown) {
   switch (field.type) {
     case "date":
       return !(typeof value === "number" && value > 0); // 0/undefined = empty
@@ -214,7 +214,7 @@ function isEmptyFor(field: ClientField<[]>, value: unknown) {
  * @param value
  * @returns
  */
-const coerceForField = (field: ClientField<[]>, value: unknown) => {
+const coerceForField = (field: ClientField<[any]>, value: unknown) => {
   switch (field.type) {
     case "number":
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
