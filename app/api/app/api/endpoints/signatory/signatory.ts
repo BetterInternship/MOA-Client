@@ -609,3 +609,77 @@ export function useSignatoryControllerGetSignedDocumentsBySignatorySuspense<
 
   return query;
 }
+
+export const signatoryControllerGetSignedDocumentsBySignatoryInternally = (
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<SignatorySignedFormsResponse>({
+    url: `/api/signatory/me/forms/__internal`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getSignatoryControllerGetSignedDocumentsBySignatoryInternallyMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signatoryControllerGetSignedDocumentsBySignatoryInternally>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signatoryControllerGetSignedDocumentsBySignatoryInternally>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["signatoryControllerGetSignedDocumentsBySignatoryInternally"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signatoryControllerGetSignedDocumentsBySignatoryInternally>>,
+    void
+  > = () => {
+    return signatoryControllerGetSignedDocumentsBySignatoryInternally();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignatoryControllerGetSignedDocumentsBySignatoryInternallyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerGetSignedDocumentsBySignatoryInternally>>
+>;
+
+export type SignatoryControllerGetSignedDocumentsBySignatoryInternallyMutationError = ErrorResponse;
+
+export const useSignatoryControllerGetSignedDocumentsBySignatoryInternally = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signatoryControllerGetSignedDocumentsBySignatoryInternally>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof signatoryControllerGetSignedDocumentsBySignatoryInternally>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions =
+    getSignatoryControllerGetSignedDocumentsBySignatoryInternallyMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};

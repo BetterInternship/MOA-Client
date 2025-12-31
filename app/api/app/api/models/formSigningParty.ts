@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0
  */
 import type { FormSigningPartySignatoryAccount } from "./formSigningPartySignatoryAccount";
-import type { FormSigningPartySignatorySource } from "./formSigningPartySignatorySource";
+import type { SignatorySource } from "./signatorySource";
 
 export interface FormSigningParty {
   _id: string;
   order: number;
   signatory_account: FormSigningPartySignatoryAccount;
-  signatory_source: FormSigningPartySignatorySource;
+  signatory_source: SignatorySource;
   signed: boolean;
 }
