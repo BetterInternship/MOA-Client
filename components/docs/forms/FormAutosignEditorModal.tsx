@@ -190,7 +190,7 @@ const FormAutosignEditorModal = React.memo(
             },
           },
         });
-        await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
+        await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
         await queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
         console.log("Autofill and autosign completed!");
       } catch (err) {

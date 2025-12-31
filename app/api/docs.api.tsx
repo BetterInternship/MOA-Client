@@ -1,41 +1,22 @@
-import {
-  authControllerDocsLoginRequest,
-  authControllerDocsLoginVerify,
-  authControllerDocsSelf,
-  authControllerDocsSignOut,
-} from "./app/api/endpoints/auth/auth";
 import { docsLinkLoginControllerLinkLogin } from "./app/api/endpoints/docs-link-login/docs-link-login";
 import { docsControllerGetEntityForms } from "./app/api/endpoints/docs/docs";
+import {
+  authControllerSignatoryLoginRequest,
+  authControllerSignatoryLoginVerify,
+  authControllerSignatorySelf,
+  authControllerSignatorySignOut,
+} from "./app/api/endpoints/auth/auth";
 
 export const requestLoginOtp = async (email: string) => {
-  try {
-    // server expects { email }
-    const res = await authControllerDocsLoginRequest({ email });
-    // res shape: { ok: boolean, resendIn?: number, ttl?: number, reason?: string }
-    return { ...res, isLoading: false, error: null };
-  } catch (error) {
-    return { ok: false, isLoading: false, error };
-  }
+  return await authControllerSignatoryLoginRequest({ email });
 };
 
 export const verifyLoginOtp = async (email: string, otp: string) => {
-  try {
-    // server expects { email, code }
-    const res = await authControllerDocsLoginVerify({ email, code: otp });
-    // server sets a cookie (docs-token) and returns { ok: boolean }
-    return { ...res, isLoading: false, error: null };
-  } catch (error) {
-    return { ok: false, isLoading: false, error };
-  }
+  return await authControllerSignatoryLoginVerify({ email, code: otp });
 };
 
-export const getDocsSelf = async () => {
-  try {
-    const res = await authControllerDocsSelf();
-    return { ...res, isLoading: false, error: null };
-  } catch (error) {
-    return { ok: false, profile: null, isLoading: false, error };
-  }
+export const getSignatorySelf = async () => {
+  return await authControllerSignatorySelf();
 };
 
 export const autoLogin = async (params: {
@@ -47,37 +28,22 @@ export const autoLogin = async (params: {
   pending?: string;
   student?: string;
 }) => {
-  try {
-    const { id, email, name, form, aud, pending, student } = params;
-    const res = await docsLinkLoginControllerLinkLogin({
-      id,
-      email,
-      name,
-      form,
-      for: aud,
-      pending,
-      student,
-    } as any);
-    return { ...res, isLoading: false, error: null };
-  } catch (error) {
-    return { ok: false, isLoading: false, error };
-  }
+  const { id, email, name, form, aud, pending, student } = params;
+  return await docsLinkLoginControllerLinkLogin({
+    id: id!,
+    email,
+    name: name!,
+    form: form!,
+    for: aud,
+    pending: pending!,
+    student: student!,
+  });
 };
 
-export const logoutDocs = async () => {
-  try {
-    const res = await authControllerDocsSignOut();
-    return { ...res, isLoading: false, error: null };
-  } catch (error) {
-    return { ok: false, isLoading: false, error };
-  }
+export const logoutSignatory = async () => {
+  return await authControllerSignatorySignOut();
 };
 
 export const getViewableForms = async () => {
-  try {
-    const res = await docsControllerGetEntityForms();
-    return { ...res, isLoading: false, error: null };
-  } catch (error) {
-    return { ok: false, isLoading: false, error };
-  }
+  return await docsControllerGetEntityForms();
 };

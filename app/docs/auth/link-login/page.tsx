@@ -40,7 +40,7 @@ export function LinkLogin() {
           id: id,
           name: "",
           form,
-          aud,
+          aud: aud!,
           pending,
           student,
         });

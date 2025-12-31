@@ -1,7 +1,4 @@
-import {
-  signatoryAccountsControllerGetSelf,
-  signatoryAccountsControllerUpdateSelf,
-} from "./app/api/endpoints/signatory-accounts/signatory-accounts";
+import { signatoryAccountsControllerUpdateSelf } from "./app/api/endpoints/signatory-accounts/signatory-accounts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useSignatoryAccountActions = () => {
@@ -15,13 +12,4 @@ export const useSignatoryAccountActions = () => {
   };
 
   return actions;
-};
-
-export const getSignatorySelf = async () => {
-  try {
-    const res = await signatoryAccountsControllerGetSelf();
-    return res;
-  } catch (error) {
-    return error;
-  }
 };

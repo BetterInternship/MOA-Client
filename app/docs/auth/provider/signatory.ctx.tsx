@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-30 07:06:04
- * @ Modified time: 2025-12-30 07:19:08
+ * @ Modified time: 2025-12-31 22:19:48
  * @ Description:
  *
  * Makes it easier to manage signatory account state across files.
@@ -9,15 +9,15 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getSignatorySelf } from "@/app/api/signatory.api";
+import { getSignatorySelf } from "@/app/api/docs.api";
 
 interface ISignatoryProfile {
-  name: string;
-  honorific: string;
+  sub: string;
   email: string;
-  title: string;
-  autofill: Record<string, string | Record<string, string>>;
-  auto_form_permissions: Record<string, Record<string, string>>;
+  name: string;
+  coordinatorId?: string;
+  god?: boolean;
+  loading?: boolean;
 }
 
 const SignatoryProfileContext = createContext({} as ISignatoryProfile);
@@ -36,7 +36,12 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
   });
 
   useEffect(() => {
-    setSignatoryContext(signatoryProfile.data as ISignatoryProfile);
+    if (signatoryProfile.data?.profile) {
+      setSignatoryContext({
+        ...signatoryProfile.data.profile,
+        loading: signatoryProfile.isLoading,
+      });
+    }
   }, [signatoryProfile]);
 
   return (

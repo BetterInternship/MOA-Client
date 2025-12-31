@@ -7,6 +7,9 @@
  */
 
 export * from "./_formBlockId";
+export * from "./_signatoryJWTPayload";
+export * from "./_signatoryJWTPayloadCoordinatorId";
+export * from "./_signatoryJWTPayloadGod";
 export * from "./approveSignatoryDto";
 export * from "./approveSignatoryDtoParty";
 export * from "./approveSignatoryDtoValues";
@@ -180,9 +183,13 @@ export * from "./selfSchoolResponseSchool";
 export * from "./selfSchoolResponseSchoolAccount";
 export * from "./signCustomMoaRequestDto";
 export * from "./signatoryEntry";
+export * from "./signatoryRequestOtpDto";
+export * from "./signatoryRequestOtpResponse";
+export * from "./signatorySelfResponse";
 export * from "./signatorySignedFormsResponse";
 export * from "./signatorySignedFormsResponseSignedDocumentsItem";
 export * from "./signatorySource";
+export * from "./signatoryVerifyOtpDto";
 export * from "./signedDocumentsResponse";
 export * from "./signedDocumentsResponse";
 export * from "./signedDocumentsResponseSignedDocumentsItem";

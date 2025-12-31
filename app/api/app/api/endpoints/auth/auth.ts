@@ -16,13 +16,15 @@ import type {
 import type {
   BaseResponse,
   CreateCompanyDto,
-  DocsLoginRequestDto,
-  DocsVerifyDto,
   ErrorResponse,
   LoginEntityDto,
   LoginSchoolDto,
   SelfEntityResponse,
   SelfSchoolResponse,
+  SignatoryRequestOtpDto,
+  SignatoryRequestOtpResponse,
+  SignatorySelfResponse,
+  SignatoryVerifyOtpDto,
 } from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
@@ -509,36 +511,36 @@ export const useAuthControllerSchoolSignOut = <TError = ErrorResponse, TContext 
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authControllerDocsLoginRequest = (
-  docsLoginRequestDto: DocsLoginRequestDto,
+export const authControllerSignatoryLoginRequest = (
+  signatoryRequestOtpDto: SignatoryRequestOtpDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<SignatoryRequestOtpResponse>({
     url: `/api/auth/docs/login/request`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    data: docsLoginRequestDto,
+    data: signatoryRequestOtpDto,
     signal,
   });
 };
 
-export const getAuthControllerDocsLoginRequestMutationOptions = <
+export const getAuthControllerSignatoryLoginRequestMutationOptions = <
   TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof authControllerDocsLoginRequest>>,
+    Awaited<ReturnType<typeof authControllerSignatoryLoginRequest>>,
     TError,
-    { data: DocsLoginRequestDto },
+    { data: SignatoryRequestOtpDto },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof authControllerDocsLoginRequest>>,
+  Awaited<ReturnType<typeof authControllerSignatoryLoginRequest>>,
   TError,
-  { data: DocsLoginRequestDto },
+  { data: SignatoryRequestOtpDto },
   TContext
 > => {
-  const mutationKey = ["authControllerDocsLoginRequest"];
+  const mutationKey = ["authControllerSignatoryLoginRequest"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -546,73 +548,73 @@ export const getAuthControllerDocsLoginRequestMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof authControllerDocsLoginRequest>>,
-    { data: DocsLoginRequestDto }
+    Awaited<ReturnType<typeof authControllerSignatoryLoginRequest>>,
+    { data: SignatoryRequestOtpDto }
   > = (props) => {
     const { data } = props ?? {};
 
-    return authControllerDocsLoginRequest(data);
+    return authControllerSignatoryLoginRequest(data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type AuthControllerDocsLoginRequestMutationResult = NonNullable<
-  Awaited<ReturnType<typeof authControllerDocsLoginRequest>>
+export type AuthControllerSignatoryLoginRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authControllerSignatoryLoginRequest>>
 >;
-export type AuthControllerDocsLoginRequestMutationBody = DocsLoginRequestDto;
-export type AuthControllerDocsLoginRequestMutationError = ErrorResponse;
+export type AuthControllerSignatoryLoginRequestMutationBody = SignatoryRequestOtpDto;
+export type AuthControllerSignatoryLoginRequestMutationError = ErrorResponse;
 
-export const useAuthControllerDocsLoginRequest = <TError = ErrorResponse, TContext = unknown>(
+export const useAuthControllerSignatoryLoginRequest = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof authControllerDocsLoginRequest>>,
+      Awaited<ReturnType<typeof authControllerSignatoryLoginRequest>>,
       TError,
-      { data: DocsLoginRequestDto },
+      { data: SignatoryRequestOtpDto },
       TContext
     >;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof authControllerDocsLoginRequest>>,
+  Awaited<ReturnType<typeof authControllerSignatoryLoginRequest>>,
   TError,
-  { data: DocsLoginRequestDto },
+  { data: SignatoryRequestOtpDto },
   TContext
 > => {
-  const mutationOptions = getAuthControllerDocsLoginRequestMutationOptions(options);
+  const mutationOptions = getAuthControllerSignatoryLoginRequestMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authControllerDocsLoginVerify = (
-  docsVerifyDto: DocsVerifyDto,
+export const authControllerSignatoryLoginVerify = (
+  signatoryVerifyOtpDto: SignatoryVerifyOtpDto,
   signal?: AbortSignal
 ) => {
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/auth/docs/login/verify`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    data: docsVerifyDto,
+    data: signatoryVerifyOtpDto,
     signal,
   });
 };
 
-export const getAuthControllerDocsLoginVerifyMutationOptions = <
+export const getAuthControllerSignatoryLoginVerifyMutationOptions = <
   TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof authControllerDocsLoginVerify>>,
+    Awaited<ReturnType<typeof authControllerSignatoryLoginVerify>>,
     TError,
-    { data: DocsVerifyDto },
+    { data: SignatoryVerifyOtpDto },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof authControllerDocsLoginVerify>>,
+  Awaited<ReturnType<typeof authControllerSignatoryLoginVerify>>,
   TError,
-  { data: DocsVerifyDto },
+  { data: SignatoryVerifyOtpDto },
   TContext
 > => {
-  const mutationKey = ["authControllerDocsLoginVerify"];
+  const mutationKey = ["authControllerSignatoryLoginVerify"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -620,68 +622,68 @@ export const getAuthControllerDocsLoginVerifyMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof authControllerDocsLoginVerify>>,
-    { data: DocsVerifyDto }
+    Awaited<ReturnType<typeof authControllerSignatoryLoginVerify>>,
+    { data: SignatoryVerifyOtpDto }
   > = (props) => {
     const { data } = props ?? {};
 
-    return authControllerDocsLoginVerify(data);
+    return authControllerSignatoryLoginVerify(data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type AuthControllerDocsLoginVerifyMutationResult = NonNullable<
-  Awaited<ReturnType<typeof authControllerDocsLoginVerify>>
+export type AuthControllerSignatoryLoginVerifyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authControllerSignatoryLoginVerify>>
 >;
-export type AuthControllerDocsLoginVerifyMutationBody = DocsVerifyDto;
-export type AuthControllerDocsLoginVerifyMutationError = ErrorResponse;
+export type AuthControllerSignatoryLoginVerifyMutationBody = SignatoryVerifyOtpDto;
+export type AuthControllerSignatoryLoginVerifyMutationError = ErrorResponse;
 
-export const useAuthControllerDocsLoginVerify = <TError = ErrorResponse, TContext = unknown>(
+export const useAuthControllerSignatoryLoginVerify = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof authControllerDocsLoginVerify>>,
+      Awaited<ReturnType<typeof authControllerSignatoryLoginVerify>>,
       TError,
-      { data: DocsVerifyDto },
+      { data: SignatoryVerifyOtpDto },
       TContext
     >;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof authControllerDocsLoginVerify>>,
+  Awaited<ReturnType<typeof authControllerSignatoryLoginVerify>>,
   TError,
-  { data: DocsVerifyDto },
+  { data: SignatoryVerifyOtpDto },
   TContext
 > => {
-  const mutationOptions = getAuthControllerDocsLoginVerifyMutationOptions(options);
+  const mutationOptions = getAuthControllerSignatoryLoginVerifyMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authControllerDocsSelf = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+export const authControllerSignatorySelf = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<SignatorySelfResponse>({
     url: `/api/auth/docs/self`,
     method: "POST",
     signal,
   });
 };
 
-export const getAuthControllerDocsSelfMutationOptions = <
+export const getAuthControllerSignatorySelfMutationOptions = <
   TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof authControllerDocsSelf>>,
+    Awaited<ReturnType<typeof authControllerSignatorySelf>>,
     TError,
     void,
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof authControllerDocsSelf>>,
+  Awaited<ReturnType<typeof authControllerSignatorySelf>>,
   TError,
   void,
   TContext
 > => {
-  const mutationKey = ["authControllerDocsSelf"];
+  const mutationKey = ["authControllerSignatorySelf"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -689,25 +691,25 @@ export const getAuthControllerDocsSelfMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof authControllerDocsSelf>>,
+    Awaited<ReturnType<typeof authControllerSignatorySelf>>,
     void
   > = () => {
-    return authControllerDocsSelf();
+    return authControllerSignatorySelf();
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type AuthControllerDocsSelfMutationResult = NonNullable<
-  Awaited<ReturnType<typeof authControllerDocsSelf>>
+export type AuthControllerSignatorySelfMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authControllerSignatorySelf>>
 >;
 
-export type AuthControllerDocsSelfMutationError = ErrorResponse;
+export type AuthControllerSignatorySelfMutationError = ErrorResponse;
 
-export const useAuthControllerDocsSelf = <TError = ErrorResponse, TContext = unknown>(
+export const useAuthControllerSignatorySelf = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof authControllerDocsSelf>>,
+      Awaited<ReturnType<typeof authControllerSignatorySelf>>,
       TError,
       void,
       TContext
@@ -715,16 +717,16 @@ export const useAuthControllerDocsSelf = <TError = ErrorResponse, TContext = unk
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof authControllerDocsSelf>>,
+  Awaited<ReturnType<typeof authControllerSignatorySelf>>,
   TError,
   void,
   TContext
 > => {
-  const mutationOptions = getAuthControllerDocsSelfMutationOptions(options);
+  const mutationOptions = getAuthControllerSignatorySelfMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authControllerDocsSignOut = (signal?: AbortSignal) => {
+export const authControllerSignatorySignOut = (signal?: AbortSignal) => {
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/auth/docs/logout`,
     method: "POST",
@@ -732,23 +734,23 @@ export const authControllerDocsSignOut = (signal?: AbortSignal) => {
   });
 };
 
-export const getAuthControllerDocsSignOutMutationOptions = <
+export const getAuthControllerSignatorySignOutMutationOptions = <
   TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+    Awaited<ReturnType<typeof authControllerSignatorySignOut>>,
     TError,
     void,
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+  Awaited<ReturnType<typeof authControllerSignatorySignOut>>,
   TError,
   void,
   TContext
 > => {
-  const mutationKey = ["authControllerDocsSignOut"];
+  const mutationKey = ["authControllerSignatorySignOut"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -756,25 +758,25 @@ export const getAuthControllerDocsSignOutMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+    Awaited<ReturnType<typeof authControllerSignatorySignOut>>,
     void
   > = () => {
-    return authControllerDocsSignOut();
+    return authControllerSignatorySignOut();
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type AuthControllerDocsSignOutMutationResult = NonNullable<
-  Awaited<ReturnType<typeof authControllerDocsSignOut>>
+export type AuthControllerSignatorySignOutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authControllerSignatorySignOut>>
 >;
 
-export type AuthControllerDocsSignOutMutationError = ErrorResponse;
+export type AuthControllerSignatorySignOutMutationError = ErrorResponse;
 
-export const useAuthControllerDocsSignOut = <TError = ErrorResponse, TContext = unknown>(
+export const useAuthControllerSignatorySignOut = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+      Awaited<ReturnType<typeof authControllerSignatorySignOut>>,
       TError,
       void,
       TContext
@@ -782,12 +784,12 @@ export const useAuthControllerDocsSignOut = <TError = ErrorResponse, TContext = 
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof authControllerDocsSignOut>>,
+  Awaited<ReturnType<typeof authControllerSignatorySignOut>>,
   TError,
   void,
   TContext
 > => {
-  const mutationOptions = getAuthControllerDocsSignOutMutationOptions(options);
+  const mutationOptions = getAuthControllerSignatorySignOutMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
