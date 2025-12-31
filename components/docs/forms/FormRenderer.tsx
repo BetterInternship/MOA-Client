@@ -130,66 +130,59 @@ const BlocksRenderer = ({
 }) => {
   if (!blocks.length) return null;
 
-  return (
-    <div className="space-y-3">
-      {blocks
-        .toSorted((a, b) => a.order - b.order)
-        .map((block) => (
-          <div
-            className="space-between flex flex-row"
-            key={`${formKey}:${block.text_content ?? JSON.stringify(block.field_schema)}`}
-          >
-            {block.field_schema && (
-              <div
-                className="flex-1"
-                onFocus={() => setSelected(block.field_schema?.field as string)}
-              >
-                <FieldRenderer
-                  field={block.field_schema}
-                  value={values[block.field_schema.field]}
-                  onChange={(v) => onChange(block.field_schema?.field as string, v)}
-                  onBlur={() => {
-                    onBlurValidate?.(block.field_schema?.field as string);
-                  }}
-                  error={errors[block.field_schema.field]}
-                  allValues={values}
-                />
-              </div>
-            )}
+  const sortedBlocks = blocks.toSorted((a, b) => a.order - b.order);
 
-            {block.phantom_field_schema && (
-              <div
-                className="flex-1"
-                onFocus={() => setSelected(block.phantom_field_schema?.field as string)}
-              >
-                <FieldRenderer
-                  field={block.phantom_field_schema}
-                  value={values[block.phantom_field_schema.field]}
-                  onChange={(v) => onChange(block.phantom_field_schema?.field as string, v)}
-                  onBlur={() => {
-                    onBlurValidate?.(block.phantom_field_schema?.field as string);
-                  }}
-                  error={errors[block.phantom_field_schema.field]}
-                  allValues={values}
-                />
-              </div>
-            )}
+  return sortedBlocks.map((block, i) => {
+    const field = getBlockField(block);
 
-            {block.block_type === "header" && block.text_content && (
-              <div className="flex-1">
-                <HeaderRenderer content={block.text_content} />
-              </div>
-            )}
-
-            {block.block_type === "paragraph" && block.text_content && (
-              <div className="flex-1">
-                <ParagraphRenderer content={block.text_content} />
-              </div>
-            )}
+    return (
+      <div key={`${formKey}:${i}`}>
+        {/* Render field blocks (manual fields only) */}
+        {isBlockField(block) && field?.source === "manual" && (
+          <div className="space-between flex flex-row">
+            <div className="flex-1" onFocus={() => setSelected(field.field as string)}>
+              <FieldRenderer
+                field={field}
+                value={values[field.field]}
+                onChange={(v) => onChange(field.field, v)}
+                onBlur={() => onBlurValidate?.(field.field)}
+                error={errors[field.field]}
+                allValues={values}
+              />
+            </div>
           </div>
-        ))}
-    </div>
-  );
+        )}
+
+        {/* Render header blocks */}
+        {block.block_type === "header" && block.text_content && (
+          <div className="flex flex-row">
+            <HeaderRenderer content={block.text_content} />
+          </div>
+        )}
+
+        {/* Render paragraph blocks */}
+        {block.block_type === "paragraph" && block.text_content && (
+          <div className="flex flex-row">
+            <ParagraphRenderer content={block.text_content} />
+          </div>
+        )}
+      </div>
+    );
+  });
+};
+
+/**
+ * Helper: Get the field from a block if it exists
+ */
+const getBlockField = (block: ClientBlock<any>): ClientField<any> | undefined => {
+  return block.field_schema || block.phantom_field_schema;
+};
+
+/**
+ * Helper: Check if a block contains a field (field_schema or phantom_field_schema)
+ */
+const isBlockField = (block: ClientBlock<any>): boolean => {
+  return !!(block.field_schema || block.phantom_field_schema);
 };
 
 /**
