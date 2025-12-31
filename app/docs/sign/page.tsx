@@ -55,8 +55,7 @@ function PageContent() {
 
   // Saved autofill
   const autofillValues = useMemo(() => {
-    // ! fix this, right now self() only returns jwt payload
-    const profileAutofill = profile.autofill as Record<string, Record<string, string>>;
+    const profileAutofill = profile.autofill;
     if (!profileAutofill) return;
 
     // Destructure to isolate only shared fields or fields for that form
@@ -215,7 +214,7 @@ function PageContent() {
         "sign-success",
         <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
           {/* Animated success icon */}
-          <div className="grid h-24 w-24 animate-[pop_420ms_ease-out] place-items-center rounded-full border-4 border-emerald-200">
+          <div className="grid h-24 w-24 place-items-center rounded-full border-4 border-emerald-200">
             <svg
               className="h-12 w-12 text-emerald-600"
               viewBox="0 0 24 24"
@@ -225,7 +224,7 @@ function PageContent() {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M20 6L9 17l-5-5" className="animate-[draw_420ms_ease-out_120ms_forwards]" />
+              <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
 
@@ -234,29 +233,6 @@ function PageContent() {
           <Button onClick={() => (window.location.href = "/dashboard")} className="w-full">
             Close
           </Button>
-
-          <style jsx>{`
-            @keyframes pop {
-              0% {
-                transform: scale(0.8);
-                opacity: 0.2;
-              }
-              100% {
-                transform: scale(1);
-                opacity: 1;
-              }
-            }
-            @keyframes draw {
-              0% {
-                stroke-dasharray: 0 32;
-                opacity: 1;
-              }
-              100% {
-                stroke-dasharray: 32 0;
-                opacity: 1;
-              }
-            }
-          `}</style>
         </div>,
         {
           panelClassName: "sm:max-w-md",

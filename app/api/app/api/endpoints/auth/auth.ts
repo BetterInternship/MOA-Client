@@ -23,7 +23,6 @@ import type {
   SelfSchoolResponse,
   SignatoryRequestOtpDto,
   SignatoryRequestOtpResponse,
-  SignatorySelfResponse,
   SignatoryVerifyOtpDto,
 } from "../../models";
 
@@ -656,73 +655,6 @@ export const useAuthControllerSignatoryLoginVerify = <TError = ErrorResponse, TC
   TContext
 > => {
   const mutationOptions = getAuthControllerSignatoryLoginVerifyMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-export const authControllerSignatorySelf = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<SignatorySelfResponse>({
-    url: `/api/auth/docs/self`,
-    method: "POST",
-    signal,
-  });
-};
-
-export const getAuthControllerSignatorySelfMutationOptions = <
-  TError = ErrorResponse,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof authControllerSignatorySelf>>,
-    TError,
-    void,
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof authControllerSignatorySelf>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ["authControllerSignatorySelf"];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof authControllerSignatorySelf>>,
-    void
-  > = () => {
-    return authControllerSignatorySelf();
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type AuthControllerSignatorySelfMutationResult = NonNullable<
-  Awaited<ReturnType<typeof authControllerSignatorySelf>>
->;
-
-export type AuthControllerSignatorySelfMutationError = ErrorResponse;
-
-export const useAuthControllerSignatorySelf = <TError = ErrorResponse, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof authControllerSignatorySelf>>,
-      TError,
-      void,
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof authControllerSignatorySelf>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions = getAuthControllerSignatorySelfMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

@@ -1,9 +1,9 @@
 import { docsControllerGetEntityForms } from "./app/api/endpoints/docs/docs";
 import { signatoryMagicLinkControllerMagicLinkLogin } from "./app/api/endpoints/signatory-magic-link/signatory-magic-link";
+import { signatoryControllerGetSelf } from "./app/api/endpoints/signatory/signatory";
 import {
   authControllerSignatoryLoginRequest,
   authControllerSignatoryLoginVerify,
-  authControllerSignatorySelf,
   authControllerSignatorySignOut,
 } from "./app/api/endpoints/auth/auth";
 
@@ -16,7 +16,7 @@ export const verifyLoginOtp = async (email: string, otp: string) => {
 };
 
 export const getSignatorySelf = async () => {
-  return await authControllerSignatorySelf();
+  return await signatoryControllerGetSelf();
 };
 
 export const magicLinkLogin = async (params: { id: string; hash: string; redirect: string }) => {

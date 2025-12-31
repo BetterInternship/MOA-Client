@@ -27,6 +27,7 @@ import type {
   BaseResponse,
   CreateSignatoryResponse,
   ErrorResponse,
+  SignatorySelfResponse,
   SignatorySignedFormsResponse,
   UpdateSignatoryDto,
 } from "../../models";
@@ -104,7 +105,7 @@ export const useSignatoryControllerCreateAccountInternally = <
   return useMutation(mutationOptions, queryClient);
 };
 export const signatoryControllerGetSelf = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<SignatorySelfResponse>({
     url: `/api/signatory/me`,
     method: "GET",
     signal,

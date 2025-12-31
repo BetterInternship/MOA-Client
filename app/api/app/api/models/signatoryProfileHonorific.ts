@@ -5,8 +5,5 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { SignatoryProfile } from "./signatoryProfile";
 
-export interface SignatorySelfResponse {
-  profile: SignatoryProfile;
-}
+export type SignatoryProfileHonorific = { [key: string]: unknown };
