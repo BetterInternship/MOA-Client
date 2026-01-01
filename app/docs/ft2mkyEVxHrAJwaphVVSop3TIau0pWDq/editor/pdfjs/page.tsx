@@ -55,7 +55,6 @@ const BLANK_FORM_METADATA: IFormMetadata = {
 
 const PdfJsEditorPage = () => {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const formName = searchParams.get("name");
   const isNewForm = !formName;
 
@@ -237,7 +236,9 @@ const PdfJsEditorPage = () => {
                   (storedMetadata?.label || originalFieldSchema?.tooltip_label) ?? field.label,
                 shared: originalFieldSchema?.shared ?? true,
                 signing_party_id: signingPartyId,
-                source: originalFieldSchema?.source ?? ("manual" as const),
+                source: (storedMetadata?.source ||
+                  originalFieldSchema?.source ||
+                  "manual") as const,
                 validator: (storedMetadata?.validator || originalFieldSchema?.validator) ?? "",
                 prefiller: (storedMetadata?.prefiller || originalFieldSchema?.prefiller) ?? "",
               } as IFormField,
@@ -340,7 +341,6 @@ const PdfJsEditorPage = () => {
     async (newField: FormField) => {
       // Fetch full field details from registry including validator and prefiller
       let fullFieldData: any = null;
-      console.log("Fetching field details for:", newField.field, newField.id);
 
       try {
         const { field } = await formsControllerGetFieldFromRegistry({ id: newField.id });
@@ -357,6 +357,7 @@ const PdfJsEditorPage = () => {
         ...newField,
         _id: fieldId,
         label: getFieldLabelByName(newField.field, registry),
+        source: fullFieldData?.source || "manual",
         align_h: placementAlign_h,
         align_v: placementAlign_v,
       };
@@ -367,6 +368,7 @@ const PdfJsEditorPage = () => {
         validator: fullFieldData?.validator || "",
         prefiller: fullFieldData?.prefiller || "",
         label: fieldWithLabel.label,
+        source: fullFieldData?.source,
       });
 
       // Only create the field - let the useEffect create the block
