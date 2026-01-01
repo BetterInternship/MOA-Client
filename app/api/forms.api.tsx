@@ -24,13 +24,7 @@ export type ApproveSignatoryResponse = {
 };
 
 export const getAllSignedForms = async () => {
-  try {
-    const res = await signatoryControllerGetSignedDocumentsBySignatory();
-    const signedDocuments = res?.signedDocuments ?? [];
-    return { signedDocuments, isLoading: false, error: null };
-  } catch (error) {
-    return { signedDocuments: null, isLoading: false, error };
-  }
+  return await signatoryControllerGetSignedDocumentsBySignatory();
 };
 
 export const requestGenerateForm = async (data: {
