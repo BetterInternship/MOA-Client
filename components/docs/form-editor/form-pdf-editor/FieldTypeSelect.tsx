@@ -35,6 +35,7 @@ export const FieldTypeSelect = ({
       .map((field) => ({
         value: field.id,
         label: field.label,
+        preset: field.preset,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -114,7 +115,7 @@ export const FieldTypeSelect = ({
                 onClick={() => handleSelect(type.value)}
                 className="w-full border-b border-slate-100 px-3 py-2 text-left text-xs transition-colors last:border-b-0 hover:bg-blue-50"
               >
-                {type.label}
+                {type.label} <strong>({type.preset})</strong>
               </button>
             ))
           )}
