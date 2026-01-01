@@ -70,7 +70,7 @@ export default function DocsTopbarUser() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="flex items-center gap-1">
-              {profile.name?.trim() || profile.email ? "User" : "Loading..."}
+              {profile.name?.trim() || profile.email || "User"}
               <ChevronDown size={14} className="mt-0.5" />
             </Button>
           </DropdownMenuTrigger>
