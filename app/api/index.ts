@@ -11,3 +11,4 @@ export * from "./app/api/endpoints/entity-schools/entity-schools";
 export * from "./app/api/endpoints/forms/forms";
 export * from "./app/api/endpoints/signatory/signatory";
 export * from "./app/api/endpoints/signatory-magic-link/signatory-magic-link";
+export * from "./app/api/endpoints/form-groups/form-groups";
