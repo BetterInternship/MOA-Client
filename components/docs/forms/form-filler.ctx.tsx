@@ -76,9 +76,7 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
     field: ClientField<any> | ClientPhantomField<any>,
     autofillValues?: FormValues
   ) => {
-    console.log("validateField called for:", fieldKey);
     const error = validateFieldHelper(field, values, autofillValues ?? {});
-    console.log("Validation result:", error);
     if (error) {
       _setErrors((prev) => ({ ...prev, [fieldKey]: error }));
     } else {
@@ -120,18 +118,15 @@ const validateFieldHelper = <T extends any[]>(
   values: FormValues,
   autofillValues: FormValues
 ) => {
-  console.log("validateFieldHelper - field:", field.field, "signing_party_id:", field.signing_party_id, "source:", field.source);
   const finalValues = { ...autofillValues, ...values };
   // Only validate manual fields (already filtered for initiator in form renderer context)
   if (field.source !== "manual") {
-    console.log("Skipping validation - not manual source");
     return;
   }
 
   const value = finalValues[field.field];
   const coerced = field.coerce(value);
   const result = field.validator?.safeParse(coerced);
-  console.log("Coerced value:", coerced, "Validation result:", result);
 
   if (result?.error) {
     const errorString = z

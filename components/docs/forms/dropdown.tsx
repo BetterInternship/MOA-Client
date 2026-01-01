@@ -179,10 +179,12 @@ export const GroupableRadioDropdown = <ID extends number | string>({
   const { activeDropdown, setActiveDropdown } = useContext(DropdownGroupContext);
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState(defaultValue);
-  const ref = useDetectClickOutside({ onTriggered: () => {
-    setIsOpen(false);
-    onBlur?.();
-  }});
+  const ref = useDetectClickOutside({
+    onTriggered: () => {
+      setIsOpen(false);
+      onBlur?.();
+    },
+  });
 
   // Just so it's not stuck at the first default when the default changes
   useEffect(() => {

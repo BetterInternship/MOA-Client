@@ -14,8 +14,10 @@ export const useMyAutofill = () => {
   const profile = useSignatoryProfile();
   const form = useFormRendererContext();
   const autofillValues = useMemo(() => {
+    // Guard: return empty object if profile or autofill data doesn't exist
+    if (!profile || !profile.autofill) return {};
+
     const internshipMoaFields = profile.autofill;
-    if (!internshipMoaFields) return;
 
     // Destructure to isolate only shared fields or fields for that form
     const autofillValues = {
@@ -27,17 +29,22 @@ export const useMyAutofill = () => {
     // Populate with prefillers as well
     for (const field of form.fields) {
       if (field.prefiller) {
-        const s = field.prefiller({
-          signatory: profile,
-        });
+        try {
+          const s = field.prefiller({
+            signatory: profile,
+          });
 
-        // ! Tentative fix for spaces, move to abstraction later on
-        autofillValues[field.field] = typeof s === "string" ? s.trim().replace("  ", " ") : s;
+          // ! Tentative fix for spaces, move to abstraction later on
+          autofillValues[field.field] = typeof s === "string" ? s.trim().replace("  ", " ") : s;
+        } catch (error) {
+          // Silently skip prefiller if it fails (profile data not ready yet)
+          continue;
+        }
       }
     }
 
     return autofillValues;
-  }, [profile]);
+  }, [profile, form.fields, form.formName]);
 
   return autofillValues;
 };

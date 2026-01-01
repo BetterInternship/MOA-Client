@@ -81,10 +81,9 @@ export function FormFillerRenderer({
             onChange={formFiller.setValue}
             errors={formFiller.errors}
             setSelected={form.setSelectedPreviewId}
-            onBlurValidate={(fieldKey, field) => {
-              console.log("Validating field on blur:", fieldKey, field.label);
-              formFiller.validateField(fieldKey, field, autofillValues);
-            }}
+            onBlurValidate={(fieldKey, field) =>
+              formFiller.validateField(fieldKey, field, autofillValues)
+            }
             fieldRefs={fieldRefs.current}
             selectedFieldId={form.selectedPreviewId}
           />
@@ -143,10 +142,7 @@ const BlocksRenderer = <T extends any[]>({
                 field={field}
                 value={values[field.field]}
                 onChange={(v) => onChange(field.field, v)}
-                onBlur={() => {
-                  console.log("Field blur event triggered for:", field.field);
-                  onBlurValidate?.(field.field, field);
-                }}
+                onBlur={() => onBlurValidate?.(field.field, field)}
                 error={errors[field.field]}
                 allValues={values}
               />
