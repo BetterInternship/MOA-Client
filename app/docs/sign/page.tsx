@@ -38,8 +38,6 @@ function PageContent() {
   const { update } = useSignatoryAccountActions();
 
   // For mobile
-  const isMobile = useIsMobile();
-  const [mobileStage, setMobileStage] = useState<"preview" | "form" | "confirm">("preview");
   const [lastFlatValues, setLastFlatValues] = useState<Record<string, string> | null>(null);
   const formProcessId = (params.get("form-process-id") || "").trim();
 
@@ -48,14 +46,14 @@ function PageContent() {
   const studentName = "The student";
 
   // Pending document preview
-  const { data: pendingRes } = useQuery({
+  const { data: formProcess } = useQuery({
     queryKey: ["pending-info", formProcessId],
     queryFn: () => getPendingInformation(formProcessId),
     staleTime: 60_000,
     enabled: !!formProcessId,
   });
 
-  const pendingInfo = pendingRes?.pendingInformation;
+  const pendingInfo = formProcess?.pendingInformation;
   const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url as string;
   const audienceAllowed = true;
 
@@ -70,14 +68,6 @@ function PageContent() {
   const [submitted, setSubmitted] = useState(false);
   const [loadingForm, setLoadingForm] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (isMobile) {
-      setMobileStage("preview");
-    } else {
-      setMobileStage("form");
-    }
-  }, [isMobile]);
 
   const setField = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value?.toString?.() ?? "" }));
@@ -129,15 +119,6 @@ function PageContent() {
     }
 
     setLastFlatValues(flatValues);
-
-    if (isMobile) {
-      // On mobile, move to confirm preview stage instead of immediately asking for authorization
-      setMobileStage("confirm");
-      // scroll to top so preview is visible
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
     openModal(
       "sign-auth",
       <SignAuthModalContent
@@ -269,22 +250,6 @@ function PageContent() {
 
   const docUrl = pendingUrl || form.document?.url;
 
-  const openDocPreviewModal = () => {
-    if (!docUrl) return;
-    openModal(
-      "doc-preview",
-      <div className="h-[95dvh] w-[95dvw] sm:w-[80vw]">
-        <DocumentRenderer
-          documentUrl={docUrl}
-          highlights={[]}
-          previews={previews}
-          onHighlightFinished={() => {}}
-        />
-      </div>,
-      { title: "Document Preview" }
-    );
-  };
-
   // Update form data if ever
   useEffect(() => {
     if (formName) form.updateFormName(formName);
@@ -302,176 +267,6 @@ function PageContent() {
         </h1>
       </div>
       <div className="relative flex h-[100%] w-full max-w-7xl flex-col justify-center gap-7 overflow-y-hidden sm:w-7xl sm:flex-row">
-        <div className="relative max-h-[100%] overflow-y-auto">
-          {/* Form Renderer */}
-          <div className="h-full max-h-[100%] space-y-4 overflow-y-auto rounded-[0.33em] border border-gray-300 p-5">
-            <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
-              <div className="relative w-full overflow-auto rounded-md border">
-                {docUrl ? (
-                  <DocumentRenderer
-                    documentUrl={docUrl}
-                    highlights={[]}
-                    previews={previews}
-                    onHighlightFinished={() => {}}
-                  />
-                ) : (
-                  <div className="p-4 text-sm text-gray-500">No preview available</div>
-                )}
-              </div>
-
-              <div className="mt-2 flex gap-2">
-                <Button
-                  className="w-full"
-                  onClick={() => setMobileStage("form")}
-                  disabled={!audienceAllowed || loadingForm}
-                >
-                  Fill Form
-                </Button>
-              </div>
-            </div>
-
-            {/* Mobile: confirm preview stage */}
-            <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
-              <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
-                {docUrl ? (
-                  <DocumentRenderer
-                    documentUrl={docUrl}
-                    highlights={[]}
-                    previews={previews}
-                    onHighlightFinished={() => {}}
-                  />
-                ) : (
-                  <div className="p-4 text-sm text-gray-500">No preview available</div>
-                )}
-              </div>
-              <div className="mt-2 flex gap-2">
-                <Button className="w-full" variant="outline" onClick={() => setMobileStage("form")}>
-                  Back to Edit
-                </Button>
-                <Button
-                  onClick={() => {
-                    // open the same authorization modal as desktop, using lastFlatValues
-                    const flatValues = lastFlatValues ?? {};
-                    openModal(
-                      "sign-auth",
-                      <div className="space-y-4 text-sm">
-                        <p className="text-justify text-gray-700">
-                          I authorize auto-fill and auto-sign of future school-issued templated
-                          documents on my behalf. A copy of each signed document will be emailed to
-                          me.
-                        </p>
-
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => void handleAuthorizeChoice(flatValues ?? {})}
-                            className="w-full"
-                          >
-                            No, I’ll sign manually for now
-                          </Button>
-
-                          <Button
-                            type="button"
-                            onClick={() => void handleAuthorizeChoice(flatValues ?? {})}
-                            className="w-full"
-                          >
-                            Yes, auto-fill & auto-sign
-                          </Button>
-                        </div>
-                      </div>,
-                      { title: "Permission to Auto-Fill & Auto-Sign" }
-                    );
-                  }}
-                  className="w-full"
-                >
-                  Submit & Sign
-                </Button>
-              </div>
-            </div>
-
-            <div className={cn(mobileStage === "form" ? "" : "hidden", "sm:block")}>
-              {/* loading / error / empty / form */}
-              {loadingForm ? (
-                <div className="flex items-center justify-center">
-                  <span className="inline-flex items-center gap-2 text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading form…
-                  </span>
-                </div>
-              ) : !audienceAllowed ? (
-                <>
-                  This form is not available. If you believe this is an error, please contact
-                  support.
-                </>
-              ) : fields.length === 0 ? (
-                <div className="text-sm text-gray-500">No fields available for this request.</div>
-              ) : (
-                <div className="space-y-4">
-                  <FormRenderer
-                    signingPartyId={""}
-                    fields={fields}
-                    blocks={blocks}
-                    values={values}
-                    pendingUrl={pendingUrl}
-                    onChange={setField}
-                    errors={errors}
-                    formName={""}
-                    autofillValues={autofillValues}
-                    setValues={(newValues) => setValues((prev) => ({ ...prev, ...newValues }))}
-                    setPreviews={setPreviews}
-                  />
-
-                  <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
-                    <Button
-                      onClick={onClickSubmitRequest}
-                      disabled={busy}
-                      aria-busy={busy}
-                      className="w-full sm:w-auto"
-                    >
-                      {busy ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Submitting…
-                        </span>
-                      ) : (
-                        "Submit & Sign"
-                      )}
-                    </Button>
-
-                    {/* On mobile, also show a secondary preview button */}
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        // On mobile while editing, allow quick jump to preview stage
-                        if (isMobile) {
-                          setMobileStage("preview");
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        } else {
-                          openDocPreviewModal();
-                        }
-                      }}
-                      disabled={!docUrl}
-                      className="w-full sm:hidden"
-                    >
-                      Open Preview
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-5 flex items-start gap-2 text-xs text-gray-500">
-                <Info className="mt-1 h-3 w-3 flex-shrink-0" />
-                <div>
-                  By selecting Submit & Sign, I agree that the signature and initials will be the
-                  electronic representation of my signature and initials for all purposes when I (or
-                  my agent) use them on documents, including legally binding contracts
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* PDF Renderer - hidden on small screens, visible on sm+ */}
         <div className="relative hidden max-w-[600px] min-w-[600px] overflow-auto sm:block">
           {!loadingForm && audienceAllowed ? (
