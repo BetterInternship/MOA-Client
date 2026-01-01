@@ -105,7 +105,7 @@ export const FieldTypeSelect = ({
 
       {/* Dropdown Menu */}
       {isOpen && !disabled && (
-        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-[200px] overflow-y-auto rounded-[0.33em] border border-slate-200 bg-white shadow-md">
+        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-[70dvh] overflow-y-auto rounded-[0.33em] border border-slate-200 bg-white shadow-md">
           {fieldTypes.length === 0 ? (
             <div className="p-2 text-center text-xs text-slate-500">No fields found</div>
           ) : (
