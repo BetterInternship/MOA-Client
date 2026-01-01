@@ -29,7 +29,9 @@ function PageContent() {
   // Update the form process stuff
   useEffect(() => {
     const formProcessId = (params.get("form-process-id") || "").trim();
+    const supposedSigningPartyId = (params.get("signing-party-id") || "").trim();
     formProcess.setFormProcessId(formProcessId);
+    formProcess.setSupposedSigningPartyId(supposedSigningPartyId);
   }, [params]);
 
   // Update form data after loading form process

@@ -10,6 +10,7 @@ import type { ContinueFormDtoAudit } from "./continueFormDtoAudit";
 
 export interface ContinueFormDto {
   formProcessId: string;
+  supposedSigningPartyId: string;
   values: ContinueFormDtoValues;
   audit: ContinueFormDtoAudit;
 }

@@ -8,4 +8,5 @@
 
 export type FormsControllerGetFormProcessParams = {
   formProcessId: string;
+  signingPartyId: string;
 };

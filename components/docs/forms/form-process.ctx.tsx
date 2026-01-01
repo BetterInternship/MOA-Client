@@ -13,6 +13,8 @@ export interface IFormProcess {
   display_information?: Record<string, string>;
   timestamp?: string;
   my_signing_party_id?: string;
+
+  setSupposedSigningPartyId: (supposedSigningPartyId: string) => void;
   setFormProcessId: (formProcessId: string) => void;
 }
 
@@ -22,9 +24,17 @@ export const useFormProcess = () => useContext(FormProcessContext);
 
 export const FormProcessContextProvider = ({ children }: { children: React.ReactNode }) => {
   const [formProcessId, setFormProcessId] = useState("");
+  const [supposedSigningPartyId, setSupposedSigningPartyId] = useState("");
   const { data: _formProcess } = useQuery({
     queryKey: ["form-process"],
-    queryFn: useCallback(() => formsControllerGetFormProcess({ formProcessId }), [formProcessId]),
+    queryFn: useCallback(
+      () =>
+        formsControllerGetFormProcess({
+          formProcessId,
+          signingPartyId: supposedSigningPartyId,
+        }),
+      [formProcessId, supposedSigningPartyId]
+    ),
     enabled: !!formProcessId.trim(),
     staleTime: 10 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -36,7 +46,9 @@ export const FormProcessContextProvider = ({ children }: { children: React.React
         ..._formProcess?.formProcess,
         id: formProcessId,
         display_information: _formProcess?.formProcess as unknown as Record<string, string>,
+
         setFormProcessId,
+        setSupposedSigningPartyId,
       }}
     >
       {children}
