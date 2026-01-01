@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2026-01-01 19:11:20
+ * @ Modified time: 2026-01-01 22:45:13
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -42,6 +42,7 @@ export interface IFormRendererContext<T extends any[]> {
 
   // Setters
   updateFormName: (newFormName: string) => void;
+  updateSigningPartyId: (signingPartyId: string) => void;
   refreshPreviews: () => void;
 }
 
@@ -79,6 +80,7 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
   const [documentName, setDocumentName] = useState<string>("");
   const [documentUrl, setDocumentUrl] = useState<string>("");
   const [formName, setFormName] = useState<string>("");
+  const [signingPartyId, setSigningPartyId] = useState<string>("initiator");
   const [formVersion, setFormVersion] = useState<number>(0);
   const [previewFields, setPreviewFields] = useState<ServerField[]>([]);
   const [blocks, setBlocks] = useState<ClientBlock<[any]>[]>([]);
@@ -141,20 +143,20 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
         setFormVersion(newFormVersion);
         setDocumentName(form.formDocument.name);
         setDocumentUrl(form.documentUrl);
-        setFields(fm.getFieldsForClientService("initiator"));
-        setBlocks(fm.getBlocksForClientService("initiator"));
+        setFields(fm.getFieldsForClientService(signingPartyId));
+        setBlocks(fm.getBlocksForClientService(signingPartyId));
         setPreviewFields(fm.getFieldsForSigningService());
       })
       .then(() => setLoading(false))
       .catch((e) => {
-        alert(e);
+        console.error(e);
         setLoading(false);
       });
 
     setLoading(true);
     console.log("UPDATING FORM", formName);
     return () => controller.abort();
-  }, [formName, formVersion]);
+  }, [formName, formVersion, signingPartyId]);
 
   // Clear fields on refresh?
   useEffect(() => {
@@ -187,6 +189,7 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
     setSelectedPreviewId: (id: string | null) => setSelectedPreviewId(id ?? ""),
     document: { name: documentName, url: documentUrl },
     updateFormName: (newFormName: string) => setFormName(newFormName),
+    updateSigningPartyId: (signingPartyId: string) => setSigningPartyId(signingPartyId),
     refreshPreviews: refreshPreviews,
   };
 

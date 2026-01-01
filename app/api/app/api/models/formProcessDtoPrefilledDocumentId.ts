@@ -5,10 +5,5 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { FormProcessDto } from "./formProcessDto";
 
-export interface FormProcessResponse {
-  success: boolean;
-  message: string;
-  formProcess: FormProcessDto;
-}
+export type FormProcessDtoPrefilledDocumentId = { [key: string]: unknown };

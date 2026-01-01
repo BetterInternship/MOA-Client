@@ -1,20 +1,14 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2 } from "lucide-react";
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
-import { approveSignatory, getPendingInformation } from "@/app/api/forms.api";
-import { useModal } from "@/app/providers/modal-provider";
+import { useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { DocumentRenderer } from "@/components/docs/forms/previewer";
 import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
-import { getClientAudit } from "@/lib/audit";
-import { useSignatoryAccountActions } from "@/app/api/signatory.api";
-import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
-import { useMyAutofill } from "@/hooks/use-my-autofill";
+import { Button } from "@/components/ui/button";
+import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
+import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
+import { Loader2 } from "lucide-react";
 import { useFormFiller } from "@/components/docs/forms/form-filler.ctx";
 
 const Page = () => {
@@ -27,68 +21,97 @@ const Page = () => {
 
 function PageContent() {
   const params = useSearchParams();
-  const router = useRouter();
   const form = useFormRendererContext();
-  const profile = useSignatoryProfile();
-  const autofillValues = useMyAutofill();
+  const formProcess = useFormProcess();
   const formFiller = useFormFiller();
+  const [mobileStage, setMobileStage] = useState("");
 
-  // ! user to update autofill later
-  const { update } = useSignatoryAccountActions();
-
-  // ! todo: copy over form flow router from students side
-
-  // For mobile
-  const [lastFlatValues, setLastFlatValues] = useState<Record<string, string> | null>(null);
-  const formProcessId = (params.get("form-process-id") || "").trim();
-
-  // ! Pull these info from the form process, which you should request directly from the server on page mount
-  const formName = "Form";
-  const studentName = "The student";
-
-  // Pending document preview
-  const { data: formProcess } = useQuery({
-    queryKey: ["pending-info", formProcessId],
-    queryFn: () => getPendingInformation(formProcessId),
-    staleTime: 60_000,
-    enabled: !!formProcessId,
-  });
-
-  const pendingInfo = formProcess?.pendingInformation;
-  const pendingUrl = pendingInfo?.pendingInfo?.latest_document_url as string;
-  const audienceAllowed = true;
-
-  // local form state
-  const [previews, setPreviews] = useState<Record<number, React.ReactNode[]>>({});
-  const docUrl = pendingUrl || form.document?.url;
-
-  // Update form data if ever
+  // Update the form process stuff
   useEffect(() => {
-    if (formName) form.updateFormName(formName);
-  }, [formName]);
+    const formProcessId = (params.get("form-process-id") || "").trim();
+    formProcess.setFormProcessId(formProcessId);
+  }, [params]);
+
+  // Update form data after loading form process
+  useEffect(() => {
+    const formName = formProcess.form_name;
+    const signingPartyId = formProcess.my_signing_party_id;
+    if (formName && signingPartyId) {
+      form.updateFormName(formName);
+      form.updateSigningPartyId(signingPartyId);
+      formFiller.updateSigningPartyId(signingPartyId);
+    }
+  }, [formProcess]);
 
   return (
-    <div className="relative mx-auto flex h-[100%] max-h-[100%] flex-col items-center space-y-4 overflow-y-hidden px-4 py-8">
-      <div className="w-full max-w-7xl overflow-x-visible overflow-y-visible sm:w-7xl">
-        <h2 className="text-justify text-sm tracking-tight whitespace-normal sm:text-base sm:whitespace-nowrap">
-          Internship Document Fill-out Request from{" "}
-          <span className="font-semibold">{studentName}</span>
-        </h2>
-        <h1 className="text-primary text-2xl font-bold tracking-tight whitespace-normal sm:whitespace-nowrap">
-          {pendingInfo?.pendingInfo?.form_label as string}
-        </h1>
-      </div>
-      <div className="relative flex h-[100%] w-full max-w-7xl flex-col justify-center gap-7 overflow-y-hidden sm:w-7xl sm:flex-row">
+    <div className="bg-opacity-25 relative mx-auto my-7 flex h-[100%] max-h-[100%] w-full max-w-7xl flex-col items-center overflow-y-hidden rounded-[0.33em] border border-gray-400 bg-white">
+      <div className="relative flex h-[100%] w-full flex-col justify-center overflow-y-hidden sm:w-7xl sm:flex-row">
+        {/* Form Renderer */}
+        <div className="relative h-full max-h-full w-full overflow-hidden">
+          <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
+            <div className="relative mx-auto w-full overflow-auto rounded-md border">
+              {formProcess.latest_document_url ? (
+                <DocumentRenderer
+                  documentUrl={formProcess.latest_document_url}
+                  highlights={[]}
+                  previews={form.previews}
+                  onHighlightFinished={() => {}}
+                />
+              ) : (
+                <div className="p-4 text-sm text-gray-500">No preview available</div>
+              )}
+            </div>
+
+            <div className="mt-2 flex gap-2">
+              <Button
+                className="w-full"
+                onClick={() => setMobileStage("form")}
+                disabled={form.loading}
+              >
+                Fill Form
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile: confirm preview stage */}
+          <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
+            <div className="relative h-[60vh] w-full overflow-auto rounded-md border bg-white">
+              {formProcess.latest_document_url ? (
+                <DocumentRenderer
+                  documentUrl={formProcess.latest_document_url}
+                  highlights={[]}
+                  previews={form.previews}
+                  onHighlightFinished={() => {}}
+                />
+              ) : (
+                <div className="p-4 text-sm text-gray-500">No preview available</div>
+              )}
+            </div>
+          </div>
+
+          {/* loading / error / empty / form */}
+          {form.loading ? (
+            <div className="flex items-center justify-center">
+              <span className="inline-flex items-center gap-2 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading form…
+              </span>
+            </div>
+          ) : (
+            <FormFillerRenderer />
+          )}
+        </div>
+
         {/* PDF Renderer - hidden on small screens, visible on sm+ */}
         <div className="relative hidden max-w-[600px] min-w-[600px] overflow-auto sm:block">
-          {!form.loading && audienceAllowed ? (
+          {!form.loading ? (
             <div className="relative flex h-full w-full flex-row gap-2">
-              {!!docUrl && (
+              {!!formProcess.latest_document_url && (
                 <div className="relative h-full w-full">
                   <DocumentRenderer
-                    documentUrl={docUrl}
+                    documentUrl={formProcess.latest_document_url}
                     highlights={[]}
-                    previews={previews}
+                    previews={form.previews}
                     onHighlightFinished={() => {}}
                   />
                 </div>

@@ -1,25 +1,13 @@
 import { formGroupsControllerGetAllFormGroups } from "./app/api/endpoints/form-groups/form-groups";
 import {
   formsControllerGetLatestFormDocumentAndMetadata,
-  formsControllerGetPending,
   formsControllerApproveSignatory,
 } from "./app/api/endpoints/forms/forms";
 import { signatoryControllerGetSignedDocumentsBySignatory } from "./app/api/endpoints/signatory/signatory";
 import {
   formGroupsControllerAddFormToGroup,
   formGroupsControllerCreateFormGroup,
-  formGroupsControllerGetFormGroupById,
 } from "./app/api/endpoints/form-groups/form-groups";
-
-export const getPendingInformation = async (formProcessId: string) => {
-  try {
-    const pendingInformation = await formsControllerGetPending({ formProcessId: formProcessId });
-    return { pendingInformation, isLoading: false, error: null };
-  } catch (error) {
-    return { pendingInformation: null, isLoading: false, error };
-  }
-};
-
 export const getFormFields = async (name: string) => {
   return await formsControllerGetLatestFormDocumentAndMetadata({ name });
 };

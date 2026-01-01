@@ -13,6 +13,7 @@ export interface IFormFiller {
   setValue: (field: string, value: string) => void;
   setValues: (values: Record<string, string>) => void;
 
+  updateSigningPartyId: (signingPartyId: string) => void;
   errors: FormErrors;
   validate: (
     fields: (ClientField<[any]> | ClientPhantomField<[any]>)[],
@@ -25,6 +26,7 @@ const FormFillerContext = createContext({} as IFormFiller);
 export const useFormFiller = () => useContext(FormFillerContext);
 
 export const FormFillerContextProvider = ({ children }: { children: React.ReactNode }) => {
+  const [signingPartyId, setSigningPartyId] = useState<string>("initiator");
   const [values, _setValues] = useState({});
   const [errors, _setErrors] = useState({});
 
@@ -46,7 +48,7 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
   ) => {
     const errors: Record<string, string> = {};
     for (const field of fields) {
-      const error = validateField(field, values, autofillValues ?? {});
+      const error = validateField(field, values, autofillValues ?? {}, signingPartyId);
       console.log("err", error, field);
       if (error) errors[field.field] = error;
     }
@@ -62,6 +64,7 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
         getFinalValues,
         setValue,
         setValues,
+        updateSigningPartyId: setSigningPartyId,
 
         validate,
         errors,
@@ -83,10 +86,11 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
 const validateField = <T extends any[]>(
   field: ClientField<T>,
   values: FormValues,
-  autofillValues: FormValues
+  autofillValues: FormValues,
+  signingPartyId: string = "initiator"
 ) => {
   const finalValues = { ...autofillValues, ...values };
-  if (field.signing_party_id !== "initiator" || field.source !== "manual") return;
+  if (field.signing_party_id !== signingPartyId || field.source !== "manual") return;
 
   const value = finalValues[field.field];
   const coerced = field.coerce(value);

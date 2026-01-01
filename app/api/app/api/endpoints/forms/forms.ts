@@ -37,8 +37,8 @@ import type {
   FormTemplatesResponse,
   FormsControllerGetFieldFromRegistryParams,
   FormsControllerGetFormGroupTemplatesParams,
+  FormsControllerGetFormProcessParams,
   FormsControllerGetLatestFormDocumentAndMetadataParams,
-  FormsControllerGetPendingParams,
   FormsControllerGetRegistryFormDocumentParams,
   FormsControllerGetRegistryFormMetadataParams,
   InitiateFormDto,
@@ -2007,8 +2007,8 @@ export function useFormsControllerGetFieldFromRegistrySuspense<
   return query;
 }
 
-export const formsControllerGetPending = (
-  params?: FormsControllerGetPendingParams,
+export const formsControllerGetFormProcess = (
+  params?: FormsControllerGetFormProcessParams,
   signal?: AbortSignal
 ) => {
   return preconfiguredAxiosFunction<FormProcessResponse>({
@@ -2019,107 +2019,109 @@ export const formsControllerGetPending = (
   });
 };
 
-export const getFormsControllerGetPendingQueryKey = (params?: FormsControllerGetPendingParams) => {
+export const getFormsControllerGetFormProcessQueryKey = (
+  params?: FormsControllerGetFormProcessParams
+) => {
   return [`/api/forms/process`, ...(params ? [params] : [])] as const;
 };
 
-export const getFormsControllerGetPendingQueryOptions = <
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export const getFormsControllerGetFormProcessQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params?: FormsControllerGetPendingParams,
+  params?: FormsControllerGetFormProcessParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFormProcess>>, TError, TData>
     >;
   }
 ) => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetPendingQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetFormProcessQueryKey(params);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetPending>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetFormProcess>>> = ({
     signal,
-  }) => formsControllerGetPending(params, signal);
+  }) => formsControllerGetFormProcess(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof formsControllerGetPending>>,
+    Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type FormsControllerGetPendingQueryResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerGetPending>>
+export type FormsControllerGetFormProcessQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetFormProcess>>
 >;
-export type FormsControllerGetPendingQueryError = ErrorResponse;
+export type FormsControllerGetFormProcessQueryError = ErrorResponse;
 
-export function useFormsControllerGetPending<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export function useFormsControllerGetFormProcess<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params: undefined | FormsControllerGetPendingParams,
+  params: undefined | FormsControllerGetFormProcessParams,
   options: {
     query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFormProcess>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof formsControllerGetPending>>,
+          Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
           TError,
-          Awaited<ReturnType<typeof formsControllerGetPending>>
+          Awaited<ReturnType<typeof formsControllerGetFormProcess>>
         >,
         "initialData"
       >;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetPending<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export function useFormsControllerGetFormProcess<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params?: FormsControllerGetPendingParams,
+  params?: FormsControllerGetFormProcessParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFormProcess>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof formsControllerGetPending>>,
+          Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
           TError,
-          Awaited<ReturnType<typeof formsControllerGetPending>>
+          Awaited<ReturnType<typeof formsControllerGetFormProcess>>
         >,
         "initialData"
       >;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetPending<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export function useFormsControllerGetFormProcess<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params?: FormsControllerGetPendingParams,
+  params?: FormsControllerGetFormProcessParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFormProcess>>, TError, TData>
     >;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useFormsControllerGetPending<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export function useFormsControllerGetFormProcess<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params?: FormsControllerGetPendingParams,
+  params?: FormsControllerGetFormProcessParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof formsControllerGetFormProcess>>, TError, TData>
     >;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getFormsControllerGetPendingQueryOptions(params, options);
+  const queryOptions = getFormsControllerGetFormProcessQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
@@ -2130,87 +2132,107 @@ export function useFormsControllerGetPending<
   return query;
 }
 
-export const getFormsControllerGetPendingSuspenseQueryOptions = <
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export const getFormsControllerGetFormProcessSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params?: FormsControllerGetPendingParams,
+  params?: FormsControllerGetFormProcessParams,
   options?: {
     query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
+        TError,
+        TData
+      >
     >;
   }
 ) => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetPendingQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getFormsControllerGetFormProcessQueryKey(params);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetPending>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof formsControllerGetFormProcess>>> = ({
     signal,
-  }) => formsControllerGetPending(params, signal);
+  }) => formsControllerGetFormProcess(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof formsControllerGetPending>>,
+    Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type FormsControllerGetPendingSuspenseQueryResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerGetPending>>
+export type FormsControllerGetFormProcessSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetFormProcess>>
 >;
-export type FormsControllerGetPendingSuspenseQueryError = ErrorResponse;
+export type FormsControllerGetFormProcessSuspenseQueryError = ErrorResponse;
 
-export function useFormsControllerGetPendingSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export function useFormsControllerGetFormProcessSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params: undefined | FormsControllerGetPendingParams,
+  params: undefined | FormsControllerGetFormProcessParams,
   options: {
     query: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
+        TError,
+        TData
+      >
     >;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetPendingSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export function useFormsControllerGetFormProcessSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params?: FormsControllerGetPendingParams,
+  params?: FormsControllerGetFormProcessParams,
   options?: {
     query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
+        TError,
+        TData
+      >
     >;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useFormsControllerGetPendingSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export function useFormsControllerGetFormProcessSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params?: FormsControllerGetPendingParams,
+  params?: FormsControllerGetFormProcessParams,
   options?: {
     query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
+        TError,
+        TData
+      >
     >;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useFormsControllerGetPendingSuspense<
-  TData = Awaited<ReturnType<typeof formsControllerGetPending>>,
+export function useFormsControllerGetFormProcessSuspense<
+  TData = Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
   TError = ErrorResponse,
 >(
-  params?: FormsControllerGetPendingParams,
+  params?: FormsControllerGetFormProcessParams,
   options?: {
     query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof formsControllerGetPending>>, TError, TData>
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof formsControllerGetFormProcess>>,
+        TError,
+        TData
+      >
     >;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getFormsControllerGetPendingSuspenseQueryOptions(params, options);
+  const queryOptions = getFormsControllerGetFormProcessSuspenseQueryOptions(params, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

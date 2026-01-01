@@ -13,10 +13,12 @@ import { getClientAudit } from "@/lib/audit";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { formsControllerFilloutFormProcess, formsControllerInitiateFormProcess } from "@/app/api";
 import useModalRegistry from "@/components/modal-registry";
+import { useFormProcess } from "./form-process.ctx";
 
 export function FormActionButtons() {
   const form = useFormRendererContext();
   const formFiller = useFormFiller();
+  const formProcess = useFormProcess();
   const autofillValues = useMyAutofill();
   const profile = useSignatoryProfile();
   const modalRegistry = useModalRegistry();
@@ -45,8 +47,6 @@ export function FormActionButtons() {
     // Validate fields before allowing to proceed
     const finalValues = formFiller.getFinalValues(autofillValues);
     const errors = formFiller.validate(form.fields, autofillValues);
-    console.log(errors);
-
     if (Object.keys(errors).length) return setBusy(false);
 
     // proceed to save + submit
@@ -59,7 +59,9 @@ export function FormActionButtons() {
       // Iniate e-sign
       if (withEsign) {
         // Check if other parties need to be requested from
-        const signingPartyBlocks = form.formMetadata.getSigningPartyBlocks("initiator");
+        const signingPartyBlocks = form.formMetadata.getSigningPartyBlocks(
+          formProcess.my_signing_party_id ?? ""
+        );
 
         // Open request for contacts
         if (signingPartyBlocks.length) {

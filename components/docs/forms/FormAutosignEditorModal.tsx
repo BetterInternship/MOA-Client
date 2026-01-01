@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { FormRenderer } from "@/components/docs/forms/FormFillerRenderer";
+import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { getFormFields } from "@/app/api/forms.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
@@ -55,7 +55,7 @@ const FormAutosignEditorModal = React.memo(
 
     // Saved autofill
     const autofillValues = useMemo(() => {
-      const profileAutofill = profile.autofill as Record<string, Record<string, string>>;
+      const profileAutofill = profile.autofill;
       if (!profileAutofill) return;
 
       // Destructure to isolate only shared fields or fields for that form
@@ -314,7 +314,7 @@ const FormAutosignEditorModal = React.memo(
                   <div className="text-sm text-gray-500">No fields available for this request.</div>
                 ) : (
                   <div className="space-y-4">
-                    <FormRenderer
+                    <FormFillerRenderer
                       signingPartyId={party}
                       fields={fieldsForParty(party)}
                       values={values[party] ?? {}}
