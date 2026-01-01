@@ -56,23 +56,23 @@ export const useMyAutofillUpdate = () => {
       fields: (ClientField<[any]> | ClientPhantomField<[any]>)[],
       finalValues: FormValues
     ) => {
-      const internshipMoaFieldsToSave: Record<string, Record<string, string>> = {
+      const autofillToSave: Record<string, Record<string, string>> = {
         shared: {} as Record<string, string>,
       };
 
       // Save it per field or shared
       for (const field of fields) {
         if (field.shared) {
-          internshipMoaFieldsToSave.shared[field.field] = finalValues[field.field];
+          autofillToSave.shared[field.field] = finalValues[field.field];
         } else {
-          if (!internshipMoaFieldsToSave[formName]) internshipMoaFieldsToSave[formName] = {};
-          internshipMoaFieldsToSave[formName][field.field] = finalValues[field.field];
+          if (!autofillToSave[formName]) autofillToSave[formName] = {};
+          autofillToSave[formName][field.field] = finalValues[field.field];
         }
       }
 
       // Save for future use
       await update.mutateAsync({
-        internship_moa_fields: internshipMoaFieldsToSave,
+        autofill: autofillToSave,
       });
     },
     [update]

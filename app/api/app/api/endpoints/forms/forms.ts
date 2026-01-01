@@ -24,8 +24,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
-  ApproveSignatoryDto,
   BaseResponse,
+  ContinueFormDto,
   ErrorResponse,
   FieldRegistryResponse,
   FieldRequestResponse,
@@ -2244,36 +2244,36 @@ export function useFormsControllerGetFormProcessSuspense<
   return query;
 }
 
-export const formsControllerApproveSignatory = (
-  approveSignatoryDto: ApproveSignatoryDto,
+export const formsControllerContinueFormProcess = (
+  continueFormDto: ContinueFormDto,
   signal?: AbortSignal
 ) => {
   return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/approve`,
+    url: `/api/forms/continue`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    data: approveSignatoryDto,
+    data: continueFormDto,
     signal,
   });
 };
 
-export const getFormsControllerApproveSignatoryMutationOptions = <
+export const getFormsControllerContinueFormProcessMutationOptions = <
   TError = ErrorResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+    Awaited<ReturnType<typeof formsControllerContinueFormProcess>>,
     TError,
-    { data: ApproveSignatoryDto },
+    { data: ContinueFormDto },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+  Awaited<ReturnType<typeof formsControllerContinueFormProcess>>,
   TError,
-  { data: ApproveSignatoryDto },
+  { data: ContinueFormDto },
   TContext
 > => {
-  const mutationKey = ["formsControllerApproveSignatory"];
+  const mutationKey = ["formsControllerContinueFormProcess"];
   const { mutation: mutationOptions } = options
     ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
       ? options
@@ -2281,40 +2281,40 @@ export const getFormsControllerApproveSignatoryMutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
-    { data: ApproveSignatoryDto }
+    Awaited<ReturnType<typeof formsControllerContinueFormProcess>>,
+    { data: ContinueFormDto }
   > = (props) => {
     const { data } = props ?? {};
 
-    return formsControllerApproveSignatory(data);
+    return formsControllerContinueFormProcess(data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type FormsControllerApproveSignatoryMutationResult = NonNullable<
-  Awaited<ReturnType<typeof formsControllerApproveSignatory>>
+export type FormsControllerContinueFormProcessMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerContinueFormProcess>>
 >;
-export type FormsControllerApproveSignatoryMutationBody = ApproveSignatoryDto;
-export type FormsControllerApproveSignatoryMutationError = ErrorResponse;
+export type FormsControllerContinueFormProcessMutationBody = ContinueFormDto;
+export type FormsControllerContinueFormProcessMutationError = ErrorResponse;
 
-export const useFormsControllerApproveSignatory = <TError = ErrorResponse, TContext = unknown>(
+export const useFormsControllerContinueFormProcess = <TError = ErrorResponse, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+      Awaited<ReturnType<typeof formsControllerContinueFormProcess>>,
       TError,
-      { data: ApproveSignatoryDto },
+      { data: ContinueFormDto },
       TContext
     >;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof formsControllerApproveSignatory>>,
+  Awaited<ReturnType<typeof formsControllerContinueFormProcess>>,
   TError,
-  { data: ApproveSignatoryDto },
+  { data: ContinueFormDto },
   TContext
 > => {
-  const mutationOptions = getFormsControllerApproveSignatoryMutationOptions(options);
+  const mutationOptions = getFormsControllerContinueFormProcessMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useState } from "react";
 
 export interface IFormProcess {
+  id: string;
   form_label?: string;
   form_name?: string;
   form_version?: number;
@@ -25,12 +26,15 @@ export const FormProcessContextProvider = ({ children }: { children: React.React
     queryKey: ["form-process"],
     queryFn: useCallback(() => formsControllerGetFormProcess({ formProcessId }), [formProcessId]),
     enabled: !!formProcessId.trim(),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   return (
     <FormProcessContext.Provider
       value={{
         ..._formProcess?.formProcess,
+        id: formProcessId,
         display_information: _formProcess?.formProcess as unknown as Record<string, string>,
         setFormProcessId,
       }}

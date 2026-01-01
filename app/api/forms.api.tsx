@@ -1,8 +1,5 @@
 import { formGroupsControllerGetAllFormGroups } from "./app/api/endpoints/form-groups/form-groups";
-import {
-  formsControllerGetLatestFormDocumentAndMetadata,
-  formsControllerApproveSignatory,
-} from "./app/api/endpoints/forms/forms";
+import { formsControllerGetLatestFormDocumentAndMetadata } from "./app/api/endpoints/forms/forms";
 import { signatoryControllerGetSignedDocumentsBySignatory } from "./app/api/endpoints/signatory/signatory";
 import {
   formGroupsControllerAddFormToGroup,
@@ -24,16 +21,6 @@ export type ApproveSignatoryResponse = {
   signedDocumentId?: string;
   signedDocumentUrl?: string;
   [k: string]: any;
-};
-
-export const approveSignatory = async (data: ApproveSignatoryRequest) => {
-  try {
-    const res = await formsControllerApproveSignatory(data);
-    const approval: ApproveSignatoryResponse | null = res ?? null;
-    return { approval, isLoading: false, error: null };
-  } catch (error) {
-    return { approval: null, isLoading: false, error };
-  }
 };
 
 export const getAllSignedForms = async () => {

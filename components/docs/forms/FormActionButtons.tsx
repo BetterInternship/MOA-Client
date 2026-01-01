@@ -11,7 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getClientAudit } from "@/lib/audit";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
-import { formsControllerFilloutFormProcess, formsControllerInitiateFormProcess } from "@/app/api";
+import { formsControllerContinueFormProcess } from "@/app/api";
 import useModalRegistry from "@/components/modal-registry";
 import { useFormProcess } from "./form-process.ctx";
 
@@ -25,14 +25,7 @@ export function FormActionButtons() {
   const updateAutofill = useMyAutofillUpdate();
   const queryClient = useQueryClient();
   const router = useRouter();
-
-  const noEsign = !form.formMetadata.mayInvolveEsign();
-  const initiateFormLabel = "Fill out & initiate e-sign";
-  const filloutFormLabel = !noEsign ? "Fill out for manual signing" : "Fill out form";
-
   const [busy, setBusy] = useState<boolean>(false);
-  const onWithoutEsignClick = () => void handleSubmit(false);
-  const onWithEsignClick = () => void handleSubmit(true);
 
   /**
    * This submits the form to the server
@@ -40,7 +33,7 @@ export function FormActionButtons() {
    * @param _bypassConfirm - internal flag to skip recipient confirmation on re-call
    * @returns
    */
-  const handleSubmit = async (withEsign?: boolean) => {
+  const handleSubmit = async () => {
     setBusy(true);
     if (!profile.id) return;
 
@@ -56,54 +49,37 @@ export function FormActionButtons() {
       // Update autofill afterwards (so even if it fails, autofill is there)
       await updateAutofill(form.formName, form.fields, finalValues);
 
-      // Iniate e-sign
-      if (withEsign) {
-        // Check if other parties need to be requested from
-        const signingPartyBlocks = form.formMetadata.getSigningPartyBlocks(
-          formProcess.my_signing_party_id ?? ""
+      // Check if other parties need to be requested from
+      const signingPartyBlocks = form.formMetadata.getSigningPartyBlocks(
+        formProcess.my_signing_party_id ?? ""
+      );
+
+      // Open request for contacts
+      if (signingPartyBlocks.length) {
+        modalRegistry.specifySigningParties.open(
+          form.fields,
+          formFiller,
+          signingPartyBlocks,
+          (signingPartyValues: FormValues) =>
+            formsControllerContinueFormProcess({
+              formProcessId: formProcess.id,
+              values: { ...finalValues, ...signingPartyValues },
+              audit: getClientAudit(),
+            }),
+          autofillValues
         );
 
-        // Open request for contacts
-        if (signingPartyBlocks.length) {
-          modalRegistry.specifySigningParties.open(
-            form.fields,
-            formFiller,
-            signingPartyBlocks,
-            (signingPartyValues: FormValues) =>
-              formsControllerInitiateFormProcess({
-                formName: form.formName,
-                formVersion: form.formVersion,
-                values: { ...finalValues, ...signingPartyValues },
-                audit: getClientAudit(),
-              }),
-            autofillValues
-          );
-
-          // Just e-sign and fill-out right away
-        } else {
-          // ! does this still need an audit? it's just generating a pdf without sigs
-          await formsControllerInitiateFormProcess({
-            formName: form.formName,
-            formVersion: form.formVersion,
-            values: finalValues,
-            audit: getClientAudit(),
-          });
-
-          await queryClient.invalidateQueries({ queryKey: ["my_forms"] });
-          router.push("/forms/history");
-        }
-
-        // Just fill out form
+        // Just e-sign and fill-out right away
       } else {
-        await formsControllerFilloutFormProcess({
-          formName: form.formName,
-          formVersion: form.formVersion,
+        // ! does this still need an audit? it's just generating a pdf without sigs
+        await formsControllerContinueFormProcess({
+          formProcessId: formProcess.id,
           values: finalValues,
           audit: getClientAudit(),
         });
 
         await queryClient.invalidateQueries({ queryKey: ["my_forms"] });
-        router.push("/forms/history");
+        router.push("/dashboard");
       }
 
       setBusy(false);
@@ -117,19 +93,13 @@ export function FormActionButtons() {
   return (
     <div className="flex items-start justify-end gap-2 pt-2">
       <Button
-        onClick={onWithoutEsignClick}
-        variant={noEsign ? "default" : "outline"}
+        onClick={() => void handleSubmit()}
+        variant="default"
         className="w-full text-xs sm:w-auto"
         disabled={busy}
       >
-        <TextLoader loading={busy}>{filloutFormLabel}</TextLoader>
+        <TextLoader loading={busy}>{"Submit Form"}</TextLoader>
       </Button>
-
-      {!noEsign && (
-        <Button onClick={onWithEsignClick} className="w-full text-xs sm:w-auto" disabled={busy}>
-          <TextLoader loading={busy}>{initiateFormLabel}</TextLoader>
-        </Button>
-      )}
     </div>
   );
 }
