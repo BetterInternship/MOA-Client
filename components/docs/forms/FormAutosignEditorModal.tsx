@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { FormRenderer } from "@/components/docs/forms/FormRenderer";
+import { FormRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { getFormFields } from "@/app/api/forms.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";

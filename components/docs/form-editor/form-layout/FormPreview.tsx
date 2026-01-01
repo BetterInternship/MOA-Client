@@ -9,7 +9,7 @@ import {
 import { validateFieldWithZod } from "@/lib/form-validation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FormRenderer } from "@/components/docs/forms/FormRenderer";
+import { FormRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { FormPreviewPdfDisplay } from "./FormPreviewPdfDisplay";
 
 interface FormPreviewProps {
