@@ -16,6 +16,7 @@ import { Input } from "./input";
 import { Textarea } from "./textarea";
 import { Matcher } from "react-day-picker";
 import { Tooltip } from "react-tooltip";
+import { MessageCircleQuestion } from "lucide-react";
 
 interface EditFormContext<T extends IFormData> {
   formData: T;
@@ -135,16 +136,16 @@ export function LabelWithTooltip({
 }) {
   const id = tooltipId ?? `${label.replace(/\s+/g, "-").toLowerCase()}-tooltip`;
   return (
-    <div className="mb-1 flex items-center gap-2">
-      <label className="text-xs text-gray-600">
+    <div className="mb-1 flex gap-2 md:items-center">
+      <span className="text-xs text-gray-600">
         {label} {required && <span className="text-red-500">*</span>}
-      </label>
+      </span>
       <div className="hover:cursor-help">
-        <Info
+        <MessageCircleQuestion
           data-tooltip-id={id}
           data-tooltip-content={tooltip ?? ""}
           data-tooltip-place="bottom"
-          className={cn("text-primary h-4 w-4 p-0.5", tooltip?.trim() ? "" : "invisible")}
+          className={cn("text-primary h-3.5 w-3.5", tooltip?.trim() ? "" : "invisible")}
         />
       </div>
       {tooltip && (
@@ -245,6 +246,7 @@ interface FormDropdownProps extends React.InputHTMLAttributes<HTMLInputElement> 
   className?: string;
   tooltip?: string;
   tooltipId?: string;
+  onBlur?: () => void;
 }
 
 export const FormDropdown = ({
@@ -256,6 +258,7 @@ export const FormDropdown = ({
   className,
   tooltip,
   tooltipId,
+  onBlur,
   ...props
 }: FormDropdownProps) => {
   return (
@@ -274,6 +277,7 @@ export const FormDropdown = ({
         options={options}
         onChange={(id) => setter && setter(id)}
         className={className}
+        onBlur={onBlur}
         {...(props as any)}
       />
     </div>
@@ -287,8 +291,9 @@ export const FormDropdown = ({
  */
 interface FormCheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   checked?: boolean;
+  indeterminate?: boolean;
   label?: string;
-  setter?: (value: boolean) => void;
+  setter?: ((value: boolean) => void) | ((e: any, value: boolean) => void);
   className?: string;
   sentence?: React.ReactNode;
   required?: boolean;
@@ -299,6 +304,7 @@ interface FormCheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> 
 export const FormCheckbox = ({
   label,
   checked,
+  indeterminate,
   setter,
   className,
   sentence,
@@ -320,13 +326,14 @@ export const FormCheckbox = ({
       <div className="flex gap-2 sm:items-center">
         <Checkbox
           name={label ?? ""}
-          checked={checked}
+          checked={indeterminate ? "indeterminate" : checked}
           className={cn(
             "inline-flex aspect-square h-6 w-6 items-center justify-center rounded-[0.33em] border sm:h-5 sm:w-5",
             checked ? "border-primary border-opacity-85 bg-blue-200" : "border-gray-300 bg-gray-50"
           )}
           onCheckedChange={(checked) => setter && setter(!!checked)}
         >
+          {indeterminate && <Minus className="text-primary h-4 w-4 opacity-75" />}
           {checked && <Check className="text-primary h-4 w-4 opacity-75" />}
         </Checkbox>
         {sentence && (
@@ -573,24 +580,18 @@ export const FormDatePicker = ({
           align={align}
           side={side}
           sideOffset={sideOffset}
-          className={cn(
-            "pointer-events-auto z-[9999] w-auto overflow-hidden p-0", // <-- ensure it blocks clicks
-            contentClassName
-          )}
-          asChild
+          className={cn("w-auto overflow-hidden p-0", contentClassName)}
         >
-          <div className="absolute">
-            <Calendar
-              mode="single"
-              selected={selected}
-              captionLayout={captionLayout}
-              disabled={disabledDays as Matcher[]}
-              onSelect={(d) => {
-                setter?.(d ? d.getTime() : undefined);
-                if (autoClose) setOpen(false);
-              }}
-            />
-          </div>
+          <Calendar
+            mode="single"
+            selected={selected}
+            captionLayout={captionLayout}
+            disabled={disabledDays as Matcher[]}
+            onSelect={(d) => {
+              setter?.(d ? d.getTime() : undefined);
+              if (autoClose) setOpen(false);
+            }}
+          />
         </PopoverContent>
       </Popover>
     </div>

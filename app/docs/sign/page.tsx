@@ -1,15 +1,17 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { DocumentRenderer } from "@/components/docs/forms/previewer";
+import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
 import { Button } from "@/components/ui/button";
 import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
-import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { Loader2 } from "lucide-react";
 import { useFormFiller } from "@/components/docs/forms/form-filler.ctx";
+import { FormPreviewPdfDisplay } from "@/components/docs/forms/previewer";
+import { getBlockField, isBlockField } from "@/components/docs/forms/utils";
+import { Loader } from "@/components/ui/loader";
 
 const Page = () => {
   return (
@@ -24,7 +26,8 @@ function PageContent() {
   const form = useFormRendererContext();
   const formProcess = useFormProcess();
   const formFiller = useFormFiller();
-  const [mobileStage, setMobileStage] = useState("");
+  const [mobileStage, setMobileStage] = useState<"preview" | "form" | "confirm">("preview");
+  const [values, setValues] = useState<Record<string, string>>({});
 
   // Update the form process stuff
   useEffect(() => {
@@ -41,23 +44,48 @@ function PageContent() {
     if (formName && signingPartyId) {
       form.updateFormName(formName);
       form.updateSigningPartyId(signingPartyId);
-      formFiller.updateSigningPartyId(signingPartyId);
     }
   }, [formProcess]);
+
+  // Filter blocks to only include manual source fields
+  const manualBlocks = useMemo(
+    () =>
+      form.blocks.filter(
+        (block) => isBlockField(block) && getBlockField(block)?.source === "manual"
+      ),
+    [form.blocks]
+  );
+
+  // Get keyedFields that correspond to manual blocks (for PDF preview with coordinates)
+  const manualKeyedFields = useMemo(() => {
+    if (!form.keyedFields || form.keyedFields.length === 0) return [];
+
+    // Get field names from manual blocks
+    const manualFieldNames = new Set(
+      manualBlocks.map((block) => getBlockField(block)?.field).filter(Boolean)
+    );
+
+    // Filter keyedFields to only those in manual blocks
+    return form.keyedFields.filter((kf) => manualFieldNames.has(kf.field));
+  }, [form.keyedFields, manualBlocks]);
+
+  if (!form.formMetadata || form.loading) return <Loader>Loading form...</Loader>;
 
   return (
     <div className="bg-opacity-25 relative mx-auto my-7 flex h-[100%] max-h-[100%] w-full max-w-7xl flex-col items-center overflow-y-hidden rounded-[0.33em] border border-gray-400 bg-white">
       <div className="relative flex h-[100%] w-full flex-col justify-center overflow-y-hidden sm:w-7xl sm:flex-row">
         {/* Form Renderer */}
         <div className="relative h-full max-h-full w-full overflow-hidden">
+          {/* MOBILE */}
           <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
             <div className="relative mx-auto w-full overflow-auto rounded-md border">
               {formProcess.latest_document_url ? (
-                <DocumentRenderer
+                <FormPreviewPdfDisplay
                   documentUrl={formProcess.latest_document_url}
-                  highlights={[]}
-                  previews={form.previews}
-                  onHighlightFinished={() => {}}
+                  blocks={manualKeyedFields}
+                  values={values}
+                  onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
+                  selectedFieldId={form.selectedPreviewId}
                 />
               ) : (
                 <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -79,11 +107,12 @@ function PageContent() {
           <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
             <div className="relative h-[60vh] w-full overflow-auto rounded-md border bg-white">
               {formProcess.latest_document_url ? (
-                <DocumentRenderer
+                <FormPreviewPdfDisplay
                   documentUrl={formProcess.latest_document_url}
-                  highlights={[]}
-                  previews={form.previews}
-                  onHighlightFinished={() => {}}
+                  blocks={manualKeyedFields}
+                  values={values}
+                  onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
+                  selectedFieldId={form.selectedPreviewId}
                 />
               ) : (
                 <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -91,6 +120,7 @@ function PageContent() {
             </div>
           </div>
 
+          {/* DESKTOP */}
           {/* loading / error / empty / form */}
           {form.loading ? (
             <div className="flex items-center justify-center">
@@ -100,7 +130,7 @@ function PageContent() {
               </span>
             </div>
           ) : (
-            <FormFillerRenderer />
+            <FormFillerRenderer onValuesChange={setValues} />
           )}
         </div>
 
@@ -110,11 +140,12 @@ function PageContent() {
             <div className="relative flex h-full w-full flex-row gap-2">
               {!!formProcess.latest_document_url && (
                 <div className="relative h-full w-full">
-                  <DocumentRenderer
+                  <FormPreviewPdfDisplay
                     documentUrl={formProcess.latest_document_url}
-                    highlights={[]}
-                    previews={form.previews}
-                    onHighlightFinished={() => {}}
+                    blocks={manualKeyedFields}
+                    values={values}
+                    onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
+                    selectedFieldId={form.selectedPreviewId}
                   />
                 </div>
               )}

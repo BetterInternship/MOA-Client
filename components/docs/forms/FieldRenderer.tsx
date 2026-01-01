@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-16 22:43:51
- * @ Modified time: 2026-01-01 19:31:56
+ * @ Modified time: 2026-01-02 12:00:00
  * @ Description:
  *
  * The field renderer 3000 automatically renders the correct field for the situation!
@@ -164,7 +164,7 @@ const FieldRendererDropdown = <T extends any[]>({
   }));
 
   return (
-    <div className="space-y-1.5">
+    <div className="relative space-y-1.5 overflow-visible">
       <FormDropdown
         required={false}
         label={field.label}

@@ -10,10 +10,14 @@ import {
 
 export interface IFormFiller {
   getFinalValues: (autofillValues?: FormValues) => FormValues;
-  setValue: (field: string, value: string) => void;
-  setValues: (values: Record<string, string>) => void;
+  setValue: (field: string, value: any) => void;
+  setValues: (values: Record<string, any>) => void;
+  validateField: (
+    fieldKey: string,
+    field: ClientField<any> | ClientPhantomField<any>,
+    autofillValues?: FormValues
+  ) => void;
 
-  updateSigningPartyId: (signingPartyId: string) => void;
   errors: FormErrors;
   validate: (
     fields: (ClientField<[any]> | ClientPhantomField<[any]>)[],
@@ -26,7 +30,6 @@ const FormFillerContext = createContext({} as IFormFiller);
 export const useFormFiller = () => useContext(FormFillerContext);
 
 export const FormFillerContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [signingPartyId, setSigningPartyId] = useState<string>("initiator");
   const [values, _setValues] = useState({});
   const [errors, _setErrors] = useState({});
 
@@ -34,12 +37,22 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
     return { ...autofillValues, ...values };
   };
 
-  const setValue = (field: string, value: string) => {
-    _setValues({ ...values, [field]: value });
+  const setValue = (field: string, value: any) => {
+    // Convert all values to strings for consistency
+    const stringValue = value === null || value === undefined ? "" : String(value);
+    _setValues({ ...values, [field]: stringValue });
   };
 
-  const setValues = (newValues: Record<string, string>) => {
-    _setValues({ ...values, ...newValues });
+  const setValues = (newValues: Record<string, any>) => {
+    // Convert all values to strings for consistency
+    const stringifiedValues = Object.entries(newValues).reduce(
+      (acc, [key, val]) => {
+        acc[key] = val === null || val === undefined ? "" : String(val);
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+    _setValues({ ...values, ...stringifiedValues });
   };
 
   const validate = (
@@ -48,7 +61,7 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
   ) => {
     const errors: Record<string, string> = {};
     for (const field of fields) {
-      const error = validateField(field, values, autofillValues ?? {}, signingPartyId);
+      const error = validateFieldHelper(field, values, autofillValues ?? {});
       console.log("err", error, field);
       if (error) errors[field.field] = error;
     }
@@ -58,13 +71,32 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
     return errors;
   };
 
+  const validateField = (
+    fieldKey: string,
+    field: ClientField<any> | ClientPhantomField<any>,
+    autofillValues?: FormValues
+  ) => {
+    console.log("validateField called for:", fieldKey);
+    const error = validateFieldHelper(field, values, autofillValues ?? {});
+    console.log("Validation result:", error);
+    if (error) {
+      _setErrors((prev) => ({ ...prev, [fieldKey]: error }));
+    } else {
+      _setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldKey];
+        return newErrors;
+      });
+    }
+  };
+
   return (
     <FormFillerContext.Provider
       value={{
         getFinalValues,
         setValue,
         setValues,
-        updateSigningPartyId: setSigningPartyId,
+        validateField,
 
         validate,
         errors,
@@ -83,18 +115,23 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
  * @param autofillValues
  * @returns
  */
-const validateField = <T extends any[]>(
+const validateFieldHelper = <T extends any[]>(
   field: ClientField<T>,
   values: FormValues,
-  autofillValues: FormValues,
-  signingPartyId: string = "initiator"
+  autofillValues: FormValues
 ) => {
+  console.log("validateFieldHelper - field:", field.field, "signing_party_id:", field.signing_party_id, "source:", field.source);
   const finalValues = { ...autofillValues, ...values };
-  if (field.signing_party_id !== signingPartyId || field.source !== "manual") return;
+  // Only validate manual fields (already filtered for initiator in form renderer context)
+  if (field.source !== "manual") {
+    console.log("Skipping validation - not manual source");
+    return;
+  }
 
   const value = finalValues[field.field];
   const coerced = field.coerce(value);
   const result = field.validator?.safeParse(coerced);
+  console.log("Coerced value:", coerced, "Validation result:", result);
 
   if (result?.error) {
     const errorString = z

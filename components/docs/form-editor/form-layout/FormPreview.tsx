@@ -9,7 +9,7 @@ import {
 import { validateFieldWithZod } from "@/lib/form-validation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FormRenderer } from "@/components/docs/forms/FormFillerRenderer";
+import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { FormPreviewPdfDisplay } from "./FormPreviewPdfDisplay";
 
 interface FormPreviewProps {
@@ -93,7 +93,7 @@ export const FormPreview = ({
         <div className="relative flex-1 overflow-y-auto bg-white">
           <div className="">
             {filteredBlocks.length > 0 ? (
-              <FormRenderer
+              <FormFillerRenderer
                 formName={formName}
                 signingPartyId={selectedPartyId || ""}
                 fields={[]}
