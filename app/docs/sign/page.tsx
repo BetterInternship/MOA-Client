@@ -72,8 +72,8 @@ function PageContent() {
   if (!form.formMetadata || form.loading) return <Loader>Loading form...</Loader>;
 
   return (
-    <div className="bg-opacity-25 relative mx-auto my-7 flex h-[100%] max-h-[100%] w-full max-w-7xl flex-col items-center overflow-y-hidden rounded-[0.33em] border border-gray-400 bg-white">
-      <div className="relative flex h-[100%] w-full flex-col justify-center overflow-y-hidden sm:w-7xl sm:flex-row">
+    <div className="bg-opacity-25 relative mx-auto flex h-[87dvh] w-full max-w-7xl flex-col items-center overflow-hidden rounded-[0.33em] bg-white">
+      <div className="relative flex h-full w-full flex-col justify-center overflow-hidden pt-4 sm:w-7xl sm:flex-row">
         {/* Form Renderer */}
         <div className="relative h-full max-h-full w-full overflow-hidden">
           {/* MOBILE */}

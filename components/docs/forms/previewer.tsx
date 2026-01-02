@@ -277,7 +277,9 @@ const PdfPageWithFields = ({
     pdf
       .getPage(pageNumber)
       .then((page: PDFPageProxy) => {
-        const viewport = page.getViewport({ scale });
+        // Account for device pixel ratio for crisp rendering on high-DPI displays
+        const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+        const viewport = page.getViewport({ scale: scale * dpr });
         viewportRef.current = viewport;
 
         const canvas = canvasRef.current;
@@ -285,6 +287,10 @@ const PdfPageWithFields = ({
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+
+        // Set CSS pixel size to match logical size (divided by dpr)
+        canvas.style.width = `${viewport.width / dpr}px`;
+        canvas.style.height = `${viewport.height / dpr}px`;
 
         const canvasContext = canvas.getContext("2d");
         if (!canvasContext) return;
@@ -309,7 +315,7 @@ const PdfPageWithFields = ({
     };
   }, [pdf, pageNumber, scale]);
 
-  // Convert PDF coordinates to display coordinates
+  // Convert PDF coordinates to display coordinates, accounting for zoom-aware rendering
   const pdfToDisplay = (
     pdfX: number,
     pdfY: number
@@ -319,7 +325,7 @@ const PdfPageWithFields = ({
     if (!canvas || !viewport) return null;
 
     // Metadata coordinates already use top-left origin (y=0 at top)
-    // Just scale them directly to display coordinates
+    // Scale them directly to display coordinates
     const displayX = pdfX * scale;
     const displayY = pdfY * scale;
 
@@ -327,6 +333,18 @@ const PdfPageWithFields = ({
       displayX,
       displayY,
     };
+  };
+
+  // Get the actual zoom-aware scale factor for box sizing
+  const getZoomAwareScale = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return scale;
+
+    const rect = canvas.getBoundingClientRect();
+    // Browser zoom factor: rendered size vs actual canvas size
+    const browserZoom = rect.width > 0 ? rect.width / canvas.width : 1;
+    // Combine PDF scale (from zoom buttons) with browser zoom
+    return Math.max(browserZoom, 0.1); // Prevent division by zero
   };
 
   return (
@@ -372,10 +390,10 @@ const PdfPageWithFields = ({
           const canvas = canvasRef.current;
           if (!rect || !canvas) return null;
 
-          // Calculate actual pixel dimensions from PDF coordinates
-          const pdfScale = scale * (window.devicePixelRatio || 1);
-          const widthPixels = (w * pdfScale * rect.width) / canvas.width;
-          const heightPixels = (h * pdfScale * rect.height) / canvas.height;
+          // Canvas internal resolution is scaled by DPR, but CSS size compensates
+          // We only need the scale factor, not DPR-adjusted dimensions
+          const widthPixels = w * scale;
+          const heightPixels = h * scale;
 
           const rawValue = values[fieldName];
           // Handle different value types (string, array, object, etc)

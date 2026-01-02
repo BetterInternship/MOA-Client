@@ -68,7 +68,7 @@ export function FormFillerRenderer({
   }, [form.selectedPreviewId]);
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="relative flex h-full flex-col rounded-[0.33em] border border-gray-300">
       <div ref={scrollContainerRef} className="relative flex flex-1 flex-col overflow-auto">
         <div className="text-opacity-60 shadow-soft border-r border-b border-gray-300 bg-gray-100 px-7 py-3 text-2xl font-bold tracking-tighter text-gray-700">
           {form.formName}
