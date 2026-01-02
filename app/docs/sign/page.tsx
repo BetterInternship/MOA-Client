@@ -55,20 +55,27 @@ function PageContent() {
     if (formName && signingPartyId) {
       form.updateFormName(formName);
       form.updateSigningPartyId(signingPartyId);
-
-      const signatureFields = form.formMetadata.getSignatureFieldsForClientService(signingPartyId);
-      const valuesWithPrefilledSignatures = form.formMetadata.setSignatureValueForSigningParty(
-        finalValues,
-        profile.name,
-        signingPartyId
-      );
-
-      formFiller.setValues(valuesWithPrefilledSignatures);
-      signContext.setRequiredSignatures(
-        signatureFields.map((signatureField) => signatureField.field)
-      );
     }
   }, [formProcess]);
+
+  // Update sign context
+  useEffect(() => {
+    if (!formProcess.my_signing_party_id || !form.formName) return;
+
+    const signatureFields = form.formMetadata.getSignatureFieldsForClientService(
+      formProcess.my_signing_party_id
+    );
+    const valuesWithPrefilledSignatures = form.formMetadata.setSignatureValueForSigningParty(
+      finalValues,
+      profile.name,
+      formProcess.my_signing_party_id
+    );
+
+    formFiller.setValues(valuesWithPrefilledSignatures);
+    signContext.setRequiredSignatures(
+      signatureFields.map((signatureField) => signatureField.field)
+    );
+  }, [formProcess, form]);
 
   // Filter blocks to only include manual source fields
   const manualBlocks = useMemo(
