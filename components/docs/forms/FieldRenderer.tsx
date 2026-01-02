@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-16 22:43:51
- * @ Modified time: 2025-12-30 12:15:22
+ * @ Modified time: 2026-01-02 18:29:50
  * @ Description:
  *
  * The field renderer 3000 automatically renders the correct field for the situation!
@@ -39,7 +39,6 @@ export const FieldRenderer = <T extends any[]>({
   // Placeholder or error
   const TooltipLabel = () => {
     if (error) return <p className="text-destructive mt-1 text-xs">{error}</p>;
-
     return null;
   };
 
@@ -148,7 +147,7 @@ export const FieldRenderer = <T extends any[]>({
  */
 const PhantomFieldBadge = () => {
   return (
-    <span className="text-xs font-medium px-1.5 py-0.5 bg-amber-100 text-amber-500 rounded-[0.33em] whitespace-nowrap">
+    <span className="rounded-[0.33em] bg-amber-100 px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-amber-500">
       Not in PDF
     </span>
   );
@@ -188,7 +187,7 @@ const FieldRendererDropdown = <T extends any[]>({
   const badge = isPhantom && <PhantomFieldBadge />;
 
   return (
-    <div className="space-y-1.5 relative overflow-visible">
+    <div className="relative space-y-1.5 overflow-visible">
       <FormDropdown
         required={false}
         label={field.label}
@@ -361,8 +360,6 @@ const FieldRendererInput = <T extends any[]>({
   const inputMode = field.type === "number" ? "numeric" : undefined;
   const badge = isPhantom && <PhantomFieldBadge />;
 
-  // const isRecipientField =
-  //   typeof field.field === "string" && field.field.endsWith(":recipient");
   return (
     <div className="space-y-1.5">
       <FormInput
@@ -380,14 +377,6 @@ const FieldRendererInput = <T extends any[]>({
         onBlur={() => onBlur?.()}
         labelAddon={badge}
       />
-      {/* {isRecipientField && (
-        <div className="flex gap-1 md:items-center">
-          <Info className="text-primary h-3.5 w-3.5"></Info>
-          <p className="text-xs text-primary">
-            A separate form will be emailed to them to complete and sign.
-          </p>
-        </div>
-      )} */}
       <TooltipContent />
     </div>
   );

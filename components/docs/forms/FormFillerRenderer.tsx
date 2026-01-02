@@ -85,7 +85,7 @@ export function FormFillerRenderer({
               formFiller.validateField(fieldKey, field, autofillValues)
             }
             fieldRefs={fieldRefs.current}
-            selectedFieldId={form.selectedPreviewId}
+            selectedFieldId={form.selectedPreviewId ?? undefined}
           />
         </div>
       </div>
@@ -125,6 +125,9 @@ const BlocksRenderer = <T extends any[]>({
 
     // Only check selection for form fields
     const isSelected = isForm && field && selectedFieldId === field.field;
+
+    // ! toremove
+    console.log(field?.field, field?.type);
 
     return (
       <>
