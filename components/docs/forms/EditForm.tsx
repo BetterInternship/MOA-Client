@@ -144,6 +144,7 @@ export function LabelWithTooltip({
   tooltipId?: string | undefined;
   labelAddon?: React.ReactNode;
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-base-to-string
   const id = tooltipId ?? `${label?.toString().replace(/\s+/g, "-").toLowerCase()}-tooltip`;
   return (
     <div className="mb-1 flex w-full justify-between gap-2 md:items-center">
@@ -862,6 +863,7 @@ export function TimeInputNative({
   className,
   tooltip,
   tooltipId,
+  labelAddon,
   ...props
 }: {
   label: string;
@@ -872,6 +874,7 @@ export function TimeInputNative({
   className?: string;
   tooltip?: string;
   tooltipId?: string;
+  labelAddon?: React.ReactNode;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange">) {
   return (
     <div className={className}>
@@ -881,6 +884,7 @@ export function TimeInputNative({
           required={required}
           tooltip={tooltip}
           tooltipId={tooltipId}
+          labelAddon={labelAddon}
         />
       )}
       <Input

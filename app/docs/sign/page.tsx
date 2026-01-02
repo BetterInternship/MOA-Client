@@ -12,6 +12,9 @@ import { useFormFiller } from "@/components/docs/forms/form-filler.ctx";
 import { FormPreviewPdfDisplay } from "@/components/docs/forms/previewer";
 import { getBlockField, isBlockField } from "@/components/docs/forms/utils";
 import { Loader } from "@/components/ui/loader";
+import { useMyAutofill } from "@/hooks/use-my-autofill";
+import { useSignContext } from "../auth/provider/sign.ctx";
+import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 
 const Page = () => {
   return (
@@ -23,11 +26,17 @@ const Page = () => {
 
 function PageContent() {
   const params = useSearchParams();
+  const profile = useSignatoryProfile();
   const form = useFormRendererContext();
   const formProcess = useFormProcess();
   const formFiller = useFormFiller();
+  const autofillValues = useMyAutofill();
+  const signContext = useSignContext();
   const [mobileStage, setMobileStage] = useState<"preview" | "form" | "confirm">("preview");
-  const [values, setValues] = useState<Record<string, string>>({});
+  const finalValues = useMemo(
+    () => formFiller.getFinalValues(autofillValues),
+    [formFiller, autofillValues]
+  );
 
   // Update the form process stuff
   useEffect(() => {
@@ -41,11 +50,32 @@ function PageContent() {
   useEffect(() => {
     const formName = formProcess.form_name;
     const signingPartyId = formProcess.my_signing_party_id;
+
+    // If somehting needs to change
     if (formName && signingPartyId) {
       form.updateFormName(formName);
       form.updateSigningPartyId(signingPartyId);
     }
   }, [formProcess]);
+
+  // Update sign context
+  useEffect(() => {
+    if (!formProcess.my_signing_party_id || !form.formName) return;
+
+    const signatureFields = form.formMetadata.getSignatureFieldsForClientService(
+      formProcess.my_signing_party_id
+    );
+    const valuesWithPrefilledSignatures = form.formMetadata.setSignatureValueForSigningParty(
+      finalValues,
+      profile.name,
+      formProcess.my_signing_party_id
+    );
+
+    formFiller.setValues(valuesWithPrefilledSignatures);
+    signContext.setRequiredSignatures(
+      signatureFields.map((signatureField) => signatureField.field)
+    );
+  }, [formProcess, form]);
 
   // Filter blocks to only include manual source fields
   const manualBlocks = useMemo(
@@ -83,7 +113,7 @@ function PageContent() {
                 <FormPreviewPdfDisplay
                   documentUrl={formProcess.latest_document_url}
                   blocks={manualKeyedFields}
-                  values={values}
+                  values={finalValues}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
                 />
@@ -110,7 +140,7 @@ function PageContent() {
                 <FormPreviewPdfDisplay
                   documentUrl={formProcess.latest_document_url}
                   blocks={manualKeyedFields}
-                  values={values}
+                  values={finalValues}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
                 />
@@ -130,7 +160,7 @@ function PageContent() {
               </span>
             </div>
           ) : (
-            <FormFillerRenderer onValuesChange={setValues} />
+            <FormFillerRenderer />
           )}
         </div>
 
@@ -143,7 +173,7 @@ function PageContent() {
                   <FormPreviewPdfDisplay
                     documentUrl={formProcess.latest_document_url}
                     blocks={manualKeyedFields}
-                    values={values}
+                    values={finalValues}
                     onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                     selectedFieldId={form.selectedPreviewId}
                   />

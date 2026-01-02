@@ -7,6 +7,7 @@ import { FormEditorContextProvider } from "./ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/ed
 import { SignatoryProfileContextProvider } from "./auth/provider/signatory.ctx";
 import { FormFillerContextProvider } from "@/components/docs/forms/form-filler.ctx";
 import { FormProcessContextProvider } from "@/components/docs/forms/form-process.ctx";
+import { SignContextProvider } from "./auth/provider/sign.ctx";
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -16,7 +17,9 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
           <FormProcessContextProvider>
             <FormFillerContextProvider>
               <SignatoryProfileContextProvider>
-                <ModalProvider>{children}</ModalProvider>
+                <SignContextProvider>
+                  <ModalProvider>{children}</ModalProvider>
+                </SignContextProvider>
               </SignatoryProfileContextProvider>
             </FormFillerContextProvider>
           </FormProcessContextProvider>

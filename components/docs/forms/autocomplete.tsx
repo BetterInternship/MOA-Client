@@ -5,7 +5,7 @@ import { Input } from "./input";
 import { useDetectClickOutside } from "react-detect-click-outside";
 import { cn } from "@/lib/utils";
 import { PlusCircleIcon } from "lucide-react";
-import { LabelWithTooltip } from "@/components/docs/forms/EditForm";
+import { LabelWithTooltip } from "./EditForm";
 
 export interface IAutocompleteOption<ID extends number | string> {
   id: ID;
@@ -24,6 +24,7 @@ function AutocompleteBase<ID extends number | string>({
   className,
   multiple = true,
   label,
+  labelAddon,
   ...props
 }: {
   required?: boolean;
@@ -34,6 +35,7 @@ function AutocompleteBase<ID extends number | string>({
   className?: string;
   multiple?: boolean;
   label?: React.ReactNode;
+  labelAddon?: string;
 }) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -58,7 +60,8 @@ function AutocompleteBase<ID extends number | string>({
       return;
     }
     const set = new Set(value ?? []);
-    set.has(id) ? set.delete(id) : set.add(id);
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
     setter(Array.from(set));
   };
 
@@ -99,11 +102,14 @@ function AutocompleteBase<ID extends number | string>({
   };
 
   return (
-    <div className={cn("relative w-full", className)} ref={ref}>
+    <div className={cn("relative w-full overflow-visible", className)} ref={ref}>
       {label ? (
-        <label htmlFor={inputId} className="mb-1 block text-xs text-gray-600">
-          {label} {required && <span className="text-red-500">*</span>}
-        </label>
+        <div className="mb-1 flex items-center gap-2">
+          <label htmlFor={inputId} className="text-xs text-gray-600">
+            {label} {required && <span className="text-red-500">*</span>}
+          </label>
+          {labelAddon && <div>{labelAddon}</div>}
+        </div>
       ) : null}
 
       {multiple ? (
@@ -352,13 +358,15 @@ export function AutocompleteTreeMulti({
   const setSelected = (arr: string[]) => setter(Array.from(new Set(arr)));
   const toggleChild = (cid: string) => {
     const next = new Set(selected);
-    next.has(cid) ? next.delete(cid) : next.add(cid);
+    if (next.has(cid)) next.delete(cid);
+    else next.add(cid);
     setSelected(Array.from(next));
   };
   const toggleParent = (p: TreeOption) => {
     if (!p.children?.length) {
       const next = new Set(selected);
-      next.has(p.value) ? next.delete(p.value) : next.add(p.value);
+      if (next.has(p.value)) next.delete(p.value);
+      else next.add(p.value);
       setSelected(Array.from(next));
       return;
     }
@@ -416,7 +424,7 @@ export function AutocompleteTreeMulti({
   );
 
   return (
-    <div className={cn("relative w-full", className)} ref={ref}>
+    <div className={cn("relative w-full overflow-visible", className)} ref={ref}>
       {label ? <LabelWithTooltip label={label} required={required} tooltip={tooltip} /> : null}
 
       {/* input + chips (same look/feel as AutocompleteMulti) */}

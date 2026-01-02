@@ -10,18 +10,13 @@ import { getBlockField, isBlockField } from "./utils";
 import { useFormFiller } from "./form-filler.ctx";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
 
-export function FormFillerRenderer({
-  onValuesChange,
-}: {
-  onValuesChange?: (values: Record<string, string>) => void;
-}) {
+export function FormFillerRenderer() {
   const form = useFormRendererContext();
   const formFiller = useFormFiller();
   const autofillValues = useMyAutofill();
   const filteredBlocks = form.blocks;
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  console.log("filteredBlocks", filteredBlocks);
 
   // Deduplicate blocks: only keep first instance of each field ID
   const deduplicatedBlocks = useMemo(() => {
@@ -42,11 +37,6 @@ export function FormFillerRenderer({
     () => formFiller.getFinalValues(autofillValues),
     [formFiller, autofillValues]
   );
-
-  // Notify parent of values change
-  useEffect(() => {
-    onValuesChange?.(finalValues);
-  }, [finalValues, onValuesChange]);
 
   // Scroll to selected field
   useEffect(() => {
@@ -73,7 +63,7 @@ export function FormFillerRenderer({
         <div className="text-opacity-60 shadow-soft border-r border-b border-gray-300 bg-gray-100 px-7 py-3 text-2xl font-bold tracking-tighter text-gray-700">
           {form.formName}
         </div>
-        <div className="flex-1 space-y-2 border-r border-gray-300 px-7">
+        <div className="mt-7 flex-1 space-y-2 border-r border-gray-300 px-7">
           <BlocksRenderer
             formKey={form.formName}
             blocks={deduplicatedBlocks}
@@ -85,7 +75,7 @@ export function FormFillerRenderer({
               formFiller.validateField(fieldKey, field, autofillValues)
             }
             fieldRefs={fieldRefs.current}
-            selectedFieldId={form.selectedPreviewId}
+            selectedFieldId={form.selectedPreviewId ?? undefined}
           />
         </div>
       </div>
@@ -126,9 +116,12 @@ const BlocksRenderer = <T extends any[]>({
     // Only check selection for form fields
     const isSelected = isForm && field && selectedFieldId === field.field;
 
+    // ! FIX THIS IN THE FUTURE
+    // ! REMOVE || field?.field.includes("signature")
+    // ! IT'S just a temporary fix while the source for sigs are not manual
     return (
       <>
-        {isForm && field?.source === "manual" && (
+        {isForm && (field?.source === "manual" || field?.field?.includes("signature")) && (
           <div className="space-between flex flex-row" key={`${formKey}:${i}`}>
             <div
               ref={(el) => {
