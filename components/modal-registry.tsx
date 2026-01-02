@@ -7,6 +7,8 @@ import {
 } from "@betterinternship/core/forms";
 import { IFormFiller } from "./docs/forms/form-filler.ctx";
 import { SpecifySigningPartiesModal } from "./modals/SpecifySigningPartyModal";
+import { useRouter } from "next/navigation";
+import { FormContinuationSuccessModal } from "./modals/FormContinuationSuccessModal";
 
 /**
  * Simplifies modal config since we usually reuse each of these modal stuffs.
@@ -15,6 +17,7 @@ import { SpecifySigningPartiesModal } from "./modals/SpecifySigningPartyModal";
  */
 export const useModalRegistry = () => {
   const { openModal: open, closeModal: close } = useModal();
+  const router = useRouter();
 
   const modalRegistry = {
     // Email confirmation modal
@@ -42,6 +45,18 @@ export const useModalRegistry = () => {
           }
         ),
       close: () => close("specify-signing-parties"),
+    },
+
+    // Appears when a form has successfully been submitted
+    formContinuationSuccess: {
+      open: () =>
+        open("form-continuation-success", <FormContinuationSuccessModal />, {
+          title: "Form Successfully Submitted",
+          hasClose: false,
+          allowBackdropClick: false,
+          onClose: () => router.push("/dashboard"),
+        }),
+      close: () => close("form-continuation-success"),
     },
   };
 

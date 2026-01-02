@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-16 22:43:51
- * @ Modified time: 2026-01-02 18:29:50
+ * @ Modified time: 2026-01-02 20:38:24
  * @ Description:
  *
  * The field renderer 3000 automatically renders the correct field for the situation!
@@ -9,6 +9,7 @@
 
 "use client";
 
+import { useSignContext } from "@/app/docs/auth/provider/sign.ctx";
 import {
   FormCheckbox,
   FormDatePicker,
@@ -19,6 +20,7 @@ import {
 } from "./EditForm";
 import { AutocompleteTreeMulti, TreeOption } from "./autocomplete";
 import { ClientField } from "@betterinternship/core/forms";
+import { useEffect, useState } from "react";
 
 export const FieldRenderer = <T extends any[]>({
   field,
@@ -116,8 +118,8 @@ export const FieldRenderer = <T extends any[]>({
     );
   }
 
-  // Signatures or checkboxes
-  if (field.type === "signature" || field.type === "checkbox") {
+  // Checkboxes
+  if (field.type === "checkbox") {
     return (
       <FieldRendererCheckbox
         field={field}
@@ -126,6 +128,19 @@ export const FieldRenderer = <T extends any[]>({
         onChange={onChange}
         onBlur={onBlur}
         isPhantom={isPhantom}
+      />
+    );
+  }
+
+  // Signatures
+  if (field.type === "signature") {
+    return (
+      <FieldRendererSignature
+        field={field}
+        value={value}
+        TooltipContent={TooltipLabel}
+        onChange={onChange}
+        onBlur={onBlur}
       />
     );
   }
@@ -377,6 +392,57 @@ const FieldRendererInput = <T extends any[]>({
         onBlur={() => onBlur?.()}
         labelAddon={badge}
       />
+      <TooltipContent />
+    </div>
+  );
+};
+
+/**
+ * Signature-specific input
+ *
+ * @component
+ */
+const FieldRendererSignature = <T extends any[]>({
+  field,
+  value,
+  TooltipContent,
+  onChange,
+  onBlur,
+}: {
+  field: ClientField<T>;
+  value: string;
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: string | number) => void;
+  onBlur?: () => void;
+}) => {
+  const signContext = useSignContext();
+  const [checked, setChecked] = useState(false);
+
+  // ! PUT THIS SOMEWHERE ELSE
+  useEffect(() => {
+    signContext.setHasAgreedForSignature(field.field, value, checked);
+  }, [checked, value]);
+
+  return (
+    <div className="space-y-1.5 rounded-[0.33em] border border-gray-300 p-4 px-5">
+      <FormInput
+        required={true}
+        label={`${field.label} (Signatory Full Name)`}
+        value={value ?? ""}
+        setter={(v) => onChange(v)}
+        tooltip={field.tooltip_label}
+        className="w-full"
+        onBlur={() => onBlur?.()}
+      />
+      <div className="mt-5 flex flex-row" onClick={() => setChecked(!checked)}>
+        <div className="mt-1 mr-2">
+          <FormCheckbox checked={checked} setter={setChecked}></FormCheckbox>
+        </div>
+        <span className="text-md text-gray-700 italic">
+          I agree to use electronic representation of my signature for all purposes when I (or my
+          agent) use them on documents, including legally binding contracts.
+        </span>
+      </div>
       <TooltipContent />
     </div>
   );

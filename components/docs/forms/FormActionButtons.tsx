@@ -14,12 +14,14 @@ import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { formsControllerContinueFormProcess } from "@/app/api";
 import useModalRegistry from "@/components/modal-registry";
 import { useFormProcess } from "./form-process.ctx";
+import { useSignContext } from "@/app/docs/auth/provider/sign.ctx";
 
 export function FormActionButtons() {
   const form = useFormRendererContext();
   const formFiller = useFormFiller();
   const formProcess = useFormProcess();
   const autofillValues = useMyAutofill();
+  const signContext = useSignContext();
   const profile = useSignatoryProfile();
   const modalRegistry = useModalRegistry();
   const updateAutofill = useMyAutofillUpdate();
@@ -63,8 +65,12 @@ export function FormActionButtons() {
           (signingPartyValues: FormValues) =>
             formsControllerContinueFormProcess({
               formProcessId: formProcess.id,
+              supposedSigningPartyId: formProcess.my_signing_party_id!,
               values: { ...finalValues, ...signingPartyValues },
               audit: getClientAudit(),
+            }).then(() => {
+              modalRegistry.specifySigningParties.close();
+              modalRegistry.formContinuationSuccess.open();
             }),
           autofillValues
         );
@@ -74,12 +80,13 @@ export function FormActionButtons() {
         // ! does this still need an audit? it's just generating a pdf without sigs
         await formsControllerContinueFormProcess({
           formProcessId: formProcess.id,
+          supposedSigningPartyId: formProcess.my_signing_party_id!,
           values: finalValues,
           audit: getClientAudit(),
         });
 
         await queryClient.invalidateQueries({ queryKey: ["my_forms"] });
-        router.push("/dashboard");
+        modalRegistry.formContinuationSuccess.open();
       }
 
       setBusy(false);
@@ -96,7 +103,7 @@ export function FormActionButtons() {
         onClick={() => void handleSubmit()}
         variant="default"
         className="w-full text-xs sm:w-auto"
-        disabled={busy}
+        disabled={busy || !signContext.hasAgreed}
       >
         <TextLoader loading={busy}>{"Submit Form"}</TextLoader>
       </Button>
