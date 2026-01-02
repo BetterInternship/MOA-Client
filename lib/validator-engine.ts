@@ -241,12 +241,17 @@ function generateArrayValidator(rule: ValidatorRule): string {
 function generatePreprocessedStringValidator(config: ValidatorConfig): string {
   let zodCode = "z.string()";
 
-  // Type conversions
+  // Type conversions - check for number type OR min/max rules (which imply number)
   const typeRules = config.rules.filter(
-    (r) => r.type === "number" || r.type === "email" || r.type === "url"
+    (r) =>
+      r.type === "number" ||
+      r.type === "email" ||
+      r.type === "url" ||
+      r.type === "min" ||
+      r.type === "max"
   );
 
-  if (typeRules.some((r) => r.type === "number")) {
+  if (typeRules.some((r) => r.type === "number" || r.type === "min" || r.type === "max")) {
     zodCode = "z.number()";
   } else if (typeRules.some((r) => r.type === "email")) {
     zodCode = "z.string()";
@@ -480,8 +485,8 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
   //   rules.push(createValidatorRule("trim"));
   // }
 
-  // Min length/value with message
-  const minMatch = coreValidator.match(/\.min\((\d+),\s*\{\s*message\s*:\s*"([^"]+)"\}/);
+  // Min length/value with message - handles various whitespace formats
+  const minMatch = coreValidator.match(/\.min\(\s*(\d+)\s*,\s*\{\s*message\s*:\s*"([^"]+)"\s*\}/);
   if (minMatch) {
     const rule = createValidatorRule(isNumber ? "min" : "minLength");
     rule.params = {
@@ -491,8 +496,8 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     rules.push(rule);
   }
 
-  // Max length/value with message
-  const maxMatch = coreValidator.match(/\.max\((\d+),\s*\{\s*message\s*:\s*"([^"]+)"\}/);
+  // Max length/value with message - handles various whitespace formats
+  const maxMatch = coreValidator.match(/\.max\(\s*(\d+)\s*,\s*\{\s*message\s*:\s*"([^"]+)"\s*\}/);
   if (maxMatch) {
     const rule = createValidatorRule(isNumber ? "max" : "maxLength");
     rule.params = {

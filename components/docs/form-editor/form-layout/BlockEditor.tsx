@@ -34,45 +34,10 @@ interface BlockEditorProps {
  */
 export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockEditorProps) => {
   const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(block);
-  const [validatorConfig, setValidatorConfig] = useState<any>(() => {
-    // Parse existing validator Zod code into config when block loads
-    if (block?.field_schema?.validator) {
-      return zodCodeToValidatorConfig(block.field_schema.validator);
-    }
-    if (block?.phantom_field_schema?.validator) {
-      return zodCodeToValidatorConfig(block.phantom_field_schema.validator);
-    }
-    return { rules: [] };
-  });
-  const [rawZodCode, setRawZodCode] = useState<string>(() => {
-    // Keep track of raw Zod code for raw mode
-    if (block?.field_schema?.validator) {
-      return block.field_schema.validator;
-    }
-    if (block?.phantom_field_schema?.validator) {
-      return block.phantom_field_schema.validator;
-    }
-    return "";
-  });
 
   useEffect(() => {
     setEditedBlock(block);
-    // Only reset validator config if the validator code actually changed
-    // This prevents losing incomplete rules when we just sent the validator ourselves
-    const newValidator =
-      block?.field_schema?.validator || block?.phantom_field_schema?.validator || "";
-
-    // Only re-parse if validator changed and it's different from what we currently have
-    if (newValidator && newValidator !== rawZodCode) {
-      const parsedConfig = zodCodeToValidatorConfig(newValidator);
-      setValidatorConfig(parsedConfig);
-      setRawZodCode(newValidator);
-    } else if (!newValidator && rawZodCode !== "") {
-      // Validator was cleared
-      setValidatorConfig({ rules: [] });
-      setRawZodCode("");
-    }
-  }, [block?.field_schema?.validator, block?.phantom_field_schema?.validator]);
+  }, [block]);
 
   if (!editedBlock) {
     return (
@@ -247,17 +212,18 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
 
             {/* Validator Builder - New UI-based validator */}
             <ValidatorBuilder
-              config={validatorConfig}
-              rawZodCode={rawZodCode}
+              config={
+                editedBlock.field_schema?.validator
+                  ? zodCodeToValidatorConfig(editedBlock.field_schema.validator)
+                  : { rules: [] }
+              }
+              rawZodCode={editedBlock.field_schema?.validator || ""}
               onConfigChange={(newConfig) => {
-                setValidatorConfig(newConfig);
-                // Convert config to Zod code and update block
+                // Convert config to Zod code and save immediately
                 const zodCode = validatorConfigToZodCode(newConfig);
-                setRawZodCode(zodCode);
                 handleFieldSchemaChange("validator", zodCode);
               }}
               onRawZodChange={(zodCode) => {
-                setRawZodCode(zodCode);
                 handleFieldSchemaChange("validator", zodCode);
               }}
             />
@@ -316,17 +282,18 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
 
             {/* Validator Builder - New UI-based validator */}
             <ValidatorBuilder
-              config={validatorConfig}
-              rawZodCode={rawZodCode}
+              config={
+                editedBlock.phantom_field_schema?.validator
+                  ? zodCodeToValidatorConfig(editedBlock.phantom_field_schema.validator)
+                  : { rules: [] }
+              }
+              rawZodCode={editedBlock.phantom_field_schema?.validator || ""}
               onConfigChange={(newConfig) => {
-                setValidatorConfig(newConfig);
-                // Convert config to Zod code and update block
+                // Convert config to Zod code and save immediately
                 const zodCode = validatorConfigToZodCode(newConfig);
-                setRawZodCode(zodCode);
                 handlePhantomFieldSchemaChange("validator", zodCode);
               }}
               onRawZodChange={(zodCode) => {
-                setRawZodCode(zodCode);
                 handlePhantomFieldSchemaChange("validator", zodCode);
               }}
             />

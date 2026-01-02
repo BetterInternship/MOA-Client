@@ -215,7 +215,6 @@ function RuleCard({
 
   // Safety check - if no definition found, show error state (after hooks)
   if (!definition) {
-    console.log("No definition - showing error");
     return (
       <div className="rounded border border-red-200 bg-red-50 p-2">
         <div className="text-xs text-red-600">Unknown rule type: {rule.type}</div>
@@ -239,7 +238,6 @@ function RuleCard({
 
   // Special handling for enum/array options
   if (rule.type === "enum" || rule.type === "array") {
-    console.log("Rendering enum/array card");
     const handleOptionsBlur = () => {
       const newOptions = optionsText
         .split("\n")
