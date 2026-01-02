@@ -1,22 +1,24 @@
 /**
- * Validator Builder UI
- * Comprehensive UI builder for non-technical users to create Zod validators
- * Also includes raw code mode for developers
+ * Validator Builder UI - Refactored for maintainability
+ *
+ * Features:
+ * - UI mode: Intuitive rule builder for non-technical users
+ * - Raw mode: Code editor for developers
+ * - Auto-normalization: Handles newlines and spacing automatically
+ * - Two-way sync: Changes propagate between UI and raw code
  */
 
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Plus, Code, Sparkles, CheckCircle, AlertCircle } from "lucide-react";
+import { X, Plus, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   ValidatorRule,
   ValidatorConfig,
   getAvailableRules,
   getRuleDefinition,
-  getRuleDescription,
   createValidatorRule,
-  isRuleValid,
   validatorConfigToZodCode,
   zodCodeToValidatorConfig,
 } from "@/lib/validator-engine";
@@ -26,6 +28,19 @@ interface ValidatorBuilderProps {
   onConfigChange: (config: ValidatorConfig) => void;
   rawZodCode?: string;
   onRawZodChange?: (code: string) => void;
+}
+
+/**
+ * Normalize Zod code: remove newlines, collapse spaces
+ */
+function normalizeZodCode(code: string): string {
+  return code
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function ValidatorBuilder({
@@ -39,18 +54,30 @@ export function ValidatorBuilder({
   const [localRawCode, setLocalRawCode] = useState(rawZodCode || "");
   const rawCodeRef = useRef<HTMLTextAreaElement>(null);
 
-  // Sync rawZodCode from parent when it changes externally
+  // Sync external rawZodCode changes
   useEffect(() => {
     setLocalRawCode(rawZodCode || "");
   }, [rawZodCode]);
 
-  const availableRules = getAvailableRules();
+  // ============================================================================
+  // UI STATE MANAGEMENT - DRY helpers
+  // ============================================================================
 
-  const addRule = (ruleType: any) => {
+  const addRule = (ruleType: ValidatorRule["type"]) => {
     const newRule = createValidatorRule(ruleType);
+
+    // Remove conflicting rules
+    // enum and array are mutually exclusive
+    let newRules = [...config.rules];
+    if (ruleType === "array") {
+      newRules = newRules.filter((r) => r.type !== "enum");
+    } else if (ruleType === "enum") {
+      newRules = newRules.filter((r) => r.type !== "array");
+    }
+
     onConfigChange({
       ...config,
-      rules: [...config.rules, newRule],
+      rules: [...newRules, newRule],
     });
     setShowRuleMenu(false);
   };
@@ -63,26 +90,48 @@ export function ValidatorBuilder({
   };
 
   const updateRule = (ruleId: string, updates: Partial<ValidatorRule>) => {
+    console.log("[updateRule] Updating rule:", ruleId, "with:", updates);
     onConfigChange({
       ...config,
       rules: config.rules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r)),
     });
   };
 
+  // ============================================================================
+  // RAW MODE HANDLERS
+  // ============================================================================
+
   const handleRawZodBlur = () => {
-    // Only sync when user is done editing (blur)
-    onRawZodChange?.(localRawCode);
+    const normalized = normalizeZodCode(localRawCode);
+
+    // Save normalized code
+    onRawZodChange?.(normalized);
+
+    // Parse and update config for UI display
     try {
-      const parsed = zodCodeToValidatorConfig(localRawCode);
-      onConfigChange(parsed);
-    } catch (e) {
-      // Keep the raw code even if parsing fails
+      const parsed = zodCodeToValidatorConfig(normalized);
+      onConfigChange?.(parsed);
+    } catch {
+      // Parsing failed - that's ok, raw code is still saved
     }
   };
 
-  const zodCode = validatorConfigToZodCode(config);
+  const handleRawModeToggle = () => {
+    if (mode === "ui") {
+      // Switching to raw: normalize the current config's generated code
+      const generated = validatorConfigToZodCode(config);
+      setLocalRawCode(generated);
+      setMode("raw");
+    } else {
+      // Switching to UI: keep existing code
+      setMode("ui");
+    }
+  };
 
-  // RAW CODE MODE - For developers
+  // ============================================================================
+  // RENDER: RAW CODE MODE
+  // ============================================================================
+
   if (mode === "raw") {
     return (
       <div className="space-y-2">
@@ -91,7 +140,7 @@ export function ValidatorBuilder({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setMode("ui")}
+            onClick={handleRawModeToggle}
             className="h-6 px-2 text-xs"
           >
             Builder
@@ -103,15 +152,24 @@ export function ValidatorBuilder({
           value={localRawCode}
           onChange={(e) => setLocalRawCode(e.target.value)}
           onBlur={handleRawZodBlur}
-          placeholder={`z.string().min(8)\nz.enum(["A", "B"])`}
+          placeholder={`z.string().min(8)\nz.array(z.enum(["A", "B"])).min(1)`}
           className="w-full rounded border border-gray-300 bg-white p-2 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           rows={4}
         />
+        <p className="text-xs text-gray-500">
+          Paste multi-line code - it will be automatically normalized
+        </p>
       </div>
     );
   }
 
-  // UI BUILDER MODE - For non-technical users
+  // ============================================================================
+  // RENDER: UI BUILDER MODE
+  // ============================================================================
+
+  const availableRules = getAvailableRules();
+  const zodCode = validatorConfigToZodCode(config);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -201,17 +259,24 @@ function RuleCard({
 
   // All useState hooks must be at the top level, before any conditionals
   const optionsArray = Array.isArray(rule.params?.value) ? rule.params.value : [];
-  const [localValue, setLocalValue] = useState(rule.params?.value || "");
+  const [localValue, setLocalValue] = useState(
+    rule.type === "enum" || rule.type === "array" ? "" : rule.params?.value || ""
+  );
   const [localMessage, setLocalMessage] = useState(rule.params?.message || "");
   const [optionsText, setOptionsText] = useState(optionsArray.join("\n"));
 
   // Sync local state when rule changes
   useEffect(() => {
-    setLocalValue(rule.params?.value || "");
+    if (rule.type === "enum" || rule.type === "array") {
+      // For enum/array, sync the options array to optionsText
+      const opts = Array.isArray(rule.params?.value) ? rule.params.value : [];
+      setOptionsText(opts.join("\n"));
+    } else {
+      // For regular rules, sync the value
+      setLocalValue(rule.params?.value || "");
+    }
     setLocalMessage(rule.params?.message || "");
-    const opts = Array.isArray(rule.params?.value) ? rule.params.value : [];
-    setOptionsText(opts.join("\n"));
-  }, [rule.params?.value, rule.params?.message]);
+  }, [rule.params?.value, rule.params?.message, rule.type]);
 
   // Safety check - if no definition found, show error state (after hooks)
   if (!definition) {
@@ -223,27 +288,50 @@ function RuleCard({
   }
 
   const handleBlur = () => {
-    // Only update parent when user is done editing (blur)
-    const processedValue =
-      definition.valueType === "number" ? parseInt(localValue as string) || 0 : localValue;
+    // For rules that need values, parse and save
+    if (definition.needsValue) {
+      const processedValue =
+        definition.valueType === "number" ? parseInt(localValue as string) || 0 : localValue;
 
-    onUpdate({
-      params: {
-        ...rule.params,
-        value: processedValue,
-        message: localMessage,
-      },
-    });
+      onUpdate({
+        params: {
+          ...rule.params,
+          value: processedValue,
+          message: localMessage,
+        },
+      });
+    } else {
+      // For rules without values, just update message if provided
+      onUpdate({
+        params: {
+          ...rule.params,
+          message: localMessage,
+        },
+      });
+    }
   };
 
   // Special handling for enum/array options
   if (rule.type === "enum" || rule.type === "array") {
-    const handleOptionsBlur = () => {
-      const newOptions = optionsText
+    console.log(
+      "[RuleCard] Rendering array/enum rule:",
+      rule.type,
+      "options:",
+      optionsArray,
+      "text:",
+      optionsText
+    );
+    const handleOptionsChange = (newText: string) => {
+      console.log("[handleOptionsChange] Text changed:", newText);
+      setOptionsText(newText);
+
+      // Auto-save on every keystroke for enum/array
+      const newOptions = newText
         .split("\n")
         .map((opt) => opt.trim())
         .filter((opt) => opt.length > 0);
 
+      console.log("[handleOptionsChange] Final options:", newOptions);
       onUpdate({
         params: {
           ...rule.params,
@@ -268,8 +356,7 @@ function RuleCard({
         <div className="space-y-1.5">
           <textarea
             value={optionsText}
-            onChange={(e) => setOptionsText(e.target.value)}
-            onBlur={handleOptionsBlur}
+            onChange={(e) => handleOptionsChange(e.target.value)}
             placeholder="Option 1&#10;Option 2&#10;Option 3"
             className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             rows={Math.min(Math.max(3, optionsArray.length + 1), 6)}
@@ -279,16 +366,67 @@ function RuleCard({
             type="text"
             value={localMessage}
             onChange={(e) => setLocalMessage(e.target.value)}
-            onBlur={handleOptionsBlur}
+            onBlur={() => {
+              onUpdate({
+                params: {
+                  ...rule.params,
+                  value: optionsArray,
+                  message: localMessage,
+                },
+              });
+            }}
             placeholder="Error message (optional)"
             className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           />
+
+          {rule.type === "array" && (
+            <>
+              <div className="grid grid-cols-2 gap-1.5">
+                <div>
+                  <label className="text-xs text-gray-600">Min items</label>
+                  <input
+                    type="number"
+                    value={rule.params?.minItems || ""}
+                    onChange={(e) => {
+                      const val = e.target.value ? parseInt(e.target.value) : undefined;
+                      onUpdate({
+                        params: {
+                          ...rule.params,
+                          minItems: val,
+                        },
+                      });
+                    }}
+                    placeholder="e.g., 1"
+                    className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600">Max items</label>
+                  <input
+                    type="number"
+                    value={rule.params?.maxItems || ""}
+                    onChange={(e) => {
+                      const val = e.target.value ? parseInt(e.target.value) : undefined;
+                      onUpdate({
+                        params: {
+                          ...rule.params,
+                          maxItems: val,
+                        },
+                      });
+                    }}
+                    placeholder="e.g., 2"
+                    className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
-  // Regular rules (minLength, maxLength, etc.)
+  // Regular rules (minLength, maxLength, email, required, etc.)
   return (
     <div className="rounded border border-gray-200 bg-white p-2">
       <div className="mb-1.5 flex items-start justify-between">
@@ -308,25 +446,25 @@ function RuleCard({
             value={localValue}
             onChange={(e) => setLocalValue(e.target.value)}
             onBlur={handleBlur}
-            placeholder={
-              definition.valueType === "number"
-                ? "e.g., 8"
-                : definition.type === "regex"
-                  ? "e.g., ^[A-Z].*"
-                  : "Value"
-            }
+            placeholder={definition.valueType === "number" ? "e.g., 8" : "Value"}
             className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           />
         )}
 
-        <input
-          type="text"
-          value={localMessage}
-          onChange={(e) => setLocalMessage(e.target.value)}
-          onBlur={handleBlur}
-          placeholder="Error message (optional)"
-          className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-        />
+        {definition.needsValue && (
+          <input
+            type="text"
+            value={localMessage}
+            onChange={(e) => setLocalMessage(e.target.value)}
+            onBlur={handleBlur}
+            placeholder="Error message (optional)"
+            className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          />
+        )}
+
+        {!definition.needsValue && (
+          <p className="text-xs text-gray-600">{definition.description}</p>
+        )}
       </div>
     </div>
   );

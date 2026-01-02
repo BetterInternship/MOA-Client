@@ -1,7 +1,16 @@
 /**
- * Validator Engine - Convert simple rules to Zod schemas
- * Users build validators with UI, engine generates Zod code
+ * Validator Engine - Refactored for robustness and maintainability
+ *
+ * Architecture:
+ * - REGEX_PATTERNS: Single source of truth for all parsing patterns
+ * - Parser helpers: Extract common patterns (min, max, message)
+ * - Generator helpers: Build Zod code from components
+ * - Public API: zodCodeToValidatorConfig() and validatorConfigToZodCode()
  */
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 export type ValidatorRuleType =
   | "required"
@@ -18,15 +27,17 @@ export type ValidatorRuleType =
   | "trim";
 
 export interface ValidatorRule {
-  id: string; // Unique ID for UI management
+  id: string;
   type: ValidatorRuleType;
   params?: {
-    value?: number | string | string[]; // Can be array for enum options
+    value?: number | string | string[];
     message?: string;
-    flags?: string; // For regex
-    itemType?: "enum" | "string"; // For array type
+    flags?: string;
+    itemType?: "enum" | "string";
     minItems?: number;
     maxItems?: number;
+    minMessage?: string;
+    maxMessage?: string;
   };
 }
 
@@ -34,9 +45,39 @@ export interface ValidatorConfig {
   rules: ValidatorRule[];
 }
 
-/**
- * Rule definitions - DRY approach, single source of truth
- */
+// ============================================================================
+// REGEX PATTERNS - Single source of truth
+// ============================================================================
+
+const REGEX_PATTERNS = {
+  // Normalize whitespace
+  newlines: /\n\s*/g,
+  multiSpace: /\s+/g,
+  trailingSemicolon: /;$/,
+
+  // Type detection
+  numberType: /z\.number\(\)/,
+  emailFormat: /\.email\(\)/,
+  urlFormat: /\.url\(\)/,
+
+  // Parse constraints
+  minConstraint: /\.min\(\s*(\d+)[^)]*message\s*:\s*"([^"]+)"/,
+  maxConstraint: /\.max\(\s*(\d+)[^)]*message\s*:\s*"([^"]+)"/,
+
+  // Parse enums
+  enum: /z\.enum\(\s*\[([^\]]+)\]\s*,\s*\{[^}]*message\s*:\s*"([^"]+)"[^}]*\}/,
+  arrayStart: /z\.array\(\s*z\.enum\(\s*\[([^\]]+)\]/,
+
+  // Parse other formats
+  required: /\.nonempty\(\)|required_error|"This field is required"/,
+  preprocess: /z\.preprocess\([^,]+,\s*(z\..*)\s*\)$/,
+  regex: /\.regex\(\s*\/([^/]+)\/([gimuy]*)[^)]*message\s*:\s*"([^"]+)"/,
+} as const;
+
+// ============================================================================
+// RULE DEFINITIONS - Single source of truth
+// ============================================================================
+
 const RULE_DEFINITIONS: Record<
   ValidatorRuleType,
   {
@@ -120,47 +161,324 @@ const RULE_DEFINITIONS: Record<
   },
 };
 
-/**
- * Get all available rules for the UI dropdown
- * Excludes 'trim' since it's applied by default
- */
+// ============================================================================
+// PARSER HELPERS - Extract from Zod code
+// ============================================================================
+
+function normalizeZodCode(zodCode: string): string {
+  return zodCode
+    .replace(REGEX_PATTERNS.newlines, " ")
+    .replace(REGEX_PATTERNS.multiSpace, " ")
+    .replace(REGEX_PATTERNS.trailingSemicolon, "")
+    .trim();
+}
+
+function parseMinConstraint(code: string): { value: number; message: string } | null {
+  const match = code.match(REGEX_PATTERNS.minConstraint);
+  return match ? { value: parseInt(match[1]), message: match[2] } : null;
+}
+
+function parseMaxConstraint(code: string): { value: number; message: string } | null {
+  const match = code.match(REGEX_PATTERNS.maxConstraint);
+  return match ? { value: parseInt(match[1]), message: match[2] } : null;
+}
+
+function parseEnumOptions(optionsStr: string): string[] {
+  return optionsStr
+    .split(",")
+    .map((opt) => opt.trim().replace(/^["']|["']$/g, ""))
+    .filter(Boolean);
+}
+
+function getCoreValidator(code: string): string {
+  const match = code.match(REGEX_PATTERNS.preprocess);
+  return match ? match[1] : code;
+}
+
+// ============================================================================
+// GENERATOR HELPERS - Build Zod code
+// ============================================================================
+
+function buildEnumValidator(options: string[], message: string): string {
+  const optionsStr = options.map((o) => `"${o}"`).join(", ");
+  return `z.enum([${optionsStr}], {message:"${message}"})`;
+}
+
+function buildArrayValidator(
+  options: string[],
+  minItems?: number,
+  minMessage?: string,
+  maxItems?: number,
+  maxMessage?: string
+): string {
+  const optionsStr = options.map((o) => `"${o}"`).join(", ");
+  let code = `z.array(z.enum([${optionsStr}], {message:"This field is required."}))`;
+
+  if (minItems) {
+    const msg = minMessage || `Select at least ${minItems} item${minItems > 1 ? "s" : ""}.`;
+    code += `.min(${minItems}, { message: "${msg}" })`;
+  }
+
+  if (maxItems) {
+    const msg = maxMessage || `Select at most ${maxItems} item${maxItems > 1 ? "s" : ""}.`;
+    code += `.max(${maxItems}, { message: "${msg}" })`;
+  }
+
+  code += '.describe("multiselect")';
+
+  return code;
+}
+
+function buildStringValidatorChain(rules: ValidatorRule[]): string {
+  let code = "z.string()";
+
+  if (rules.some((r) => r.type === "email")) {
+    code += ".email()";
+  }
+  if (rules.some((r) => r.type === "url")) {
+    code += ".url()";
+  }
+
+  if (rules.some((r) => r.type === "required")) {
+    code += '.nonempty({ message: "This field is required." })';
+  }
+
+  const minRule = rules.find((r) => r.type === "minLength");
+  if (minRule) {
+    const value = String(minRule.params?.value ?? 0);
+    const msg = minRule.params?.message || `Minimum ${value} characters.`;
+    code += `.min(${value}, { message: "${msg}" })`;
+  }
+
+  const maxRule = rules.find((r) => r.type === "maxLength");
+  if (maxRule) {
+    const value = String(maxRule.params?.value ?? 0);
+    const msg = maxRule.params?.message || `Maximum ${value} characters.`;
+    code += `.max(${value}, { message: "${msg}" })`;
+  }
+
+  const regexRule = rules.find((r) => r.type === "regex");
+  if (regexRule) {
+    const pattern = String(regexRule.params?.value ?? "");
+    const flags = String(regexRule.params?.flags ?? "");
+    const msg = String(regexRule.params?.message ?? "Invalid format.");
+    code += `.regex(/${pattern}/${flags}, { message: "${msg}" })`;
+  }
+
+  return code;
+}
+
+function buildNumberValidatorChain(rules: ValidatorRule[]): string {
+  let code = "z.number()";
+
+  if (rules.some((r) => r.type === "required")) {
+    code += '.refine((val) => val !== null, { message: "This field is required." })';
+  }
+
+  const minRule = rules.find((r) => r.type === "min");
+  if (minRule) {
+    const value = String(minRule.params?.value ?? 0);
+    const msg = minRule.params?.message || `Minimum value: ${value}.`;
+    code += `.min(${value}, { message: "${msg}" })`;
+  }
+
+  const maxRule = rules.find((r) => r.type === "max");
+  if (maxRule) {
+    const value = String(maxRule.params?.value ?? 0);
+    const msg = maxRule.params?.message || `Maximum value: ${value}.`;
+    code += `.max(${value}, { message: "${msg}" })`;
+  }
+
+  return code;
+}
+
+function wrapInPreprocess(validator: string): string {
+  return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
+}
+
+// ============================================================================
+// PUBLIC API - zodCodeToValidatorConfig
+// ============================================================================
+
+export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
+  if (!zodCode || typeof zodCode !== "string") {
+    return { rules: [] };
+  }
+
+  const rules: ValidatorRule[] = [];
+  const sanitized = normalizeZodCode(zodCode);
+
+  // Try array FIRST (before enum) since array contains enum inside it
+  {
+    const match = sanitized.match(REGEX_PATTERNS.arrayStart);
+    if (match) {
+      const options = parseEnumOptions(match[1]);
+      const minConstraint = parseMinConstraint(sanitized);
+      const maxConstraint = parseMaxConstraint(sanitized);
+
+      const rule = createValidatorRule("array");
+      rule.params = {
+        value: options,
+        itemType: "enum",
+        ...(minConstraint && { minItems: minConstraint.value, minMessage: minConstraint.message }),
+        ...(maxConstraint && { maxItems: maxConstraint.value, maxMessage: maxConstraint.message }),
+      };
+      rules.push(rule);
+      return { rules };
+    }
+  }
+
+  // Try enum (standalone) - AFTER array
+  {
+    const match = sanitized.match(REGEX_PATTERNS.enum);
+    if (match) {
+      const options = parseEnumOptions(match[1]);
+      const rule = createValidatorRule("enum");
+      rule.params = { value: options, message: match[2] };
+      rules.push(rule);
+      return { rules };
+    }
+  }
+
+  // Parse string/number validators
+  const coreValidator = getCoreValidator(sanitized);
+  const isNumber = REGEX_PATTERNS.numberType.test(coreValidator);
+
+  // Type modifiers
+  if (REGEX_PATTERNS.emailFormat.test(coreValidator)) {
+    rules.push(createValidatorRule("email"));
+  }
+  if (REGEX_PATTERNS.urlFormat.test(coreValidator)) {
+    rules.push(createValidatorRule("url"));
+  }
+  if (isNumber) {
+    rules.push(createValidatorRule("number"));
+  }
+
+  // Required check
+  if (REGEX_PATTERNS.required.test(coreValidator)) {
+    rules.push(createValidatorRule("required"));
+  }
+
+  // Constraints (min/max)
+  if (!rules.some((r) => r.type === "array")) {
+    const minConstraint = parseMinConstraint(coreValidator);
+    if (minConstraint) {
+      const rule = createValidatorRule(isNumber ? "min" : "minLength");
+      rule.params = { value: minConstraint.value, message: minConstraint.message };
+      rules.push(rule);
+    }
+
+    const maxConstraint = parseMaxConstraint(coreValidator);
+    if (maxConstraint) {
+      const rule = createValidatorRule(isNumber ? "max" : "maxLength");
+      rule.params = { value: maxConstraint.value, message: maxConstraint.message };
+      rules.push(rule);
+    }
+  }
+
+  // Regex pattern
+  {
+    const match = coreValidator.match(REGEX_PATTERNS.regex);
+    if (match) {
+      const rule = createValidatorRule("regex");
+      rule.params = {
+        value: match[1],
+        ...(match[2] && { flags: match[2] }),
+        message: match[3],
+      };
+      rules.push(rule);
+    }
+  }
+
+  return { rules };
+}
+
+// ============================================================================
+// PUBLIC API - validatorConfigToZodCode
+// ============================================================================
+
+export function validatorConfigToZodCode(config: ValidatorConfig): string {
+  if (!config.rules || config.rules.length === 0) {
+    return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), z.string())`;
+  }
+
+  // Check for standalone rules
+  const enumRule = config.rules.find((r) => r.type === "enum");
+  if (enumRule && Array.isArray(enumRule.params?.value)) {
+    return buildEnumValidator(
+      enumRule.params.value,
+      enumRule.params?.message || "This field is required."
+    );
+  }
+
+  const arrayRule = config.rules.find((r) => r.type === "array");
+  if (arrayRule && Array.isArray(arrayRule.params?.value)) {
+    return buildArrayValidator(
+      arrayRule.params.value,
+      arrayRule.params?.minItems,
+      arrayRule.params?.minMessage,
+      arrayRule.params?.maxItems,
+      arrayRule.params?.maxMessage
+    );
+  }
+
+  // Check for number type FIRST (before string)
+  // If user has min/max rules, it's definitely a number field
+  const isNumberType = config.rules.some(
+    (r) => r.type === "number" || r.type === "min" || r.type === "max"
+  );
+
+  if (isNumberType) {
+    return buildNumberValidatorChain(config.rules);
+  }
+
+  // Default: string with preprocess + trim
+  const validator = buildStringValidatorChain(config.rules);
+  return wrapInPreprocess(validator);
+}
+
+// ============================================================================
+// PUBLIC API - Helper functions
+// ============================================================================
+
 export function getAvailableRules() {
   return Object.entries(RULE_DEFINITIONS)
-    .filter(([type]) => type !== "trim") // Hide trim - it's always applied
+    .filter(([type]) => type !== "trim")
     .map(([type, def]) => ({
       type: type as ValidatorRuleType,
       ...def,
     }));
 }
 
-/**
- * Get definition for a specific rule type
- */
 export function getRuleDefinition(type: ValidatorRuleType) {
   return RULE_DEFINITIONS[type];
 }
 
-/**
- * Generate human-readable description of a rule
- */
 export function getRuleDescription(rule: ValidatorRule): string {
   const def = getRuleDefinition(rule.type);
 
   switch (rule.type) {
     case "minLength":
-      return `Minimum ${rule.params?.value} characters`;
+      return `Minimum ${String(rule.params?.value)} characters`;
     case "maxLength":
-      return `Maximum ${rule.params?.value} characters`;
+      return `Maximum ${String(rule.params?.value)} characters`;
     case "min":
-      return `Minimum value: ${rule.params?.value}`;
+      return `Minimum value: ${String(rule.params?.value)}`;
     case "max":
-      return `Maximum value: ${rule.params?.value}`;
+      return `Maximum value: ${String(rule.params?.value)}`;
     case "regex":
-      return `Matches pattern: ${rule.params?.value}`;
-    case "enum":
+      return `Matches pattern: ${String(rule.params?.value)}`;
+    case "email":
+    case "url":
+    case "required":
+    case "number":
+      return def.label;
+    case "enum": {
       const enumCount = Array.isArray(rule.params?.value) ? rule.params.value.length : 0;
       return `${enumCount} options available`;
-    case "array":
+    }
+    case "array": {
       const arrayCount = Array.isArray(rule.params?.value) ? rule.params.value.length : 0;
       const minItems = rule.params?.minItems;
       const maxItems = rule.params?.maxItems;
@@ -169,6 +487,7 @@ export function getRuleDescription(rule: ValidatorRule): string {
         arrayDesc += ` (${minItems || "0"}-${maxItems || "all"})`;
       }
       return arrayDesc;
+    }
     case "trim":
       return "Whitespace will be trimmed";
     default:
@@ -176,366 +495,47 @@ export function getRuleDescription(rule: ValidatorRule): string {
   }
 }
 
-/**
- * Convert validator config to Zod schema code string
- * This is the core conversion logic - clean and maintainable
- */
-export function validatorConfigToZodCode(config: ValidatorConfig): string {
-  if (!config.rules || config.rules.length === 0) {
-    return getDefaultStringValidator();
-  }
-
-  // Check for standalone rules (enum, array) that don't need wrapping
-  const enumRule = config.rules.find((r) => r.type === "enum");
-  if (enumRule) {
-    return generateEnumValidator(enumRule);
-  }
-
-  const arrayRule = config.rules.find((r) => r.type === "array");
-  if (arrayRule) {
-    return generateArrayValidator(arrayRule);
-  }
-
-  // For string validators, wrap in preprocess with trim by default
-  return generatePreprocessedStringValidator(config);
-}
-
-/**
- * Generate z.enum validator
- */
-function generateEnumValidator(rule: ValidatorRule): string {
-  const options = Array.isArray(rule.params?.value) ? rule.params.value : [];
-  const optionsStr = options.map((o) => `"${o}"`).join(", ");
-  const message = rule.params?.message || "This field is required.";
-  return `z.enum([${optionsStr}], {message:"${message}"})`;
-}
-
-/**
- * Generate z.array validator for multi-select
- */
-function generateArrayValidator(rule: ValidatorRule): string {
-  const options = Array.isArray(rule.params?.value) ? rule.params.value : [];
-  const optionsStr = options.map((o) => `"${o}"`).join(", ");
-  let zodCode = `z.array(z.enum([${optionsStr}], {message:"This field is required."}))`;
-
-  const minItems = rule.params?.minItems;
-  const maxItems = rule.params?.maxItems;
-
-  if (minItems) {
-    const msg = minItems === 1 ? "Select at least 1 item." : `Select at least ${minItems} items.`;
-    zodCode += `.min(${minItems}, { message: "${msg}" })`;
-  }
-
-  if (maxItems) {
-    const msg = `Select at most ${maxItems} item${maxItems > 1 ? "s" : ""}.`;
-    zodCode += `.max(${maxItems}, { message: "${msg}" })`;
-  }
-
-  return zodCode;
-}
-
-/**
- * Generate z.preprocess(...z.string()...) validator
- * Always wraps strings in preprocess with trim by default
- */
-function generatePreprocessedStringValidator(config: ValidatorConfig): string {
-  let zodCode = "z.string()";
-
-  // Type conversions - check for number type OR min/max rules (which imply number)
-  const typeRules = config.rules.filter(
-    (r) =>
-      r.type === "number" ||
-      r.type === "email" ||
-      r.type === "url" ||
-      r.type === "min" ||
-      r.type === "max"
-  );
-
-  if (typeRules.some((r) => r.type === "number" || r.type === "min" || r.type === "max")) {
-    zodCode = "z.number()";
-  } else if (typeRules.some((r) => r.type === "email")) {
-    zodCode = "z.string()";
-  } else if (typeRules.some((r) => r.type === "url")) {
-    zodCode = "z.string()";
-  }
-
-  // For non-number types, wrap in preprocess
-  if (!zodCode.includes("z.number()")) {
-    // Apply all validations to core string validator
-    // Filter out invalid rules (those that need values but don't have them)
-    const validationRules = config.rules.filter((r) => {
-      if (r.type === "number" || r.type === "enum" || r.type === "array" || r.type === "trim") {
-        return false; // Skip these, handled elsewhere
-      }
-      // Skip rules that need values but don't have them
-      const def = getRuleDefinition(r.type);
-      if (def.needsValue && (!r.params?.value || r.params.value === "")) {
-        return false;
-      }
-      return true;
-    });
-
-    // Add required error if needed
-    if (config.rules.some((r) => r.type === "required")) {
-      zodCode = `z.string({ required_error: "This field is required." })`;
-    } else {
-      zodCode = "z.string()";
-    }
-
-    // Always add trim
-    zodCode += ".trim()";
-
-    // Add validations
-    for (const rule of validationRules) {
-      zodCode += getRuleZodChain(rule);
-    }
-
-    // Wrap in preprocess
-    const preprocessCode = `z.preprocess(
-  v => ((v ?? null) == null ? "" : v),
-  ${zodCode}
-)`;
-    return preprocessCode;
-  }
-
-  // For number types, don't wrap in preprocess
-  // Filter out invalid rules
-  const validNumberRules = config.rules.filter((r) => {
-    if (r.type === "enum" || r.type === "array" || r.type === "trim") {
-      return false;
-    }
-    const def = getRuleDefinition(r.type);
-    if (def.needsValue && (!r.params?.value || r.params.value === "")) {
-      return false;
-    }
-    return true;
-  });
-
-  for (const rule of validNumberRules) {
-    zodCode += getRuleZodChain(rule);
-  }
-
-  return zodCode;
-}
-
-/**
- * Default string validator with preprocess
- */
-function getDefaultStringValidator(): string {
-  return `z.preprocess(
-  v => ((v ?? null) == null ? "" : v),
-  z.string()
-)`;
-}
-
-/**
- * Get the Zod chain for a specific rule
- * DRY: Single place to define how each rule maps to Zod
- */
-function getRuleZodChain(rule: ValidatorRule): string {
-  const message = rule.params?.message;
-  const messageObj = message ? `, { message: "${message}" }` : "";
-
-  switch (rule.type) {
-    case "required":
-      return `.nonempty()`;
-    case "minLength":
-      return `.min(${rule.params?.value}${messageObj})`;
-    case "maxLength":
-      return `.max(${rule.params?.value}${messageObj})`;
-    case "min":
-      return `.min(${rule.params?.value}${messageObj})`;
-    case "max":
-      return `.max(${rule.params?.value}${messageObj})`;
-    case "regex":
-      const pattern = rule.params?.value || "";
-      const flags = rule.params?.flags || "";
-      // Flags are appended directly after the closing /, e.g., /pattern/u not /pattern//u
-      const flagsStr = flags || "";
-      return `.regex(/${pattern}/${flagsStr}${messageObj})`;
-    case "email":
-      return `.email()`;
-    case "url":
-      return `.url()`;
-    case "number":
-    case "enum":
-    case "array":
-    case "trim":
-      return ""; // Handled elsewhere
-    default:
-      return "";
-  }
-}
-
-/**
- * Generate a new rule with unique ID
- */
 export function createValidatorRule(type: ValidatorRuleType): ValidatorRule {
+  // Initialize array/enum rules with placeholder options
+  if (type === "array") {
+    return {
+      id: `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      params: {
+        value: ["Option 1", "Option 2"],
+        message: "This field is required.",
+        minItems: 1,
+        minMessage: "Select at least 1 item.",
+        maxItems: 2,
+        maxMessage: "Select at most 2 items.",
+      },
+    };
+  }
+
+  if (type === "enum") {
+    return {
+      id: `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      params: {
+        value: ["Option 1", "Option 2"],
+        message: "Please select an option",
+      },
+    };
+  }
+
   return {
     id: `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     type,
-    params: {}, // Always initialize params, even for rules that don't need values
+    params: {},
   };
 }
 
-/**
- * Validate that a rule has all required parameters
- */
 export function isRuleValid(rule: ValidatorRule): boolean {
   const def = getRuleDefinition(rule.type);
   if (!def.needsValue) return true;
   return rule.params?.value !== undefined && rule.params.value !== "" && rule.params.value !== null;
 }
 
-/**
- * Convert Zod code string back to validator config (reverse parsing)
- * Handles: enum, array, preprocess, string validators, and more
- */
-export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
-  if (!zodCode || typeof zodCode !== "string") {
-    return { rules: [] };
-  }
-
-  const rules: ValidatorRule[] = [];
-  // Normalize whitespace: collapse to single spaces, but preserve structure
-  const sanitized = zodCode
-    .replace(/\n\s*/g, " ") // Replace newlines with space
-    .replace(/\s+/g, " ") // Collapse multiple spaces
-    .trim();
-
-  // ===== Parse ENUM =====
-  const enumMatch = sanitized.match(/z\.enum\(\s*\[([^\]]+)\]\s*,\s*\{message\s*:\s*"([^"]+)"\}/);
-  if (enumMatch) {
-    // Extract enum options
-    const optionsStr = enumMatch[1];
-    const options = optionsStr
-      .split(",")
-      .map((opt) => opt.trim().replace(/^["']|["']$/g, ""))
-      .filter(Boolean);
-
-    const rule = createValidatorRule("enum");
-    rule.params = {
-      value: options,
-      message: enumMatch[2],
-    };
-    rules.push(rule);
-    return { rules }; // Enum is standalone, return immediately
-  }
-
-  // ===== Parse ARRAY (multi-select) =====
-  const arrayMatch = sanitized.match(/z\.array\(z\.enum\(\s*\[([^\]]+)\]/);
-  if (arrayMatch) {
-    const optionsStr = arrayMatch[1];
-    const options = optionsStr
-      .split(",")
-      .map((opt) => opt.trim().replace(/^["']|["']$/g, ""))
-      .filter(Boolean);
-
-    // Extract min items
-    const minMatch = sanitized.match(/\.min\((\d+),\s*\{\s*message\s*:\s*"([^"]+)"\}/);
-    const minItems = minMatch ? parseInt(minMatch[1]) : undefined;
-
-    // Extract max items
-    const maxMatch = sanitized.match(/\.max\((\d+),\s*\{\s*message\s*:\s*"([^"]+)"\}/);
-    const maxItems = maxMatch ? parseInt(maxMatch[1]) : undefined;
-
-    const rule = createValidatorRule("array");
-    rule.params = {
-      value: options,
-      itemType: "enum",
-      ...(minItems && { minItems }),
-      ...(maxItems && { maxItems }),
-    };
-    rules.push(rule);
-    return { rules }; // Array is standalone, return immediately
-  }
-
-  // ===== Parse PREPROCESS wrapper =====
-  // Extract the inner z.string() validator from preprocess
-  let coreValidator = sanitized;
-  const preprocessMatch = sanitized.match(/z\.preprocess\(\s*[\s\S]*?,\s*(z\..*)\s*\)$/m);
-  if (preprocessMatch) {
-    // We found a preprocess wrapper, extract the core validator
-    coreValidator = preprocessMatch[1];
-    // Don't add trim rule to UI - it's always applied by default
-  }
-
-  // ===== Parse STRING validators =====
-  let isNumber = coreValidator.includes("z.number()");
-
-  // Type/format modifiers
-  if (coreValidator.includes(".email()")) {
-    rules.push(createValidatorRule("email"));
-  } else if (coreValidator.includes(".url()")) {
-    rules.push(createValidatorRule("url"));
-  } else if (isNumber) {
-    rules.push(createValidatorRule("number"));
-  }
-
-  // Required (nonempty or required_error)
-  if (
-    coreValidator.includes(".nonempty()") ||
-    coreValidator.includes('required_error: "This field is required"')
-  ) {
-    rules.push(createValidatorRule("required"));
-  }
-
-  // Don't add trim rule - it's always applied by default
-  // if (coreValidator.includes(".trim()") && !rules.some((r) => r.type === "trim")) {
-  //   rules.push(createValidatorRule("trim"));
-  // }
-
-  // Min length/value with message - handles various whitespace formats
-  const minMatch = coreValidator.match(/\.min\(\s*(\d+)\s*,\s*\{\s*message\s*:\s*"([^"]+)"\s*\}/);
-  if (minMatch) {
-    const rule = createValidatorRule(isNumber ? "min" : "minLength");
-    rule.params = {
-      value: parseInt(minMatch[1]),
-      message: minMatch[2],
-    };
-    rules.push(rule);
-  }
-
-  // Max length/value with message - handles various whitespace formats
-  const maxMatch = coreValidator.match(/\.max\(\s*(\d+)\s*,\s*\{\s*message\s*:\s*"([^"]+)"\s*\}/);
-  if (maxMatch) {
-    const rule = createValidatorRule(isNumber ? "max" : "maxLength");
-    rule.params = {
-      value: parseInt(maxMatch[1]),
-      message: maxMatch[2],
-    };
-    rules.push(rule);
-  }
-
-  // Regex with message
-  // Handles both formats:
-  // .regex(/pattern/flags, { message: "..." })
-  // .regex(/pattern/flags, "message")
-  let regexMatch = coreValidator.match(
-    /\.regex\(\s*\/(.*?)\/([gimuy]*),?\s*\{?\s*message\s*:\s*"([^"]+)"\s*\}?\s*\)/
-  );
-  if (!regexMatch) {
-    // Try the simpler format with message as direct string
-    regexMatch = coreValidator.match(/\.regex\(\s*\/(.*?)\/([gimuy]*),?\s*"([^"]+)"\s*\)/);
-  }
-
-  if (regexMatch) {
-    const rule = createValidatorRule("regex");
-    rule.params = {
-      value: regexMatch[1],
-      ...(regexMatch[2] && { flags: regexMatch[2] }),
-      message: regexMatch[3],
-    };
-    rules.push(rule);
-  }
-
-  return { rules };
-}
-
-/**
- * Test/debug function to verify parsing works
- * Pass in any Zod code and it will show what it parsed
- */
 export function testValidatorParsing(zodCode: string) {
   console.log("Input Zod Code:", zodCode);
   const config = zodCodeToValidatorConfig(zodCode);

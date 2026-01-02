@@ -289,11 +289,23 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               }
               rawZodCode={editedBlock.phantom_field_schema?.validator || ""}
               onConfigChange={(newConfig) => {
-                // Convert config to Zod code and save immediately
-                const zodCode = validatorConfigToZodCode(newConfig);
-                handlePhantomFieldSchemaChange("validator", zodCode);
+                // Only regenerate if in UI mode (no raw code)
+                // If raw code exists, just update config for display without regenerating
+                const hasRawCode = editedBlock.phantom_field_schema?.validator;
+
+                if (hasRawCode) {
+                  // In raw mode: just update config for UI, don't regenerate code
+                  // The raw code is already saved via onRawZodChange
+                  // This allows min/max/describe to show in the UI even if not fully parsed
+                } else {
+                  // In UI mode: always regenerate from config
+                  // Array/enum rules start with placeholder options, so they're safe to generate
+                  const zodCode = validatorConfigToZodCode(newConfig);
+                  handlePhantomFieldSchemaChange("validator", zodCode);
+                }
               }}
               onRawZodChange={(zodCode) => {
+                // Save raw code directly - this takes priority over config regeneration
                 handlePhantomFieldSchemaChange("validator", zodCode);
               }}
             />
