@@ -440,7 +440,17 @@ function RuleCard({
       </div>
 
       <div className="space-y-1.5">
-        {definition.needsValue && (
+        {definition.needsValue && (rule.type === "minDate" || rule.type === "maxDate") ? (
+          <>
+            <input
+              type="date"
+              value={localValue as string}
+              onChange={(e) => setLocalValue(e.target.value)}
+              onBlur={handleBlur}
+              className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            />
+          </>
+        ) : definition.needsValue ? (
           <input
             type={definition.valueType === "number" ? "number" : "text"}
             value={localValue}
@@ -449,7 +459,7 @@ function RuleCard({
             placeholder={definition.valueType === "number" ? "e.g., 8" : "Value"}
             className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           />
-        )}
+        ) : null}
 
         {definition.needsValue && (
           <input

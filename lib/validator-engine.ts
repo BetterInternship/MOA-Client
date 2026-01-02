@@ -24,7 +24,10 @@ export type ValidatorRuleType =
   | "url"
   | "enum"
   | "array"
-  | "trim";
+  | "trim"
+  | "date"
+  | "minDate"
+  | "maxDate";
 
 export interface ValidatorRule {
   id: string;
@@ -57,12 +60,15 @@ const REGEX_PATTERNS = {
 
   // Type detection
   numberType: /z\.number\(\)/,
+  dateType: /z\.coerce\.date\(\)/,
   emailFormat: /\.email\(\)/,
   urlFormat: /\.url\(\)/,
 
   // Parse constraints
   minConstraint: /\.min\(\s*(\d+)[^)]*message\s*:\s*"([^"]+)"/,
   maxConstraint: /\.max\(\s*(\d+)[^)]*message\s*:\s*"([^"]+)"/,
+  minDateConstraint: /\.min\(\s*new\s+Date\(\s*"([^"]+)"\s*\)[^)]*message\s*:\s*"([^"]+)"/,
+  maxDateConstraint: /\.max\(\s*new\s+Date\(\s*"([^"]+)"\s*\)[^)]*message\s*:\s*"([^"]+)"/,
 
   // Parse enums
   enum: /z\.enum\(\s*\[([^\]]+)\]\s*,\s*\{[^}]*message\s*:\s*"([^"]+)"[^}]*\}/,
@@ -158,6 +164,24 @@ const RULE_DEFINITIONS: Record<
     description: "Select multiple items from a list",
     needsValue: true,
     valueType: "list",
+  },
+  date: {
+    label: "Date Format",
+    description: "Must be a valid date",
+    needsValue: false,
+    valueType: "none",
+  },
+  minDate: {
+    label: "Minimum Date",
+    description: "Date must be on or after X",
+    needsValue: true,
+    valueType: "string",
+  },
+  maxDate: {
+    label: "Maximum Date",
+    description: "Date must be on or before X",
+    needsValue: true,
+    valueType: "string",
   },
 };
 
@@ -292,6 +316,31 @@ function buildNumberValidatorChain(rules: ValidatorRule[]): string {
   return code;
 }
 
+function buildDateValidatorChain(rules: ValidatorRule[]): string {
+  let code = "z.coerce.date()";
+
+  if (rules.some((r) => r.type === "required")) {
+    code +=
+      '.refine((val) => val !== null && val !== undefined, { message: "This field is required." })';
+  }
+
+  const minDateRule = rules.find((r) => r.type === "minDate");
+  if (minDateRule && minDateRule.params?.value) {
+    const dateValue = String(minDateRule.params.value);
+    const msg = minDateRule.params?.message || `Date must be on or after ${dateValue}.`;
+    code += `.min(new Date("${dateValue}"), { message: "${msg}" })`;
+  }
+
+  const maxDateRule = rules.find((r) => r.type === "maxDate");
+  if (maxDateRule && maxDateRule.params?.value) {
+    const dateValue = String(maxDateRule.params.value);
+    const msg = maxDateRule.params?.message || `Date must be on or before ${dateValue}.`;
+    code += `.max(new Date("${dateValue}"), { message: "${msg}" })`;
+  }
+
+  return code;
+}
+
 function wrapInPreprocess(validator: string): string {
   return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
 }
@@ -343,6 +392,7 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
   // Parse string/number validators
   const coreValidator = getCoreValidator(sanitized);
   const isNumber = REGEX_PATTERNS.numberType.test(coreValidator);
+  const isDate = REGEX_PATTERNS.dateType.test(coreValidator);
 
   // Type modifiers
   if (REGEX_PATTERNS.emailFormat.test(coreValidator)) {
@@ -354,26 +404,47 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
   if (isNumber) {
     rules.push(createValidatorRule("number"));
   }
+  if (isDate) {
+    rules.push(createValidatorRule("date"));
+  }
 
   // Required check
   if (REGEX_PATTERNS.required.test(coreValidator)) {
     rules.push(createValidatorRule("required"));
   }
 
-  // Constraints (min/max)
+  // Constraints (min/max or minDate/maxDate)
   if (!rules.some((r) => r.type === "array")) {
-    const minConstraint = parseMinConstraint(coreValidator);
-    if (minConstraint) {
-      const rule = createValidatorRule(isNumber ? "min" : "minLength");
-      rule.params = { value: minConstraint.value, message: minConstraint.message };
-      rules.push(rule);
-    }
+    if (isDate) {
+      // Parse date constraints
+      const minDateMatch = coreValidator.match(REGEX_PATTERNS.minDateConstraint);
+      if (minDateMatch) {
+        const rule = createValidatorRule("minDate");
+        rule.params = { value: minDateMatch[1], message: minDateMatch[2] };
+        rules.push(rule);
+      }
 
-    const maxConstraint = parseMaxConstraint(coreValidator);
-    if (maxConstraint) {
-      const rule = createValidatorRule(isNumber ? "max" : "maxLength");
-      rule.params = { value: maxConstraint.value, message: maxConstraint.message };
-      rules.push(rule);
+      const maxDateMatch = coreValidator.match(REGEX_PATTERNS.maxDateConstraint);
+      if (maxDateMatch) {
+        const rule = createValidatorRule("maxDate");
+        rule.params = { value: maxDateMatch[1], message: maxDateMatch[2] };
+        rules.push(rule);
+      }
+    } else {
+      // Parse numeric/length constraints
+      const minConstraint = parseMinConstraint(coreValidator);
+      if (minConstraint) {
+        const rule = createValidatorRule(isNumber ? "min" : "minLength");
+        rule.params = { value: minConstraint.value, message: minConstraint.message };
+        rules.push(rule);
+      }
+
+      const maxConstraint = parseMaxConstraint(coreValidator);
+      if (maxConstraint) {
+        const rule = createValidatorRule(isNumber ? "max" : "maxLength");
+        rule.params = { value: maxConstraint.value, message: maxConstraint.message };
+        rules.push(rule);
+      }
     }
   }
 
@@ -423,6 +494,15 @@ export function validatorConfigToZodCode(config: ValidatorConfig): string {
     );
   }
 
+  // Check for date type
+  const isDateType = config.rules.some(
+    (r) => r.type === "date" || r.type === "minDate" || r.type === "maxDate"
+  );
+
+  if (isDateType) {
+    return buildDateValidatorChain(config.rules);
+  }
+
   // Check for number type FIRST (before string)
   // If user has min/max rules, it's definitely a number field
   const isNumberType = config.rules.some(
@@ -467,12 +547,17 @@ export function getRuleDescription(rule: ValidatorRule): string {
       return `Minimum value: ${String(rule.params?.value)}`;
     case "max":
       return `Maximum value: ${String(rule.params?.value)}`;
+    case "minDate":
+      return `On or after ${String(rule.params?.value)}`;
+    case "maxDate":
+      return `On or before ${String(rule.params?.value)}`;
     case "regex":
       return `Matches pattern: ${String(rule.params?.value)}`;
     case "email":
     case "url":
     case "required":
     case "number":
+    case "date":
       return def.label;
     case "enum": {
       const enumCount = Array.isArray(rule.params?.value) ? rule.params.value.length : 0;
@@ -519,6 +604,22 @@ export function createValidatorRule(type: ValidatorRuleType): ValidatorRule {
       params: {
         value: ["Option 1", "Option 2"],
         message: "Please select an option",
+      },
+    };
+  }
+
+  // Initialize date rules with today's date as default
+  if (type === "minDate" || type === "maxDate") {
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+    return {
+      id: `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      params: {
+        value: today,
+        message:
+          type === "minDate"
+            ? `Date must be on or after ${today}.`
+            : `Date must be on or before ${today}.`,
       },
     };
   }
