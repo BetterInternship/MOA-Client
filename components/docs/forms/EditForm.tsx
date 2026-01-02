@@ -231,7 +231,7 @@ export const FormTextarea = ({
   ...props
 }: FormTextareaProps) => {
   return (
-    <div>
+    <div className={className}>
       {label && (
         <LabelWithTooltip
           label={label}

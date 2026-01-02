@@ -9,6 +9,7 @@ import { IFormFiller } from "./docs/forms/form-filler.ctx";
 import { SpecifySigningPartiesModal } from "./modals/SpecifySigningPartyModal";
 import { useRouter } from "next/navigation";
 import { FormContinuationSuccessModal } from "./modals/FormContinuationSuccessModal";
+import { FormRejectionPromptModal } from "./modals/FormRejectionPromptModal";
 
 /**
  * Simplifies modal config since we usually reuse each of these modal stuffs.
@@ -54,9 +55,16 @@ export const useModalRegistry = () => {
           title: "Form Successfully Submitted",
           hasClose: false,
           allowBackdropClick: false,
-          onClose: () => router.push("/dashboard"),
         }),
       close: () => close("form-continuation-success"),
+    },
+
+    formRejectionPrompt: {
+      open: (formProcessId: string) =>
+        open("form-rejection-prompt", <FormRejectionPromptModal formProcessId={formProcessId} />, {
+          title: "Reject to Sign This Form",
+        }),
+      close: () => close("form-rejection-prompt"),
     },
   };
 

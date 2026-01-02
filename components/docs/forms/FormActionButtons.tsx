@@ -8,7 +8,6 @@ import { useMyAutofillUpdate, useMyAutofill } from "@/hooks/use-my-autofill";
 import { TextLoader } from "@/components/ui/loader";
 import { FormValues } from "@betterinternship/core/forms";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { getClientAudit } from "@/lib/audit";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { formsControllerContinueFormProcess } from "@/app/api";
@@ -26,8 +25,17 @@ export function FormActionButtons() {
   const modalRegistry = useModalRegistry();
   const updateAutofill = useMyAutofillUpdate();
   const queryClient = useQueryClient();
-  const router = useRouter();
   const [busy, setBusy] = useState<boolean>(false);
+
+  // Signing blocks
+  const signingPartyBlocks = form.formMetadata.getSigningPartyBlocks(
+    formProcess.my_signing_party_id ?? ""
+  );
+
+  // Signatures
+  const needsToSign =
+    formProcess.my_signing_party_id &&
+    form.formMetadata.getSignatureFieldsForClientService(formProcess.my_signing_party_id).length;
 
   /**
    * This submits the form to the server
@@ -50,11 +58,6 @@ export function FormActionButtons() {
 
       // Update autofill afterwards (so even if it fails, autofill is there)
       await updateAutofill(form.formName, form.fields, finalValues);
-
-      // Check if other parties need to be requested from
-      const signingPartyBlocks = form.formMetadata.getSigningPartyBlocks(
-        formProcess.my_signing_party_id ?? ""
-      );
 
       // Open request for contacts
       if (signingPartyBlocks.length) {
@@ -97,8 +100,23 @@ export function FormActionButtons() {
     }
   };
 
+  const handleReject = () => {
+    modalRegistry.formRejectionPrompt.open(formProcess.id);
+  };
+
   return (
     <div className="flex items-start justify-end gap-2 pt-2">
+      {!!needsToSign && (
+        <Button
+          onClick={() => void handleReject()}
+          variant="outline"
+          scheme="destructive"
+          className="w-full text-xs sm:w-auto"
+          disabled={busy}
+        >
+          <TextLoader loading={busy}>{"Reject Form"}</TextLoader>
+        </Button>
+      )}
       <Button
         onClick={() => void handleSubmit()}
         variant="default"
