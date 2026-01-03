@@ -37,11 +37,11 @@ export default function DocsTopbarUser() {
         <Link href="/dashboard">
           <Button variant="ghost">My Signed Forms</Button>
         </Link>
-        <Link href="/forms">
+        {/* <Link href="/forms">
           <Button variant="ghost">
             {profile.coordinatorId ? "Forms Preview" : "My Saved Templates"}{" "}
           </Button>
-        </Link>
+        </Link> */}
 
         {profile.god && (
           <DropdownMenu>
