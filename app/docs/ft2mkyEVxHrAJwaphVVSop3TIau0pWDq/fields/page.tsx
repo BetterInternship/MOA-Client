@@ -25,7 +25,7 @@ interface FieldRegistryEntry {
   preset: string;
   type: "" | "text" | "signature" | "email" | "param";
   label: string;
-  party: "student" | "university" | "entity" | "student-guardian";
+  party: "student" | "university" | "entity" | "student-guardian" | "entity-representative";
   source: "auto" | "prefill" | "derived" | "manual";
   shared: boolean;
   tooltip_label: string;
@@ -33,6 +33,8 @@ interface FieldRegistryEntry {
   prefiller: string;
   is_phantom?: boolean;
 }
+
+const PARTY = PARTIES.concat(["entity-representative"]);
 
 /**
  * Displays all the forms we have, and their latest versions.
@@ -285,8 +287,8 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
             <Autocomplete
               value={field?.party}
               inputClassName="h-7 py-1 text-xs"
-              placeholder={PARTIES.join(", ")}
-              options={PARTIES.map((s) => ({ id: s, name: s }))}
+              placeholder={PARTY.join(", ")}
+              options={PARTY.map((s) => ({ id: s, name: s }))}
               setter={(id) => id && handleChangeFactory("party")(id)}
             />
             <Badge>Shared Field?</Badge>
