@@ -12,7 +12,7 @@ import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DocumentRenderer } from "./previewer";
+import { FormPreviewPdfDisplay } from "@/components/docs/form-editor/form-layout/FormPreviewPdfDisplay";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFormRendererContext } from "./form-renderer.ctx";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
@@ -252,11 +252,10 @@ const FormAutosignEditorModal = React.memo(
               <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
                 <div className="relative w-full overflow-auto rounded-md border">
                   {form.document.url ? (
-                    <DocumentRenderer
+                    <FormPreviewPdfDisplay
                       documentUrl={form.document.url}
-                      highlights={[]}
-                      previews={previews}
-                      onHighlightFinished={() => {}}
+                      blocks={form.blocks || []}
+                      values={{}}
                     />
                   ) : (
                     <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -278,11 +277,10 @@ const FormAutosignEditorModal = React.memo(
               <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
                 <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
                   {form.document.url ? (
-                    <DocumentRenderer
+                    <FormPreviewPdfDisplay
                       documentUrl={form.document.url}
-                      highlights={[]}
-                      previews={previews}
-                      onHighlightFinished={() => {}}
+                      blocks={form.blocks || []}
+                      values={{}}
                     />
                   ) : (
                     <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -372,11 +370,10 @@ const FormAutosignEditorModal = React.memo(
               <div className="relative flex h-full w-full flex-row gap-2">
                 {!!form.document.url && (
                   <div className="relative h-full w-full">
-                    <DocumentRenderer
+                    <FormPreviewPdfDisplay
                       documentUrl={form.document.url}
-                      highlights={[]}
-                      previews={previews}
-                      onHighlightFinished={() => {}}
+                      blocks={form.blocks || []}
+                      values={{}}
                     />
                   </div>
                 )}
