@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2026-01-01 22:45:13
+ * @ Modified time: 2026-01-03 14:38:37
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -100,7 +100,7 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
   );
 
   // Loading states
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Refresh previews of the different fields
   const refreshPreviews = () => {
@@ -129,6 +129,7 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
   // When form name and version are updated, pull latest
   useEffect(() => {
     if (!formName || (!formVersion && formVersion !== 0)) return;
+    let timeout: NodeJS.Timeout;
     const controller = new AbortController();
 
     formsControllerGetLatestFormDocumentAndMetadata({ name: formName })
@@ -147,15 +148,17 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
         setBlocks(fm.getBlocksForClientService(signingPartyId));
         setPreviewFields(fm.getFieldsForSigningService());
       })
-      .then(() => setLoading(false))
+      .then(() => (timeout = setTimeout(() => setLoading(false), 1000)))
       .catch((e) => {
         console.error(e);
-        setLoading(false);
+        timeout = setTimeout(() => setLoading(false), 1000);
       });
 
     setLoading(true);
-    console.log("UPDATING FORM", formName);
-    return () => controller.abort();
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      controller.abort();
+    };
   }, [formName, formVersion, signingPartyId]);
 
   // Clear fields on refresh?

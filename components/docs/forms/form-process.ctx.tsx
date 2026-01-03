@@ -16,6 +16,7 @@ export interface IFormProcess {
 
   setSupposedSigningPartyId: (supposedSigningPartyId: string) => void;
   setFormProcessId: (formProcessId: string) => void;
+  error?: string;
 }
 
 const FormProcessContext = createContext({} as IFormProcess);
@@ -26,13 +27,13 @@ export const FormProcessContextProvider = ({ children }: { children: React.React
   const [formProcessId, setFormProcessId] = useState("");
   const [supposedSigningPartyId, setSupposedSigningPartyId] = useState("");
   const { data: _formProcess } = useQuery({
-    queryKey: ["form-process"],
+    queryKey: ["form-process", formProcessId],
     queryFn: useCallback(
       () =>
         formsControllerGetFormProcess({
           formProcessId,
           signingPartyId: supposedSigningPartyId,
-        }),
+        }).catch((e) => ({ formProcess: undefined, message: e as string })),
       [formProcessId, supposedSigningPartyId]
     ),
     enabled: !!formProcessId.trim(),
@@ -49,6 +50,7 @@ export const FormProcessContextProvider = ({ children }: { children: React.React
 
         setFormProcessId,
         setSupposedSigningPartyId,
+        error: _formProcess?.message,
       }}
     >
       {children}

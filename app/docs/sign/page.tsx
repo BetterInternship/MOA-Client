@@ -15,6 +15,8 @@ import { Loader } from "@/components/ui/loader";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
 import { useSignContext } from "../auth/provider/sign.ctx";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
+import { type } from "../../../.next/types/routes";
+import { Badge } from "@/components/ui/badge";
 
 const Page = () => {
   return (
@@ -99,6 +101,25 @@ function PageContent() {
     return form.keyedFields.filter((kf) => manualFieldNames.has(kf.field));
   }, [form.keyedFields, manualBlocks]);
 
+  console.log("errrr", formProcess.error);
+  if (formProcess.error) {
+    return (
+      <div className="bg-opacity-25 relative mx-auto flex h-[87dvh] w-full max-w-7xl flex-col items-center overflow-hidden rounded-[0.33em] bg-white">
+        <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden pt-4 sm:w-7xl sm:flex-row">
+          <div className="flex flex-col gap-4 rounded-[0.33em] border border-gray-300 p-3 px-4">
+            <Badge className="text-md w-fit" type="destructive">
+              Notice
+            </Badge>
+            <span className="text-gray-700">
+              This form is unavailable. <br /> Reason:{" "}
+              {formProcess.error.toString().replace("Error: ", "")}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!form.formMetadata || form.loading) return <Loader>Loading form...</Loader>;
 
   return (
@@ -156,7 +177,7 @@ function PageContent() {
             <div className="flex items-center justify-center">
               <span className="inline-flex items-center gap-2 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading form…
+                Loading form...
               </span>
             </div>
           ) : (

@@ -80,7 +80,7 @@ export function FormFillerRenderer() {
         </div>
       </div>
       <div className="border-t border-r border-gray-300 bg-gray-100 px-7 py-3">
-        <FormActionButtons />
+        {!!form.fields.length && <FormActionButtons />}
       </div>
     </div>
   );
