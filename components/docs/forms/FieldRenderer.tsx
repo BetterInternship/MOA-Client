@@ -158,13 +158,26 @@ export const FieldRenderer = <T extends any[]>({
 };
 
 /**
- * Badge component for phantom fields
+ * Subtle icon for phantom fields (not visible in PDF)
  */
 const PhantomFieldBadge = () => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
   return (
-    <span className="rounded-[0.33em] bg-amber-100 px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-amber-500">
-      Not in PDF
-    </span>
+    <div className="relative flex">
+      <Eye
+        size={14}
+        className="cursor-help text-gray-300 transition-colors hover:text-gray-400"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      />
+      {showTooltip && (
+        <div className="pointer-events-none absolute top-1/2 right-full z-10 mr-2 -translate-y-1/2 transform rounded bg-gray-700 px-2 py-1 text-xs whitespace-nowrap text-white">
+          Not visible in PDF
+          <div className="absolute top-1/2 left-full -translate-y-1/2 transform border-4 border-transparent border-l-gray-700"></div>
+        </div>
+      )}
+    </div>
   );
 };
 
