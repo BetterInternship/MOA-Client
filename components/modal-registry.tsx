@@ -42,6 +42,9 @@ export const useModalRegistry = () => {
           />,
           {
             title: "Next Signing Parties",
+            closeOnEsc: false,
+            allowBackdropClick: false,
+            hasClose: false,
             showHeaderDivider: true,
           }
         ),
@@ -52,7 +55,6 @@ export const useModalRegistry = () => {
     formContinuationSuccess: {
       open: () =>
         open("form-continuation-success", <FormContinuationSuccessModal />, {
-          title: "Form Successfully Submitted",
           hasClose: false,
           allowBackdropClick: false,
         }),

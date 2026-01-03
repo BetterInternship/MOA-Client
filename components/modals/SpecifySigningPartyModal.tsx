@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { IFormFiller } from "../docs/forms/form-filler.ctx";
 import { getBlockField } from "../docs/forms/utils";
 import { FieldRenderer } from "../docs/forms/FieldRenderer";
+import { useModalRegistry } from "../modal-registry";
 
 export const SpecifySigningPartiesModal = ({
   fields,
@@ -31,9 +32,12 @@ export const SpecifySigningPartiesModal = ({
 }) => {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const modalRegistry = useModalRegistry();
   const [errors, setErrors] = useState<FormErrors>({});
   const [signingPartyValues, setSigningPartyValues] = useState<FormValues>({});
   const [busy, setBusy] = useState(false);
+
+  const [submitted, setSubmitted] = useState(false);
 
   const handleClick = async () => {
     setBusy(true);
@@ -88,9 +92,16 @@ export const SpecifySigningPartiesModal = ({
         );
       })}
 
-      <Button className="mt-4 self-end" disabled={busy} onClick={() => void handleClick()}>
-        <TextLoader loading={busy}>Sign and send form</TextLoader>
-      </Button>
+      <div className="mt-4 flex gap-2 self-end">
+        {!busy && !submitted && (
+          <Button variant="outline" onClick={close}>
+            Cancel
+          </Button>
+        )}
+        <Button disabled={busy} onClick={() => void handleClick()}>
+          <TextLoader loading={busy}>Sign and send form</TextLoader>
+        </Button>
+      </div>
     </div>
   );
 };
