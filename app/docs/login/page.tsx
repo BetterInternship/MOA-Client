@@ -10,10 +10,6 @@ import { Loader2, ShieldCheck, Lock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { requestLoginOtp, verifyLoginOtp } from "@/app/api/docs.api";
 
-/* ────────────────────────────
-   OTP Input (6 boxes, paste-friendly)
-────────────────────────────── */
-
 function OtpInput({
   length = 6,
   value,
@@ -75,7 +71,7 @@ function OtpInput({
     if (!clip) return;
     e.preventDefault();
 
-    let next = value.split("");
+    const next = value.split("");
     for (let k = 0; k < clip.length && i + k < length; k++) {
       next[i + k] = clip[k];
     }
@@ -108,10 +104,6 @@ function OtpInput({
     </div>
   );
 }
-
-/* ────────────────────────────
-   Page
-────────────────────────────── */
 
 type Step = "email" | "otp";
 
@@ -169,16 +161,16 @@ export default function DocsLoginPage() {
     setBusy(true);
     try {
       const res = await requestLoginOtp(email.trim());
-      if (!res || !res.ok) {
-        setEmailErr(res?.reason ?? "We couldn’t find an account with that email.");
+      if (!res.success) {
+        setEmailErr(res.message);
         return;
       }
       setStep("otp");
       setOtp("");
       // start resend countdown. If the server provided `resendIn` (seconds), use it
-      if (typeof (res as any).resendIn === "number") {
+      if (typeof res.resendIn === "number") {
         // server may give seconds remaining; our UI uses a 60s window, so adjust resentAt
-        const resendIn = Math.max(0, (res as any).resendIn as number);
+        const resendIn = Math.max(0, res.resendIn);
         const assumedWindow = 60;
         const resentAtTs = Date.now() - (assumedWindow - resendIn) * 1000;
         setResentAt(resentAtTs);
@@ -202,12 +194,12 @@ export default function DocsLoginPage() {
     setBusy(true);
     try {
       const res = await verifyLoginOtp(email.trim(), otp);
-      if (!res || !res.ok) {
-        setOtpErr(res?.reason ?? "That code didn’t work. Try again.");
+      if (!res.success) {
+        setOtpErr(res.message);
         return;
       }
       // success → go to dashboard
-      await queryClient.invalidateQueries(["docs-self"]);
+      await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
       router.push("/docs/dashboard");
     } finally {
       setBusy(false);
@@ -219,12 +211,12 @@ export default function DocsLoginPage() {
     setBusy(true);
     try {
       const res = await requestLoginOtp(email.trim());
-      if (!res || !res.ok) {
-        setOtpErr(res?.reason ?? "Unable to resend code. Try again later.");
+      if (!res.success) {
+        setOtpErr(res.message);
         return;
       }
-      if (typeof (res as any).resendIn === "number") {
-        const resendIn = Math.max(0, (res as any).resendIn as number);
+      if (typeof res.resendIn === "number") {
+        const resendIn = Math.max(0, res.resendIn);
         const assumedWindow = 60;
         const resentAtTs = Date.now() - (assumedWindow - resendIn) * 1000;
         setResentAt(resentAtTs);
@@ -250,7 +242,7 @@ export default function DocsLoginPage() {
 
       {step === "email" && (
         <Card className="space-y-4 p-5 sm:p-6">
-          <form className="space-y-4" onSubmit={startOtpFlow} noValidate>
+          <form className="space-y-4" onSubmit={() => void startOtpFlow()} noValidate>
             <div>
               <label className="mb-1 block text-xs text-gray-600">Email</label>
               <div className="relative">
@@ -290,7 +282,7 @@ export default function DocsLoginPage() {
             </p>
           </div>
 
-          <form onSubmit={verifyOtp} className="space-y-4" noValidate>
+          <form onSubmit={() => void verifyOtp()} className="space-y-4" noValidate>
             <div className="flex flex-col items-center">
               <OtpInput value={otp} onChange={setOtp} disabled={busy} />
             </div>
@@ -308,7 +300,7 @@ export default function DocsLoginPage() {
 
               <button
                 type="button"
-                onClick={resend}
+                onClick={() => void resend()}
                 className={`underline underline-offset-4 ${resendWait > 0 ? "text-muted-foreground cursor-not-allowed" : "text-primary"}`}
                 disabled={busy || resendWait > 0}
                 aria-disabled={busy || resendWait > 0}

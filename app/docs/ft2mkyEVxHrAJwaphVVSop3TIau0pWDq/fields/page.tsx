@@ -15,7 +15,7 @@ import { formsControllerUpdateField } from "../../../api/app/api/endpoints/forms
 import { Loader } from "@/components/ui/loader";
 import { Plus } from "lucide-react";
 import { Autocomplete } from "@/components/ui/autocomplete";
-import { PARTIES, SOURCES } from "@betterinternship/core/forms";
+import { SOURCES } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
 import { FormDropdown } from "@/components/docs/forms/EditForm";
 
@@ -25,7 +25,6 @@ interface FieldRegistryEntry {
   preset: string;
   type: "" | "text" | "signature" | "email" | "param";
   label: string;
-  party: "student" | "university" | "entity" | "student-guardian" | "entity-representative";
   source: "auto" | "prefill" | "derived" | "manual";
   shared: boolean;
   tooltip_label: string;
@@ -33,8 +32,6 @@ interface FieldRegistryEntry {
   prefiller: string;
   is_phantom?: boolean;
 }
-
-const PARTY = PARTIES.concat(["entity-representative"]);
 
 /**
  * Displays all the forms we have, and their latest versions.
@@ -199,6 +196,8 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
       validator: field?.validator ?? null,
       prefiller: field?.prefiller ?? null,
       id: fieldId,
+      // ! todo: remove
+      party: "__deprecated",
       is_phantom: field?.is_phantom ?? false,
     });
     setEditing(false);
@@ -221,7 +220,6 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
         tooltip_label: data.field.tooltip_label ?? "",
         validator: data.field.validator ?? "",
         prefiller: data.field.prefiller ?? "",
-        party: data.field.party ?? "",
         is_phantom: data.field.is_phantom,
       });
     } else {
@@ -282,14 +280,6 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
               placeholder={SOURCES.join(", ")}
               options={SOURCES.map((s) => ({ id: s, name: s }))}
               setter={(id) => id && handleChangeFactory("source")(id)}
-            />
-            <Badge>Field Party</Badge>
-            <Autocomplete
-              value={field?.party}
-              inputClassName="h-7 py-1 text-xs"
-              placeholder={PARTY.join(", ")}
-              options={PARTY.map((s) => ({ id: s, name: s }))}
-              setter={(id) => id && handleChangeFactory("party")(id)}
             />
             <Badge>Shared Field?</Badge>
             <FormDropdown
@@ -363,7 +353,6 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
     label: "",
     type: "text",
     source: "manual",
-    party: "student",
   });
   const [registering, setRegistering] = useState(false);
 
@@ -384,7 +373,8 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
       prefiller: field.prefiller ?? null,
       type: field.type,
       source: field.source,
-      party: field.party ?? "student",
+      // ! todo: remove
+      party: "__deprecated",
       shared: field.shared ?? true,
       is_phantom: false,
     });
@@ -448,14 +438,6 @@ const FieldRegistration = ({ close }: { close: () => void }) => {
             placeholder={SOURCES.join(", ")}
             options={SOURCES.map((s) => ({ id: s, name: s }))}
             setter={(id) => id && handleChangeFactory("source")(id)}
-          />
-          <Badge>Field Party</Badge>
-          <Autocomplete
-            value={field?.party}
-            inputClassName="h-7 py-1 text-xs"
-            placeholder={PARTIES.join(", ")}
-            options={PARTIES.map((s) => ({ id: s, name: s }))}
-            setter={(id) => id && handleChangeFactory("party")(id)}
           />
           <Badge>Tooltip Label (optional)</Badge>
           <Input

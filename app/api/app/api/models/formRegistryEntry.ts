@@ -9,4 +9,5 @@
 export interface FormRegistryEntry {
   name: string;
   version: number;
+  time_generated: string;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,48 +11,39 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { getDocsSelf, logoutDocs } from "@/app/api/docs.api";
-import { DocsUser } from "@/types/docs-user";
+import { logoutSignatory } from "@/app/api/docs.api";
+import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 
 export default function DocsTopbarUser() {
   const queryClient = useQueryClient();
   const router = useRouter();
-
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["docs-self"],
-    queryFn: getDocsSelf,
-    staleTime: 60_000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-  });
+  const profile = useSignatoryProfile();
 
   const logoutMutation = useMutation({
-    mutationFn: logoutDocs,
+    mutationFn: logoutSignatory,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
+      await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
       router.push("/login");
     },
   });
 
-  const user = data?.profile as DocsUser | undefined;
-
-  if (isLoading) {
+  if (profile.loading) {
     return <div className="bg-muted h-9 w-24 animate-pulse rounded" />;
   }
 
-  return user ? (
+  return profile ? (
     <div className="flex w-full justify-between gap-2">
       <div className="flex items-center gap-2">
         <Link href="/dashboard">
           <Button variant="ghost">My Signed Forms</Button>
         </Link>
-        <Link href="/forms">
+        {/* <Link href="/forms">
           <Button variant="ghost">
-            {user?.coordinatorId ? "Forms Preview" : "My Saved Templates"}{" "}
+            {profile.coordinatorId ? "Forms Preview" : "My Saved Templates"}{" "}
           </Button>
-        </Link>
+        </Link> */}
 
-        {user?.isGodMode && (
+        {profile.god && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-1">
@@ -79,7 +70,7 @@ export default function DocsTopbarUser() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="flex items-center gap-1">
-              {user ? user.name?.trim() || user.email || "User" : "Loading..."}
+              {profile.name?.trim() || profile.email || "User"}
               <ChevronDown size={14} className="mt-0.5" />
             </Button>
           </DropdownMenuTrigger>
@@ -87,9 +78,9 @@ export default function DocsTopbarUser() {
             <DropdownMenuItem
               variant="destructive"
               onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isLoading}
+              disabled={logoutMutation.isPending}
             >
-              {logoutMutation.isLoading ? "Logging out..." : "Logout"}
+              {logoutMutation.isPending ? "Logging out..." : "Logout"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

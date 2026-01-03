@@ -163,6 +163,7 @@ export const GroupableRadioDropdown = <ID extends number | string>({
   size = "sm",
   className = "",
   fallback = "Select option",
+  onBlur,
 }: {
   name: string;
   options: IRadioDropdownOption<ID>[];
@@ -172,12 +173,18 @@ export const GroupableRadioDropdown = <ID extends number | string>({
   size?: "xs" | "sm" | "md" | "lg";
   className?: string;
   fallback?: string;
+  onBlur?: () => void;
 }) => {
   const { isMobile } = useAppContext();
   const { activeDropdown, setActiveDropdown } = useContext(DropdownGroupContext);
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState(defaultValue);
-  const ref = useDetectClickOutside({ onTriggered: () => setIsOpen(false) });
+  const ref = useDetectClickOutside({
+    onTriggered: () => {
+      setIsOpen(false);
+      onBlur?.();
+    },
+  });
 
   // Just so it's not stuck at the first default when the default changes
   useEffect(() => {

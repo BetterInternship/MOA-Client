@@ -1,21 +1,10 @@
+import { formGroupsControllerGetAllFormGroups } from "./app/api/endpoints/form-groups/form-groups";
+import { formsControllerGetLatestFormDocumentAndMetadata } from "./app/api/endpoints/forms/forms";
+import { signatoryControllerGetSignedDocumentsBySignatory } from "./app/api/endpoints/signatory/signatory";
 import {
-  formsControllerGetLatestFormDocumentAndMetadata,
-  formsControllerGetPending,
-  formsControllerApproveSignatory,
-  formsControllerGenerateForm,
-} from "./app/api/endpoints/forms/forms";
-import { FormMetadata, IFormField, IFormMetadata } from "@betterinternship/core/forms";
-import { formsControllerGetSignedDocumentsBySignatory } from "./app/api/endpoints/forms/forms";
-
-export const getPendingInformation = async (pendingDocumentId: string) => {
-  try {
-    const pendingInformation = await formsControllerGetPending({ pendingDocumentId });
-    return { pendingInformation, isLoading: false, error: null };
-  } catch (error) {
-    return { pendingInformation: null, isLoading: false, error };
-  }
-};
-
+  formGroupsControllerAddFormToGroup,
+  formGroupsControllerCreateFormGroup,
+} from "./app/api/endpoints/form-groups/form-groups";
 export const getFormFields = async (name: string) => {
   return await formsControllerGetLatestFormDocumentAndMetadata({ name });
 };
@@ -23,16 +12,7 @@ export const getFormFields = async (name: string) => {
 export type Party = "student" | "entity" | "student-guardian" | "university";
 
 export type ApproveSignatoryRequest = {
-  pendingDocumentId: string;
-  signatories: {
-    name: string;
-    title: string;
-    party: string;
-    status?: string;
-    email?: string;
-    honorific?: string;
-  }[];
-  party: Party;
+  pendingFormId: string;
   values?: Record<string, string>;
 };
 
@@ -43,24 +23,8 @@ export type ApproveSignatoryResponse = {
   [k: string]: any;
 };
 
-export const approveSignatory = async (data: ApproveSignatoryRequest) => {
-  try {
-    const res = await formsControllerApproveSignatory(data);
-    const approval: ApproveSignatoryResponse | null = res ?? null;
-    return { approval, isLoading: false, error: null };
-  } catch (error) {
-    return { approval: null, isLoading: false, error };
-  }
-};
-
 export const getAllSignedForms = async () => {
-  try {
-    const res = await formsControllerGetSignedDocumentsBySignatory();
-    const signedDocuments = res?.signedDocuments ?? [];
-    return { signedDocuments, isLoading: false, error: null };
-  } catch (error) {
-    return { signedDocuments: null, isLoading: false, error };
-  }
+  return await signatoryControllerGetSignedDocumentsBySignatory();
 };
 
 export const requestGenerateForm = async (data: {
@@ -76,9 +40,45 @@ export const requestGenerateForm = async (data: {
   disableEsign?: boolean;
 }) => {
   try {
-    const res = await formsControllerGenerateForm(data);
-    return { response: res, isLoading: false, error: null };
+    // ! reimplement this part, call the correct route
+    await Promise.resolve("lol");
+    return { response: {}, isLoading: false, error: null };
   } catch (error) {
     return { response: null, isLoading: false, error };
+  }
+};
+
+export const fetchAllFormGroups = async () => {
+  try {
+    const res = await formGroupsControllerGetAllFormGroups();
+    const groups = res?.groups ?? [];
+    return { groups, isLoading: false, error: null };
+  } catch (error) {
+    return { groups: null, isLoading: false, error };
+  }
+};
+
+export const createFormGroup = async (name: string) => {
+  try {
+    const res = await formGroupsControllerCreateFormGroup({
+      body: { name },
+    });
+    const group = res?.response ?? null;
+    return { group, isLoading: false, error: null };
+  } catch (error) {
+    return { group: null, isLoading: false, error };
+  }
+};
+
+export const addFormToGroup = async (formName: string, groupId: string) => {
+  console.log("API call to addFormToGroup with", { formName, groupId });
+  try {
+    const res = await formGroupsControllerAddFormToGroup({
+      body: { formName, groupId },
+    });
+    const result = res?.response ?? null;
+    return { result, isLoading: false, error: null };
+  } catch (error) {
+    return { result: null, isLoading: false, error };
   }
 };

@@ -3,18 +3,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { DynamicForm } from "@/components/docs/forms/RecipientDynamicForm";
+import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { getFormFields } from "@/app/api/forms.api";
 import { FormMetadata } from "@betterinternship/core/forms";
 import z from "zod";
 import { useModal } from "@/app/providers/modal-provider";
-import { getSignatorySelf, useSignatoryAccountActions } from "@/app/api/signatory.api";
+import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useFormContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form.ctx";
-import { DocumentRenderer } from "./previewer";
+import { FormPreviewPdfDisplay } from "@/components/docs/form-editor/form-layout/FormPreviewPdfDisplay";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useFormRendererContext } from "./form-renderer.ctx";
+import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 
 type Props = {
   formName: string;
@@ -28,7 +29,8 @@ type Props = {
 const FormAutosignEditorModal = React.memo(
   ({ formName, party, currentValue, valueSetter, notAsModal, errors: _errors }: Props) => {
     const queryClient = useQueryClient();
-    const form = useFormContext();
+    const form = useFormRendererContext();
+    const profile = useSignatoryProfile();
     const isMobile = useIsMobile();
     const { update } = useSignatoryAccountActions();
     const { openModal, closeModal } = useModal();
@@ -51,15 +53,9 @@ const FormAutosignEditorModal = React.memo(
       enabled: !!formName,
     });
 
-    const profile = useQuery({
-      queryKey: ["signatory-self"],
-      queryFn: async () => await getSignatorySelf(),
-      staleTime: 60_000,
-    });
-
     // Saved autofill
     const autofillValues = useMemo(() => {
-      const profileAutofill = profile.data?.autofill as Record<string, Record<string, string>>;
+      const profileAutofill = profile.autofill;
       if (!profileAutofill) return;
 
       // Destructure to isolate only shared fields or fields for that form
@@ -75,7 +71,7 @@ const FormAutosignEditorModal = React.memo(
     const formMetadata = previewQuery.data?.formMetadata
       ? new FormMetadata(previewQuery.data?.formMetadata)
       : null;
-    const fields = formMetadata?.getFieldsForClient() ?? [];
+    const fields = formMetadata?.getFieldsForClientService() ?? [];
 
     const fieldsForParty = (p: string) => fields.filter((f) => f.party === p);
 
@@ -194,7 +190,7 @@ const FormAutosignEditorModal = React.memo(
             },
           },
         });
-        await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
+        await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
         await queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
         console.log("Autofill and autosign completed!");
       } catch (err) {
@@ -256,11 +252,10 @@ const FormAutosignEditorModal = React.memo(
               <div className={cn("mb-2 sm:hidden", mobileStage === "preview" ? "" : "hidden")}>
                 <div className="relative w-full overflow-auto rounded-md border">
                   {form.document.url ? (
-                    <DocumentRenderer
+                    <FormPreviewPdfDisplay
                       documentUrl={form.document.url}
-                      highlights={[]}
-                      previews={previews}
-                      onHighlightFinished={() => {}}
+                      blocks={form.blocks || []}
+                      values={{}}
                     />
                   ) : (
                     <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -282,11 +277,10 @@ const FormAutosignEditorModal = React.memo(
               <div className={cn("sm:hidden", mobileStage === "confirm" ? "" : "hidden")}>
                 <div className="relative h-[60vh] w-full overflow-auto rounded-md border">
                   {form.document.url ? (
-                    <DocumentRenderer
+                    <FormPreviewPdfDisplay
                       documentUrl={form.document.url}
-                      highlights={[]}
-                      previews={previews}
-                      onHighlightFinished={() => {}}
+                      blocks={form.blocks || []}
+                      values={{}}
                     />
                   ) : (
                     <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -318,18 +312,19 @@ const FormAutosignEditorModal = React.memo(
                   <div className="text-sm text-gray-500">No fields available for this request.</div>
                 ) : (
                   <div className="space-y-4">
-                    <DynamicForm
-                      party={party}
+                    <FormFillerRenderer
+                      signingPartyId={party}
                       fields={fieldsForParty(party)}
                       values={values[party] ?? {}}
                       onChange={(field, value) => setField(party, field, value)}
                       errors={errors}
-                      showErrors={true}
                       formName={formName ?? ""}
                       autofillValues={autofillValues}
                       setValues={(newVals) => setValuesForParty(party, newVals)}
                       setPreviews={setPreviews}
                       onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
+                      blocks={[]}
+                      pendingUrl={""}
                     />
 
                     <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
@@ -375,11 +370,10 @@ const FormAutosignEditorModal = React.memo(
               <div className="relative flex h-full w-full flex-row gap-2">
                 {!!form.document.url && (
                   <div className="relative h-full w-full">
-                    <DocumentRenderer
+                    <FormPreviewPdfDisplay
                       documentUrl={form.document.url}
-                      highlights={[]}
-                      previews={previews}
-                      onHighlightFinished={() => {}}
+                      blocks={form.blocks || []}
+                      values={{}}
                     />
                   </div>
                 )}
@@ -389,50 +383,6 @@ const FormAutosignEditorModal = React.memo(
         </div>
       </div>
     );
-    //   <div>
-    //     <div className="space-y-3">
-    //       {previewQuery.isLoading ? (
-    //         <div className="rounded-md border p-3">
-    //           <div className="text-muted-foreground text-sm">Loading form preview...</div>
-    //         </div>
-    //       ) : (previewQuery.data?.formMetadata?.schema ?? []).length === 0 ? (
-    //         <div className="text-sm">No preview available.</div>
-    //       ) : (
-    //         <div className="rounded-md border p-3">
-    //           <div className="mb-2 flex items-center justify-between">
-    //             <div className="text-sm font-semibold">{party}</div>
-    //             <div className="text-muted-foreground text-xs">
-    //               {fieldsForParty(party).length} field{fieldsForParty(party).length !== 1 ? "s" : ""}
-    //             </div>
-    //           </div>
-
-    //           <DynamicForm
-    //             party={party}
-    //             fields={fieldsForParty(party)}
-    //             values={values[party] ?? {}}
-    //             onChange={(field, value) => setField(party, field, value)}
-    //             errors={errors}
-    //             showErrors={true}
-    //             formName={formName ?? ""}
-    //             autofillValues={autofillValues}
-    //             setValues={(newVals) => setValuesForParty(party, newVals)}
-    //             onBlurValidate={(fieldKey: string) => validateFieldOnBlur(fieldKey)}
-    //           />
-    //         </div>
-    //       )}
-
-    //       <div className="mt-4 flex justify-end gap-2">
-    //         <Button
-    //           type="button"
-    //           onClick={() => void handleSubmit()}
-    //           disabled={submitting || previewQuery.isLoading}
-    //         >
-    //           {submitting ? "Saving..." : "Save"}
-    //         </Button>
-    //       </div>
-    //     </div>
-    //   </div>
-    // );
   }
 );
 

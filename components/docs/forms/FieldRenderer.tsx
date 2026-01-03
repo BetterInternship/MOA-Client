@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-16 22:43:51
- * @ Modified time: 2025-10-31 16:18:44
+ * @ Modified time: 2026-01-02 20:38:24
  * @ Description:
  *
  * The field renderer 3000 automatically renders the correct field for the situation!
@@ -9,35 +9,38 @@
 
 "use client";
 
+import { useSignContext } from "@/app/docs/auth/provider/sign.ctx";
 import {
-  FormDropdown,
-  FormDatePicker,
-  TimeInputNative,
-  FormInput,
   FormCheckbox,
+  FormDatePicker,
+  FormDropdown,
+  FormInput,
   FormTextarea,
+  TimeInputNative,
 } from "./EditForm";
 import { AutocompleteTreeMulti, TreeOption } from "./autocomplete";
 import { ClientField } from "@betterinternship/core/forms";
+import { useEffect, useState } from "react";
 
-export function FieldRenderer({
+export const FieldRenderer = <T extends any[]>({
   field,
   value = "",
   onChange,
   error,
   onBlur,
+  isPhantom = false,
 }: {
-  field: ClientField<[]>;
+  field: ClientField<T>;
   value: string;
   onChange: (v: any) => void;
   error?: string;
   onBlur?: () => void;
   allValues?: Record<string, string>;
-}) {
+  isPhantom?: boolean;
+}) => {
   // Placeholder or error
   const TooltipLabel = () => {
     if (error) return <p className="text-destructive mt-1 text-xs">{error}</p>;
-
     return null;
   };
 
@@ -50,6 +53,7 @@ export function FieldRenderer({
         TooltipContent={TooltipLabel}
         onChange={onChange}
         onBlur={onBlur}
+        isPhantom={isPhantom}
       />
     );
   }
@@ -63,6 +67,7 @@ export function FieldRenderer({
         TooltipContent={TooltipLabel}
         onChange={onChange}
         onBlur={onBlur}
+        isPhantom={isPhantom}
       />
     );
   }
@@ -76,6 +81,7 @@ export function FieldRenderer({
         TooltipContent={TooltipLabel}
         onChange={onChange}
         onBlur={onBlur}
+        isPhantom={isPhantom}
       />
     );
   }
@@ -88,6 +94,7 @@ export function FieldRenderer({
         TooltipContent={TooltipLabel}
         onChange={onChange}
         onBlur={onBlur}
+        isPhantom={isPhantom}
       />
     );
   }
@@ -106,14 +113,29 @@ export function FieldRenderer({
           })) ?? []
         }
         onBlur={onBlur}
+        isPhantom={isPhantom}
       />
     );
   }
 
-  // Signatures or checkboxes
-  if (field.type === "signature" || field.type === "checkbox") {
+  // Checkboxes
+  if (field.type === "checkbox") {
     return (
       <FieldRendererCheckbox
+        field={field}
+        value={value}
+        TooltipContent={TooltipLabel}
+        onChange={onChange}
+        onBlur={onBlur}
+        isPhantom={isPhantom}
+      />
+    );
+  }
+
+  // Signatures
+  if (field.type === "signature") {
+    return (
+      <FieldRendererSignature
         field={field}
         value={value}
         TooltipContent={TooltipLabel}
@@ -130,9 +152,34 @@ export function FieldRenderer({
       TooltipContent={TooltipLabel}
       onChange={onChange}
       onBlur={onBlur}
+      isPhantom={isPhantom}
     />
   );
-}
+};
+
+/**
+ * Subtle icon for phantom fields (not visible in PDF)
+ */
+const PhantomFieldBadge = () => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div className="relative flex">
+      <Eye
+        size={14}
+        className="cursor-help text-gray-300 transition-colors hover:text-gray-400"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      />
+      {showTooltip && (
+        <div className="pointer-events-none absolute top-1/2 right-full z-10 mr-2 -translate-y-1/2 transform rounded bg-gray-700 px-2 py-1 text-xs whitespace-nowrap text-white">
+          Not visible in PDF
+          <div className="absolute top-1/2 left-full -translate-y-1/2 transform border-4 border-transparent border-l-gray-700"></div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ! Probably migrate this in the future
 interface Option {
@@ -145,26 +192,30 @@ interface Option {
  *
  * @component
  */
-const FieldRendererDropdown = ({
+const FieldRendererDropdown = <T extends any[]>({
   field,
   value,
   TooltipContent,
   onChange,
   onBlur,
+  isPhantom = false,
 }: {
-  field: ClientField<[]>;
+  field: ClientField<T>;
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string | number) => void;
   onBlur?: () => void;
+  isPhantom?: boolean;
 }) => {
   const options: Option[] = (field.options ?? []).map((o) => ({
     id: o as string,
     name: o as string,
   }));
 
+  const badge = isPhantom && <PhantomFieldBadge />;
+
   return (
-    <div className="space-y-1.5">
+    <div className="relative space-y-1.5 overflow-visible">
       <FormDropdown
         required={false}
         label={field.label}
@@ -174,6 +225,7 @@ const FieldRendererDropdown = ({
         className="w-full"
         tooltip={field.tooltip_label}
         onBlur={() => onBlur?.()}
+        labelAddon={badge}
       />
       <TooltipContent />
     </div>
@@ -185,21 +237,25 @@ const FieldRendererDropdown = ({
  *
  * @component
  */
-const FieldRendererDate = ({
+const FieldRendererDate = <T extends any[]>({
   field,
   value,
   TooltipContent,
   onChange,
   onBlur,
+  isPhantom = false,
 }: {
-  field: ClientField<[]>;
+  field: ClientField<T>;
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: number) => void;
   onBlur?: () => void;
+  isPhantom?: boolean;
 }) => {
   // Try to parse it first
   const numericalValue = isNaN(parseInt(value)) ? 0 : parseInt(value);
+
+  const badge = isPhantom && <PhantomFieldBadge />;
 
   // By default the unix timestamp is 0 if it's not a number
   return (
@@ -225,6 +281,7 @@ const FieldRendererDate = ({
             day: "2-digit",
           })
         }
+        labelAddon={badge}
       />
       <TooltipContent />
     </div>
@@ -236,19 +293,23 @@ const FieldRendererDate = ({
  *
  * @component
  */
-const FieldRendererTime = ({
+const FieldRendererTime = <T extends any[]>({
   field,
   value,
   TooltipContent,
   onChange,
   onBlur,
+  isPhantom = false,
 }: {
-  field: ClientField<[]>;
+  field: ClientField<T>;
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string) => void;
   onBlur?: () => void;
+  isPhantom?: boolean;
 }) => {
+  const badge = isPhantom && <PhantomFieldBadge />;
+
   return (
     <div className="space-y-1.5">
       <TimeInputNative
@@ -258,6 +319,7 @@ const FieldRendererTime = ({
         tooltip={field.tooltip_label}
         onChange={(v) => onChange(v ?? "")}
         onBlur={() => onBlur?.()}
+        labelAddon={badge}
       />
       <TooltipContent />
     </div>
@@ -265,23 +327,27 @@ const FieldRendererTime = ({
 };
 
 /**
- * Time input
+ * Checkbox input
  *
  * @component
  */
-const FieldRendererCheckbox = ({
+const FieldRendererCheckbox = <T extends any[]>({
   field,
   value,
   TooltipContent,
   onChange,
   onBlur,
+  isPhantom = false,
 }: {
-  field: ClientField<[]>;
+  field: ClientField<T>;
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: boolean) => void;
   onBlur?: () => void;
+  isPhantom?: boolean;
 }) => {
+  const badge = isPhantom && <PhantomFieldBadge />;
+
   return (
     <div className="space-y-1.5">
       <FormCheckbox
@@ -290,8 +356,9 @@ const FieldRendererCheckbox = ({
         checked={!!value}
         tooltip={field.tooltip_label}
         sentence={field.tooltip_label}
-        setter={(c) => onChange(c)}
+        setter={(c: boolean) => onChange(c)}
         onBlur={() => onBlur?.()}
+        labelAddon={badge}
       />
       <TooltipContent />
     </div>
@@ -303,22 +370,24 @@ const FieldRendererCheckbox = ({
  *
  * @component
  */
-const FieldRendererInput = ({
+const FieldRendererInput = <T extends any[]>({
   field,
   value,
   TooltipContent,
   onChange,
   onBlur,
+  isPhantom = false,
 }: {
-  field: ClientField<[]>;
+  field: ClientField<T>;
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string | number) => void;
   onBlur?: () => void;
+  isPhantom?: boolean;
 }) => {
   const inputMode = field.type === "number" ? "numeric" : undefined;
-  // const isRecipientField =
-  //   typeof field.field === "string" && field.field.endsWith(":recipient");
+  const badge = isPhantom && <PhantomFieldBadge />;
+
   return (
     <div className="space-y-1.5">
       <FormInput
@@ -334,15 +403,59 @@ const FieldRendererInput = ({
         tooltip={field.tooltip_label}
         className="w-full"
         onBlur={() => onBlur?.()}
+        labelAddon={badge}
       />
-      {/* {isRecipientField && (
-        <div className="flex gap-1 md:items-center">
-          <Info className="text-primary h-3.5 w-3.5"></Info>
-          <p className="text-xs text-primary">
-            A separate form will be emailed to them to complete and sign.
-          </p>
+      <TooltipContent />
+    </div>
+  );
+};
+
+/**
+ * Signature-specific input
+ *
+ * @component
+ */
+const FieldRendererSignature = <T extends any[]>({
+  field,
+  value,
+  TooltipContent,
+  onChange,
+  onBlur,
+}: {
+  field: ClientField<T>;
+  value: string;
+  TooltipContent: () => React.ReactNode;
+  onChange: (v: string | number) => void;
+  onBlur?: () => void;
+}) => {
+  const signContext = useSignContext();
+  const [checked, setChecked] = useState(false);
+
+  // ! PUT THIS SOMEWHERE ELSE
+  useEffect(() => {
+    signContext.setHasAgreedForSignature(field.field, value, checked);
+  }, [checked, value]);
+
+  return (
+    <div className="space-y-1.5 rounded-[0.33em] border border-gray-300 p-4 px-5">
+      <FormInput
+        required={true}
+        label={`${field.label} (Signatory Full Name)`}
+        value={value ?? ""}
+        setter={(v) => onChange(v)}
+        tooltip={field.tooltip_label}
+        className="w-full"
+        onBlur={() => onBlur?.()}
+      />
+      <div className="mt-5 flex flex-row" onClick={() => setChecked(!checked)}>
+        <div className="mt-1 mr-2">
+          <FormCheckbox checked={checked} setter={setChecked}></FormCheckbox>
         </div>
-      )} */}
+        <span className="text-md text-gray-700 italic">
+          I agree to use electronic representation of my signature for all purposes when I (or my
+          agent) use them on documents, including legally binding contracts.
+        </span>
+      </div>
       <TooltipContent />
     </div>
   );
@@ -353,19 +466,23 @@ const FieldRendererInput = ({
  *
  * @component
  */
-const FieldRendererTextarea = ({
+const FieldRendererTextarea = <T extends any[]>({
   field,
   value,
   TooltipContent,
   onChange,
   onBlur,
+  isPhantom = false,
 }: {
-  field: ClientField<[]>;
+  field: ClientField<T>;
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string | number) => void;
   onBlur?: () => void;
+  isPhantom?: boolean;
 }) => {
+  const badge = isPhantom && <PhantomFieldBadge />;
+
   return (
     <div className="space-y-1.5">
       <FormTextarea
@@ -376,6 +493,7 @@ const FieldRendererTextarea = ({
         onBlur={() => onBlur?.()}
         tooltip={field.tooltip_label}
         className="w-full"
+        labelAddon={badge}
       />
       <TooltipContent />
     </div>
@@ -383,25 +501,29 @@ const FieldRendererTextarea = ({
 };
 
 /**
- * Textarea input
+ * Multiselect input
  *
  * @component
  */
-const FieldRendererMultiselect = ({
+const FieldRendererMultiselect = <T extends any[]>({
   field,
   values,
   options,
   TooltipContent,
   onChange,
   onBlur,
+  isPhantom = false,
 }: {
-  field: ClientField<[]>;
+  field: ClientField<T>;
   values: string[];
   options: TreeOption[];
   TooltipContent: () => React.ReactNode;
   onChange: (v: string[]) => void;
   onBlur?: () => void;
+  isPhantom?: boolean;
 }) => {
+  const badge = isPhantom && <PhantomFieldBadge />;
+
   return (
     <div className="space-y-1.5" onBlur={() => onBlur?.()}>
       <AutocompleteTreeMulti
@@ -412,6 +534,7 @@ const FieldRendererMultiselect = ({
         className="w-full"
         tooltip={field.tooltip_label}
         tree={options}
+        labelAddon={badge}
       />
       <TooltipContent />
     </div>

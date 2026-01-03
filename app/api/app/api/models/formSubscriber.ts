@@ -7,9 +7,7 @@
  */
 
 export interface FormSubscriber {
+  account_id: string;
   name: string;
-  honorific: string;
-  title: string;
   email: string;
-  party: string;
 }

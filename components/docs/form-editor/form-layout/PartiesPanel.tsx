@@ -1,0 +1,491 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { type IFormSigningParty } from "@betterinternship/core/forms";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/docs/forms/EditForm";
+import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { validateEmail } from "@/lib/validators";
+
+interface PartiesPanelProps {
+  parties: IFormSigningParty[];
+  onPartiesChange: (parties: IFormSigningParty[]) => void;
+}
+
+type CredentialMode = "source" | "account";
+
+interface ValidationErrors {
+  partyName?: string;
+  order?: string;
+  email?: string;
+  source?: string;
+}
+
+export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) => {
+  // Safeguard against undefined parties
+  const safeParties = parties || [];
+
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState<Partial<IFormSigningParty>>({});
+  const [credentialMode, setCredentialMode] = useState<CredentialMode>("source");
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [sourceErrors, setSourceErrors] = useState<{
+    sourceId?: string;
+    sourceFieldLabel?: string;
+    sourceFieldTooltip?: string;
+  }>({});
+
+  // Ensure at least one initiator party (order=1) always exists
+  useEffect(() => {
+    const hasInitiator = safeParties.some((p) => p.order === 1);
+    if (!hasInitiator) {
+      const newParty: IFormSigningParty = {
+        _id: "initiator",
+        order: 1,
+        signatory_source: "initiator",
+      };
+      onPartiesChange([newParty, ...safeParties]);
+    }
+  }, []);
+
+  const handleStartEdit = (party: IFormSigningParty, index: number) => {
+    setEditingIndex(index);
+    setEditValues(party);
+    setCredentialMode(party.signatory_account ? "account" : "source");
+    setValidationErrors({});
+    setSourceErrors({});
+  };
+
+  const validateForm = (): boolean => {
+    const errors: ValidationErrors = {};
+
+    // Validate party name
+    if (!editValues._id || editValues._id.trim() === "") {
+      errors.partyName = "Party name is required";
+    }
+
+    // Validate order
+    if (!editValues.order || editValues.order < 1) {
+      errors.order = "Order must be at least 1";
+    }
+
+    // Order 1 (Initiator) doesn't need signatory fields, skip validation
+    if (editValues.order !== 1) {
+      // Validate based on credential mode
+      if (credentialMode === "source") {
+        if (!editValues.signatory_source?._id || editValues.signatory_source._id.trim() === "") {
+          errors.source = "Source ID is required";
+        }
+        if (!editValues.signatory_source?.label || editValues.signatory_source.label.trim() === "") {
+          errors.source = "Source label is required";
+        }
+      } else if (credentialMode === "account") {
+        const emailValidation = validateEmail(editValues.signatory_account?.email || "");
+        if (!emailValidation.valid) {
+          errors.email = emailValidation.error;
+        }
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSaveEdit = () => {
+    if (editingIndex === null) return;
+
+    if (!validateForm()) {
+      return;
+    }
+
+    const updatedParties = safeParties.map((p, idx) => {
+      if (idx === editingIndex) {
+        let party = { ...p, ...editValues } as IFormSigningParty;
+        // Clear signatory fields for order 1 (Initiator)
+        if (party.order === 1) {
+          party.signatory_account = undefined;
+          party.signatory_source = undefined;
+        }
+        const { signed: _signed, ...partyWithoutSigned } = party;
+        return partyWithoutSigned as IFormSigningParty;
+      }
+      return p;
+    });
+    onPartiesChange(updatedParties);
+    setEditingIndex(null);
+    setEditValues({});
+    setValidationErrors({});
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setEditValues({});
+    setCredentialMode("source");
+    setValidationErrors({});
+    setSourceErrors({});
+  };
+
+  const handleDeleteParty = (id: string) => {
+    // Prevent deletion of the Initiator party (order=1)
+    const partyToDelete = safeParties.find((p) => p._id === id);
+    if (partyToDelete?.order === 1) {
+      return;
+    }
+    const updatedParties = safeParties.filter((p) => p._id !== id);
+    onPartiesChange(updatedParties);
+  };
+
+  const handleAddParty = () => {
+    const newParty: IFormSigningParty = {
+      _id: `party-${Date.now()}`,
+      order: Math.max(...safeParties.map((p) => p.order), 0) + 1,
+      signatory_source: {
+        _id: "",
+        label: "",
+        tooltip_label: "",
+      },
+    };
+    onPartiesChange([...safeParties, newParty]);
+    setEditingIndex(safeParties.length); // Auto-edit the new party
+    setEditValues(newParty);
+    setCredentialMode("source");
+  };
+
+  const isInitiatorParty = (order?: number) => order === 1;
+
+  return (
+    <div className="space-y-4">
+      {/* Instruction card and Add button */}
+      <Card className="border border-blue-200 bg-blue-50/50 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs text-blue-800">
+            Define the signing parties that will fill and sign this form. Each party can have
+            different fields assigned to them.
+          </p>
+          <Button
+            onClick={handleAddParty}
+            size="sm"
+            className="flex-shrink-0 gap-2 bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add Signing Party
+          </Button>
+        </div>
+      </Card>
+
+      {safeParties.length === 0 ? (
+        <Card className="border border-dashed border-slate-300 p-8 text-center">
+          <p className="text-sm text-slate-500">No parties yet</p>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {safeParties
+            .sort((a, b) => a.order - b.order)
+            .map((party, index) => (
+              <Card
+                key={party._id}
+                className={`border p-3 transition-colors ${
+                  editingIndex === index
+                    ? "border-blue-300 bg-blue-50"
+                    : "border-slate-200 bg-white hover:bg-slate-50/50"
+                }`}
+              >
+                {editingIndex === index ? (
+                  // Edit Mode
+                  <div className="space-y-4">
+                    {/* Party Name */}
+                    <div>
+                      <FormInput
+                        label="Party Name"
+                        type="text"
+                        value={editValues._id || ""}
+                        setter={(value) => {
+                          setEditValues({ ...editValues, _id: value });
+                          setValidationErrors({ ...validationErrors, partyName: undefined });
+                        }}
+                        placeholder="e.g., Student, Entity, University"
+                        required={false}
+                      />
+                      {validationErrors.partyName && (
+                        <p className="mt-1 text-xs text-red-600">{validationErrors.partyName}</p>
+                      )}
+                    </div>
+
+                    {/* Order */}
+                    <div>
+                      {isInitiatorParty(editValues.order) ? (
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-600">
+                            Order
+                          </label>
+                          <div className="flex h-8 items-center rounded-[0.33em] border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-600">
+                            1 (Initiator - Fixed)
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <FormInput
+                            label="Order"
+                            type="number"
+                            value={editValues.order?.toString() || "1"}
+                            setter={(value) => {
+                              setEditValues({ ...editValues, order: parseInt(value) });
+                              setValidationErrors({ ...validationErrors, order: undefined });
+                            }}
+                            required={false}
+                          />
+                          {validationErrors.order && (
+                            <p className="mt-1 text-xs text-red-600">{validationErrors.order}</p>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Credential Mode Selector - only for non-initiator parties */}
+                    {!isInitiatorParty(editValues.order) && (
+                      <div>
+                        <div className="mb-2 flex items-center gap-3">
+                          <label className="text-xs font-medium text-slate-600">
+                            How will this party provide credentials?
+                          </label>
+                          <div className="flex gap-1.5">
+                            <Button
+                              size="sm"
+                              variant={credentialMode === "source" ? "default" : "outline"}
+                              onClick={() => {
+                                setCredentialMode("source");
+                                setEditValues({ ...editValues, signatory_account: undefined });
+                              }}
+                              className={
+                                credentialMode === "source" ? "bg-blue-600 hover:bg-blue-700" : ""
+                              }
+                            >
+                              By Source
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={credentialMode === "account" ? "default" : "outline"}
+                              onClick={() => {
+                                setCredentialMode("account");
+                                setEditValues({ ...editValues, signatory_source: undefined });
+                              }}
+                              className={
+                                credentialMode === "account" ? "bg-blue-600 hover:bg-blue-700" : ""
+                              }
+                            >
+                              By Email
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Source-based Mode - only for non-initiator parties */}
+                    {!isInitiatorParty(editValues.order) && credentialMode === "source" && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-600">
+                            Select Party Source
+                          </label>
+                          {isInitiatorParty(editValues.order) ? (
+                            <div className="flex h-8 items-center rounded-[0.33em] border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-600">
+                              Initiator (Fixed)
+                            </div>
+                          ) : (
+                            <>
+                              <select
+                                value={editValues.signatory_source?._id || ""}
+                                onChange={(e) => {
+                                  setEditValues({
+                                    ...editValues,
+                                    signatory_source: {
+                                      _id: e.target.value,
+                                      label: editValues.signatory_source?.label || "",
+                                      tooltip_label: editValues.signatory_source?.tooltip_label || "",
+                                    },
+                                  });
+                                  setSourceErrors({ ...sourceErrors, sourceId: undefined });
+                                }}
+                                className={`h-8 w-full rounded-[0.33em] border px-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:outline-none ${
+                                  sourceErrors.sourceId ? "border-red-500" : "border-slate-300"
+                                }`}
+                              >
+                                <option value="">-- Select a party --</option>
+                                {safeParties
+                                  .filter(
+                                    (p) =>
+                                      p._id !==
+                                      (editingIndex !== null ? safeParties[editingIndex]._id : null)
+                                  )
+                                  .map((p) => (
+                                    <option key={p._id} value={p._id}>
+                                      {p._id}
+                                    </option>
+                                  ))}
+                              </select>
+                              {sourceErrors.sourceId && (
+                                <p className="mt-1 text-xs text-red-600">{sourceErrors.sourceId}</p>
+                              )}
+                            </>
+                          )}
+                        </div>
+
+                        <div>
+                          <FormInput
+                            label="Source Field Label"
+                            type="text"
+                            value={editValues.signatory_source?.label || ""}
+                            setter={(value) => {
+                              setEditValues({
+                                ...editValues,
+                                signatory_source: {
+                                  _id: editValues.signatory_source?._id || "",
+                                  label: value,
+                                  tooltip_label: editValues.signatory_source?.tooltip_label || "",
+                                },
+                              });
+                              setSourceErrors({ ...sourceErrors, sourceFieldLabel: undefined });
+                            }}
+                            placeholder="e.g., Student"
+                            required={false}
+                          />
+                          {sourceErrors.sourceFieldLabel && (
+                            <p className="mt-1 text-xs text-red-600">
+                              {sourceErrors.sourceFieldLabel}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <FormInput
+                            label="Source Field Tooltip (Optional)"
+                            type="text"
+                            value={editValues.signatory_source?.tooltip_label || ""}
+                            setter={(value) => {
+                              setEditValues({
+                                ...editValues,
+                                signatory_source: {
+                                  _id: editValues.signatory_source?._id || "",
+                                  label: editValues.signatory_source?.label || "",
+                                  tooltip_label: value,
+                                },
+                              });
+                              setSourceErrors({ ...sourceErrors, sourceFieldTooltip: undefined });
+                            }}
+                            placeholder="e.g., The student or applicant signing the form"
+                            required={false}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Account-based Mode - only for non-initiator parties */}
+                    {!isInitiatorParty(editValues.order) && credentialMode === "account" && (
+                      <div>
+                        <FormInput
+                          label="Email"
+                          type="email"
+                          value={editValues.signatory_account?.email || ""}
+                          setter={(value) => {
+                            setEditValues({
+                              ...editValues,
+                              signatory_account: {
+                                account_id: value.split("@")[0] || "",
+                                name: value.split("@")[0] || "",
+                                email: value,
+                              },
+                            });
+                            setValidationErrors({ ...validationErrors, email: undefined });
+                          }}
+                          placeholder="signatory@example.com"
+                          required={false}
+                        />
+                        {validationErrors.email && (
+                          <p className="mt-1 text-xs text-red-600">{validationErrors.email}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Save/Cancel Buttons */}
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancelEdit}
+                        className="gap-1"
+                      >
+                        <X className="mt-0.5 h-3.5 w-3.5" />
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveEdit}
+                        className="gap-1 bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        <Check className="mt-0.5 h-3.5 w-3.5" />
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // Display Mode
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-900">{party._id}</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center rounded-[0.33em] bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                          #{party.order}
+                        </span>
+                        {party.signatory_source && (
+                          <>
+                            <span className="inline-flex items-center rounded-[0.33em] bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700">
+                              {party.signatory_source.label}
+                            </span>
+                            <span
+                              title={party.signatory_source.tooltip_label}
+                              className="inline-flex items-center rounded-[0.33em] bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700"
+                            >
+                              {party.signatory_source._id}
+                            </span>
+                          </>
+                        )}
+                        {party.signatory_account?.email && (
+                          <span className="inline-flex items-center truncate rounded-[0.33em] bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
+                            {party.signatory_account.email}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-shrink-0 gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleStartEdit(party, index)}
+                        className="h-8 w-8 p-0"
+                        title="Edit party"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                      {!isInitiatorParty(party.order) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteParty(party._id)}
+                          className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-700"
+                          title="Delete party"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+};

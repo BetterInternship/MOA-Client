@@ -17,7 +17,7 @@ const SerialSchema = z
   .trim()
   .regex(
     /^\d{10}-[A-Fa-f0-9]{8}-[A-Fa-f0-9]{8}$/,
-    "Serial must be 10-8-8 characters (e.g., 1234567890-aaaaaaaa-bbbbbbbb)"
+    "Serial must be 10-8-8 characters (e.g., 1234567890-abcdefg-xyzwlmno)"
   );
 
 export default function VerifyDocsPage() {
@@ -43,11 +43,11 @@ function VerifyDocsPageContent() {
 
   useEffect(() => {
     const doc = signedDocument.data?.signedDocument;
-    if (doc) setResult(doc ?? ({} as SignedDocument));
+    if (doc) setResult((doc as SignedDocument) ?? {});
     setLoading(signedDocument.isFetching);
   }, [signedDocument]);
 
-  async function handleVerify(e: React.FormEvent) {
+  function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setResult(null);

@@ -7,7 +7,6 @@ import { Newspaper } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import FormTable from "@/components/docs/dashboard/FormTable";
 import { getAllSignedForms } from "@/app/api/forms.api";
-import { getDocsSelf } from "@/app/api/docs.api";
 import { FormRow } from "@/components/docs/dashboard/FormTable";
 import {
   VerticalTabs,
@@ -15,33 +14,26 @@ import {
   VerticalTabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
+import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 
 export default function DocsDashboardPage() {
-  const { data } = useQuery({
-    queryKey: ["docs-self"],
-    queryFn: getDocsSelf,
-    staleTime: 60_000,
-  });
-
-  const user = data?.profile as
-    | { id: string; email: string; name?: string; coordinatorId?: string; isGodMode: boolean }
-    | undefined;
-  const isCoordinator = Boolean(user?.coordinatorId);
+  const profile = useSignatoryProfile();
+  const isCoordinator = Boolean(profile.coordinatorId);
 
   const {
-    data: signedDocs,
+    data: forms,
     isLoading,
     error,
   } = useQuery<FormRow[]>({
-    queryKey: ["docs-signed"],
+    queryKey: ["my-forms"],
     queryFn: async (): Promise<FormRow[]> => {
       const res = await getAllSignedForms(); // jana dont be confused, this returns all forms astm. just refactor later on
-      return (res?.signedDocuments as unknown as FormRow[] | undefined) ?? [];
+      return (res?.forms as unknown as FormRow[] | undefined) ?? [];
     },
     staleTime: 60_000,
   });
 
-  const rows: FormRow[] = signedDocs ?? [];
+  const rows: FormRow[] = forms ?? [];
 
   // Temp solution, in the future, lets look at the coordinator forms + autofill forms
   const formTabs = useMemo(() => {

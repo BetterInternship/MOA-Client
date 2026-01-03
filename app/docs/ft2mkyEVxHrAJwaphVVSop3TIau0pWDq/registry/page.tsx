@@ -1,121 +1,132 @@
 "use client";
 
-import { useFormsControllerGetRegistry } from "@/app/api";
-import { useModal } from "@/app/providers/modal-provider";
+import {
+  useFormsControllerGetRegistry,
+  useFormsControllerGetRegistryFormMetadata,
+} from "@/app/api";
 import { Button } from "@/components/ui/button";
-import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
-import { useFormsControllerGetRegistryFormMetadata } from "../../../api/app/api/endpoints/forms/forms";
-import JsonView from "@uiw/react-json-view";
 import { Loader } from "@/components/ui/loader";
-import { Badge } from "@/components/ui/badge";
-import { Divider } from "@/components/ui/divider";
-
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 /**
  * Displays all the forms we have, and their latest versions.
  *
  * @component
  */
 const FormRegistryPage = () => {
+  const router = useRouter();
   const formRegistry = useFormsControllerGetRegistry();
   const forms = formRegistry.data?.registry ?? [];
   const formSorted = forms.sort((a, b) => a.name.localeCompare(b.name));
+  console.log("Form Registry Data:", forms);
+
+  const isLoading = formRegistry.isLoading;
+  const error = formRegistry.error;
+
+  const handleCreateForm = () => {
+    router.push("./editor/pdfjs");
+  };
+
+  const handleMigrateForm = () => {
+    router.push("./editor/migrate");
+  };
 
   return (
-    <div className="mx-auto mt-4 max-w-5xl">
-      <h1 className="m-2 text-2xl font-bold tracking-tight">Form Registry</h1>
-      <Table>
-        <TableHeader>
-          <TableHead>Form Identifier</TableHead>
-          <TableHead>Current Revision Number</TableHead>
-        </TableHeader>
-        {formSorted.map((form) => (
-          <FormRegistryEntry name={form.name} version={form.version} />
-        ))}
-      </Table>
+    <div className="min-h-screen w-full p-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">Form Registry</h1>
+          <div className="flex gap-2">
+            <Button onClick={handleMigrateForm} variant="outline" className="gap-2">
+              ↻ Migrate Form (v0 → v1)
+            </Button>
+            <Button onClick={handleCreateForm} className="gap-2">
+              + Create Form
+            </Button>
+          </div>
+        </div>
+
+        {error && <div className="text-destructive mb-6">Failed to load forms</div>}
+
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader>Loading forms...</Loader>
+          </div>
+        ) : forms.length === 0 ? (
+          <div className="text-muted-foreground py-12 text-center">No forms found</div>
+        ) : (
+          <div className="rounded-[0.33em] border p-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Form Name</TableHead>
+                  <TableHead>Version</TableHead>
+                  <TableHead>Last Updated</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {formSorted.map((form) => (
+                  <FormRegistryRow
+                    key={form.name}
+                    name={form.name}
+                    version={form.version}
+                    lastUpdated={
+                      form.time_generated
+                        ? new Date(form.time_generated).toLocaleString()
+                        : "Unknown"
+                    }
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 /**
- * A form in our registry.
+ * A form row in the registry table.
  *
  * @component
  */
-const FormRegistryEntry = ({ name, version }: { name: string; version: number }) => {
+const FormRegistryRow = ({
+  name,
+  version,
+  lastUpdated,
+}: {
+  name: string;
+  version: number;
+  lastUpdated: string;
+}) => {
   const router = useRouter();
-  const { openModal, closeModal } = useModal();
 
-  // Opens the document in the editor page
-  const handleView = () => {
+  // Navigate to the PDF editor with form metadata state
+  const handleEdit = () => {
     const encodedName = encodeURIComponent(name);
-    const encodedVersion = encodeURIComponent(version);
-    router.push(`./editor?name=${encodedName}&version=${encodedVersion}`);
-  };
-
-  // Opens the document in the editor page
-  const handleMetadataPreview = () => {
-    openModal("form-metadata-preview", <FormMetadataPreview name={name} version={version} />, {
-      title: (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row items-center gap-2">
-            <Badge>
-              <pre className="inline-block">{name}</pre>
-            </Badge>
-            <span className="font-semibold tracking-tight">Metadata Preview</span>
-          </div>
-          <Divider />
-        </div>
-      ),
-    });
+    router.push(`./editor/pdfjs?name=${encodedName}&edit=true`);
   };
 
   return (
     <TableRow>
       <TableCell>{name}</TableCell>
-      <TableCell>{version}</TableCell>
-      <TableCell>
-        <div className="flex flex-row gap-2">
-          <Button variant="outline" scheme="primary" size="xs" onClick={handleMetadataPreview}>
-            Preview Metadata
-          </Button>
-          <Button variant="outline" scheme="primary" size="xs" onClick={handleView}>
-            View
-          </Button>
-        </div>
+      <TableCell>v{version}</TableCell>
+      <TableCell>{lastUpdated}</TableCell>
+      <TableCell className="text-right">
+        <Button onClick={handleEdit} variant="outline" size="sm">
+          Edit
+        </Button>
       </TableCell>
     </TableRow>
-  );
-};
-
-/**
- * Shows a preview of the form metadata.
- *
- * @component
- */
-const FormMetadataPreview = ({ name, version }: { name: string; version: number }) => {
-  const formMetadata = useFormsControllerGetRegistryFormMetadata({ name, version });
-
-  return (
-    <div className="flex min-w-xl flex-col gap-2">
-      <div className="h-[600px] max-h-[600px] overflow-y-auto">
-        {formMetadata.error || !formMetadata.data?.success ? (
-          <div className="text-destructive">
-            {formMetadata.error?.message ?? formMetadata.data?.message}
-          </div>
-        ) : formMetadata.isLoading || formMetadata.isFetching ? (
-          <Loader>Loading preview...</Loader>
-        ) : (
-          <div className="py-4">
-            <JsonView
-              indentWidth={22}
-              displayDataTypes={false}
-              value={formMetadata.data?.formMetadata}
-            />
-          </div>
-        )}
-      </div>
-    </div>
   );
 };
 

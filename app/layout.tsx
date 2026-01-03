@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SonnerToaster } from "@/components/sonner-toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 import ApiQueryProvider from "./providers/api-query-provider";
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </head>
         <body className="overflow-y-auto">
           <ThemeProvider>{children}</ThemeProvider>
+          <SonnerToaster />
         </body>
       </html>
     </ApiQueryProvider>

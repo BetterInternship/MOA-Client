@@ -10,6 +10,6 @@ export type FormPhantomFieldType = (typeof FormPhantomFieldType)[keyof typeof Fo
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const FormPhantomFieldType = {
-  email: "email",
-  param: "param",
+  text: "text",
+  signature: "signature",
 } as const;

@@ -7,5 +7,5 @@
  */
 
 export type FormsControllerGetPendingParams = {
-  pendingDocumentId: string;
+  formProcessId: string;
 };

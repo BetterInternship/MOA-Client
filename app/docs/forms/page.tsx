@@ -5,13 +5,12 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper } from "lucide-react";
-import FormPreviewModal from "@/components/docs/forms/FormPreviewModal";
 import { getViewableForms } from "@/app/api/docs.api";
 import { useModal } from "@/app/providers/modal-provider";
-import { getDocsSelf } from "@/app/api/docs.api";
-import { DocsUser } from "@/types/docs-user";
-import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorModal";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
+import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
+import FormPreviewModal from "@/components/docs/forms/FormPreviewModal";
+import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorModal";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
 
 type FormItem = {
@@ -23,19 +22,10 @@ type FormItem = {
 
 export default function DocsFormsPage() {
   const queryClient = useQueryClient();
+  const profile = useSignatoryProfile();
+  const isCoordinator = !!profile.coordinatorId;
   const { update } = useSignatoryAccountActions();
   const [togglingName, setTogglingName] = useState<string | null>(null);
-
-  const { data } = useQuery({
-    queryKey: ["docs-self"],
-    queryFn: getDocsSelf,
-    staleTime: 60_000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-  });
-
-  const user = data?.profile as DocsUser | undefined;
-  const isCoordinator = !!user?.coordinatorId;
 
   const { data: rows = [] } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
@@ -103,7 +93,7 @@ export default function DocsFormsPage() {
         },
       });
       await queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
-      await queryClient.invalidateQueries({ queryKey: ["docs-self"] });
+      await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
     } catch (err) {
       console.error("Failed to toggle auto-sign:", err);
       alert("Failed to toggle auto-sign. Please try again.");

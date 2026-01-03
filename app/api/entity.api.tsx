@@ -16,11 +16,10 @@ import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import { preconfiguredAxiosFunction } from "@/app/api/preconfig.axios";
 import { useMemo } from "react";
 import {
-  getEntityWithStatus,
-  useGetEntityWithStatus,
-  useGetMyEntityForSchool,
-} from "./app/api/endpoints/entity-school-entities/entity-school-entities";
-import { useSchoolMoaControllerSignApprovedCustom } from "./app/api/endpoints/school-moa/school-moa";
+  useSchoolEntitiesControllerGetAPartner,
+  useSchoolEntitiesControllerGetMyPartners,
+} from "./app/api/endpoints/school-entities/school-entities";
+
 /**
  * Grabs a public list of lean entity DTOs.
  * Only names and ids are included.
@@ -200,16 +199,6 @@ function pickLatestRequest(rows: RequestRow[]): RequestRow | null {
   }, null);
 }
 
-function mapRelationStatus(s?: string | null): RelationBucket {
-  const v = String(s ?? "")
-    .trim()
-    .toLowerCase();
-  if (v === "blacklisted") return "blacklisted";
-  if (["approved", "active", "valid", "registered"].includes(v)) return "approved";
-  if (["denied", "rejected", "not-approved"].includes(v)) return "not-approved";
-  return "pending";
-}
-
 /**
  * Entity-side: relationship with a school
  * GET /api/entity/school-entities/self?schoolId=...
@@ -219,7 +208,7 @@ function mapRelationStatus(s?: string | null): RelationBucket {
 export function useMyEntityForSchool(schoolId?: string) {
   const id = schoolId ?? DEFAULT_SCHOOL_ID;
 
-  const requestsQ = useGetMyEntityForSchool(id as any, {
+  const requestsQ = useSchoolEntitiesControllerGetMyPartners(id, {
     query: {
       staleTime: 1000,
       refetchOnWindowFocus: true,
@@ -227,21 +216,13 @@ export function useMyEntityForSchool(schoolId?: string) {
     },
   });
 
-  const linkQ =
-    useGetEntityWithStatus?.(id as any, {
-      query: {
-        staleTime: 1000,
-        refetchOnWindowFocus: true,
-        placeholderData: keepPreviousData,
-      },
-    }) ??
-    (getEntityWithStatus as any)(id as any, {
-      query: {
-        staleTime: 1000,
-        refetchOnWindowFocus: true,
-        placeholderData: keepPreviousData,
-      },
-    });
+  const linkQ = useSchoolEntitiesControllerGetAPartner(id, {
+    query: {
+      staleTime: 1000,
+      refetchOnWindowFocus: true,
+      placeholderData: keepPreviousData,
+    },
+  });
 
   const raw = requestsQ.data?.entity ?? null;
   const rows: RequestRow[] = Array.isArray(raw) ? raw : raw ? [raw] : [];
@@ -268,7 +249,7 @@ export function useMyEntityForSchool(schoolId?: string) {
     latestOutcome,
     relationStatus,
     isLoading: requestsQ.isLoading || requestsQ.isFetching || linkQ.isLoading || linkQ.isFetching,
-    error: (requestsQ.error as unknown) ?? (linkQ.error as unknown),
+    error: (requestsQ.error as unknown) ?? linkQ.error,
     refetch: async () => {
       await Promise.all([requestsQ.refetch(), linkQ.refetch()]);
     },
