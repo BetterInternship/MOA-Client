@@ -15,7 +15,6 @@ import { Loader } from "@/components/ui/loader";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
 import { useSignContext } from "../auth/provider/sign.ctx";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
-import { type } from "../../../.next/types/routes";
 import { Badge } from "@/components/ui/badge";
 
 const Page = () => {
