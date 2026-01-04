@@ -6,11 +6,10 @@ import {
   type IFormSigningParty,
   type IFormMetadata,
 } from "@betterinternship/core/forms";
-import { validateFieldWithZod } from "@/lib/form-validation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
-import { FormPreviewPdfDisplay } from "./FormPreviewPdfDisplay";
+import { FormPreviewRenderer } from "./FormPreviewRenderer";
+import { FormPreviewPdfDisplay } from "@/components/docs/forms/previewer";
 
 interface FormPreviewProps {
   formName: string;
@@ -24,7 +23,7 @@ interface FormPreviewProps {
  * Non-editable form preview that shows how the form looks for each signing party
  * Split layout: document preview on left, form on right
  */
-export const FormPreview = ({
+const FormPreviewContent = ({
   formName,
   blocks,
   signingParties,
@@ -35,35 +34,33 @@ export const FormPreview = ({
     signingParties.length > 0 ? signingParties[0]._id : null
   );
   const [values, setValues] = useState<Record<string, string>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Filter blocks for the selected signing party
+  // Include blocks that either:
+  // 1. Are assigned to this party (signing_party_id matches)
+  // 2. Have no party assigned yet (empty signing_party_id) - show them in preview
   const filteredBlocks = selectedPartyId
-    ? blocks.filter((block) => block.signing_party_id === selectedPartyId)
+    ? blocks.filter(
+        (block) => block.signing_party_id === selectedPartyId || !block.signing_party_id
+      )
     : [];
 
-  const selectedParty = signingParties.find((p) => p._id === selectedPartyId);
+  console.log("[FormPreview] All blocks:", blocks);
+  console.log("[FormPreview] Selected party ID:", selectedPartyId);
+  console.log("[FormPreview] Filtered blocks:", filteredBlocks);
 
-  // Handle blur validation using centralized validator
-  const handleBlurValidate = (fieldKey: string) => {
-    if (!metadata) return;
-
-    const value = values[fieldKey];
-    const error = validateFieldWithZod(fieldKey, value, metadata);
-
-    if (error) {
-      setErrors((prev) => ({
-        ...prev,
-        [fieldKey]: error,
-      }));
-    } else {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldKey];
-        return newErrors;
-      });
-    }
-  };
+  // Extract field blocks with coordinates from metadata for PDF rendering
+  const fieldBlocksForPdf = filteredBlocks
+    .filter((b) => b.field_schema?.field)
+    .map((block) => ({
+      field: block.field_schema?.field || "",
+      label: block.field_schema?.label || "",
+      page: block.field_schema?.page || 1,
+      x: block.field_schema?.x || 0,
+      y: block.field_schema?.y || 0,
+      w: block.field_schema?.w || 0,
+      h: block.field_schema?.h || 0,
+    }));
 
   return (
     <div className="relative flex h-full w-full flex-col gap-5 overflow-hidden">
@@ -91,34 +88,21 @@ export const FormPreview = ({
       <div className="flex flex-1 gap-5 overflow-hidden">
         {/* Left side - Form */}
         <div className="relative flex-1 overflow-y-auto bg-white">
-          <div className="">
-            {filteredBlocks.length > 0 ? (
-              <FormFillerRenderer
-                formName={formName}
-                signingPartyId={selectedPartyId || ""}
-                fields={[]}
-                blocks={filteredBlocks}
-                values={values}
-                setValues={setValues}
-                autofillValues={{}}
-                onChange={(key, value) => {
-                  setValues((prev) => ({
-                    ...prev,
-                    [key]: value,
-                  }));
-                }}
-                errors={errors}
-                pendingUrl={documentUrl || ""}
-                onBlurValidate={handleBlurValidate}
-              />
-            ) : (
-              <div className="rounded bg-slate-50 p-8 text-center">
-                <p className="text-sm text-slate-500">
-                  No blocks assigned to this signing party yet.
-                </p>
-              </div>
-            )}
-          </div>
+          {filteredBlocks.length > 0 ? (
+            <FormPreviewRenderer
+              formName={formName}
+              blocks={filteredBlocks}
+              values={values}
+              onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+              metadata={metadata}
+            />
+          ) : (
+            <div className="rounded bg-slate-50 p-8 text-center">
+              <p className="text-sm text-slate-500">
+                No blocks assigned to this signing party yet.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Right side - PDF Preview */}
@@ -126,8 +110,8 @@ export const FormPreview = ({
           {documentUrl ? (
             <FormPreviewPdfDisplay
               documentUrl={documentUrl}
-              blocks={filteredBlocks}
-              values={values}
+              blocks={fieldBlocksForPdf}
+              values={{}}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
@@ -140,5 +124,23 @@ export const FormPreview = ({
         </div>
       </div>
     </div>
+  );
+};
+
+export const FormPreview = ({
+  formName,
+  blocks,
+  signingParties,
+  documentUrl,
+  metadata,
+}: FormPreviewProps) => {
+  return (
+    <FormPreviewContent
+      formName={formName}
+      blocks={blocks}
+      signingParties={signingParties}
+      documentUrl={documentUrl}
+      metadata={metadata}
+    />
   );
 };
