@@ -364,7 +364,7 @@ const PdfJsEditorPage = () => {
 
       // Store metadata for this field so the useEffect can use it when creating the block
       fieldMetadataRef.current.set(fieldId, {
-        type: placementFieldType,
+        type: newField.type || "text",
         validator: fullFieldData?.validator || "",
         prefiller: fullFieldData?.prefiller || "",
         label: fieldWithLabel.label,

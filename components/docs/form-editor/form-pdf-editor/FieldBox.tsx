@@ -8,6 +8,7 @@ export type FormField = {
   _id?: string; // Unique block ID for stable field identification
   field: string;
   label: string;
+  type: string;
   page: number;
   x: number;
   y: number;
