@@ -8,5 +8,4 @@
 
 export interface CancelFormDto {
   formProcessId: string;
-  reason: string;
 }
