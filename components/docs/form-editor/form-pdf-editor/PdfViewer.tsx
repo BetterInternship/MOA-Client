@@ -571,10 +571,12 @@ const PdfPageCanvas = ({
       const defaultSize = { w: 100, h: 40 };
       const fieldName = getFieldName(placementFieldType, registry);
       const fieldLabel = getFieldLabel(placementFieldType, registry);
+      const registryEntry = registry.find((r) => r.id === placementFieldType);
       const newField: FormField = {
         id: placementFieldType,
         field: fieldName,
         label: fieldLabel,
+        type: registryEntry?.type || "text",
         page: pageNumber,
         x: location.pdfX,
         y: location.pdfY,
