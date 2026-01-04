@@ -366,21 +366,3 @@ export const FormPreview = ({
     />
   );
 };
-
-export const FormPreview = ({
-  formName,
-  blocks,
-  signingParties,
-  documentUrl,
-  metadata,
-}: FormPreviewProps) => {
-  return (
-    <FormPreviewContent
-      formName={formName}
-      blocks={blocks}
-      signingParties={signingParties}
-      documentUrl={documentUrl}
-      metadata={metadata}
-    />
-  );
-};
