@@ -17,6 +17,203 @@ import { type IFormBlock } from "@betterinternship/core/forms";
 import { Loader } from "@/components/ui/loader";
 import { ZoomIn, ZoomOut } from "lucide-react";
 
+// Load Roboto font from Google Fonts and wait for it to load
+if (typeof window !== "undefined") {
+  const link = document.createElement("link");
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Roboto:wght@400&family=Italianno&display=block";
+  link.rel = "stylesheet";
+  document.head.appendChild(link);
+
+  // Ensure fonts are loaded before using them
+  if ("fonts" in document) {
+    document.fonts.ready.catch(() => {
+      // Font loading failed, but continue anyway
+    });
+  }
+}
+
+// Text wrapping and fitting utilities (matches PDF engine exactly)
+function measureTextWidth(
+  text: string,
+  fontSize: number,
+  zoom: number = 1,
+): number {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return 0;
+  ctx.font = `${fontSize}px Roboto`;
+  const width = ctx.measureText(text).width;
+  // Canvas measures Roboto wider than pdf-lib's font.widthOfTextAtSize()
+  // Fixed correction factor calibrated at 110% zoom
+  return width * 1.15;
+}
+
+// Get font metrics (approximated for browser, matching PDF engine approach)
+function getFontMetricsAtSize(fontSize: number) {
+  const ascent = fontSize * 0.8;
+  const descent = -fontSize * 0.26;
+  return {
+    ascent,
+    descent,
+    height: ascent - descent,
+  };
+}
+
+// Wrap text into lines that fit maxWidth (matches PDF engine)
+function wrapText({
+  text,
+  fontSize,
+  maxWidth,
+}: {
+  text: string;
+  fontSize: number;
+  maxWidth: number;
+}): string[] {
+  const paragraphs = String(text ?? "").split(/\r?\n/);
+  const lines: string[] = [];
+  const measure = (s: string) => measureTextWidth(s, fontSize);
+
+  const breakLongWord = (word: string): string[] => {
+    const parts: string[] = [];
+    let cur = "";
+    for (const ch of word) {
+      const next = cur + ch;
+      if (cur && measure(next) > maxWidth) {
+        parts.push(cur);
+        cur = ch;
+      } else {
+        cur = next;
+      }
+    }
+    if (cur) parts.push(cur);
+    return parts;
+  };
+
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
+    if (!trimmed) {
+      lines.push("");
+      continue;
+    }
+
+    const words = trimmed.split(/\s+/);
+    let current = "";
+
+    for (const w of words) {
+      const candidate = current ? `${current} ${w}` : w;
+
+      if (measure(candidate) <= maxWidth) {
+        current = candidate;
+        continue;
+      }
+
+      if (current) {
+        lines.push(current);
+        current = "";
+      }
+
+      if (measure(w) <= maxWidth) {
+        current = w;
+      } else {
+        const broken = breakLongWord(w);
+        for (let i = 0; i < broken.length; i++) {
+          if (i === broken.length - 1) current = broken[i];
+          else lines.push(broken[i]);
+        }
+      }
+    }
+
+    if (current) lines.push(current);
+  }
+
+  return lines;
+}
+
+function layoutWrappedBlock({
+  text,
+  fontSize,
+  lineHeight,
+  maxWidth,
+  zoom = 1,
+}: {
+  text: string;
+  fontSize: number;
+  lineHeight: number;
+  maxWidth: number;
+  zoom?: number;
+}) {
+  const { ascent, descent } = getFontMetricsAtSize(fontSize);
+  const lines = wrapText({ text, fontSize, maxWidth, zoom });
+  const n = lines.length;
+  const blockHeight = (n > 0 ? (n - 1) * lineHeight : 0) + (ascent - descent);
+  return { lines, ascent, descent, blockHeight };
+}
+
+function fitWrapped({
+  text,
+  maxWidth,
+  maxHeight,
+  startSize,
+  lineHeightMult = 1.2,
+  zoom = 1,
+}: {
+  text: string;
+  maxWidth: number;
+  maxHeight: number;
+  startSize: number;
+  lineHeightMult?: number;
+  zoom?: number;
+}) {
+  const fits = (size: number): boolean => {
+    const lh = size * lineHeightMult;
+    const { blockHeight } = layoutWrappedBlock({
+      text,
+      fontSize: size,
+      lineHeight: lh,
+      maxWidth,
+      zoom,
+    });
+    return blockHeight <= maxHeight + 1e-6;
+  };
+
+  if (fits(startSize)) {
+    const lh = startSize * lineHeightMult;
+    const laid = layoutWrappedBlock({
+      text,
+      fontSize: startSize,
+      lineHeight: lh,
+      maxWidth,
+      zoom,
+    });
+    return { fontSize: startSize, lineHeight: lh, ...laid };
+  }
+
+  let hi = startSize;
+  let lo = startSize;
+  while (!fits(lo)) {
+    lo /= 2;
+    if (lo < 0.1) break;
+  }
+
+  for (let i = 0; i < 22; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid;
+    else hi = mid;
+  }
+
+  const bestSize = lo;
+  const bestLineHeight = bestSize * lineHeightMult;
+  const laid = layoutWrappedBlock({
+    text,
+    fontSize: bestSize,
+    lineHeight: bestLineHeight,
+    maxWidth,
+    zoom,
+  });
+  return { fontSize: bestSize, lineHeight: bestLineHeight, ...laid };
+}
+
 interface FormPreviewPdfDisplayProps {
   documentUrl: string;
   blocks: any[]; // ServerField[] with coordinates (x, y, w, h, page, field)
@@ -26,7 +223,8 @@ interface FormPreviewPdfDisplayProps {
   selectedFieldId?: string;
 }
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 /**
  * PDF display component that shows form fields as boxes overlaid on the PDF
@@ -73,7 +271,9 @@ export const FormPreviewPdfDisplay = ({
   // Initialize PDF.js worker
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const workerFile = pdfjsVersion.startsWith("4") ? "pdf.worker.min.mjs" : "pdf.worker.min.js";
+    const workerFile = pdfjsVersion.startsWith("4")
+      ? "pdf.worker.min.mjs"
+      : "pdf.worker.min.js";
     GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/${workerFile}`;
   }, []);
 
@@ -109,9 +309,12 @@ export const FormPreviewPdfDisplay = ({
     };
   }, [documentUrl]);
 
-  const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
-    pageRefs.current.set(page, node);
-  }, []);
+  const registerPageRef = useCallback(
+    (page: number, node: HTMLDivElement | null) => {
+      pageRefs.current.set(page, node);
+    },
+    [],
+  );
 
   const handleZoom = (direction: "in" | "out") => {
     const delta = direction === "in" ? 0.1 : -0.1;
@@ -127,7 +330,7 @@ export const FormPreviewPdfDisplay = ({
 
   const pagesArray = useMemo(
     () => Array.from({ length: pageCount }, (_, idx) => idx + 1),
-    [pageCount]
+    [pageCount],
   );
 
   if (error) {
@@ -243,7 +446,10 @@ const PdfPageWithFields = ({
   const [rendering, setRendering] = useState<boolean>(false);
   const [forceRender, setForceRender] = useState<number>(0);
 
-  useEffect(() => registerPageRef(pageNumber, containerRef.current), [pageNumber, registerPageRef]);
+  useEffect(
+    () => registerPageRef(pageNumber, containerRef.current),
+    [pageNumber, registerPageRef],
+  );
 
   // Force re-render of field positions when scale changes
   useEffect(() => {
@@ -261,7 +467,7 @@ const PdfPageWithFields = ({
           onVisible(pageNumber);
         }
       },
-      { threshold: 0.6 }
+      { threshold: 0.6 },
     );
 
     observer.observe(element);
@@ -278,7 +484,8 @@ const PdfPageWithFields = ({
       .getPage(pageNumber)
       .then((page: PDFPageProxy) => {
         // Account for device pixel ratio for crisp rendering on high-DPI displays
-        const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+        const dpr =
+          typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
         const viewport = page.getViewport({ scale: scale * dpr });
         viewportRef.current = viewport;
 
@@ -303,7 +510,8 @@ const PdfPageWithFields = ({
         return renderTask.promise;
       })
       .catch((err) => {
-        if (!cancelled) console.error(`Failed to render page ${pageNumber}:`, err);
+        if (!cancelled)
+          console.error(`Failed to render page ${pageNumber}:`, err);
       })
       .finally(() => {
         if (!cancelled) setRendering(false);
@@ -318,7 +526,7 @@ const PdfPageWithFields = ({
   // Convert PDF coordinates to display coordinates, accounting for zoom-aware rendering
   const pdfToDisplay = (
     pdfX: number,
-    pdfY: number
+    pdfY: number,
   ): { displayX: number; displayY: number } | null => {
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
@@ -404,45 +612,86 @@ const PdfPageWithFields = ({
               : "";
           const isFilled = valueStr.trim().length > 0;
 
-          // Calculate dynamic font size based on box dimensions
-          const baseFontSize = Math.min(
-            Math.max(heightPixels * 1, 6), // Use 60% of box height, min 6px
-            20
-          );
+          // Calculate optimal font size using PDF engine algorithm
+          const fieldType =
+            block.field_schema?.type ||
+            block.phantom_field_schema?.type ||
+            block.type;
 
-          const isSelected = animatingFieldId === fieldName || selectedFieldId === fieldName;
+          let fontSize: number;
+          let lineHeight: number;
+          let displayLines: string[] = [];
+
+          if (fieldType === "signature") {
+            // Signatures are not wrapped
+            fontSize = 25;
+            lineHeight = fontSize * 1.0;
+          } else if (isFilled) {
+            // Use exact PDF engine algorithm for text (no padding)
+            const fitted = fitWrapped({
+              text: valueStr,
+              maxWidth: widthPixels,
+              maxHeight: heightPixels,
+              startSize: 11,
+              lineHeightMult: 1.0,
+              zoom: scale,
+            });
+            fontSize = fitted.fontSize;
+            lineHeight = fitted.lineHeight;
+            displayLines = fitted.lines || [];
+          } else {
+            fontSize = 11;
+            lineHeight = fontSize * 1.0;
+          }
+
+          const isSelected =
+            animatingFieldId === fieldName || selectedFieldId === fieldName;
 
           return (
             <div
               key={fieldName}
               onClick={() => onFieldClick?.(fieldName)}
-              className={`absolute cursor-pointer text-black transition-all ${isSelected ? "bg-green-300" : "bg-blue-200"} `}
+              className={`absolute cursor-pointer transition-all text-black ${isSelected ? "bg-green-300" : "bg-blue-200"} `}
               style={{
                 left: `${displayPos.displayX}px`,
                 top: `${displayPos.displayY}px`,
                 width: `${Math.max(widthPixels, 10)}px`,
                 height: `${Math.max(heightPixels, 10)}px`,
                 overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
                 display: "flex",
                 alignItems: "center",
-                paddingLeft: "2px",
+                justifyContent: "center",
               }}
               title={`${label}: ${valueStr}`}
             >
               {isFilled && (
                 <div
-                  className="font-semibold text-black"
+                  className={
+                    fieldType === "signature" ? "text-blue-600" : "text-black"
+                  }
                   style={{
-                    fontSize: `${baseFontSize}px`,
-                    lineHeight: 1,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
+                    fontSize: `${fontSize}px`,
+                    lineHeight: `${lineHeight}px`,
+                    overflow: "visible",
+                    whiteSpace: "pre-wrap",
+                    wordWrap: "break-word",
+                    width: "100%",
+                    padding: "0px",
+                    boxSizing: "border-box",
+                    display: "flex",
+                    alignItems:
+                      fieldType === "signature" ? "flex-end" : "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    fontFamily:
+                      fieldType === "signature"
+                        ? "Italianno, cursive"
+                        : "Roboto, sans-serif",
+                    fontWeight: fieldType === "signature" ? "normal" : "600",
+                    color: fieldType === "signature" ? "#0000FF" : "#000000",
                   }}
                 >
-                  {valueStr}
+                  {displayLines.length > 0 ? displayLines.join("\n") : valueStr}
                 </div>
               )}
             </div>

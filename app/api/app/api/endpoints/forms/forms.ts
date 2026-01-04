@@ -2777,6 +2777,76 @@ export const useFormsControllerCancelFormProcessInternally = <
 
   return useMutation(mutationOptions, queryClient);
 };
+export const formsControllerResendFormProcessInternally = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/resend/__internal`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getFormsControllerResendFormProcessInternallyMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerResendFormProcessInternally>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerResendFormProcessInternally>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["formsControllerResendFormProcessInternally"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerResendFormProcessInternally>>,
+    void
+  > = () => {
+    return formsControllerResendFormProcessInternally();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerResendFormProcessInternallyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerResendFormProcessInternally>>
+>;
+
+export type FormsControllerResendFormProcessInternallyMutationError = ErrorResponse;
+
+export const useFormsControllerResendFormProcessInternally = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerResendFormProcessInternally>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerResendFormProcessInternally>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getFormsControllerResendFormProcessInternallyMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const formsControllerInitiateFormProcess = (
   initiateFormDto: InitiateFormDto,
   signal?: AbortSignal
@@ -3062,6 +3132,80 @@ export const useFormsControllerFilloutFormProcessInternally = <
   TContext
 > => {
   const mutationOptions = getFormsControllerFilloutFormProcessInternallyMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerGenerateTestForm = (
+  initiateFormDto: InitiateFormDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/test-generate`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: initiateFormDto,
+    signal,
+  });
+};
+
+export const getFormsControllerGenerateTestFormMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerGenerateTestForm>>,
+    TError,
+    { data: InitiateFormDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerGenerateTestForm>>,
+  TError,
+  { data: InitiateFormDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerGenerateTestForm"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerGenerateTestForm>>,
+    { data: InitiateFormDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerGenerateTestForm(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerGenerateTestFormMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGenerateTestForm>>
+>;
+export type FormsControllerGenerateTestFormMutationBody = InitiateFormDto;
+export type FormsControllerGenerateTestFormMutationError = ErrorResponse;
+
+export const useFormsControllerGenerateTestForm = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerGenerateTestForm>>,
+      TError,
+      { data: InitiateFormDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerGenerateTestForm>>,
+  TError,
+  { data: InitiateFormDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerGenerateTestFormMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

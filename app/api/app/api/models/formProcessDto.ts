@@ -13,6 +13,7 @@ export interface FormProcessDto {
   form_label: string;
   form_name: string;
   form_version: number;
+  schema_version: number;
   latest_document_url: string;
   prefilled_document_id: string;
   signed_document_id: string;

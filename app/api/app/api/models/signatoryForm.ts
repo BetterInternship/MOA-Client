@@ -13,5 +13,6 @@ export interface SignatoryForm {
   form_process_id: string;
   form_process_status: string;
   signatory_id: string;
+  rejection_response: string;
   timestamp: string;
 }
