@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState, useEffect } from "react";
-import { type IFormBlock, type IFormMetadata } from "@betterinternship/core/forms";
+import { type IFormBlock, type IFormMetadata, FormMetadata } from "@betterinternship/core/forms";
 import { FieldRenderer } from "@/components/docs/forms/FieldRenderer";
 import { HeaderRenderer, ParagraphRenderer } from "@/components/docs/forms/BlockrRenderer";
 import { getBlockField, isBlockField } from "@/components/docs/forms/utils";
-import { validateFieldWithZod } from "@/lib/form-validation";
 
 interface FormPreviewRendererProps {
   formName: string;
@@ -32,8 +31,25 @@ export const FormPreviewRenderer = ({
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
   const hasInitialized = useRef(false);
 
-  console.log("[FormPreviewRenderer] Received blocks:", blocks);
-  console.log("[FormPreviewRenderer] Received values:", values);
+  // Extract actual fields from metadata for proper validation and field types
+  const metadataFields = useMemo(() => {
+    if (!metadata) return [];
+    try {
+      const formMetadata = new FormMetadata(metadata);
+      return formMetadata.getFieldsForClientService();
+    } catch (error) {
+      return [];
+    }
+  }, [metadata]);
+
+  // Create a map of field name to field object for easy lookup
+  const fieldMap = useMemo(() => {
+    const map = new Map();
+    metadataFields.forEach((field) => {
+      map.set(field.field, field);
+    });
+    return map;
+  }, [metadataFields]);
 
   // Deduplicate blocks: only keep first instance of each field ID
   const deduplicatedBlocks = useMemo(() => {
@@ -55,29 +71,21 @@ export const FormPreviewRenderer = ({
     if (hasInitialized.current) return;
 
     const initialValues: Record<string, string> = {};
-    deduplicatedBlocks.forEach((block) => {
-      const field = getBlockField(block);
-      if (field && "prefiller" in field && field.prefiller) {
+    metadataFields.forEach((field) => {
+      if (field.prefiller) {
         try {
-          // Execute the prefiller function
-          const prefillerFn =
-            typeof field.prefiller === "string"
-              ? new Function("return " + field.prefiller)()
-              : field.prefiller;
-
-          if (typeof prefillerFn === "function") {
-            const value = prefillerFn({ signatory: {} });
-            initialValues[field.field] = typeof value === "string" ? value.trim() : String(value);
-          }
+          // Execute the prefiller function from metadata
+          const value = field.prefiller({ signatory: {} });
+          initialValues[field.field] = typeof value === "string" ? value.trim() : String(value);
         } catch (error) {
-          console.log(`[FormPreviewRenderer] Prefiller error for ${field.field}:`, error);
+          // Silently skip if prefiller fails
         }
       }
     });
 
     setLocalValues(initialValues);
     hasInitialized.current = true;
-  }, [deduplicatedBlocks]);
+  }, [metadataFields]);
 
   // Merge local values with prop values (prop values take precedence for user input)
   const displayValues = useMemo(() => {
@@ -94,21 +102,35 @@ export const FormPreviewRenderer = ({
     [deduplicatedBlocks]
   );
 
-  console.log("[FormPreviewRenderer] Sorted blocks:", sortedBlocks);
-
   if (!sortedBlocks.length) {
-    console.log("[FormPreviewRenderer] No blocks to display");
     return <div className="py-8 text-center text-sm text-slate-500">No blocks to display</div>;
   }
 
-  const handleBlurValidate = (fieldKey: string, field: any) => {
-    if (!metadata) return;
-    const error = validateFieldWithZod(fieldKey, displayValues[fieldKey], metadata);
-    setErrors((prev) => ({
-      ...prev,
-      [fieldKey]: error || "",
-    }));
-    console.log(`[FormPreviewRenderer] Blur validation for ${fieldKey}:`, error);
+  const handleBlurValidate = (fieldKey: string) => {
+    const field = fieldMap.get(fieldKey);
+    if (!field || field.source !== "manual") return;
+
+    const value = displayValues[fieldKey];
+    const coerced = field.coerce(value);
+    const result = field.validator?.safeParse(coerced);
+
+    if (result?.error) {
+      const z = require("zod");
+      const errorString = z
+        .treeifyError(result.error)
+        .errors.map((e: string) => e.split(" ").slice(0).join(" "))
+        .join("\n");
+      setErrors((prev) => ({
+        ...prev,
+        [fieldKey]: `${field.label}: ${errorString}`,
+      }));
+    } else {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldKey];
+        return newErrors;
+      });
+    }
   };
 
   return (
@@ -126,6 +148,7 @@ export const FormPreviewRenderer = ({
             errors={errors}
             onBlurValidate={handleBlurValidate}
             fieldRefs={fieldRefs.current}
+            fieldMap={fieldMap}
           />
         </div>
       </div>
@@ -141,43 +164,42 @@ const BlocksRenderer = ({
   errors,
   onBlurValidate,
   fieldRefs,
+  fieldMap,
 }: {
   formKey: string;
   blocks: IFormBlock[];
   values: Record<string, string>;
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
-  onBlurValidate?: (fieldKey: string, field: any) => void;
+  onBlurValidate?: (fieldKey: string) => void;
   fieldRefs: Record<string, HTMLDivElement | null>;
+  fieldMap: Map<string, any>;
 }) => {
   if (!blocks.length) return null;
 
   return blocks.map((block, i) => {
     const isForm = isBlockField(block);
-    const field = isForm ? getBlockField(block) : null;
+    const blockField = isForm ? getBlockField(block) : null;
 
-    console.log(`[BlocksRenderer] Rendering block ${i}:`, {
-      block_type: block.block_type,
-      field: field?.field,
-      source: field?.source,
-    });
+    // Get the actual field from metadata (has validators and proper type info)
+    const metadataField = blockField ? fieldMap.get(blockField.field) : null;
 
     return (
       <>
-        {isForm && field?.source === "manual" && (
+        {isForm && blockField?.source === "manual" && metadataField && (
           <div className="space-between flex flex-row" key={`${formKey}:${i}`}>
             <div
               ref={(el) => {
-                if (el && field) fieldRefs[field.field] = el;
+                if (el && blockField) fieldRefs[blockField.field] = el;
               }}
               className="flex-1 cursor-pointer px-1 py-2 transition-all"
             >
               <FieldRenderer
-                field={field}
-                value={values[field.field]}
-                onChange={(v) => onChange(field.field, v)}
-                onBlur={() => onBlurValidate?.(field.field, field)}
-                error={errors[field.field]}
+                field={metadataField}
+                value={values[blockField.field]}
+                onChange={(v) => onChange(blockField.field, v)}
+                onBlur={() => onBlurValidate?.(blockField.field)}
+                error={errors[blockField.field]}
                 allValues={values}
               />
             </div>
