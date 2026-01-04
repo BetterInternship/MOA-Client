@@ -100,7 +100,6 @@ function PageContent() {
     return form.keyedFields.filter((kf) => manualFieldNames.has(kf.field));
   }, [form.keyedFields, manualBlocks]);
 
-  console.log("errrr", formProcess.error);
   if (formProcess.error) {
     return (
       <div className="bg-opacity-25 relative mx-auto flex h-[87dvh] w-full max-w-7xl flex-col items-center overflow-hidden rounded-[0.33em] bg-white">
