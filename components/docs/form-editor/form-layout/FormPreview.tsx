@@ -45,10 +45,6 @@ const FormPreviewContent = ({
       )
     : [];
 
-  console.log("[FormPreview] All blocks:", blocks);
-  console.log("[FormPreview] Selected party ID:", selectedPartyId);
-  console.log("[FormPreview] Filtered blocks:", filteredBlocks);
-
   // Extract field blocks with coordinates from metadata for PDF rendering
   const fieldBlocksForPdf = filteredBlocks
     .filter((b) => b.field_schema?.field)
