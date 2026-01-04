@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { magicLinkLogin } from "@/app/api/docs.api";
 import { Suspense } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function LinkLoginPage() {
   return (
@@ -15,6 +16,7 @@ export default function LinkLoginPage() {
 export function LinkLogin() {
   const search = useSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<string>();
   const [message, setMessage] = useState<string>("Establishing secure session...");
 
@@ -41,6 +43,7 @@ export function LinkLogin() {
         // Session established successfully, redirect to sign page
         setStatus("ok");
         setMessage("Session established. Redirecting...");
+        await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
         router.push(res.redirect);
       } catch (e) {
         setStatus("error");

@@ -31,13 +31,9 @@ export const SpecifySigningPartiesModal = ({
   close: () => void;
 }) => {
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const modalRegistry = useModalRegistry();
   const [errors, setErrors] = useState<FormErrors>({});
   const [signingPartyValues, setSigningPartyValues] = useState<FormValues>({});
   const [busy, setBusy] = useState(false);
-
-  const [submitted, setSubmitted] = useState(false);
 
   const handleClick = async () => {
     setBusy(true);
@@ -93,7 +89,7 @@ export const SpecifySigningPartiesModal = ({
       })}
 
       <div className="mt-4 flex gap-2 self-end">
-        {!busy && !submitted && (
+        {!busy && (
           <Button variant="outline" onClick={close}>
             Cancel
           </Button>
