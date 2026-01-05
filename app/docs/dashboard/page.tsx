@@ -1,13 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import FormTable from "@/components/docs/dashboard/FormTable";
-import { getAllSignedForms } from "@/app/api/forms.api";
-import { FormRow } from "@/components/docs/dashboard/FormTable";
 import {
   VerticalTabs,
   VerticalTabsList,
@@ -15,43 +11,23 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
+import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
+import MyFormsTable from "@/components/docs/dashboard/FormTable";
 
 export default function DocsDashboardPage() {
+  const { forms, loading, error } = useMyForms();
   const profile = useSignatoryProfile();
   const isCoordinator = Boolean(profile.coordinatorId);
 
-  const {
-    data: forms,
-    isLoading,
-    error,
-  } = useQuery<FormRow[]>({
-    queryKey: ["my-forms"],
-    queryFn: async (): Promise<FormRow[]> => {
-      const res = await getAllSignedForms(); // jana dont be confused, this returns all forms astm. just refactor later on
-      return (res?.forms as unknown as FormRow[] | undefined) ?? [];
-    },
-    staleTime: 60_000,
-  });
-
-  const rows: FormRow[] = forms ?? [];
-
   // Temp solution, in the future, lets look at the coordinator forms + autofill forms
   const formTabs = useMemo(() => {
-    const seen = new Set<string>();
-    return rows.reduce<{ value: string; label: string }[]>((acc, row: FormRow) => {
-      const value = row.form_name || String(row.id);
-      if (!value || seen.has(value)) return acc;
-      seen.add(value);
-      acc.push({ value, label: row.form_label || row.form_name || "Untitled Form" });
+    return forms.reduce<{ id: string; label: string }[]>((acc, form: IMyForm) => {
+      const id = form.label;
+      if (!id || !!acc.find((tab) => tab.id === id)) return acc;
+      acc.push({ id, label: form.label || "Untitled Form" });
       return acc;
     }, []);
-  }, [rows]);
-
-  const rowsByForm = (formName: string): FormRow[] =>
-    rows.filter((row): row is FormRow => {
-      if (!row || typeof row !== "object" || !("form_name" in row)) return false;
-      return (row as { form_name?: string }).form_name === formName;
-    });
+  }, [forms]);
 
   return (
     <div className="max-w-8xl container mx-auto space-y-6 px-4 pt-6 sm:px-10 sm:pt-16">
@@ -62,18 +38,16 @@ export default function DocsDashboardPage() {
           <HeaderText>My Signed Forms</HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
-          All internship forms you’ve successfully signed and completed.
+          All internship forms you've successfully signed and completed.
         </p>
       </div>
 
       {/* Table */}
       <div className="">
-        {isLoading ? (
+        {loading ? (
           <div className="text-sm text-gray-600">Loading signed documents…</div>
         ) : error ? (
           <div className="text-sm text-red-600">Failed to load signed documents.</div>
-        ) : !isCoordinator ? (
-          <FormTable rows={rows} isCoordinator={isCoordinator} />
         ) : (
           <VerticalTabs
             orientation="vertical"
@@ -87,8 +61,8 @@ export default function DocsDashboardPage() {
 
               {formTabs.map((tab) => (
                 <VerticalTabsTrigger
-                  key={tab.value}
-                  value={tab.value}
+                  key={tab.id}
+                  value={tab.id}
                   title={tab.label}
                   className="text-left"
                 >
@@ -100,15 +74,15 @@ export default function DocsDashboardPage() {
             <div className="min-w-0 flex-1">
               <TabsContent value="all" className="mt-0">
                 <Card className="space-y-3 p-3">
-                  <FormTable rows={rows} isCoordinator={isCoordinator} exportEnabled={false} />
+                  <MyFormsTable rows={forms} isCoordinator={isCoordinator} />
                 </Card>
               </TabsContent>
 
               {formTabs.map((tab) => (
-                <TabsContent key={tab.value} value={tab.value} className="mt-0">
+                <TabsContent key={tab.id} value={tab.id} className="mt-0">
                   <Card className="space-y-3 p-3">
-                    <FormTable
-                      rows={rowsByForm(tab.value)}
+                    <MyFormsTable
+                      rows={forms.filter((form) => form.label === tab.label)}
                       isCoordinator={isCoordinator}
                       exportEnabled
                       exportLabel={tab.label}

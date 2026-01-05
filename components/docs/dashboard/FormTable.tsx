@@ -8,50 +8,30 @@ import { Button } from "@/components/ui/button";
 import { Download, Hourglass, Table2 } from "lucide-react";
 import FormDataModal from "@/components/docs/dashboard/FormDataModal";
 import { useModal } from "@/app/providers/modal-provider";
+import { IMyForm } from "../forms/myforms.ctx";
 
-export interface FormRow {
-  id: string | number;
-  form_name: string;
-  form_label: string;
-  prefilled_document_id?: string;
-  pending_document_id?: string;
-  signed_document_id?: string;
-  timestamp: string;
-  url: string;
-  display_information: Record<string, any>;
-}
-
-export function getDisplayValue(
-  info: Record<string, unknown>,
-  section: string,
-  key: string,
-  preferredSuffixes: string[] = ["student-filled", "default"]
-) {
-  const toDisplayString = (value: unknown): string => {
-    if (value === null || value === undefined) return "—";
-    if (typeof value === "string") return value;
-    if (typeof value === "number" || typeof value === "boolean") return `${value}`;
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return "—";
-    }
-  };
-
+export function getDisplayValue(info: Record<string, unknown>, section: string, key: string) {
   if (!info) return "—";
-  for (const sfx of preferredSuffixes) {
-    const composed = `${section}.${key}:${sfx}`;
-    const val = info[composed];
-    if (val !== undefined && val !== null) return toDisplayString(val);
-  }
-  const raw = info[`${section}.${key}`];
-  return raw !== undefined && raw !== null ? toDisplayString(raw) : "—";
+  const composed = `${section}.${key}:default`;
+  const val = info[composed];
+  if (val !== undefined && val !== null) return toDisplayString(val);
 }
 
-export function createFormColumns(isCoordinator: boolean): ColumnDef<FormRow>[] {
-  const cols: ColumnDef<FormRow>[] = [
+const toDisplayString = (value: unknown): string => {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return `${value}`;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "—";
+  }
+};
+
+export const createFormColumns = (): ColumnDef<IMyForm>[] => {
+  return [
     {
-      accessorKey: "form_label",
+      accessorKey: "label",
       header: "Form",
       cell: (info) => info.getValue(),
     },
@@ -63,71 +43,89 @@ export function createFormColumns(isCoordinator: boolean): ColumnDef<FormRow>[] 
     {
       id: "requester",
       header: "Requester",
-      accessorFn: (row) => getDisplayValue(row.display_information, "student", "full-name"),
+      accessorFn: (row) => getDisplayValue(row.display_information!, "student", "full-name"),
       cell: (info) => info.getValue(),
       enableSorting: true,
     },
   ];
+};
 
-  if (isCoordinator) {
-    cols.splice(
-      3,
-      0,
-      {
-        id: "studentId",
-        header: "Student ID",
-        accessorFn: (row) => getDisplayValue(row.display_information, "student", "id-number"),
-        cell: (info) => info.getValue(),
-        enableSorting: true,
+/**
+ * Form columns for coordinators.
+ * Contains additional info about student and company.
+ *
+ * @returns
+ */
+const createCoordinatorFormColumns = (): ColumnDef<IMyForm>[] => {
+  return [
+    ...createFormColumns(),
+    {
+      id: "student_id",
+      header: "Student ID",
+      accessorFn: (row) => getDisplayValue(row.display_information!, "student", "id-number"),
+      cell: (info) => info.getValue(),
+      enableSorting: true,
+    },
+    {
+      id: "entity",
+      header: "Company",
+      accessorFn: (row) => getDisplayValue(row.display_information!, "entity", "legal-name"),
+      cell: (info) => info.getValue(),
+      enableSorting: true,
+    },
+    ...createActionColumns(),
+  ];
+};
+
+/**
+ * A column for the actions you can perform on a form.
+ *
+ * @returns
+ */
+const createActionColumns = (): ColumnDef<IMyForm>[] => {
+  return [
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (info) => {
+        const myForm = info.row.original;
+        if (myForm.signed_document_id) {
+          return (
+            <Button
+              size="sm"
+              onClick={() => window.open(myForm.latest_document_url!, "_blank")}
+              className="flex items-center gap-2"
+            >
+              Download
+              <Download className="h-4 w-4" />
+            </Button>
+          );
+        } else {
+          return (
+            <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
+              Pending
+              <Hourglass className="h-4 w-4" />
+            </Button>
+          );
+        }
       },
-      {
-        id: "company",
-        header: "Company",
-        accessorFn: (row) => getDisplayValue(row.display_information, "entity", "legal-name"),
-        cell: (info) => info.getValue(),
-        enableSorting: true,
-      }
-    );
-  }
+    },
+  ];
+};
 
-  cols.push({
-    id: "actions",
-    header: "Actions",
-    cell: (info) =>
-      info.row.original.url ? (
-        <Button
-          size="sm"
-          onClick={() => window.open(info.row.original.url, "_blank")}
-          className="flex items-center gap-2"
-        >
-          Download
-          <Download className="h-4 w-4" />
-        </Button>
-      ) : (
-        <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
-          Pending
-          <Hourglass className="h-4 w-4" />
-        </Button>
-      ),
-  });
-
-  return cols;
-}
-
-export default function FormTable({
+export default function MyFormsTable({
   rows,
   isCoordinator,
   exportEnabled = false,
   exportLabel,
 }: {
-  rows: FormRow[];
+  rows: IMyForm[];
   isCoordinator: boolean;
   exportEnabled?: boolean;
   exportLabel?: string;
 }) {
-  const columns = createFormColumns(isCoordinator);
+  const columns = isCoordinator ? createFormColumns() : createCoordinatorFormColumns();
   const { openModal } = useModal();
-
   const modalName = useMemo(
     () => `form-data-${exportLabel ? exportLabel.replace(/\s+/g, "-").toLowerCase() : "all"}`,
     [exportLabel]

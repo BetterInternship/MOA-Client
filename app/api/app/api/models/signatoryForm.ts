@@ -5,6 +5,7 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { FormProcess } from "./formProcess";
 
 export interface SignatoryForm {
   id: string;
@@ -15,4 +16,5 @@ export interface SignatoryForm {
   signatory_id: string;
   rejection_response: string;
   timestamp: string;
+  form_processes: FormProcess;
 }

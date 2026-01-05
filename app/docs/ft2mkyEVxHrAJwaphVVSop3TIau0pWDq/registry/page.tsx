@@ -25,7 +25,6 @@ const FormRegistryPage = () => {
   const formRegistry = useFormsControllerGetRegistry();
   const forms = formRegistry.data?.registry ?? [];
   const formSorted = forms.sort((a, b) => a.name.localeCompare(b.name));
-  console.log("Form Registry Data:", forms);
 
   const isLoading = formRegistry.isLoading;
   const error = formRegistry.error;
@@ -42,7 +41,11 @@ const FormRegistryPage = () => {
     <div className="min-h-screen w-full p-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Form Registry</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold tracking-tight">
+              Form Registry ({forms.length} forms)
+            </h1>
+          </div>
           <div className="flex gap-2">
             <Button onClick={handleMigrateForm} variant="outline" className="gap-2">
               ↻ Migrate Form (v0 → v1)
