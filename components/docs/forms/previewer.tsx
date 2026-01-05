@@ -34,15 +34,14 @@ if (typeof window !== "undefined") {
 }
 
 // Text wrapping and fitting utilities (matches PDF engine exactly)
-function measureTextWidth(text: string, fontSize: number, zoom: number = 1): number {
+
+// Measure text width using Canvas (used by wrapText)
+function measureTextWidth(text: string, fontSize: number): number {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return 0;
   ctx.font = `${fontSize}px Roboto`;
-  const width = ctx.measureText(text).width;
-  // Canvas measures Roboto wider than pdf-lib's font.widthOfTextAtSize()
-  // Fixed correction factor calibrated at 110% zoom
-  return width * 1.15;
+  return ctx.measureText(text).width;
 }
 
 // Get font metrics (approximated for browser, matching PDF engine approach)
@@ -210,6 +209,65 @@ function fitWrapped({
   return { fontSize: bestSize, lineHeight: bestLineHeight, ...laid };
 }
 
+// For non-wrapping fields: find the largest font size that fits text on ONE line
+function fitNoWrap({
+  text,
+  maxWidth,
+  maxHeight,
+  startSize,
+}: {
+  text: string;
+  maxWidth: number;
+  maxHeight: number;
+  startSize: number;
+}) {
+  const line = String(text ?? "").replace(/\r?\n/g, " ");
+
+  // TWEAK THIS VALUE: Higher = more aggressive shrinking (more safety margin)
+  // Try: 2 (minimal), 4 (conservative), 8 (moderate), 12 (aggressive)
+  const SAFETY_MARGIN = 0;
+
+  const fits = (size: number): boolean => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return false;
+    ctx.font = `${size}px Roboto`;
+    // Measure text width with a small correction factor for safety
+    // TWEAK THIS: 1.0 (most lenient), 1.05, 1.1, 1.15 (most conservative)
+    const w = ctx.measureText(line).width * 0.68;
+    const { height } = getFontMetricsAtSize(size);
+    return w <= maxWidth - SAFETY_MARGIN && height <= maxHeight - SAFETY_MARGIN;
+  };
+
+  // If startSize already fits, return it
+  if (fits(startSize)) {
+    const { ascent, descent, height } = getFontMetricsAtSize(startSize);
+    return { fontSize: startSize, line, ascent, descent, height };
+  }
+
+  // Binary search down to find a size that fits
+  let lo = startSize;
+  while (!fits(lo)) {
+    lo /= 2;
+    if (lo < 0.1) break;
+  }
+
+  // Binary search up to find the largest size that fits
+  let hi = startSize;
+  for (let i = 0; i < 22; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+
+  const bestSize = lo;
+  const { ascent, descent, height } = getFontMetricsAtSize(bestSize);
+  return { fontSize: bestSize, line, ascent, descent, height };
+}
+
 interface FormPreviewPdfDisplayProps {
   documentUrl: string;
   blocks: any[]; // ServerField[] with coordinates (x, y, w, h, page, field)
@@ -219,7 +277,8 @@ interface FormPreviewPdfDisplayProps {
   selectedFieldId?: string;
 }
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 /**
  * PDF display component that shows form fields as boxes overlaid on the PDF
@@ -266,7 +325,9 @@ export const FormPreviewPdfDisplay = ({
   // Initialize PDF.js worker
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const workerFile = pdfjsVersion.startsWith("4") ? "pdf.worker.min.mjs" : "pdf.worker.min.js";
+    const workerFile = pdfjsVersion.startsWith("4")
+      ? "pdf.worker.min.mjs"
+      : "pdf.worker.min.js";
     GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/${workerFile}`;
   }, []);
 
@@ -302,9 +363,12 @@ export const FormPreviewPdfDisplay = ({
     };
   }, [documentUrl]);
 
-  const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
-    pageRefs.current.set(page, node);
-  }, []);
+  const registerPageRef = useCallback(
+    (page: number, node: HTMLDivElement | null) => {
+      pageRefs.current.set(page, node);
+    },
+    [],
+  );
 
   const handleZoom = (direction: "in" | "out") => {
     const delta = direction === "in" ? 0.1 : -0.1;
@@ -320,7 +384,7 @@ export const FormPreviewPdfDisplay = ({
 
   const pagesArray = useMemo(
     () => Array.from({ length: pageCount }, (_, idx) => idx + 1),
-    [pageCount]
+    [pageCount],
   );
 
   if (error) {
@@ -436,7 +500,10 @@ const PdfPageWithFields = ({
   const [rendering, setRendering] = useState<boolean>(false);
   const [forceRender, setForceRender] = useState<number>(0);
 
-  useEffect(() => registerPageRef(pageNumber, containerRef.current), [pageNumber, registerPageRef]);
+  useEffect(
+    () => registerPageRef(pageNumber, containerRef.current),
+    [pageNumber, registerPageRef],
+  );
 
   // Force re-render of field positions when scale changes
   useEffect(() => {
@@ -454,7 +521,7 @@ const PdfPageWithFields = ({
           onVisible(pageNumber);
         }
       },
-      { threshold: 0.6 }
+      { threshold: 0.6 },
     );
 
     observer.observe(element);
@@ -471,7 +538,8 @@ const PdfPageWithFields = ({
       .getPage(pageNumber)
       .then((page: PDFPageProxy) => {
         // Account for device pixel ratio for crisp rendering on high-DPI displays
-        const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+        const dpr =
+          typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
         const viewport = page.getViewport({ scale: scale * dpr });
         viewportRef.current = viewport;
 
@@ -496,7 +564,8 @@ const PdfPageWithFields = ({
         return renderTask.promise;
       })
       .catch((err) => {
-        if (!cancelled) console.error(`Failed to render page ${pageNumber}:`, err);
+        if (!cancelled)
+          console.error(`Failed to render page ${pageNumber}:`, err);
       })
       .finally(() => {
         if (!cancelled) setRendering(false);
@@ -511,7 +580,7 @@ const PdfPageWithFields = ({
   // Convert PDF coordinates to display coordinates, accounting for zoom-aware rendering
   const pdfToDisplay = (
     pdfX: number,
-    pdfY: number
+    pdfY: number,
   ): { displayX: number; displayY: number } | null => {
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
@@ -526,18 +595,6 @@ const PdfPageWithFields = ({
       displayX,
       displayY,
     };
-  };
-
-  // Get the actual zoom-aware scale factor for box sizing
-  const getZoomAwareScale = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return scale;
-
-    const rect = canvas.getBoundingClientRect();
-    // Browser zoom factor: rendered size vs actual canvas size
-    const browserZoom = rect.width > 0 ? rect.width / canvas.width : 1;
-    // Combine PDF scale (from zoom buttons) with browser zoom
-    return Math.max(browserZoom, 0.1); // Prevent division by zero
   };
 
   return (
@@ -560,7 +617,6 @@ const PdfPageWithFields = ({
       {/* Field boxes overlay */}
       <div className="absolute inset-0" key={forceRender}>
         {blocks.map((block) => {
-          // blocks are ServerFields with x, y, w, h, page, field properties
           const x = block.x || 0;
           const y = block.y || 0;
           const w = block.w || 0;
@@ -571,8 +627,6 @@ const PdfPageWithFields = ({
           if (!x || !y || !w || !h) {
             return null;
           }
-
-          const schema = { x, y, w, h, field: fieldName, label };
 
           const displayPos = pdfToDisplay(x, y);
           if (!displayPos) {
@@ -597,32 +651,24 @@ const PdfPageWithFields = ({
               : "";
           const isFilled = valueStr.trim().length > 0;
 
-          // Get alignment and wrapping from block metadata
+          // Get alignment and wrapping from field schema
           const align_h = block.align_h ?? "left";
           const align_v = block.align_v ?? "top";
           const shouldWrap = block.wrap ?? true;
 
           // Calculate optimal font size using PDF engine algorithm
           const fieldType =
-            block.field_schema?.type || block.phantom_field_schema?.type || block.type;
+            block.field_schema?.type ||
+            block.phantom_field_schema?.type ||
+            block.type;
 
           let fontSize: number;
           let lineHeight: number;
           let displayLines: string[] = [];
 
-          if (fieldType === "signature") {
-            // Signatures are not wrapped
-            fontSize = 25;
-            lineHeight = fontSize * 1.0;
-          } else if (isFilled) {
-            // Use metadata size if provided, otherwise fit to box
-            if (block.field_schema?.size && !shouldWrap) {
-              // Fixed size, no wrapping
-              fontSize = block.field_schema.size;
-              lineHeight = fontSize * 1.0;
-              displayLines = [valueStr];
-            } else if (shouldWrap) {
-              // Use exact PDF engine algorithm for text (no padding)
+          if (isFilled) {
+            if (shouldWrap) {
+              // Use exact PDF engine algorithm for text with wrapping (no padding)
               const fitted = fitWrapped({
                 text: valueStr,
                 maxWidth: widthPixels,
@@ -635,17 +681,26 @@ const PdfPageWithFields = ({
               lineHeight = fitted.lineHeight;
               displayLines = fitted.lines || [];
             } else {
-              // No wrapping, use metadata size
-              fontSize = block.field_schema?.size ?? 11;
+              // No wrapping - find largest font size that fits on ONE line
+              const defaultSize = fieldType === "signature" ? 25 : 11;
+              const fitted = fitNoWrap({
+                text: valueStr,
+                maxWidth: widthPixels,
+                maxHeight: heightPixels,
+                startSize: block.field_schema?.size ?? defaultSize,
+              });
+
+              fontSize = fitted.fontSize;
               lineHeight = fontSize * 1.0;
-              displayLines = [valueStr];
+              displayLines = [fitted.line];
             }
           } else {
             fontSize = block.field_schema?.size ?? 11;
             lineHeight = fontSize * 1.0;
           }
 
-          const isSelected = animatingFieldId === fieldName || selectedFieldId === fieldName;
+          const isSelected =
+            animatingFieldId === fieldName || selectedFieldId === fieldName;
 
           return (
             <div
@@ -666,13 +721,19 @@ const PdfPageWithFields = ({
                       ? "flex-end"
                       : "flex-start",
                 justifyContent:
-                  align_h === "center" ? "center" : align_h === "right" ? "flex-end" : "flex-start",
+                  align_h === "center"
+                    ? "center"
+                    : align_h === "right"
+                      ? "flex-end"
+                      : "flex-start",
               }}
               title={`${label}: ${valueStr}`}
             >
               {isFilled && (
                 <div
-                  className={fieldType === "signature" ? "text-blue-600" : "text-black"}
+                  className={
+                    fieldType === "signature" ? "text-blue-600" : "text-black"
+                  }
                   style={{
                     fontSize: `${fontSize}px`,
                     lineHeight: `${lineHeight}px`,
@@ -681,13 +742,16 @@ const PdfPageWithFields = ({
                     wordWrap: shouldWrap ? "break-word" : "normal",
                     width: "100%",
                     padding: "0px",
+                    margin: "0px",
                     boxSizing: "border-box",
                     display: "flex",
                     alignItems: "inherit",
                     justifyContent: "inherit",
                     textAlign: align_h === "center" ? "center" : align_h,
                     fontFamily:
-                      fieldType === "signature" ? "Italianno, cursive" : "Roboto, sans-serif",
+                      fieldType === "signature"
+                        ? "Italianno, cursive"
+                        : "Roboto, sans-serif",
                     fontWeight: fieldType === "signature" ? "normal" : "600",
                     color: fieldType === "signature" ? "#0000FF" : "#000000",
                   }}
