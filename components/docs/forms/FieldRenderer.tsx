@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-10-16 22:43:51
- * @ Modified time: 2026-01-02 20:38:24
+ * @ Modified time: 2026-01-05 16:24:38
  * @ Description:
  *
  * The field renderer 3000 automatically renders the correct field for the situation!
@@ -21,6 +21,7 @@ import {
 import { AutocompleteTreeMulti, TreeOption } from "./autocomplete";
 import { ClientField } from "@betterinternship/core/forms";
 import { useEffect, useState } from "react";
+import { Eye } from "lucide-react";
 
 export const FieldRenderer = <T extends any[]>({
   field,

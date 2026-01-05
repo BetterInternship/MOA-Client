@@ -5,11 +5,7 @@
  *                Supports all block types: headers, paragraphs, form fields, phantom fields
  */
 
-import {
-  type IFormBlock,
-  type IFormField,
-  type IFormPhantomField,
-} from "@betterinternship/core/forms";
+import { type IFormBlock } from "@betterinternship/core/forms";
 import { GripVertical } from "lucide-react";
 import { FieldRenderer } from "@/components/docs/forms/FieldRenderer";
 
@@ -126,7 +122,7 @@ export const renderBlock = (
             <input
               type="checkbox"
               checked={isChecked || false}
-              onChange={() => onBlockToggle?.(block._id!)}
+              onChange={() => onBlockToggle?.(block._id)}
               onClick={(e) => e.stopPropagation()}
               className="h-4 w-4 cursor-pointer"
             />
@@ -167,7 +163,7 @@ export const renderBlock = (
             <input
               type="checkbox"
               checked={isChecked || false}
-              onChange={() => onBlockToggle?.(block._id!)}
+              onChange={() => onBlockToggle?.(block._id)}
               onClick={(e) => e.stopPropagation()}
               className="h-4 w-4 cursor-pointer"
             />
@@ -192,7 +188,7 @@ export const renderBlock = (
 
   // Form field blocks
   if (block.block_type === "form_field" && block.field_schema) {
-    const field = block.field_schema as IFormField;
+    const field = block.field_schema;
     const fieldContent = (
       <FieldRenderer
         field={{
@@ -229,7 +225,7 @@ export const renderBlock = (
             <input
               type="checkbox"
               checked={isChecked || false}
-              onChange={() => onBlockToggle?.(block._id!)}
+              onChange={() => onBlockToggle?.(block._id)}
               onClick={(e) => e.stopPropagation()}
               className="h-4 w-4 cursor-pointer"
             />
@@ -252,7 +248,7 @@ export const renderBlock = (
 
   // Phantom field blocks
   if (block.block_type === "form_phantom_field" && block.phantom_field_schema) {
-    const field = block.phantom_field_schema as IFormPhantomField;
+    const field = block.phantom_field_schema;
     const phantomClasses = !stripStyling
       ? editorMode
         ? draggedIndex === blockIndex
@@ -299,7 +295,7 @@ export const renderBlock = (
             <input
               type="checkbox"
               checked={isChecked || false}
-              onChange={() => onBlockToggle?.(block._id!)}
+              onChange={() => onBlockToggle?.(block._id)}
               onClick={(e) => e.stopPropagation()}
               className="h-4 w-4 cursor-pointer"
             />
@@ -332,6 +328,8 @@ export const renderBlock = (
  * @returns Array of JSX elements
  */
 export const renderBlocks = (
+  // ! TODO: make this accept ClientBlock<[any]>[] instead of IFormBlock[]
+  // ! TODO: make this accept ClientBlock<[any]>[] instead of IFormBlock[]
   blocks: IFormBlock[],
   fieldProps: BlockFieldProps,
   options: BlockRendererOptions = {}

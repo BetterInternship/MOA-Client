@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-23 20:41:54
- * @ Modified time: 2026-01-01 19:11:11
+ * @ Modified time: 2026-01-05 16:07:49
  * @ Description:
  *
  * Move some of these utils to the core package maybe.
@@ -56,7 +56,7 @@ export const coerceForField = <T extends any[]>(field: ClientField<T>, value: un
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       return value == null ? "" : String(value);
     case "signature":
-      return value === true;
+      return (value as string)?.trim?.();
     case "text":
     default:
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -76,7 +76,7 @@ export const isEmptyFor = <T extends any[]>(field: ClientField<T>, value: unknow
     case "date":
       return !(typeof value === "number" && value > 0); // 0/undefined = empty
     case "signature":
-      return value !== true;
+      return !(value as string)?.trim?.();
     case "number":
       return value === undefined || value === "";
     default:
