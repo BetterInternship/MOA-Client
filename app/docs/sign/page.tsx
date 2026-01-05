@@ -67,7 +67,7 @@ function PageContent() {
       formProcess.my_signing_party_id
     );
     const valuesWithPrefilledSignatures = form.formMetadata.setSignatureValueForSigningParty(
-      finalValues,
+      formFiller.getFinalValues({}),
       profile.name,
       formProcess.my_signing_party_id
     );
