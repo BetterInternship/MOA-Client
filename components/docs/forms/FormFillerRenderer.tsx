@@ -116,12 +116,9 @@ const BlocksRenderer = <T extends any[]>({
     // Only check selection for form fields
     const isSelected = isForm && field && selectedFieldId === field.field;
 
-    // ! FIX THIS IN THE FUTURE
-    // ! REMOVE || field?.field.includes("signature")
-    // ! IT'S just a temporary fix while the source for sigs are not manual
     return (
       <>
-        {isForm && (field?.source === "manual" || field?.field?.includes("signature")) && (
+        {isForm && field?.source === "manual" && (
           <div className="space-between flex flex-row" key={`${formKey}:${i}`}>
             <div
               ref={(el) => {

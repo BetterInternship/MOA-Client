@@ -76,7 +76,7 @@ function PageContent() {
     signContext.setRequiredSignatures(
       signatureFields.map((signatureField) => signatureField.field)
     );
-  }, [formProcess, form]);
+  }, [formProcess, form.formName]);
 
   // Filter blocks to only include manual source fields
   const manualBlocks = useMemo(

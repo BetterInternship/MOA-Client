@@ -17,6 +17,9 @@ interface FormPreviewRendererProps {
 /**
  * Simple form preview renderer that replicates FormFillerRenderer
  * but without context, validation, or autofill dependencies
+ *
+ * // ! todo: use contexts to access field and block data instead of passing them in
+ * // ! todo: use ClientField and ClientBlock instead of IFormField and IFormBlock
  */
 export const FormPreviewRenderer = ({
   formName,
@@ -115,6 +118,8 @@ export const FormPreviewRenderer = ({
     const result = field.validator?.safeParse(coerced);
 
     if (result?.error) {
+      // ! todo: import zod at the top, not here (dynamic imports bad)
+      // ! todo: import zod at the top, not here (dynamic imports bad)
       const z = require("zod");
       const errorString = z
         .treeifyError(result.error)
@@ -167,6 +172,8 @@ const BlocksRenderer = ({
   fieldMap,
 }: {
   formKey: string;
+  // ! TODO: make this use ClientBlock<[any]>[] instead of IFormBlock[]
+  // ! TODO: make this use ClientBlock<[any]>[] instead of IFormBlock[]
   blocks: IFormBlock[];
   values: Record<string, string>;
   onChange: (key: string, value: any) => void;
