@@ -170,6 +170,17 @@ const PdfJsEditorPage = () => {
     }
   }, [formData]);
 
+  // Update alignment controls when a field is selected
+  useEffect(() => {
+    if (selectedFieldId) {
+      const selectedField = fields.find((f) => (f._id || `${f.field}:${f.page}`) === selectedFieldId);
+      if (selectedField) {
+        setPlacementAlign_h(selectedField.align_h ?? "left");
+        setPlacementAlign_v(selectedField.align_v ?? "top");
+      }
+    }
+  }, [selectedFieldId, fields]);
+
   // Get blocks from metadata
   // Get blocks from metadata
   const blocks = metadata.schema.blocks;
@@ -773,6 +784,14 @@ const PdfJsEditorPage = () => {
                 onAlignmentChange={(alignment) => {
                   setPlacementAlign_h(alignment.align_h);
                   setPlacementAlign_v(alignment.align_v);
+                  
+                  // If a field is selected, update its alignment in the fields state
+                  if (selectedFieldId) {
+                    handleFieldsChange(selectedFieldId, {
+                      align_h: alignment.align_h,
+                      align_v: alignment.align_v,
+                    });
+                  }
                 }}
                 registry={registry}
                 onFieldClickInSidebar={handleFieldClickInSidebar}
