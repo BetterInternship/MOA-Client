@@ -27,10 +27,14 @@ type EditorSidebarProps = {
   onCoordinatesChange?: (coords: { x: number; y: number; w: number; h: number }) => void;
   placementAlign_h?: "left" | "center" | "right";
   placementAlign_v?: "top" | "middle" | "bottom";
+  size?: number;
+  wrap?: boolean;
   onAlignmentChange?: (alignment: {
     align_h: "left" | "center" | "right";
     align_v: "top" | "middle" | "bottom";
   }) => void;
+  onSizeChange?: (size: number) => void;
+  onWrapChange?: (wrap: boolean) => void;
   registry?: FieldRegistryEntry[];
   onFieldClickInSidebar?: (fieldId: string) => void;
 };
@@ -49,7 +53,11 @@ export const EditorSidebar = ({
   onCoordinatesChange,
   placementAlign_h = "center",
   placementAlign_v = "middle",
+  size,
+  wrap,
   onAlignmentChange,
+  onSizeChange,
+  onWrapChange,
   registry = [],
   onFieldClickInSidebar,
 }: EditorSidebarProps) => {
@@ -73,8 +81,12 @@ export const EditorSidebar = ({
           h={selectedField?.h}
           align_h={placementAlign_h}
           align_v={placementAlign_v}
+          size={size ?? 11}
+          wrap={wrap ?? true}
           onCoordinatesChange={onCoordinatesChange}
           onAlignmentChange={onAlignmentChange}
+          onSizeChange={onSizeChange}
+          onWrapChange={onWrapChange}
           registry={registry}
         />
       </div>

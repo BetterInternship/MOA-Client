@@ -109,6 +109,8 @@ const PdfJsEditorPage = () => {
   const [placementFieldType, setPlacementFieldType] = useState<string>("text");
   const [placementAlign_h, setPlacementAlign_h] = useState<"left" | "center" | "right">("left");
   const [placementAlign_v, setPlacementAlign_v] = useState<"top" | "middle" | "bottom">("top");
+  const [placementSize, setPlacementSize] = useState<number>(11);
+  const [placementWrap, setPlacementWrap] = useState<boolean>(true);
   const [formLabel, setFormLabel] = useState<string>(formMetadata.getLabel());
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [editingNameValue, setEditingNameValue] = useState<string>(formLabel);
@@ -179,6 +181,8 @@ const PdfJsEditorPage = () => {
       if (selectedField) {
         setPlacementAlign_h(selectedField.align_h ?? "left");
         setPlacementAlign_v(selectedField.align_v ?? "top");
+        setPlacementSize(selectedField.size ?? 11);
+        setPlacementWrap(selectedField.wrap ?? true);
       }
     }
   }, [selectedFieldId, fields]);
@@ -258,6 +262,8 @@ const PdfJsEditorPage = () => {
                   "manual") as const,
                 validator: (storedMetadata?.validator || originalFieldSchema?.validator) ?? "",
                 prefiller: (storedMetadata?.prefiller || originalFieldSchema?.prefiller) ?? "",
+                size: field.size ?? 11,
+                wrap: field.wrap ?? true,
               } as IFormField,
             };
             newBlocks = [...newBlocks, newBlock];
@@ -295,6 +301,8 @@ const PdfJsEditorPage = () => {
                 align_h: updatedField.align_h ?? fieldSchema.align_h,
                 align_v: updatedField.align_v ?? fieldSchema.align_v,
                 label: updatedField.label ?? fieldSchema.label,
+                size: updatedField.size ?? fieldSchema.size ?? 11,
+                wrap: updatedField.wrap ?? fieldSchema.wrap ?? true,
               } as IFormField,
             } as IFormBlock;
           }
@@ -783,6 +791,8 @@ const PdfJsEditorPage = () => {
                 onCoordinatesChange={handleCoordinatesChange}
                 placementAlign_h={placementAlign_h}
                 placementAlign_v={placementAlign_v}
+                size={placementSize}
+                wrap={placementWrap}
                 onAlignmentChange={(alignment) => {
                   setPlacementAlign_h(alignment.align_h);
                   setPlacementAlign_v(alignment.align_v);
@@ -792,6 +802,24 @@ const PdfJsEditorPage = () => {
                     handleFieldsChange(selectedFieldId, {
                       align_h: alignment.align_h,
                       align_v: alignment.align_v,
+                    });
+                  }
+                }}
+                onSizeChange={(newSize) => {
+                  setPlacementSize(newSize);
+                  // If a field is selected, update its size
+                  if (selectedFieldId) {
+                    handleFieldsChange(selectedFieldId, {
+                      size: newSize,
+                    });
+                  }
+                }}
+                onWrapChange={(newWrap) => {
+                  setPlacementWrap(newWrap);
+                  // If a field is selected, update its wrap
+                  if (selectedFieldId) {
+                    handleFieldsChange(selectedFieldId, {
+                      wrap: newWrap,
                     });
                   }
                 }}

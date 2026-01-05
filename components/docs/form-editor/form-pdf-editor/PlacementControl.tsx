@@ -31,11 +31,15 @@ type PlacementControlProps = {
   h?: number;
   align_h?: "left" | "center" | "right";
   align_v?: "top" | "middle" | "bottom";
+  size?: number;
+  wrap?: boolean;
   onCoordinatesChange?: (coords: { x: number; y: number; w: number; h: number }) => void;
   onAlignmentChange?: (alignment: {
     align_h: "left" | "center" | "right";
     align_v: "top" | "middle" | "bottom";
   }) => void;
+  onSizeChange?: (size: number) => void;
+  onWrapChange?: (wrap: boolean) => void;
   registry?: FieldRegistryEntry[];
 };
 
@@ -78,8 +82,12 @@ export const PlacementControl = ({
   h = 50,
   align_h = "center",
   align_v = "middle",
+  size = 11,
+  wrap = true,
   onCoordinatesChange,
   onAlignmentChange,
+  onSizeChange,
+  onWrapChange,
   registry = [],
 }: PlacementControlProps) => {
   if (isPlacing) {
@@ -105,6 +113,32 @@ export const PlacementControl = ({
       {onAlignmentChange && (
         <AlignmentInputs align_h={align_h} align_v={align_v} onChange={onAlignmentChange} />
       )}
+
+      <Divider />
+
+      {/* Font Size and Wrap Controls */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-slate-700">Font Size & Wrap</label>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            min="6"
+            max="72"
+            value={size}
+            onChange={(e) => onSizeChange?.(parseInt(e.target.value) || 11)}
+            className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="Size"
+          />
+          <select
+            value={wrap ? "wrap" : "no-wrap"}
+            onChange={(e) => onWrapChange?.(e.target.value === "wrap")}
+            className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="wrap">Wrap</option>
+            <option value="no-wrap">No Wrap</option>
+          </select>
+        </div>
+      </div>
 
       <Button size="sm" onClick={onStartPlacing} className="w-full">
         Place Field

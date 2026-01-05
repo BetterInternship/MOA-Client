@@ -16,6 +16,8 @@ export type FormField = {
   h: number;
   align_h?: "left" | "center" | "right";
   align_v?: "top" | "middle" | "bottom";
+  size?: number;
+  wrap?: boolean;
 };
 
 export type FieldBoxProps = {
