@@ -126,13 +126,13 @@ export const PlacementControl = ({
             max="72"
             value={size}
             onChange={(e) => onSizeChange?.(parseInt(e.target.value) || 11)}
-            className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="Size"
           />
           <select
             value={wrap ? "wrap" : "no-wrap"}
             onChange={(e) => onWrapChange?.(e.target.value === "wrap")}
-            className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
           >
             <option value="wrap">Wrap</option>
             <option value="no-wrap">No Wrap</option>

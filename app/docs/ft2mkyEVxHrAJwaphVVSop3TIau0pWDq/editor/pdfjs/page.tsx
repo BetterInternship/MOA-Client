@@ -97,6 +97,8 @@ const PdfJsEditorPage = () => {
         h: field.h,
         align_h: (field.align_h ?? "left") as "left" | "center" | "right",
         align_v: (field.align_v ?? "top") as "top" | "middle" | "bottom",
+        size: field.size ?? 11,
+        wrap: field.wrap ?? true,
       };
     });
   }, [ALL_BLOCKS_RAW]);
@@ -166,6 +168,8 @@ const PdfJsEditorPage = () => {
             h: field.h,
             align_h: (field.align_h ?? "left") as "left" | "center" | "right",
             align_v: (field.align_v ?? "top") as "top" | "middle" | "bottom",
+            size: field.size ?? 11,
+            wrap: field.wrap ?? true,
           };
         });
       setFields(fieldsFromMetadata);
