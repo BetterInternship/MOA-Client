@@ -32,15 +32,14 @@ export function VerificationDetailsCard({ signedDocument }: { signedDocument: Si
 
   return (
     <Card className="bg-white">
-      <CardHeader className="">
+      {/* <CardHeader className="">
         <CardTitle className="flex items-center gap-2">
-          {/* Result */}
           <Badge variant={isValid ? "success" : "warning"} className="gap-1.5 text-sm">
             {isValid ? <ShieldCheck className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
             {isValid ? "Active Document" : "Expired"}
           </Badge>
         </CardTitle>
-      </CardHeader>
+      </CardHeader> */}
 
       <CardContent className="space-y-5">
         <div className="grid gap-3">
