@@ -55,6 +55,7 @@ type PdfViewerProps = {
   onCancelPlacing?: () => void;
   onFileSelect?: (file: File) => void;
   registry?: FieldRegistryEntry[];
+  onFieldClickInPdf?: (fieldId: string) => void;
 };
 
 export function PdfViewer({
@@ -68,6 +69,7 @@ export function PdfViewer({
   placementFieldType = "signature",
   onFileSelect,
   registry = [],
+  onFieldClickInPdf,
 }: PdfViewerProps) {
   const searchParams = useSearchParams();
   const [pendingUrl, setPendingUrl] = useState<string>(initialUrl ?? "");
@@ -342,6 +344,7 @@ export function PdfViewer({
                   onHoverPlacement={setHoverPointDuringPlacement}
                   onPlaceField={onFieldCreate}
                   registry={registry}
+                  onFieldClickInPdf={onFieldClickInPdf}
                 />
               ))}
             </div>
@@ -372,6 +375,7 @@ type PdfPageCanvasProps = {
   hoverPointDuringPlacement?: PointerLocation | null;
   onPlaceField?: (field: FormField) => void;
   registry?: FieldRegistryEntry[];
+  onFieldClickInPdf?: (fieldId: string) => void;
 };
 
 const PdfPageCanvas = ({
@@ -394,6 +398,7 @@ const PdfPageCanvas = ({
   onPlaceField,
   hoverPointDuringPlacement,
   registry = [],
+  onFieldClickInPdf,
 }: PdfPageCanvasProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -673,6 +678,7 @@ const PdfPageCanvas = ({
   return (
     <div
       ref={containerRef}
+      data-page={pageNumber}
       className={cn(
         "relative w-full max-w-4xl overflow-hidden rounded-[0.33em] border bg-white shadow-sm transition-colors",
         isSelected ? "border-primary/80 ring-primary/50 ring-1" : "border-border"
@@ -722,7 +728,10 @@ const PdfPageCanvas = ({
                 <FieldBox
                   field={field}
                   isSelected={selectedFieldId === fieldId}
-                  onSelect={() => onFieldSelect?.(fieldId)}
+                  onSelect={() => {
+                    onFieldSelect?.(fieldId);
+                    onFieldClickInPdf?.(fieldId);
+                  }}
                   onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
                   onDragEnd={() => {}}
                   onResize={(handle, deltaX, deltaY) =>

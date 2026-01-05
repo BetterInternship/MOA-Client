@@ -121,6 +121,10 @@ const PdfJsEditorPage = () => {
   const [debugSchemaInput, setDebugSchemaInput] = useState<string>("");
   const [isDebugModalOpen, setIsDebugModalOpen] = useState<boolean>(false);
 
+  // Refs for scroll-to-field functionality
+  const pdfViewerContainerRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
   // Get document URL from form metadata (only for existing forms) or from uploaded PDF
   const documentUrl = uploadedPdfUrl || (isNewForm ? undefined : formData?.formUrl || undefined);
 
@@ -389,6 +393,38 @@ const PdfJsEditorPage = () => {
     },
     [selectedFieldId, handleFieldsChange]
   );
+
+  /**
+   * Handle field click from sidebar - scroll to field in PDF viewer
+   */
+  const handleFieldClickInSidebar = useCallback(
+    (fieldId: string) => {
+      const field = fields.find((f) => (f._id || `${f.field}:${f.page}`) === fieldId);
+      if (field && pdfViewerContainerRef.current) {
+        // Scroll the PDF viewer to the page containing this field
+        const pageElement = pdfViewerContainerRef.current.querySelector(
+          `[data-page="${field.page}"]`
+        );
+        if (pageElement) {
+          pageElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    },
+    [fields]
+  );
+
+  /**
+   * Handle field click from PDF - scroll to field in sidebar
+   */
+  const handleFieldClickInPdf = useCallback((fieldId: string) => {
+    if (sidebarRef.current) {
+      // Find the field element in the sidebar and scroll it into view
+      const fieldElement = sidebarRef.current.querySelector(`[data-field-id="${fieldId}"]`);
+      if (fieldElement) {
+        fieldElement.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+  }, []);
 
   /**
    * Handle form name edit
@@ -697,7 +733,7 @@ const PdfJsEditorPage = () => {
           // PDF Editor View
           <div className="flex h-full gap-0">
             {/* PDF Viewer (left, main) */}
-            <div className="flex-1">
+            <div ref={pdfViewerContainerRef} className="flex-1 overflow-y-auto">
               <Suspense fallback={<Loader>Loading PDF…</Loader>}>
                 <PdfViewer
                   initialUrl={documentUrl}
@@ -713,12 +749,13 @@ const PdfJsEditorPage = () => {
                   onCancelPlacing={() => setIsPlacingField(false)}
                   onFileSelect={handlePdfFileSelect}
                   registry={registry}
+                  onFieldClickInPdf={handleFieldClickInPdf}
                 />
               </Suspense>
             </div>
 
             {/* Sidebar (right) */}
-            <div className="w-72 flex-shrink-0 overflow-y-auto border-l bg-white">
+            <div ref={sidebarRef} className="w-72 flex-shrink-0 overflow-y-auto border-l bg-white">
               <EditorSidebar
                 fields={fields}
                 selectedFieldId={selectedFieldId}
@@ -738,6 +775,7 @@ const PdfJsEditorPage = () => {
                   setPlacementAlign_v(alignment.align_v);
                 }}
                 registry={registry}
+                onFieldClickInSidebar={handleFieldClickInSidebar}
               />
             </div>
           </div>

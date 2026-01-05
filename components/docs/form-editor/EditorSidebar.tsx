@@ -32,6 +32,7 @@ type EditorSidebarProps = {
     align_v: "top" | "middle" | "bottom";
   }) => void;
   registry?: FieldRegistryEntry[];
+  onFieldClickInSidebar?: (fieldId: string) => void;
 };
 
 export const EditorSidebar = ({
@@ -50,6 +51,7 @@ export const EditorSidebar = ({
   placementAlign_v = "middle",
   onAlignmentChange,
   registry = [],
+  onFieldClickInSidebar,
 }: EditorSidebarProps) => {
   // Find selected field by _id
   const selectedField = fields.find((f) => (f._id || `${f.field}:${f.page}`) === selectedFieldId);
@@ -85,6 +87,7 @@ export const EditorSidebar = ({
           onFieldSelect={onFieldSelect}
           onFieldDelete={onFieldDelete}
           onFieldDuplicate={onFieldDuplicate}
+          onFieldClick={onFieldClickInSidebar}
         />
       </div>
     </div>

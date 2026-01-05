@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { FormField } from "./PdfViewer";
 import { Button } from "@/components/ui/button";
 import { Trash2, Copy } from "lucide-react";
@@ -10,6 +11,7 @@ type FieldListPanelProps = {
   onFieldSelect: (fieldId: string) => void;
   onFieldDelete: (fieldId: string) => void;
   onFieldDuplicate: (fieldId: string) => void;
+  onFieldClick?: (fieldId: string) => void;
 };
 
 export const FieldListPanel = ({
@@ -18,11 +20,29 @@ export const FieldListPanel = ({
   onFieldSelect,
   onFieldDelete,
   onFieldDuplicate,
+  onFieldClick,
 }: FieldListPanelProps) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const handleFieldClick = (fieldId: string) => {
+    onFieldSelect(fieldId);
+    onFieldClick?.(fieldId);
+
+    // Scroll to field in sidebar
+    const fieldElement = fieldRefs.current.get(fieldId);
+    if (fieldElement && scrollContainerRef.current) {
+      fieldElement.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  };
+
   return (
     <div className="flex h-full flex-col gap-2 overflow-hidden">
       <div className="text-muted-foreground text-xs font-semibold">Fields ({fields.length})</div>
-      <div className="flex-1 space-y-1.5 overflow-y-scroll pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb:hover]:bg-slate-400 [&::-webkit-scrollbar-track]:bg-transparent">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 space-y-1.5 overflow-y-scroll pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb:hover]:bg-slate-400 [&::-webkit-scrollbar-track]:bg-transparent"
+      >
         {fields.length === 0 ? (
           <div className="border-muted-foreground/30 bg-muted/30 text-muted-foreground rounded border border-dashed p-3 text-center text-xs">
             No fields yet. Use the Placement tab to add fields.
@@ -35,7 +55,11 @@ export const FieldListPanel = ({
             return (
               <div
                 key={fieldId}
-                onClick={() => onFieldSelect(fieldId)}
+                data-field-id={fieldId}
+                ref={(el) => {
+                  if (el) fieldRefs.current.set(fieldId, el);
+                }}
+                onClick={() => handleFieldClick(fieldId)}
                 className={`cursor-pointer rounded-[0.33em] p-2 transition-colors ${
                   isSelected ? "bg-blue-100" : "hover:bg-slate-150 bg-slate-100"
                 }`}
