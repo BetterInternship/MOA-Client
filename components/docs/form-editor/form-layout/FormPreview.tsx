@@ -60,6 +60,10 @@ const FormPreviewContent = ({
       y: block.field_schema?.y || 0,
       w: block.field_schema?.w || 0,
       h: block.field_schema?.h || 0,
+      size: block.field_schema?.size ?? 11,
+      wrap: block.field_schema?.wrap ?? true,
+      align_h: block.field_schema?.align_h ?? "left",
+      align_v: block.field_schema?.align_v ?? "top",
     }));
 
   return (
@@ -111,7 +115,7 @@ const FormPreviewContent = ({
             <FormPreviewPdfDisplay
               documentUrl={documentUrl}
               blocks={fieldBlocksForPdf}
-              values={{}}
+              values={values}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
