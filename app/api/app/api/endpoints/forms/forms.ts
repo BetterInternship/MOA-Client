@@ -3209,3 +3209,70 @@ export const useFormsControllerGenerateTestForm = <TError = ErrorResponse, TCont
 
   return useMutation(mutationOptions, queryClient);
 };
+export const formsControllerSyncFormsToProd = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/sync-dev-to-prod`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getFormsControllerSyncFormsToProdMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerSyncFormsToProd>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerSyncFormsToProd>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["formsControllerSyncFormsToProd"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerSyncFormsToProd>>,
+    void
+  > = () => {
+    return formsControllerSyncFormsToProd();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerSyncFormsToProdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerSyncFormsToProd>>
+>;
+
+export type FormsControllerSyncFormsToProdMutationError = ErrorResponse;
+
+export const useFormsControllerSyncFormsToProd = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerSyncFormsToProd>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerSyncFormsToProd>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getFormsControllerSyncFormsToProdMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};

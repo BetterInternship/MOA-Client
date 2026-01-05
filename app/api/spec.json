@@ -1799,6 +1799,27 @@
         "tags": ["Forms"]
       }
     },
+    "/api/forms/sync-dev-to-prod": {
+      "post": {
+        "operationId": "FormsController_syncFormsToProd",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Forms"]
+      }
+    },
     "/api/form-groups": {
       "get": {
         "operationId": "FormGroupsController_getAllFormGroups",
