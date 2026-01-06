@@ -41,7 +41,6 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
-  Download,
   SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -136,22 +135,6 @@ export function DataTable<TData, TValue>({
   const effectiveSearchKeys = React.useMemo(() => {
     return selectedSearchKey ? [selectedSearchKey] : searchKeys;
   }, [selectedSearchKey, searchKeys]);
-
-  const isFiltered = React.useMemo(() => {
-    const hasColumnFilters = Object.values(table.getState().columnFilters ?? {}).length > 0;
-    const hasSearchFilters = (effectiveSearchKeys ?? []).some(
-      (k) => !!table.getColumn(k)?.getFilterValue()
-    );
-    return hasColumnFilters || hasSearchFilters;
-  }, [table, effectiveSearchKeys]);
-
-  function resetFilters() {
-    table.resetColumnFilters();
-    // clear any explicit search key filters too
-    for (const k of effectiveSearchKeys) {
-      table.getColumn(k)?.setFilterValue("");
-    }
-  }
 
   return (
     <div className={cn("space-y-3", className)}>
