@@ -45,6 +45,8 @@ export * from "./formMetadataResponse";
 export * from "./formPhantomField";
 export * from "./formPhantomFieldSource";
 export * from "./formPhantomFieldType";
+export * from "./formProcess";
+export * from "./formProcessDisplayInformation";
 export * from "./formProcessDto";
 export * from "./formProcessDtoDisplayInformation";
 export * from "./formProcessDtoFormLabel";

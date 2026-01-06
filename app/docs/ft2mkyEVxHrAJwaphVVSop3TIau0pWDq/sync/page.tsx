@@ -1,8 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
-import { formsControllerSyncFormsToProd } from "@/app/api";
+import {
+  formSyncControllerSyncAllForms,
+  formSyncControllerCompareFormVersions,
+  formSyncControllerSyncSingleForm,
+  useFormsControllerGetRegistry,
+} from "@/app/api";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+
+interface ComparisonItem {
+  formName: string;
+  devVersion: number;
+  devId: string;
+  prodVersion: number;
+  prodId: string | null;
+  isSynced: boolean;
+}
 
 interface SyncResult {
   formId: string;
@@ -23,11 +40,43 @@ interface SyncResponse {
   results: SyncResult[];
 }
 
-export default function DocsPage() {
+interface FormSyncRow {
+  name: string;
+  version: number;
+  comparisonItem?: ComparisonItem;
+  comparisonLoading: boolean;
+  syncing: boolean;
+  onSync: (name: string) => void;
+}
+
+export default function SyncPage() {
+  const formRegistry = useFormsControllerGetRegistry();
+  const forms = formRegistry.data?.registry ?? [];
+
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<SyncResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+
+  const [comparison, setComparison] = useState<ComparisonItem[]>([]);
+  const [comparisonLoading, setComparisonLoading] = useState(true);
+  const [syncing, setSyncing] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadComparison();
+  }, []);
+
+  const loadComparison = async () => {
+    setComparisonLoading(true);
+    try {
+      const data = await formSyncControllerCompareFormVersions();
+      setComparison(data || []);
+    } catch (err) {
+      console.error("Failed to load comparison:", err);
+    } finally {
+      setComparisonLoading(false);
+    }
+  };
 
   const handleSync = async () => {
     if (!confirmed) return;
@@ -37,8 +86,10 @@ export default function DocsPage() {
     setResponse(null);
 
     try {
-      const data = await formsControllerSyncFormsToProd();
+      const data = await formSyncControllerSyncAllForms();
       setResponse(data);
+      // Reload comparison after sync
+      await loadComparison();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error occurred");
     } finally {
@@ -47,15 +98,106 @@ export default function DocsPage() {
     }
   };
 
+  const handleSyncSingleForm = async (formName: string) => {
+    setSyncing(formName);
+    setError(null);
+    try {
+      await formSyncControllerSyncSingleForm({ formName });
+      // Reload comparison after sync
+      await loadComparison();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sync form");
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  const syncColumns: ColumnDef<FormSyncRow>[] = [
+    {
+      accessorKey: "name",
+      header: "Form Name",
+    },
+    {
+      accessorKey: "version",
+      header: "Dev Version",
+      cell: ({ row }) => `v${row.getValue("version")}`,
+    },
+    {
+      accessorKey: "comparisonItem",
+      header: "Prod Status",
+      cell: ({ row }) => {
+        const item = row.original;
+        if (item.comparisonLoading) {
+          return <Loader2 className="h-4 w-4 animate-spin text-slate-400" />;
+        }
+        if (item.comparisonItem?.isSynced) {
+          return (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <span className="text-xs font-medium text-green-600">
+                Synced (v{item.comparisonItem.prodVersion})
+              </span>
+            </div>
+          );
+        }
+        return (
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <span className="text-xs font-medium text-amber-600">
+              {item.comparisonItem?.prodVersion ? "Out of sync" : "Not synced"}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Action",
+      cell: ({ row }) => (
+        <Button
+          onClick={() => row.original.onSync(row.original.name)}
+          // disabled={row.original.syncing}
+          disabled={true}
+          size="sm"
+          className="ml-auto gap-2"
+        >
+          {row.original.syncing ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Syncing...
+            </>
+          ) : (
+            // "Sync Form"
+            "Disabled"
+          )}
+        </Button>
+      ),
+    },
+  ];
+
+  const syncTableData: FormSyncRow[] = forms.map((form) => ({
+    name: form.name,
+    version: form.version,
+    comparisonItem: comparison.find((c) => c.formName === form.name),
+    comparisonLoading,
+    syncing: syncing === form.name,
+    onSync: handleSyncSingleForm,
+  }));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold text-slate-900">Data Synchronization</h1>
+          <h1 className="mb-2 text-4xl font-bold text-slate-900">Form Synchronization</h1>
           <p className="text-slate-600">
-            Synchronize and update template registry across environments
+            Sync individual forms or synchronize all templates across environments
           </p>
+        </div>
+
+        {/* Individual Form Sync Section */}
+        <div className="mb-8">
+          <DataTable columns={syncColumns} data={syncTableData} pageSizes={[999]} />
         </div>
 
         {/* Warning Card */}

@@ -1799,27 +1799,6 @@
         "tags": ["Forms"]
       }
     },
-    "/api/forms/sync-dev-to-prod": {
-      "post": {
-        "operationId": "FormsController_syncFormsToProd",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
-            }
-          },
-          "400": {
-            "description": "Error Response",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
-        },
-        "tags": ["Forms"]
-      }
-    },
     "/api/form-groups": {
       "get": {
         "operationId": "FormGroupsController_getAllFormGroups",
@@ -1908,6 +1887,30 @@
           }
         },
         "tags": ["FormGroups"]
+      }
+    },
+    "/api/form-sync/compare": {
+      "get": {
+        "operationId": "FormSyncController_compareFormVersions",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "tags": ["FormSync"]
+      }
+    },
+    "/api/form-sync/sync": {
+      "post": {
+        "operationId": "FormSyncController_syncAllForms",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "tags": ["FormSync"]
+      }
+    },
+    "/api/form-sync/sync-single": {
+      "post": {
+        "operationId": "FormSyncController_syncSingleForm",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "tags": ["FormSync"]
       }
     },
     "/api/signatory/create/__internal": {
@@ -2823,6 +2826,25 @@
         "properties": { "profile": { "$ref": "#/components/schemas/SignatoryProfile" } },
         "required": ["profile"]
       },
+      "FormProcess": {
+        "type": "object",
+        "properties": {
+          "prefilled_document_id": { "type": "string" },
+          "pending_document_id": { "type": "string" },
+          "signed_document_id": { "type": "string" },
+          "latest_document_url": { "type": "string" },
+          "rejection_reason": { "type": "string" },
+          "display_information": { "type": "object", "additionalProperties": { "type": "string" } }
+        },
+        "required": [
+          "prefilled_document_id",
+          "pending_document_id",
+          "signed_document_id",
+          "latest_document_url",
+          "rejection_reason",
+          "display_information"
+        ]
+      },
       "SignatoryForm": {
         "type": "object",
         "properties": {
@@ -2833,7 +2855,8 @@
           "form_process_status": { "type": "string" },
           "signatory_id": { "type": "string" },
           "rejection_response": { "type": "string" },
-          "timestamp": { "type": "string" }
+          "timestamp": { "type": "string" },
+          "form_processes": { "$ref": "#/components/schemas/FormProcess" }
         },
         "required": [
           "id",
@@ -2843,7 +2866,8 @@
           "form_process_status",
           "signatory_id",
           "rejection_response",
-          "timestamp"
+          "timestamp",
+          "form_processes"
         ]
       },
       "SignatorySignedFormsResponse": {
