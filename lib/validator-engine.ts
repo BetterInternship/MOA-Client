@@ -27,7 +27,8 @@ export type ValidatorRuleType =
   | "trim"
   | "date"
   | "minDate"
-  | "maxDate";
+  | "maxDate"
+  | "plainText";
 
 export interface ValidatorRule {
   id: string;
@@ -78,6 +79,8 @@ const REGEX_PATTERNS = {
   required: /\.nonempty\(\)|required_error|"This field is required"/,
   preprocess: /z\.preprocess\([^,]+,\s*(z\..*)\s*\)$/,
   regex: /\.regex\(\s*\/([^/]+)\/([gimuy]*)[^)]*message\s*:\s*"([^"]+)"/,
+  regexConstructor:
+    /\.regex\(\s*new\s+RegExp\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)[^)]*message\s*:\s*"([^"]+)"/,
 } as const;
 
 // ============================================================================
@@ -183,6 +186,12 @@ const RULE_DEFINITIONS: Record<
     needsValue: true,
     valueType: "string",
   },
+  plainText: {
+    label: "Plain Text Only",
+    description: "Title case and characters only (A–Z, 0–9, spaces, basic punctuation)",
+    needsValue: false,
+    valueType: "none",
+  },
 };
 
 // ============================================================================
@@ -286,7 +295,17 @@ function buildStringValidatorChain(rules: ValidatorRule[]): string {
     const pattern = String(regexRule.params?.value ?? "");
     const flags = String(regexRule.params?.flags ?? "");
     const msg = String(regexRule.params?.message ?? "Invalid format.");
-    code += `.regex(/${pattern}/${flags}, { message: "${msg}" })`;
+    // Use RegExp constructor for complex patterns (e.g., with Unicode properties)
+    if (flags.includes("u") || pattern.includes("\\p{")) {
+      code += `.regex(new RegExp("${pattern}", "${flags}"), { message: "${msg}" })`;
+    } else {
+      code += `.regex(/${pattern}/${flags}, { message: "${msg}" })`;
+    }
+  }
+
+  // Plain text preset (title case and characters only)
+  if (rules.some((r) => r.type === "plainText")) {
+    return `z.string({ required_error: "This field is required." }).trim().min(1, { message: "This field is required." }).max(100).regex(/^(?!.*[\\p{Extended_Pictographic}\\uFE0F])(?!.*[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F])(?!.*[\\u202A-\\u202E\\u2066-\\u2069])[\\p{L}\\p{M}\\p{Pc}\\p{Pd}\\p{Ps}\\p{Pe}\\p{Pi}\\p{Pf}\\p{Po}\\p{Zs}\\n\\r\\t]+$/u, "This field accepts letters, spaces, and common punctuation only. No numbers or emojis.").refine(s => s.replace(/\\p{L}+/gu, w => w[0].toLocaleUpperCase() + w.slice(1).toLocaleLowerCase()) === s, "Please write in title case (capitalize the first letter of each word).")`;
   }
 
   return code;
@@ -389,6 +408,15 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     }
   }
 
+  // Detect plainText preset by checking for the specific regex and refine pattern
+  {
+    const plainTextRegex = /Extended_Pictographic.*u.*refine.*toLocaleUpperCase.*toLocaleLowerCase/;
+    if (plainTextRegex.test(sanitized)) {
+      rules.push(createValidatorRule("plainText"));
+      return { rules };
+    }
+  }
+
   // Parse string/number validators
   const coreValidator = getCoreValidator(sanitized);
   const isNumber = REGEX_PATTERNS.numberType.test(coreValidator);
@@ -448,17 +476,30 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     }
   }
 
-  // Regex pattern
+  // Regex pattern - support both literal /pattern/flags and new RegExp() formats
   {
-    const match = coreValidator.match(REGEX_PATTERNS.regex);
-    if (match) {
+    // Try RegExp constructor first (for Unicode properties)
+    const constructorMatch = coreValidator.match(REGEX_PATTERNS.regexConstructor);
+    if (constructorMatch) {
       const rule = createValidatorRule("regex");
       rule.params = {
-        value: match[1],
-        ...(match[2] && { flags: match[2] }),
-        message: match[3],
+        value: constructorMatch[1],
+        flags: constructorMatch[2],
+        message: constructorMatch[3],
       };
       rules.push(rule);
+    } else {
+      // Fall back to regex literal format
+      const literalMatch = coreValidator.match(REGEX_PATTERNS.regex);
+      if (literalMatch) {
+        const rule = createValidatorRule("regex");
+        rule.params = {
+          value: literalMatch[1],
+          ...(literalMatch[2] && { flags: literalMatch[2] }),
+          message: literalMatch[3],
+        };
+        rules.push(rule);
+      }
     }
   }
 
