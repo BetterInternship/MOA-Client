@@ -7,10 +7,12 @@
  */
 import type { ContinueFormDtoValues } from "./continueFormDtoValues";
 import type { ContinueFormDtoAudit } from "./continueFormDtoAudit";
+import type { SignatureValue } from "./signatureValue";
 
 export interface ContinueFormDto {
   formProcessId: string;
   supposedSigningPartyId: string;
   values: ContinueFormDtoValues;
   audit: ContinueFormDtoAudit;
+  signature?: SignatureValue;
 }
