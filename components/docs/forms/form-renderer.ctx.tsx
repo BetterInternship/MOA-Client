@@ -28,6 +28,7 @@ export const SCHEMA_VERSION = 1;
 // Context interface
 export interface IFormRendererContext<T extends any[]> {
   formName: string;
+  formLabel: string;
   formVersion: number;
   formMetadata: FormMetadata<T>;
   document: IDocument;
@@ -80,6 +81,7 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
   const [documentName, setDocumentName] = useState<string>("");
   const [documentUrl, setDocumentUrl] = useState<string>("");
   const [formName, setFormName] = useState<string>("");
+  const [formLabel, setFormLabel] = useState<string>("");
   const [signingPartyId, setSigningPartyId] = useState<string>("initiator");
   const [formVersion, setFormVersion] = useState<number>(0);
   const [previewFields, setPreviewFields] = useState<ServerField[]>([]);
@@ -141,6 +143,7 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
         // Only update form if it's new
         setFormMetadata(fm);
         setFormName(newFormName);
+        setFormLabel(form.formMetadata.label);
         setFormVersion(newFormVersion);
         setDocumentName(form.formDocument.name);
         setDocumentUrl(form.documentUrl);
@@ -180,6 +183,7 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
   // The form context
   const formContext: IFormRendererContext<[any]> = {
     formName,
+    formLabel,
     formVersion,
     formMetadata,
     fields,

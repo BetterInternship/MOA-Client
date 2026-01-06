@@ -3,14 +3,19 @@
 import { useEffect, useMemo, useRef } from "react";
 import { ClientBlock } from "@betterinternship/core/forms";
 import { FieldRenderer } from "./FieldRenderer";
-import { HeaderRenderer, ParagraphRenderer } from "./BlockrRenderer";
+import { HeaderRenderer, ParagraphRenderer } from "@/components/docs/forms/BlockrRenderer";
 import { useFormRendererContext } from "./form-renderer.ctx";
 import { FormActionButtons } from "./FormActionButtons";
 import { getBlockField, isBlockField } from "./utils";
 import { useFormFiller } from "./form-filler.ctx";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
+import { formatTimestampDateWithoutTime } from "@/lib/utils";
 
-export function FormFillerRenderer() {
+export function FormFillerRenderer({
+  onValuesChange,
+}: {
+  onValuesChange?: (values: Record<string, string>) => void;
+}) {
   const form = useFormRendererContext();
   const formFiller = useFormFiller();
   const autofillValues = useMyAutofill();
@@ -26,7 +31,6 @@ export function FormFillerRenderer() {
       const field = getBlockField(block);
       if (!field) return true;
 
-      // Only include if this is the first time we see this field ID
       if (seenFieldIds.has(field.field)) return false;
       seenFieldIds.add(field.field);
       return true;
@@ -37,6 +41,27 @@ export function FormFillerRenderer() {
     () => formFiller.getFinalValues(autofillValues),
     [formFiller, autofillValues]
   );
+
+  const formatValues = (values: Record<string, any>) => {
+    const formatted: Record<string, string> = {};
+
+    Object.entries(values).forEach(([key, value]) => {
+      // unix timestamp to string
+      const numValue = Number(value);
+      if (!isNaN(numValue) && numValue > 1000000000 && numValue < 999999999999999) {
+        formatted[key] = formatTimestampDateWithoutTime(numValue);
+      } else {
+        formatted[key] = String(value || "");
+      }
+    });
+
+    return formatted;
+  };
+
+  // Notify parent of values change
+  useEffect(() => {
+    onValuesChange?.(formatValues(finalValues));
+  }, [finalValues, onValuesChange]);
 
   // Scroll to selected field
   useEffect(() => {
@@ -58,12 +83,12 @@ export function FormFillerRenderer() {
   }, [form.selectedPreviewId]);
 
   return (
-    <div className="relative flex h-full flex-col rounded-[0.33em] border border-gray-300">
+    <div className="relative flex h-full flex-col">
       <div ref={scrollContainerRef} className="relative flex flex-1 flex-col overflow-auto">
-        <div className="text-opacity-60 shadow-soft border-r border-b border-gray-300 bg-gray-100 px-7 py-3 text-2xl font-bold tracking-tighter text-gray-700">
-          {form.formName}
+        <div className="px-7 py-5">
+          <h2 className="text-primary text-2xl font-bold">{form.formLabel}</h2>
         </div>
-        <div className="mt-7 flex-1 space-y-2 border-r border-gray-300 px-7">
+        <div className="mb-5 flex-1 space-y-3 px-7">
           <BlocksRenderer
             formKey={form.formName}
             blocks={deduplicatedBlocks}
@@ -75,12 +100,12 @@ export function FormFillerRenderer() {
               formFiller.validateField(fieldKey, field, autofillValues)
             }
             fieldRefs={fieldRefs.current}
-            selectedFieldId={form.selectedPreviewId ?? undefined}
+            selectedFieldId={form.selectedPreviewId}
           />
         </div>
       </div>
-      <div className="border-t border-r border-gray-300 bg-gray-100 px-7 py-3">
-        {!!form.fields.length && <FormActionButtons />}
+      <div className="hidden border-t border-r border-gray-300 bg-gray-100 p-2 sm:block">
+        <FormActionButtons />
       </div>
     </div>
   );
