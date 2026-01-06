@@ -124,7 +124,7 @@ export default function MyFormsTable({
   exportEnabled?: boolean;
   exportLabel?: string;
 }) {
-  const columns = isCoordinator ? createFormColumns() : createCoordinatorFormColumns();
+  const columns = isCoordinator ? createCoordinatorFormColumns() : createFormColumns();
   const { openModal } = useModal();
   const modalName = useMemo(
     () => `form-data-${exportLabel ? exportLabel.replace(/\s+/g, "-").toLowerCase() : "all"}`,
