@@ -7,7 +7,6 @@ import {
 } from "@betterinternship/core/forms";
 import { IFormFiller } from "./docs/forms/form-filler.ctx";
 import { SpecifySigningPartiesModal } from "./modals/SpecifySigningPartyModal";
-import { useRouter } from "next/navigation";
 import { FormContinuationSuccessModal } from "./modals/FormContinuationSuccessModal";
 import { FormRejectionPromptModal } from "./modals/FormRejectionPromptModal";
 
@@ -18,7 +17,6 @@ import { FormRejectionPromptModal } from "./modals/FormRejectionPromptModal";
  */
 export const useModalRegistry = () => {
   const { openModal: open, closeModal: close } = useModal();
-  const router = useRouter();
 
   const modalRegistry = {
     // Email confirmation modal
@@ -41,7 +39,11 @@ export const useModalRegistry = () => {
             autofillValues={autofillValues}
           />,
           {
-            title: "Next Signing Parties",
+            title: (
+              <div className="px-5 py-1 text-3xl font-bold tracking-tight">
+                Next Signing Parties
+              </div>
+            ),
             closeOnEsc: false,
             allowBackdropClick: false,
             hasClose: false,
