@@ -33,8 +33,8 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
   const [values, _setValues] = useState({});
   const [errors, _setErrors] = useState({});
 
-  const getFinalValues = (autofillValues?: FormValues) => {
-    return { ...autofillValues, ...values };
+  const getFinalValues = (additionalValues?: FormValues) => {
+    return { ...additionalValues, ...values };
   };
 
   const setValue = (field: string, value: any) => {

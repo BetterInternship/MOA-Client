@@ -1,16 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Eye,
-  Check,
-  Info,
-  ChevronRight,
-  X,
-  Expand,
-  EyeIcon,
-  SquareArrowOutUpRight,
-} from "lucide-react";
+import { Eye, Check, X, SquareArrowOutUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWhen } from "@/lib/format";
 

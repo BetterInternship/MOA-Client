@@ -64,6 +64,25 @@ export function FormActionButtons() {
 
       // Update autofill afterwards (so even if it fails, autofill is there)
       await updateAutofill(form.formName, form.fields, finalValues);
+      const signatureFullName = Object.values(
+        form.formMetadata.getSignatureValueForSigningParty(
+          finalValues,
+          formProcess.my_signing_party_id!
+        )
+      )[0];
+
+      // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE
+      // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE
+      // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE
+      // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE
+      // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE
+      // ! Consider maybe handling titles the same way as signature fields (maybe autogenerate? or maybe create a new class of fields that are autogen?? idk mehn)
+      const signatureTitle =
+        Object.entries(finalValues)
+          .filter(([field, _value]) => field.includes("title:default"))
+          .map(([_field, value]) => value)[0] ?? "";
+      // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE ^^^^^7^^
+      // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE ^^6^^^^^
 
       // Open request for contacts
       if (signingPartyBlocks.length) {
@@ -77,6 +96,10 @@ export function FormActionButtons() {
               supposedSigningPartyId: formProcess.my_signing_party_id!,
               values: { ...finalValues, ...signingPartyValues },
               audit: getClientAudit(),
+              // ! LOLOLOLOL
+              signature: signatureFullName
+                ? { fullName: signatureFullName, title: signatureTitle }
+                : undefined,
             }).then(() => {
               modalRegistry.specifySigningParties.close();
               modalRegistry.formContinuationSuccess.open();
@@ -86,12 +109,15 @@ export function FormActionButtons() {
 
         // Just e-sign and fill-out right away
       } else {
-        // ! does this still need an audit? it's just generating a pdf without sigs
         await formsControllerContinueFormProcess({
           formProcessId: formProcess.id,
           supposedSigningPartyId: formProcess.my_signing_party_id!,
           values: finalValues,
           audit: getClientAudit(),
+          // ! LOLOLOLOL
+          signature: signatureFullName
+            ? { fullName: signatureFullName, title: signatureTitle }
+            : undefined,
         });
 
         await queryClient.invalidateQueries({ queryKey: ["my_forms"] });
