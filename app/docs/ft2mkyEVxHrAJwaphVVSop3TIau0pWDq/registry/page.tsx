@@ -22,6 +22,7 @@ interface FormRow {
   name: string;
   version: number;
   id: string;
+  lastUpdated?: string;
   comparisonItem?: ComparisonItem;
   comparisonLoading: boolean;
   onEdit: (name: string) => void;
@@ -96,13 +97,18 @@ const FormRegistryPage = () => {
       cell: ({ row }) => `v${row.getValue("version")}`,
     },
     {
-      accessorKey: "id",
-      header: "Dev ID",
-      cell: ({ row }) => (
-        <span className="text-xs text-slate-500">
-          {(row.getValue("id") as string)?.slice(0, 8)}...
-        </span>
-      ),
+      accessorKey: "lastUpdated",
+      header: "Last Updated",
+      cell: ({ row }) => {
+        const timestamp = row.getValue("lastUpdated") as string | undefined;
+        if (!timestamp) return <span className="text-xs text-slate-400">—</span>;
+        const date = new Date(timestamp);
+        return (
+          <span className="text-xs text-slate-600">
+            {date.toLocaleDateString()} {date.toLocaleTimeString()}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "comparisonItem",
@@ -152,6 +158,7 @@ const FormRegistryPage = () => {
     name: form.name,
     version: form.version,
     id: form.id,
+    lastUpdated: (form as any).time_generated,
     comparisonItem: comparison.find((c) => c.formName === form.name),
     comparisonLoading,
     onEdit: handleEditForm,
