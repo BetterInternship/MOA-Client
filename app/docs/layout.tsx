@@ -49,11 +49,11 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                   <img
                     src="/betterinternship-logo.png"
                     alt="Logo"
-                    width={30}
-                    height={30}
+                    width={25}
+                    height={25}
                     className="flex-none"
                   />
-                  <h1 className="mb-0.5 hidden items-center gap-2 text-lg font-semibold tracking-tighter sm:flex sm:text-2xl">
+                  <h1 className="mb-0.5 hidden items-center gap-2 text-lg font-semibold tracking-tighter sm:flex sm:text-xl">
                     BetterInternship
                   </h1>
                 </div>
