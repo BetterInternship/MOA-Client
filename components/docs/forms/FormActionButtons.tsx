@@ -16,17 +16,24 @@ import { useFormProcess } from "./form-process.ctx";
 import { useSignContext } from "@/app/docs/auth/provider/sign.ctx";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
+import {
+  ISignatoryFormSettings,
+  useFormSettings,
+} from "@/app/docs/auth/provider/form-settings.ctx";
+import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 
 export function FormActionButtons() {
   const form = useFormRendererContext();
   const formFiller = useFormFiller();
   const formProcess = useFormProcess();
+  const formSettings = useFormSettings();
   const autofillValues = useMyAutofill();
   const signContext = useSignContext();
   const profile = useSignatoryProfile();
   const modalRegistry = useModalRegistry();
   const updateAutofill = useMyAutofillUpdate();
   const queryClient = useQueryClient();
+  const { update } = useSignatoryAccountActions();
   const [busy, setBusy] = useState<boolean>(false);
 
   // Signing blocks
@@ -45,12 +52,15 @@ export function FormActionButtons() {
    * @param _bypassConfirm - internal flag to skip recipient confirmation on re-call
    * @returns
    */
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setBusy(true);
     if (!profile.id) return;
 
     // Validate fields before allowing to proceed
-    const finalValues = formFiller.getFinalValues(autofillValues);
+    const signature = form.formMetadata.getSignatureValueForSigningParty(
+      formFiller.getFinalValues({}),
+      formProcess.my_signing_party_id!
+    );
     const errors = formFiller.validate(form.fields, autofillValues);
     if (Object.keys(errors).length) {
       toast.error("There are missing fields", toastPresets.destructive);
@@ -58,43 +68,54 @@ export function FormActionButtons() {
       return;
     }
 
-    // proceed to save + submit
+    // Proceed to save and submit
     try {
       setBusy(true);
 
-      // Update autofill afterwards (so even if it fails, autofill is there)
-      await updateAutofill(form.formName, form.fields, finalValues);
-
       // Open request for contacts
       if (signingPartyBlocks.length) {
-        modalRegistry.specifySigningParties.open(
+        modalRegistry.specifySigningPartiesAndFormSettingsSetup.open(
           form.fields,
           formFiller,
           signingPartyBlocks,
-          (signingPartyValues: FormValues) =>
+          (finalValues: FormValues, settings: ISignatoryFormSettings) =>
             formsControllerContinueFormProcess({
               formProcessId: formProcess.id,
               supposedSigningPartyId: formProcess.my_signing_party_id!,
-              values: { ...finalValues, ...signingPartyValues },
+              values: finalValues,
               audit: getClientAudit(),
-            }).then(() => {
-              modalRegistry.specifySigningParties.close();
+            }).then(async () => {
+              await queryClient.invalidateQueries({ queryKey: ["my-forms"] });
+              await formSettings.updateFormSettings(formProcess.form_name!, settings);
+              if (settings.autosign && signature) await update.mutateAsync({ name: signature });
+              modalRegistry.specifySigningPartiesAndFormSettingsSetup.close();
               modalRegistry.formContinuationSuccess.open();
             }),
+          (finalValues: FormValues) => updateAutofill(form.formName, form.fields, finalValues),
           autofillValues
         );
 
         // Just e-sign and fill-out right away
       } else {
-        await formsControllerContinueFormProcess({
-          formProcessId: formProcess.id,
-          supposedSigningPartyId: formProcess.my_signing_party_id!,
-          values: finalValues,
-          audit: getClientAudit(),
-        });
-
-        await queryClient.invalidateQueries({ queryKey: ["my_forms"] });
-        modalRegistry.formContinuationSuccess.open();
+        modalRegistry.formSettingsSetup.open(
+          form.fields,
+          formFiller,
+          (finalValues: FormValues, settings: ISignatoryFormSettings) =>
+            formsControllerContinueFormProcess({
+              formProcessId: formProcess.id,
+              supposedSigningPartyId: formProcess.my_signing_party_id!,
+              values: finalValues,
+              audit: getClientAudit(),
+            }).then(async () => {
+              await queryClient.invalidateQueries({ queryKey: ["my-forms"] });
+              await formSettings.updateFormSettings(formProcess.form_name!, settings);
+              if (settings.autosign && signature) await update.mutateAsync({ name: signature });
+              modalRegistry.specifySigningPartiesAndFormSettingsSetup.close();
+              modalRegistry.formContinuationSuccess.open();
+            }),
+          (finalValues: FormValues) => updateAutofill(form.formName, form.fields, finalValues),
+          autofillValues
+        );
       }
 
       setBusy(false);

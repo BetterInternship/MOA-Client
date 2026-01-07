@@ -35,11 +35,23 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
     queryKey: ["my-profile"],
     queryFn: async () => await getSignatorySelf(),
     staleTime: 60_000,
+    retry: (failureCount, error: any) => {
+      // Don't retry on 401 (Unauthorized) - user is logged out
+      if (error?.response?.status === 401) {
+        return false;
+      }
+      // Retry up to 3 times for other errors
+      return failureCount < 3;
+    },
   });
 
   useEffect(() => {
     const profile = signatoryProfile.data?.profile;
-    if (profile) {
+
+    // Clear context if there's an error (like 401 after logout) OR no profile
+    if (signatoryProfile.status === "error" || !profile) {
+      setSignatoryContext({} as ISignatoryProfile);
+    } else if (profile) {
       setSignatoryContext({
         ...profile,
         autofill: profile.autofill as Record<string, Record<string, string>>,
@@ -47,7 +59,7 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
         loading: signatoryProfile.isLoading,
       });
     }
-  }, [signatoryProfile.data]);
+  }, [signatoryProfile.data, signatoryProfile.status, signatoryProfile.error]);
 
   return (
     <SignatoryProfileContext.Provider value={signatoryContext}>

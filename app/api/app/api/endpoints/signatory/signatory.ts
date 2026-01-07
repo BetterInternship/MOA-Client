@@ -27,6 +27,9 @@ import type {
   BaseResponse,
   CreateSignatoryResponse,
   ErrorResponse,
+  GetSignatoryFormSettingsRequest,
+  GetSignatoryFormSettingsResponse,
+  SetSignatoryFormSettingsRequest,
   SignatorySelfResponse,
   SignatorySignedFormsResponse,
   UpdateSignatoryDto,
@@ -681,6 +684,160 @@ export const useSignatoryControllerGetSignedDocumentsBySignatoryInternally = <
 > => {
   const mutationOptions =
     getSignatoryControllerGetSignedDocumentsBySignatoryInternallyMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const signatoryControllerGetSignatoryFormSettings = (
+  getSignatoryFormSettingsRequest: GetSignatoryFormSettingsRequest,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<GetSignatoryFormSettingsResponse>({
+    url: `/api/signatory/me/form-settings`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: getSignatoryFormSettingsRequest,
+    signal,
+  });
+};
+
+export const getSignatoryControllerGetSignatoryFormSettingsMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormSettings>>,
+    TError,
+    { data: GetSignatoryFormSettingsRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormSettings>>,
+  TError,
+  { data: GetSignatoryFormSettingsRequest },
+  TContext
+> => {
+  const mutationKey = ["signatoryControllerGetSignatoryFormSettings"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormSettings>>,
+    { data: GetSignatoryFormSettingsRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return signatoryControllerGetSignatoryFormSettings(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignatoryControllerGetSignatoryFormSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormSettings>>
+>;
+export type SignatoryControllerGetSignatoryFormSettingsMutationBody =
+  GetSignatoryFormSettingsRequest;
+export type SignatoryControllerGetSignatoryFormSettingsMutationError = ErrorResponse;
+
+export const useSignatoryControllerGetSignatoryFormSettings = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormSettings>>,
+      TError,
+      { data: GetSignatoryFormSettingsRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormSettings>>,
+  TError,
+  { data: GetSignatoryFormSettingsRequest },
+  TContext
+> => {
+  const mutationOptions = getSignatoryControllerGetSignatoryFormSettingsMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const signatoryControllerSetSignatoryFormSettings = (
+  setSignatoryFormSettingsRequest: SetSignatoryFormSettingsRequest
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/signatory/me/form-settings`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: setSignatoryFormSettingsRequest,
+  });
+};
+
+export const getSignatoryControllerSetSignatoryFormSettingsMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signatoryControllerSetSignatoryFormSettings>>,
+    TError,
+    { data: SetSignatoryFormSettingsRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signatoryControllerSetSignatoryFormSettings>>,
+  TError,
+  { data: SetSignatoryFormSettingsRequest },
+  TContext
+> => {
+  const mutationKey = ["signatoryControllerSetSignatoryFormSettings"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signatoryControllerSetSignatoryFormSettings>>,
+    { data: SetSignatoryFormSettingsRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return signatoryControllerSetSignatoryFormSettings(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignatoryControllerSetSignatoryFormSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerSetSignatoryFormSettings>>
+>;
+export type SignatoryControllerSetSignatoryFormSettingsMutationBody =
+  SetSignatoryFormSettingsRequest;
+export type SignatoryControllerSetSignatoryFormSettingsMutationError = ErrorResponse;
+
+export const useSignatoryControllerSetSignatoryFormSettings = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signatoryControllerSetSignatoryFormSettings>>,
+      TError,
+      { data: SetSignatoryFormSettingsRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof signatoryControllerSetSignatoryFormSettings>>,
+  TError,
+  { data: SetSignatoryFormSettingsRequest },
+  TContext
+> => {
+  const mutationOptions = getSignatoryControllerSetSignatoryFormSettingsMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

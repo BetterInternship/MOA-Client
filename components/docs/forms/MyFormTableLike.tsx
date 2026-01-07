@@ -58,8 +58,23 @@ export default function MyFormsTableLike({
           ) : (
             forms.map((r, i) =>
               r.isLoading ? (
-                <div className="border-b p-2">
-                  <Loader2>Alright</Loader2>
+                <div key={r.name} className="border-b p-3">
+                  <div className="grid grid-cols-12 items-center gap-3">
+                    {/* Form name skeleton */}
+                    <div className="col-span-6 space-y-2">
+                      <div className="h-5 w-32 animate-pulse rounded bg-gray-300"></div>
+                      <div className="h-8 w-48 animate-pulse rounded bg-gray-200"></div>
+                    </div>
+                    <div className="col-span-2"></div>
+                    {/* Default values skeleton */}
+                    <div className="col-span-2 flex justify-center">
+                      <div className="h-9 w-40 animate-pulse rounded bg-gray-200"></div>
+                    </div>
+                    {/* Auto-sign skeleton */}
+                    <div className="col-span-2 flex justify-center">
+                      <div className="h-9 w-20 animate-pulse rounded bg-gray-200"></div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <MyFormRow

@@ -81,7 +81,7 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
       _setErrors((prev) => ({ ...prev, [fieldKey]: error }));
     } else {
       _setErrors((prev) => {
-        const newErrors = { ...prev };
+        const newErrors: Record<string, string> = { ...prev };
         delete newErrors[fieldKey];
         return newErrors;
       });

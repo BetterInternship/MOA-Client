@@ -177,6 +177,8 @@ export default function DocsLoginPage() {
       } else {
         setResentAt(Date.now());
       }
+    } catch (error) {
+      setEmailErr(error instanceof Error ? error.message : "Failed to send code");
     } finally {
       setBusy(false);
     }
@@ -201,6 +203,8 @@ export default function DocsLoginPage() {
       // success → go to dashboard
       await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
       router.push("/docs/dashboard");
+    } catch (error) {
+      setOtpErr(error instanceof Error ? error.message : "Verification failed");
     } finally {
       setBusy(false);
     }
@@ -223,6 +227,8 @@ export default function DocsLoginPage() {
       } else {
         setResentAt(Date.now());
       }
+    } catch (error) {
+      setOtpErr(error instanceof Error ? error.message : "Failed to resend code");
     } finally {
       setBusy(false);
     }
@@ -242,7 +248,7 @@ export default function DocsLoginPage() {
 
       {step === "email" && (
         <Card className="space-y-4 p-5 sm:p-6">
-          <form className="space-y-4" onSubmit={() => void startOtpFlow()} noValidate>
+          <form className="space-y-4" onSubmit={(e) => void startOtpFlow(e)} noValidate>
             <div>
               <label className="mb-1 block text-xs text-gray-600">Email</label>
               <div className="relative">
@@ -282,7 +288,7 @@ export default function DocsLoginPage() {
             </p>
           </div>
 
-          <form onSubmit={() => void verifyOtp()} className="space-y-4" noValidate>
+          <form onSubmit={(e) => void verifyOtp(e)} className="space-y-4" noValidate>
             <div className="flex flex-col items-center">
               <OtpInput value={otp} onChange={setOtp} disabled={busy} />
             </div>

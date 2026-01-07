@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, Check, X, SquareArrowOutUpRight } from "lucide-react";
+import { Eye, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWhen } from "@/lib/format";
 
@@ -40,18 +40,17 @@ export default function MyFormRow({
           <div className="text-md truncate font-medium">{row.name}</div>
         </div>
         <div className="flex flex-row space-x-2">
-          <span className="text-sm">previews: </span>
           {isCoordinator &&
             parties &&
             parties.map((p) => (
               <Button
-                size="xs"
-                variant="outline"
+                key={p}
+                size="sm"
                 onClick={() => onPreview(p)}
-                aria-label={`Preview ${row.name}`}
+                aria-label={`Preview ${row.name} as ${p}`}
               >
-                {p}
-                <SquareArrowOutUpRight className="h-3! w-3!" />
+                <Eye className="mr-1.5 h-4 w-4" />
+                Preview Forms
               </Button>
             ))}
         </div>
