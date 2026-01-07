@@ -153,6 +153,7 @@ export const FormLayoutEditor = ({
       block_type: "header" as const,
       order: orderedBlocks.length,
       signing_party_id: "",
+      text_content: "New Section",
     };
     const newBlocks = [...orderedBlocks, newBlock];
     setOrderedBlocks(newBlocks);

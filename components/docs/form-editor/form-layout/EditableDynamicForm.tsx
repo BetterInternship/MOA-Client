@@ -71,14 +71,21 @@ export const EditableDynamicForm = ({
     }
   }, [initialBlocks]);
 
-  const handleDragStart = useCallback((index: number, partyId?: string) => {
-    setDraggedIndex(index);
-    setDraggedFromPartyId(partyId || null);
-  }, []);
+  const handleDragStart = useCallback(
+    (blockId: string, partyId?: string) => {
+      // Find the global index by block _id
+      const index = blocks.findIndex((b) => b._id === blockId);
+      setDraggedIndex(index);
+      setDraggedFromPartyId(partyId || null);
+    },
+    [blocks]
+  );
 
   const handleDragOver = useCallback(
-    (index: number, targetPartyId?: string) => {
-      if (draggedIndex === null || draggedIndex === index) return;
+    (blockId: string, targetPartyId?: string) => {
+      // Find the global index by block _id
+      const targetIndex = blocks.findIndex((b) => b._id === blockId);
+      if (draggedIndex === null || draggedIndex === targetIndex) return;
 
       const newBlocks = [...blocks];
       const draggedItem = newBlocks[draggedIndex];
@@ -92,9 +99,9 @@ export const EditableDynamicForm = ({
       }
 
       newBlocks.splice(draggedIndex, 1);
-      newBlocks.splice(index, 0, draggedItem);
+      newBlocks.splice(targetIndex, 0, draggedItem);
 
-      setDraggedIndex(index);
+      setDraggedIndex(targetIndex);
       setBlocks(newBlocks);
     },
     [draggedIndex, blocks, draggedFromPartyId]
@@ -270,16 +277,12 @@ export const EditableDynamicForm = ({
                   {
                     editorMode: true,
                     onDragStart: (index) => {
-                      const globalIndex = blocks.findIndex(
-                        (b) => b._id === groupedBlocks.unassigned[index]._id
-                      );
-                      handleDragStart(globalIndex);
+                      const blockId = groupedBlocks.unassigned[index]._id;
+                      handleDragStart(blockId);
                     },
                     onDragOver: (index) => {
-                      const globalIndex = blocks.findIndex(
-                        (b) => b._id === groupedBlocks.unassigned[index]._id
-                      );
-                      handleDragOver(globalIndex);
+                      const blockId = groupedBlocks.unassigned[index]._id;
+                      handleDragOver(blockId);
                     },
                     onDragEnd: handleDragEnd,
                     draggedIndex,
@@ -340,16 +343,12 @@ export const EditableDynamicForm = ({
                     {
                       editorMode: true,
                       onDragStart: (index) => {
-                        const globalIndex = blocks.findIndex(
-                          (b) => b._id === manualBlocks[index]._id
-                        );
-                        handleDragStart(globalIndex, party._id);
+                        const blockId = manualBlocks[index]._id;
+                        handleDragStart(blockId, party._id);
                       },
                       onDragOver: (index) => {
-                        const globalIndex = blocks.findIndex(
-                          (b) => b._id === manualBlocks[index]._id
-                        );
-                        handleDragOver(globalIndex, party._id);
+                        const blockId = manualBlocks[index]._id;
+                        handleDragOver(blockId, party._id);
                       },
                       onDragEnd: handleDragEnd,
                       draggedIndex,
@@ -383,16 +382,12 @@ export const EditableDynamicForm = ({
                       {
                         editorMode: true,
                         onDragStart: (index) => {
-                          const globalIndex = blocks.findIndex(
-                            (b) => b._id === autoBlocks[index]._id
-                          );
-                          handleDragStart(globalIndex, party._id);
+                          const blockId = autoBlocks[index]._id;
+                          handleDragStart(blockId, party._id);
                         },
                         onDragOver: (index) => {
-                          const globalIndex = blocks.findIndex(
-                            (b) => b._id === autoBlocks[index]._id
-                          );
-                          handleDragOver(globalIndex, party._id);
+                          const blockId = autoBlocks[index]._id;
+                          handleDragOver(blockId, party._id);
                         },
                         onDragEnd: handleDragEnd,
                         draggedIndex,

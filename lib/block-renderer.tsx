@@ -79,7 +79,7 @@ export const renderBlock = (
   } = options;
 
   const { values, onChange, errors = {}, onBlurValidate } = fieldProps;
-  const blockId = `block:${block.order}`;
+  const blockId = `block:${block._id}`;
 
   const isSelected = selectedIndex === blockIndex;
   const baseClasses = stripStyling
