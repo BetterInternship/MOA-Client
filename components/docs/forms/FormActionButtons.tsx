@@ -77,10 +77,10 @@ export function FormActionButtons() {
       // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE
       // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE
       // ! Consider maybe handling titles the same way as signature fields (maybe autogenerate? or maybe create a new class of fields that are autogen?? idk mehn)
-      const signatureTitle =
-        Object.entries(finalValues)
-          .filter(([field, _value]) => field.includes("title:default"))
-          .map(([_field, value]) => value)[0] ?? "";
+      const signatureTitle = "";
+      // Object.entries(finalValues)
+      //   .filter(([field, _value]) => field.includes("title:default"))
+      //   .map(([_field, value]) => value)[0] ?? "";
       // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE ^^^^^7^^
       // ! EEE THIS TOO GHETTO, FIX IN THE FUTURE ^^6^^^^^
 
