@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-18 15:17:08
- * @ Modified time: 2026-01-05 20:48:31
+ * @ Modified time: 2026-01-07 10:24:13
  * @ Description:
  *
  * These are the forms a user has generated or initiated.
@@ -46,7 +46,9 @@ export const MyFormsContextProvider = ({ children }: { children: React.ReactNode
       const res = await getAllSignedForms();
       return res?.forms ?? [];
     },
-    staleTime: 60 * 60 * 1000,
+    // ! place this in env
+    staleTime: 1 * 60 * 1000,
+    gcTime: 1 * 60 * 1000,
   });
 
   const mappedForms =
