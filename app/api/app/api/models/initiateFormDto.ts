@@ -7,12 +7,10 @@
  */
 import type { InitiateFormDtoValues } from "./initiateFormDtoValues";
 import type { InitiateFormDtoAudit } from "./initiateFormDtoAudit";
-import type { SignatureValue } from "./signatureValue";
 
 export interface InitiateFormDto {
   formName: string;
   formVersion: number;
   values: InitiateFormDtoValues;
   audit: InitiateFormDtoAudit;
-  signature?: SignatureValue;
 }

@@ -11,6 +11,7 @@ import type { SignatorySource } from "./signatorySource";
 export interface FormSigningParty {
   _id: string;
   order: number;
+  signatory_title: string;
   signatory_account: FormSigningPartySignatoryAccount;
   signatory_source: SignatorySource;
   signed: boolean;
