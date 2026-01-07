@@ -39,7 +39,7 @@ export default function DocsTopbarUser() {
         </div>,
         { ...toastPresets.loading, duration: Infinity }
       );
-      
+
       // Refetch to trigger the 401 error and let context clear
       try {
         await queryClient.refetchQueries({ queryKey: ["my-profile"] });
@@ -137,6 +137,13 @@ export default function DocsTopbarUser() {
                   </button>
                 </Link>
 
+                <Link href="/forms" className="block w-full">
+                  <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
+                    <span>{profile.coordinatorId ? "Forms Preview" : "My Saved Templates"} </span>
+                    <ChevronRight className="h-4 w-4 text-gray-300" />
+                  </button>
+                </Link>
+
                 {profile.god && (
                   <>
                     <div className="mt-3 px-3 py-1.5 text-xs font-semibold tracking-wider text-gray-600 uppercase">
@@ -203,6 +210,12 @@ export default function DocsTopbarUser() {
       <div className="flex items-center gap-2">
         <Link href="/dashboard">
           <Button variant="ghost">My Signed Forms</Button>
+        </Link>
+
+        <Link href="/forms">
+          <Button variant="ghost">
+            {profile.coordinatorId ? "Forms Preview" : "My Saved Templates"}{" "}
+          </Button>
         </Link>
 
         {profile.god && (
