@@ -30,22 +30,30 @@ export const FieldTypeSelect = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fieldTypes = useMemo(() => {
-    // Sort fields by label
-    const sorted = registry
-      .map((field) => ({
-        value: field.id,
-        label: field.label,
-        preset: field.preset,
-      }))
+    // Separate fields into preset and non-preset
+    const fields = registry.map((field) => ({
+      value: field.id,
+      label: field.label,
+      preset: field.preset,
+    }));
+
+    const presetFields = fields
+      .filter((f) => f.preset === "preset")
       .sort((a, b) => a.label.localeCompare(b.label));
+    const otherFields = fields
+      .filter((f) => f.preset !== "preset")
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    // Combine with preset fields first
+    const combined = [...presetFields, ...otherFields];
 
     // Filter by search term
     if (!searchTerm.trim()) {
-      return sorted;
+      return combined;
     }
 
     const lowerSearch = searchTerm.toLowerCase();
-    return sorted.filter((type) => type.label.toLowerCase().includes(lowerSearch));
+    return combined.filter((type) => type.label.toLowerCase().includes(lowerSearch));
   }, [registry, searchTerm]);
 
   const selectedLabel = useMemo(
@@ -109,15 +117,27 @@ export const FieldTypeSelect = ({
           {fieldTypes.length === 0 ? (
             <div className="p-2 text-center text-xs text-slate-500">No fields found</div>
           ) : (
-            fieldTypes.map((type) => (
-              <button
-                key={type.value}
-                onClick={() => handleSelect(type.value)}
-                className="w-full border-b border-slate-100 px-3 py-2 text-left text-xs transition-colors last:border-b-0 hover:bg-blue-50"
-              >
-                {type.label} <strong>({type.preset})</strong>
-              </button>
-            ))
+            <>
+              {fieldTypes.map((type, index) => {
+                const isPreset = type.preset === "preset";
+                const nextIsNotPreset =
+                  index < fieldTypes.length - 1 && fieldTypes[index + 1].preset !== "preset";
+
+                return (
+                  <div key={type.value}>
+                    <button
+                      onClick={() => handleSelect(type.value)}
+                      className="w-full px-3 py-2 text-left text-xs transition-colors hover:bg-blue-50"
+                    >
+                      {type.label} <strong>({type.preset})</strong>
+                    </button>
+                    {isPreset && nextIsNotPreset && (
+                      <div className="my-1 border-t border-slate-200" />
+                    )}
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
       )}
