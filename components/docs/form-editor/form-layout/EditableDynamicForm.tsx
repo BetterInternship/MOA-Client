@@ -340,11 +340,15 @@ export const EditableDynamicForm = ({
                     {
                       editorMode: true,
                       onDragStart: (index) => {
-                        const globalIndex = blocks.findIndex((b) => b._id === manualBlocks[index]._id);
+                        const globalIndex = blocks.findIndex(
+                          (b) => b._id === manualBlocks[index]._id
+                        );
                         handleDragStart(globalIndex, party._id);
                       },
                       onDragOver: (index) => {
-                        const globalIndex = blocks.findIndex((b) => b._id === manualBlocks[index]._id);
+                        const globalIndex = blocks.findIndex(
+                          (b) => b._id === manualBlocks[index]._id
+                        );
                         handleDragOver(globalIndex, party._id);
                       },
                       onDragEnd: handleDragEnd,
@@ -379,11 +383,15 @@ export const EditableDynamicForm = ({
                       {
                         editorMode: true,
                         onDragStart: (index) => {
-                          const globalIndex = blocks.findIndex((b) => b._id === autoBlocks[index]._id);
+                          const globalIndex = blocks.findIndex(
+                            (b) => b._id === autoBlocks[index]._id
+                          );
                           handleDragStart(globalIndex, party._id);
                         },
                         onDragOver: (index) => {
-                          const globalIndex = blocks.findIndex((b) => b._id === autoBlocks[index]._id);
+                          const globalIndex = blocks.findIndex(
+                            (b) => b._id === autoBlocks[index]._id
+                          );
                           handleDragOver(globalIndex, party._id);
                         },
                         onDragEnd: handleDragEnd,

@@ -145,13 +145,22 @@ const PdfJsEditorPage = () => {
   useEffect(() => {
     if (formData?.formMetadata) {
       const metadataData = formData.formMetadata as any as IFormMetadata;
-      setMetadata(metadataData);
-      const newFormMetadata = new FormMetadata(metadataData);
+      // Ensure all signing parties have signatory_title
+      const partiesWithTitle = (metadataData.signing_parties || []).map((party: any) => ({
+        ...party,
+        signatory_title: party.signatory_title || party._id,
+      }));
+      const metadataWithParties = {
+        ...metadataData,
+        signing_parties: partiesWithTitle,
+      };
+      setMetadata(metadataWithParties);
+      const newFormMetadata = new FormMetadata(metadataWithParties);
       setFormLabel(newFormMetadata.getLabel());
       setEditingNameValue(newFormMetadata.getLabel());
 
       // Update fields from loaded metadata - MUST include _id from blocks
-      const blocksData = metadataData.schema.blocks;
+      const blocksData = metadataWithParties.schema.blocks;
       const fieldsFromMetadata: FormField[] = blocksData
         .filter((block: any) => block.block_type === "form_field" && block.field_schema)
         .map((block: any) => {
@@ -608,9 +617,13 @@ const PdfJsEditorPage = () => {
               ...editedMetadata.schema,
               blocks: blocksWithIdsAndOrder,
             },
-            signing_parties: Array.isArray(editedMetadata.signing_parties)
+            signing_parties: (Array.isArray(editedMetadata.signing_parties)
               ? editedMetadata.signing_parties
-              : [editedMetadata.signing_parties],
+              : [editedMetadata.signing_parties]
+            ).map((party: any) => ({
+              ...party,
+              signatory_title: party.signatory_title || party._id,
+            })),
             ...(fileToSubmit && { base_document: fileToSubmit }),
           };
 
