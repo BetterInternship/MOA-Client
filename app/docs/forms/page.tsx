@@ -4,12 +4,13 @@ import React from "react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Newspaper } from "lucide-react";
+import { Newspaper, Loader2 } from "lucide-react";
 import { getViewableForms } from "@/app/api/docs.api";
 import { useModal } from "@/app/providers/modal-provider";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
-import FormPreviewModal from "@/components/docs/forms/FormPreviewModal";
+import { FormPreview } from "@/components/docs/form-editor/form-layout/FormPreview";
+import { getFormFields } from "@/app/api/forms.api";
 import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorModal";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
 
@@ -58,11 +59,89 @@ export default function DocsFormsPage() {
   const { openModal } = useModal();
 
   // Open form preview
-  const onPreview = (name: string, party: string) => {
-    openModal(`form-preview:${name}`, <FormPreviewModal formName={name} selectedParty={party} />, {
-      title: `Preview: ${name}`,
-      useCustomPanel: true,
-    });
+  const onPreview = async (name: string, party: string) => {
+    // Show loading modal first
+    openModal(
+      `form-preview:${name}`,
+      <div className="flex h-[80dvh] w-full items-center justify-center transition-opacity">
+        <Loader2 className="text-primary h-12 w-12 animate-spin" />
+      </div>,
+      {
+        title: `Preview: ${name}`,
+        panelClassName:
+          "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
+        contentClassName: "flex-1 overflow-hidden p-0",
+        showHeaderDivider: true,
+      }
+    );
+
+    // Load form data
+    try {
+      const formData = await getFormFields(name);
+
+      // Update modal with actual content
+      openModal(
+        `form-preview:${name}`,
+        <div className="h-[80dvh] w-full">
+          <FormPreview
+            formName={name}
+            blocks={formData.formMetadata?.schema?.blocks || []}
+            signingParties={
+              formData.formMetadata?.schema?.blocks
+                ?.flatMap((block) => (block.signing_party_id ? [block.signing_party_id] : []))
+                ?.filter((party, index, self) => self.indexOf(party) === index)
+                ?.map((partyId) => ({
+                  _id: partyId,
+                  name: partyId,
+                  label: partyId,
+                })) || []
+            }
+            documentUrl={formData.formUrl || ""}
+            metadata={formData.formMetadata}
+          />
+        </div>,
+        {
+          title: `Preview: ${name}`,
+          panelClassName:
+            "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
+          contentClassName: "flex-1 overflow-hidden p-4",
+          showHeaderDivider: true,
+        }
+      );
+    } catch (error) {
+      console.error("Failed to load form:", error);
+      openModal(
+        `form-preview:${name}`,
+        <div className="flex h-[80vh] items-center justify-center">
+          <div className="w-full max-w-sm rounded-xl bg-white p-8 text-center shadow-lg">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+              <svg
+                className="h-7 w-7 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-900">Failed to load form</h3>
+            <p className="mt-2 text-sm text-gray-600">Please try again later or contact support</p>
+          </div>
+        </div>,
+        {
+          title: `Preview: ${name}`,
+          panelClassName:
+            "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
+          contentClassName: "flex-1 overflow-hidden p-0",
+          showHeaderDivider: true,
+        }
+      );
+    }
   };
 
   // Open auto-sign editor
@@ -118,7 +197,7 @@ export default function DocsFormsPage() {
       </div>
       <MyFormsTableLike
         rows={rows}
-        onPreview={(name, party) => onPreview(name, party)}
+        onPreview={(name, party) => void onPreview(name, party)}
         onOpenAutoSignForm={(name, party, currentValue) =>
           void onOpenAutoSignForm(name, party, currentValue)
         }
