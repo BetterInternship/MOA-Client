@@ -11,14 +11,16 @@ const createToastPreset = (
   background: string,
   options: ToastOptions = {}
 ) => {
-  const { center = true, fitContent = true } = options;
+  const { center = true, fitContent = false } = options;
   return {
     icon,
     style: {
       background,
       color: "#ffffff",
       border: "none",
-      ...(center && { textAlign: "center" as const }),
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       ...(fitContent && { width: "fit-content" }),
     },
   };

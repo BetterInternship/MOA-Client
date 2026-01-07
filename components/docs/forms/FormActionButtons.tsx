@@ -14,6 +14,8 @@ import { formsControllerContinueFormProcess } from "@/app/api";
 import useModalRegistry from "@/components/modal-registry";
 import { useFormProcess } from "./form-process.ctx";
 import { useSignContext } from "@/app/docs/auth/provider/sign.ctx";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
 
 export function FormActionButtons() {
   const form = useFormRendererContext();
@@ -50,7 +52,11 @@ export function FormActionButtons() {
     // Validate fields before allowing to proceed
     const finalValues = formFiller.getFinalValues(autofillValues);
     const errors = formFiller.validate(form.fields, autofillValues);
-    if (Object.keys(errors).length) return setBusy(false);
+    if (Object.keys(errors).length) {
+      toast.error("There are missing fields", toastPresets.destructive);
+      setBusy(false);
+      return;
+    }
 
     // proceed to save + submit
     try {
@@ -140,7 +146,10 @@ export function FormActionButtons() {
           className="w-full text-xs sm:w-auto"
           disabled={busy}
         >
-          <TextLoader loading={busy}>{"Reject Form"}</TextLoader>
+          <TextLoader loading={busy}>
+            <span className="sm:hidden">Reject</span>
+            <span className="hidden sm:inline">Reject Form</span>
+          </TextLoader>
         </Button>
       )}
       <Button
@@ -149,7 +158,10 @@ export function FormActionButtons() {
         className="w-full text-xs sm:w-auto"
         disabled={busy || !signContext.hasAgreed}
       >
-        <TextLoader loading={busy}>{"Submit Form"}</TextLoader>
+        <TextLoader loading={busy}>
+          <span className="sm:hidden">Submit</span>
+          <span className="hidden sm:inline">Submit Form</span>
+        </TextLoader>
       </Button>
     </div>
   );

@@ -42,3 +42,18 @@ export const formatDateWithoutTime = (dateString?: string | null) => {
     day: "numeric",
   });
 };
+
+/**
+ * Return a formatted date string from a UNIX timestamp without the time.
+ * @param timestamp Timestamp/date in UNIX timestamp format.
+ * @returns
+ */
+export const formatTimestampDateWithoutTime = (timestamp?: number | null) => {
+  if (!timestamp) return "-";
+  const date = new Date(timestamp);
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
