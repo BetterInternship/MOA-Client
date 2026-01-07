@@ -98,6 +98,7 @@ export default function DocsFormsPage() {
             }
             documentUrl={formData.formUrl || ""}
             metadata={formData.formMetadata}
+            showTestPdfButton={false}
           />
         </div>,
         {

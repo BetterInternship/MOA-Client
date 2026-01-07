@@ -19,6 +19,7 @@ interface FormPreviewProps {
   signingParties: IFormSigningParty[];
   documentUrl?: string;
   metadata?: IFormMetadata;
+  showTestPdfButton?: boolean;
 }
 
 /**
@@ -31,6 +32,7 @@ const FormPreviewContent = ({
   signingParties,
   documentUrl,
   metadata,
+  showTestPdfButton = true,
 }: FormPreviewProps) => {
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(
     signingParties.length > 0 ? signingParties[0]._id : null
@@ -129,25 +131,27 @@ const FormPreviewContent = ({
       </div>
 
       {/* Test Form Generation - Minimal */}
-      <div className="flex items-center gap-2 border-slate-200 bg-white">
-        <Button onClick={handleGenerateTestForm} disabled={isGenerating} size="xs">
-          {isGenerating && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
-          {isGenerating ? "..." : "Test PDF"}
-        </Button>
+      {showTestPdfButton && (
+        <div className="flex items-center gap-2 border-slate-200 bg-white">
+          <Button onClick={handleGenerateTestForm} disabled={isGenerating} size="xs">
+            {isGenerating && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
+            {isGenerating ? "..." : "Test PDF"}
+          </Button>
 
-        {generationResult && (
-          <a
-            href={generationResult.documentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] text-green-500 hover:text-green-600 hover:underline"
-          >
-            View result
-          </a>
-        )}
+          {generationResult && (
+            <a
+              href={generationResult.documentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-green-500 hover:text-green-600 hover:underline"
+            >
+              View result
+            </a>
+          )}
 
-        {generationError && <span className="text-[11px] text-red-500">✕</span>}
-      </div>
+          {generationError && <span className="text-[11px] text-red-500">✕</span>}
+        </div>
+      )}
     </div>
   );
 
@@ -359,6 +363,7 @@ export const FormPreview = ({
   signingParties,
   documentUrl,
   metadata,
+  showTestPdfButton,
 }: FormPreviewProps) => {
   return (
     <FormPreviewContent
@@ -367,6 +372,7 @@ export const FormPreview = ({
       signingParties={signingParties}
       documentUrl={documentUrl}
       metadata={metadata}
+      showTestPdfButton={showTestPdfButton}
     />
   );
 };
