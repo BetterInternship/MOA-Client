@@ -17,6 +17,7 @@ type CredentialMode = "source" | "account";
 
 interface ValidationErrors {
   partyName?: string;
+  signatoryTitle?: string;
   order?: string;
   email?: string;
   source?: string;
@@ -43,6 +44,7 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
       const newParty: IFormSigningParty = {
         _id: "initiator",
         order: 1,
+        signatory_title: "initiator",
         signatory_source: "initiator",
       };
       onPartiesChange([newParty, ...safeParties]);
@@ -77,7 +79,10 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
         if (!editValues.signatory_source?._id || editValues.signatory_source._id.trim() === "") {
           errors.source = "Source ID is required";
         }
-        if (!editValues.signatory_source?.label || editValues.signatory_source.label.trim() === "") {
+        if (
+          !editValues.signatory_source?.label ||
+          editValues.signatory_source.label.trim() === ""
+        ) {
           errors.source = "Source label is required";
         }
       } else if (credentialMode === "account") {
@@ -102,6 +107,10 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     const updatedParties = safeParties.map((p, idx) => {
       if (idx === editingIndex) {
         let party = { ...p, ...editValues } as IFormSigningParty;
+        // Default signatory_title to _id if empty
+        if (!party.signatory_title || party.signatory_title.trim() === "") {
+          party.signatory_title = party._id;
+        }
         // Clear signatory fields for order 1 (Initiator)
         if (party.order === 1) {
           party.signatory_account = undefined;
@@ -137,9 +146,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
   };
 
   const handleAddParty = () => {
+    const partyId = `party-${Date.now()}`;
     const newParty: IFormSigningParty = {
-      _id: `party-${Date.now()}`,
+      _id: partyId,
       order: Math.max(...safeParties.map((p) => p.order), 0) + 1,
+      signatory_title: partyId,
       signatory_source: {
         _id: "",
         label: "",
@@ -209,6 +220,26 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                       />
                       {validationErrors.partyName && (
                         <p className="mt-1 text-xs text-red-600">{validationErrors.partyName}</p>
+                      )}
+                    </div>
+
+                    {/* Signatory Title */}
+                    <div>
+                      <FormInput
+                        label="Signatory Title (Optional - defaults to Party Name)"
+                        type="text"
+                        value={editValues.signatory_title || ""}
+                        setter={(value) => {
+                          setEditValues({ ...editValues, signatory_title: value });
+                          setValidationErrors({ ...validationErrors, signatoryTitle: undefined });
+                        }}
+                        placeholder={editValues._id || "Party name"}
+                        required={false}
+                      />
+                      {validationErrors.signatoryTitle && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {validationErrors.signatoryTitle}
+                        </p>
                       )}
                     </div>
 
@@ -302,7 +333,8 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                                     signatory_source: {
                                       _id: e.target.value,
                                       label: editValues.signatory_source?.label || "",
-                                      tooltip_label: editValues.signatory_source?.tooltip_label || "",
+                                      tooltip_label:
+                                        editValues.signatory_source?.tooltip_label || "",
                                     },
                                   });
                                   setSourceErrors({ ...sourceErrors, sourceId: undefined });
@@ -437,6 +469,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                         <span className="inline-flex items-center rounded-[0.33em] bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
                           #{party.order}
                         </span>
+                        {party.signatory_title && (
+                          <span className="inline-flex items-center rounded-[0.33em] bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                            {party.signatory_title}
+                          </span>
+                        )}
                         {party.signatory_source && (
                           <>
                             <span className="inline-flex items-center rounded-[0.33em] bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700">
