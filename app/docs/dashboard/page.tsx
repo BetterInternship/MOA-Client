@@ -84,8 +84,8 @@ export default function DocsDashboardPage() {
                     <MyFormsTable
                       rows={forms.filter((form) => form.label === tab.label)}
                       isCoordinator={isCoordinator}
-                      exportEnabled
-                      exportLabel={tab.label}
+                      // exportEnabled // TODO: Fix export tables
+                      // exportLabel={tab.label} // TODO: Fix export tables
                     />
                   </Card>
                 </TabsContent>
