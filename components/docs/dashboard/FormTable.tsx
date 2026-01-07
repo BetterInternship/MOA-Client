@@ -28,27 +28,25 @@ const toDisplayString = (value: unknown): string => {
   }
 };
 
-export const createFormColumns = (): ColumnDef<IMyForm>[] => {
-  return [
-    {
-      accessorKey: "label",
-      header: "Form",
-      cell: (info) => info.getValue(),
-    },
-    {
-      accessorKey: "timestamp",
-      header: "Generated At",
-      cell: (info) => formatDate(new Date(info.getValue() as string), "MM/dd/yyyy hh:mm a"),
-    },
-    {
-      id: "requester",
-      header: "Requester",
-      accessorFn: (row) => getDisplayValue(row.display_information!, "student", "full-name"),
-      cell: (info) => info.getValue(),
-      enableSorting: true,
-    },
-  ];
-};
+export const createBaseFormColumns = (): ColumnDef<IMyForm>[] => [
+  {
+    accessorKey: "label",
+    header: "Form",
+    cell: (info) => info.getValue(),
+  },
+  {
+    accessorKey: "timestamp",
+    header: "Generated At",
+    cell: (info) => formatDate(new Date(info.getValue() as string), "MM/dd/yyyy hh:mm a"),
+  },
+  {
+    id: "requester",
+    header: "Requester",
+    accessorFn: (row) => getDisplayValue(row.display_information!, "student", "full-name"),
+    cell: (info) => info.getValue(),
+    enableSorting: true,
+  },
+];
 
 /**
  * Form columns for coordinators.
@@ -56,62 +54,68 @@ export const createFormColumns = (): ColumnDef<IMyForm>[] => {
  *
  * @returns
  */
-const createCoordinatorFormColumns = (): ColumnDef<IMyForm>[] => {
-  return [
-    ...createFormColumns(),
-    {
-      id: "student_id",
-      header: "Student ID",
-      accessorFn: (row) => getDisplayValue(row.display_information!, "student", "id-number"),
-      cell: (info) => info.getValue(),
-      enableSorting: true,
-    },
-    {
-      id: "entity",
-      header: "Company",
-      accessorFn: (row) => getDisplayValue(row.display_information!, "entity", "legal-name"),
-      cell: (info) => info.getValue(),
-      enableSorting: true,
-    },
-    ...createActionColumns(),
-  ];
-};
+const createCoordinatorFormColumns = (): ColumnDef<IMyForm>[] => [
+  ...createBaseFormColumns(),
+  {
+    id: "student_id",
+    header: "Student ID",
+    accessorFn: (row) => getDisplayValue(row.display_information!, "student", "id-number"),
+    cell: (info) => info.getValue(),
+    enableSorting: true,
+  },
+  {
+    id: "entity",
+    header: "Company",
+    accessorFn: (row) => getDisplayValue(row.display_information!, "entity", "legal-name"),
+    cell: (info) => info.getValue(),
+    enableSorting: true,
+  },
+  ...createActionColumns(),
+];
+
+/**
+ * Non-coordinator cols.
+ *
+ * @returns
+ */
+const createNonCoordintatorColumns = (): ColumnDef<IMyForm>[] => [
+  ...createBaseFormColumns(),
+  ...createActionColumns(),
+];
 
 /**
  * A column for the actions you can perform on a form.
  *
  * @returns
  */
-const createActionColumns = (): ColumnDef<IMyForm>[] => {
-  return [
-    {
-      id: "actions",
-      header: "Actions",
-      cell: (info) => {
-        const myForm = info.row.original;
-        if (myForm.signed_document_id) {
-          return (
-            <Button
-              size="sm"
-              onClick={() => window.open(myForm.latest_document_url!, "_blank")}
-              className="flex items-center gap-2"
-            >
-              Download
-              <Download className="h-4 w-4" />
-            </Button>
-          );
-        } else {
-          return (
-            <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
-              Pending
-              <Hourglass className="h-4 w-4" />
-            </Button>
-          );
-        }
-      },
+const createActionColumns = (): ColumnDef<IMyForm>[] => [
+  {
+    id: "actions",
+    header: "Actions",
+    cell: (info) => {
+      const myForm = info.row.original;
+      if (myForm.signed_document_id) {
+        return (
+          <Button
+            size="sm"
+            onClick={() => window.open(myForm.latest_document_url!, "_blank")}
+            className="flex items-center gap-2"
+          >
+            Download
+            <Download className="h-4 w-4" />
+          </Button>
+        );
+      } else {
+        return (
+          <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
+            Pending
+            <Hourglass className="h-4 w-4" />
+          </Button>
+        );
+      }
     },
-  ];
-};
+  },
+];
 
 export default function MyFormsTable({
   rows,
@@ -124,7 +128,7 @@ export default function MyFormsTable({
   exportEnabled?: boolean;
   exportLabel?: string;
 }) {
-  const columns = isCoordinator ? createCoordinatorFormColumns() : createFormColumns();
+  const columns = isCoordinator ? createCoordinatorFormColumns() : createNonCoordintatorColumns();
   const { openModal } = useModal();
   const modalName = useMemo(
     () => `form-data-${exportLabel ? exportLabel.replace(/\s+/g, "-").toLowerCase() : "all"}`,
