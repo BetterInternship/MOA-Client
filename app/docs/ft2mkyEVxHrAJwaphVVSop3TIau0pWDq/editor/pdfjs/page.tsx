@@ -13,7 +13,7 @@ import { Suspense } from "react";
 import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
 import { useModal } from "@/app/providers/modal-provider";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toastPresets } from "@/components/sonner-toaster";
 import { PdfViewer } from "../../../../../components/docs/form-editor/form-pdf-editor/PdfViewer";
 import { EditorSidebar } from "../../../../../components/docs/form-editor/EditorSidebar";
@@ -62,7 +62,6 @@ const PdfJsEditorPage = () => {
     useFormsControllerGetLatestFormDocumentAndMetadata({
       name: formName || "",
     });
-  console.log("Loaded form data for editor:", formData);
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
   const registry = fieldRegistryData?.fields ?? [];
 
@@ -128,6 +127,7 @@ const PdfJsEditorPage = () => {
   // Refs for scroll-to-field functionality
   const pdfViewerContainerRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const lastMetadataUpdateSourceRef = useRef<"formData" | "localEdit">("formData");
 
   // Get document URL from form metadata (only for existing forms) or from uploaded PDF
   const documentUrl = uploadedPdfUrl || (isNewForm ? undefined : formData?.formUrl || undefined);
@@ -214,6 +214,12 @@ const PdfJsEditorPage = () => {
    */
   useEffect(() => {
     const syncTimer = setTimeout(() => {
+      // Skip syncing if metadata was just updated from a local FormLayoutEditor edit
+      if (lastMetadataUpdateSourceRef.current === "localEdit") {
+        lastMetadataUpdateSourceRef.current = "formData"; // Reset for next time
+        return;
+      }
+
       const currentFieldCount = fields.length;
       const prevFieldCount = prevFieldCountRef.current;
       let newBlocks = [...blocks];
@@ -556,14 +562,13 @@ const PdfJsEditorPage = () => {
     }));
 
     // Merge result metadata with current metadata to preserve all blocks, signing_parties, and subscribers
-    // Add base_document to the metadata for submission (only if a new file was uploaded)
     const baseMetadata: IFormMetadata & { base_document?: File } =
       result.metadata && result.isValid
         ? {
             ...result.metadata,
             schema: {
               ...result.metadata.schema,
-              blocks: blocksWithFinalOrder, // Use all blocks with computed order
+              blocks: blocksWithFinalOrder,
             },
             signing_parties: metadata.signing_parties,
             subscribers: metadata.subscribers,
@@ -606,7 +611,6 @@ const PdfJsEditorPage = () => {
             ...(fileToSubmit && { base_document: fileToSubmit }),
           };
 
-          console.log("Form ");
           // Register the form and handle success/error
           formsControllerRegisterForm(metadataWithDocument)
             .then(() => {
@@ -628,7 +632,6 @@ const PdfJsEditorPage = () => {
         }}
         onFieldsUpdate={(updatedFields) => {
           // Update fields in real-time as JSON is edited
-          // Metadata will auto-sync via the global useEffect
           const fieldsWithLabels = updatedFields.map((field) => ({
             ...field,
             id: field.id || "",
@@ -839,7 +842,31 @@ const PdfJsEditorPage = () => {
             metadata={metadata}
             documentUrl={documentUrl}
             onMetadataChange={(updatedMetadata: IFormMetadata) => {
+              lastMetadataUpdateSourceRef.current = "localEdit";
               setMetadata(updatedMetadata);
+
+              // Also sync fields array with the new block data to keep them in sync
+              const updatedFields = updatedMetadata.schema.blocks
+                .filter((block: any) => block.block_type === "form_field" && block.field_schema)
+                .map((block: any) => {
+                  const field = block.field_schema as IFormField;
+                  return {
+                    id: "",
+                    _id: block._id,
+                    field: field.field,
+                    label: field.label,
+                    page: field.page,
+                    x: field.x,
+                    y: field.y,
+                    w: field.w,
+                    h: field.h,
+                    align_h: (field.align_h ?? "left") as "left" | "center" | "right",
+                    align_v: (field.align_v ?? "top") as "top" | "middle" | "bottom",
+                    size: field.size ?? 11,
+                    wrap: field.wrap ?? true,
+                  };
+                }) as FormField[];
+              setFields(updatedFields);
             }}
           />
         )}
