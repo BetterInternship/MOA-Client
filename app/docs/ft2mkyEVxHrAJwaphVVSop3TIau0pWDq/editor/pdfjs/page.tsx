@@ -376,8 +376,11 @@ const PdfJsEditorPage = () => {
     async (newField: FormField) => {
       // Fetch full field details from registry including validator and prefiller
       let fullFieldData: any = null;
+      let fieldPreset = "";
 
       try {
+        const registryEntry = registry.find((f) => f.id === newField.id);
+        fieldPreset = registryEntry?.preset || "";
         const { field } = await formsControllerGetFieldFromRegistry({ id: newField.id });
         fullFieldData = field;
       } catch (error) {
@@ -391,6 +394,8 @@ const PdfJsEditorPage = () => {
       const fieldWithLabel: FormField = {
         ...newField,
         _id: fieldId,
+        // Format field name as <name>:<preset>
+        field: fieldPreset ? `${newField.field}:${fieldPreset}` : newField.field,
         label: getFieldLabelByName(newField.field, registry),
         source: fullFieldData?.source || "manual",
         align_h: placementAlign_h,
