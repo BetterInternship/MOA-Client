@@ -1,23 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useRef } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Newspaper } from "lucide-react";
+import { Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import {
-  VerticalTabs,
-  VerticalTabsList,
-  VerticalTabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { HorizontalScroller } from "@/components/shared/horizontal-scroller";
 
 export default function DocsDashboardPage() {
   const { forms, loading, error } = useMyForms();
   const profile = useSignatoryProfile();
   const isCoordinator = Boolean(profile.coordinatorId);
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("all");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Temp solution, in the future, lets look at the coordinator forms + autofill forms
   const formTabs = useMemo(() => {
@@ -28,7 +28,14 @@ export default function DocsDashboardPage() {
       return acc;
     }, []);
   }, [forms]);
-
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -200 : 200,
+        behavior: "smooth",
+      });
+    }
+  };
   return (
     <div className="max-w-8xl container mx-auto space-y-6 px-4 pt-6 sm:px-10 sm:pt-16">
       {/* Header */}
@@ -43,55 +50,79 @@ export default function DocsDashboardPage() {
       </div>
 
       {/* Table */}
-      <div className="">
+      <div>
         {loading ? (
           <div className="text-sm text-gray-600">Loading signed documents…</div>
         ) : error ? (
           <div className="text-sm text-red-600">Failed to load signed documents.</div>
         ) : (
-          <VerticalTabs
-            orientation="vertical"
-            defaultValue="all"
-            className="bg- flex flex-col gap-4 md:flex-row md:items-start"
-          >
-            <VerticalTabsList className="w-[20rem] max-w-[28rem] min-w-[12rem] flex-shrink-0 rounded-[0.33em] border">
-              <VerticalTabsTrigger value="all" className="text-left">
-                All Forms
-              </VerticalTabsTrigger>
+          <div className="space-y-4">
+            {/* Tabs with External Arrows */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => scroll("left")}
+                className="flex-shrink-0 rounded-lg border border-gray-200 bg-white p-2 transition-colors hover:bg-gray-50"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="h-5 w-5 text-gray-600" />
+              </button>
 
-              {formTabs.map((tab) => (
-                <VerticalTabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  title={tab.label}
-                  className="text-left"
+              <div
+                ref={scrollContainerRef}
+                className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto rounded-[0.33em] border border-gray-200 bg-white p-2"
+              >
+                <button
+                  onClick={() => setActiveTab("all")}
+                  className={cn(
+                    "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                    activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
+                  )}
                 >
-                  {tab.label}
-                </VerticalTabsTrigger>
-              ))}
-            </VerticalTabsList>
+                  All Forms
+                </button>
 
-            <div className="min-w-0 flex-1">
-              <TabsContent value="all" className="mt-0">
-                <Card className="space-y-3 p-3">
-                  <MyFormsTable rows={forms} isCoordinator={isCoordinator} />
-                </Card>
-              </TabsContent>
+                {formTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    title={tab.label}
+                    className={cn(
+                      "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                      activeTab === tab.id ? "bg-primary text-white" : "hover:bg-gray-50"
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
-              {formTabs.map((tab) => (
-                <TabsContent key={tab.id} value={tab.id} className="mt-0">
-                  <Card className="space-y-3 p-3">
-                    <MyFormsTable
-                      rows={forms.filter((form) => form.label === tab.label)}
-                      isCoordinator={isCoordinator}
-                      exportEnabled
-                      exportLabel={tab.label}
-                    />
-                  </Card>
-                </TabsContent>
-              ))}
+              <button
+                onClick={() => scroll("right")}
+                className="flex-shrink-0 rounded-lg border border-gray-200 bg-white p-2 transition-colors hover:bg-gray-50"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="h-5 w-5 text-gray-600" />
+              </button>
             </div>
-          </VerticalTabs>
+
+            {/* Content */}
+            {activeTab === "all" && (
+              <Card className="space-y-3 p-3">
+                <MyFormsTable rows={forms} isCoordinator={isCoordinator} />
+              </Card>
+            )}
+
+            {formTabs.map((tab) =>
+              activeTab === tab.id ? (
+                <Card key={tab.id} className="space-y-3 p-3">
+                  <MyFormsTable
+                    rows={forms.filter((form) => form.label === tab.label)}
+                    isCoordinator={isCoordinator}
+                  />
+                </Card>
+              ) : null
+            )}
+          </div>
         )}
       </div>
     </div>
