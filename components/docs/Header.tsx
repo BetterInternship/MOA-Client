@@ -11,12 +11,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Menu, X as XIcon, LogOut, ChevronRight, Settings } from "lucide-react";
+import { ChevronDown, Menu, X as XIcon, LogOut, ChevronRight, Loader2 } from "lucide-react";
 import { logoutSignatory } from "@/app/api/docs.api";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
 
 export default function DocsTopbarUser() {
   const queryClient = useQueryClient();
@@ -29,7 +31,27 @@ export default function DocsTopbarUser() {
   const logoutMutation = useMutation({
     mutationFn: logoutSignatory,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+      // Show loading with preset styling
+      toast(
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Signing out...</span>
+        </div>,
+        { ...toastPresets.loading, duration: Infinity }
+      );
+      
+      // Refetch to trigger the 401 error and let context clear
+      try {
+        await queryClient.refetchQueries({ queryKey: ["my-profile"] });
+      } catch {
+        // Expected to fail with 401
+      }
+
+      // Wait a bit for context to update, then redirect
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      toast.dismiss();
+      toast.success("Signed out successfully", { ...toastPresets.success, duration: 2000 });
       router.push("/login");
     },
   });
@@ -207,23 +229,29 @@ export default function DocsTopbarUser() {
       </div>
 
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-1">
-              {profile.name?.trim() || profile.email || "User"}
-              <ChevronDown size={14} className="mt-0.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-            >
-              {logoutMutation.isPending ? "Logging out..." : "Logout"}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {profile?.email ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-1">
+                {profile.name?.trim() || profile.email || "User"}
+                <ChevronDown size={14} className="mt-0.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+              >
+                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link href="/login">
+            <Button variant="outline">Login</Button>
+          </Link>
+        )}
       </div>
     </div>
   );
