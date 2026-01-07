@@ -90,7 +90,6 @@ export function ValidatorBuilder({
   };
 
   const updateRule = (ruleId: string, updates: Partial<ValidatorRule>) => {
-    console.log("[updateRule] Updating rule:", ruleId, "with:", updates);
     onConfigChange({
       ...config,
       rules: config.rules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r)),
@@ -313,16 +312,7 @@ function RuleCard({
 
   // Special handling for enum/array options
   if (rule.type === "enum" || rule.type === "array") {
-    console.log(
-      "[RuleCard] Rendering array/enum rule:",
-      rule.type,
-      "options:",
-      optionsArray,
-      "text:",
-      optionsText
-    );
     const handleOptionsChange = (newText: string) => {
-      console.log("[handleOptionsChange] Text changed:", newText);
       setOptionsText(newText);
 
       // Auto-save on every keystroke for enum/array
@@ -331,7 +321,6 @@ function RuleCard({
         .map((opt) => opt.trim())
         .filter((opt) => opt.length > 0);
 
-      console.log("[handleOptionsChange] Final options:", newOptions);
       onUpdate({
         params: {
           ...rule.params,

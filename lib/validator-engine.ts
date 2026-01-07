@@ -679,9 +679,6 @@ export function isRuleValid(rule: ValidatorRule): boolean {
 }
 
 export function testValidatorParsing(zodCode: string) {
-  console.log("Input Zod Code:", zodCode);
   const config = zodCodeToValidatorConfig(zodCode);
-  console.log("Parsed Config:", JSON.stringify(config, null, 2));
-  console.log("Regenerated Zod:", validatorConfigToZodCode(config));
   return config;
 }
