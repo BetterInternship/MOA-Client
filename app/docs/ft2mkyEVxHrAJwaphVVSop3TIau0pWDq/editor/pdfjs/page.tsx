@@ -242,10 +242,8 @@ const PdfJsEditorPage = () => {
 
             const originalFieldSchema = originalBlock?.field_schema;
             const storedMetadata = fieldMetadataRef.current.get(field._id!);
-            const signingPartyId =
-              blocks.length > 0 && blocks[0].signing_party_id
-                ? blocks[0].signing_party_id
-                : "party-1";
+            // New fields are unassigned by default
+            const signingPartyId = "";
 
             const newBlock: IFormBlock = {
               block_type: "form_field",
