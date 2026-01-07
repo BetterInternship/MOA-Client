@@ -9,6 +9,8 @@ import { IFormFiller } from "./docs/forms/form-filler.ctx";
 import { SpecifySigningPartiesModal } from "./modals/SpecifySigningPartyModal";
 import { FormContinuationSuccessModal } from "./modals/FormContinuationSuccessModal";
 import { FormRejectionPromptModal } from "./modals/FormRejectionPromptModal";
+import { ISignatoryFormSettings } from "@/app/docs/auth/provider/form-settings.ctx";
+import { SetupFormSettings } from "./modals/SetupFormSettings";
 
 /**
  * Simplifies modal config since we usually reuse each of these modal stuffs.
@@ -19,13 +21,46 @@ export const useModalRegistry = () => {
   const { openModal: open, closeModal: close } = useModal();
 
   const modalRegistry = {
+    formSettingsSetup: {
+      open: (
+        fields: (ClientField<[any]> | ClientPhantomField<[any]>)[],
+        formFiller: IFormFiller,
+        handleSubmit: (finalValues: FormValues, settings: ISignatoryFormSettings) => Promise<any>,
+        handleUpdateAutofill: (finalValues: FormValues) => Promise<any>,
+        formSettings: ISignatoryFormSettings,
+        autofillValues?: FormValues
+      ) =>
+        open(
+          "form-settings-setup",
+          <SetupFormSettings
+            fields={fields}
+            formFiller={formFiller}
+            formSettings={formSettings}
+            autofillValues={autofillValues}
+            handleSubmit={handleSubmit}
+            handleUpdateAutofill={handleUpdateAutofill}
+            close={() => close("form-settings-setup")}
+          />,
+          {
+            title: <div className="px-5 py-1 text-3xl font-bold tracking-tight">Submit Form</div>,
+            closeOnEsc: false,
+            allowBackdropClick: false,
+            hasClose: false,
+            showHeaderDivider: true,
+          }
+        ),
+      close: () => close("form-settings-setup"),
+    },
+
     // Email confirmation modal
-    specifySigningParties: {
+    specifySigningPartiesAndFormSettingsSetup: {
       open: (
         fields: (ClientField<[any]> | ClientPhantomField<[any]>)[],
         formFiller: IFormFiller,
         signingPartyBlocks: ClientBlock<[any]>[],
-        handleSubmit: (signingPartyValues: FormValues) => Promise<any>,
+        handleSubmit: (finalValues: FormValues, settings: ISignatoryFormSettings) => Promise<any>,
+        handleUpdateAutofill: (finalValues: FormValues) => Promise<any>,
+        formSettings: ISignatoryFormSettings,
         autofillValues?: FormValues
       ) =>
         open(
@@ -34,9 +69,11 @@ export const useModalRegistry = () => {
             fields={fields}
             formFiller={formFiller}
             signingPartyBlocks={signingPartyBlocks}
-            handleSubmit={handleSubmit}
-            close={() => close("specify-signing-parties")}
+            formSettings={formSettings}
             autofillValues={autofillValues}
+            handleSubmit={handleSubmit}
+            handleUpdateAutofill={handleUpdateAutofill}
+            close={() => close("specify-signing-parties")}
           />,
           {
             title: (

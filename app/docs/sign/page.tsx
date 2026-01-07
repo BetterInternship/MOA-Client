@@ -2,7 +2,6 @@
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
 import { Button } from "@/components/ui/button";
@@ -37,10 +36,9 @@ function PageContent() {
   const autofillValues = useMyAutofill();
   const signContext = useSignContext();
   const [mobileStage, setMobileStage] = useState<"preview" | "form" | "sign">("preview");
-  const [values, setValues] = useState<Record<string, string>>({});
   const finalValues = useMemo(
     () => formFiller.getFinalValues(autofillValues),
-    [formFiller, autofillValues]
+    [formFiller, form, autofillValues]
   );
 
   // Update the form process stuff
@@ -71,7 +69,7 @@ function PageContent() {
       formProcess.my_signing_party_id
     );
     const valuesWithPrefilledSignatures = form.formMetadata.setSignatureValueForSigningParty(
-      formFiller.getFinalValues({}),
+      formFiller.getFinalValues(autofillValues),
       profile.name,
       formProcess.my_signing_party_id
     );
@@ -80,7 +78,7 @@ function PageContent() {
     signContext.setRequiredSignatures(
       signatureFields.map((signatureField) => signatureField.field)
     );
-  }, [formProcess, form.formName]);
+  }, [formProcess, form]);
 
   // Filter blocks to only include manual source fields
   const manualBlocks = useMemo(
@@ -169,7 +167,7 @@ function PageContent() {
                   </span>
                 </div>
               ) : (
-                <FormFillerRenderer onValuesChange={setValues} />
+                <FormFillerRenderer />
               )}
             </div>
 
@@ -245,7 +243,7 @@ function PageContent() {
               </span>
             </div>
           ) : (
-            <FormFillerRenderer onValuesChange={setValues} />
+            <FormFillerRenderer />
           )}
         </div>
 
