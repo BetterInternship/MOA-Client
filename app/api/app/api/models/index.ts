@@ -135,7 +135,7 @@ export * from "./signatorySignedFormsResponse";
 export * from "./signatorySignedFormsResponseSignedDocumentsItem";
 export * from "./signatorySource";
 export * from "./signatoryVerifyOtpDto";
+export * from "./signatureValue";
 export * from "./updateFieldDto";
 export * from "./updateFieldDtoSource";
 export * from "./updateSignatoryDto";
-export * from "./signatureValue";
