@@ -71,12 +71,15 @@ export const EditableDynamicForm = ({
     }
   }, [initialBlocks]);
 
-  const handleDragStart = useCallback((blockId: string, partyId?: string) => {
-    // Find the global index by block _id
-    const index = blocks.findIndex((b) => b._id === blockId);
-    setDraggedIndex(index);
-    setDraggedFromPartyId(partyId || null);
-  }, [blocks]);
+  const handleDragStart = useCallback(
+    (blockId: string, partyId?: string) => {
+      // Find the global index by block _id
+      const index = blocks.findIndex((b) => b._id === blockId);
+      setDraggedIndex(index);
+      setDraggedFromPartyId(partyId || null);
+    },
+    [blocks]
+  );
 
   const handleDragOver = useCallback(
     (blockId: string, targetPartyId?: string) => {
