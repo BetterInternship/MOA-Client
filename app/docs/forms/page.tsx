@@ -5,15 +5,18 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper, Loader2 } from "lucide-react";
-import { getViewableForms } from "@/app/api/docs.api";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
 import { useModal } from "@/app/providers/modal-provider";
 import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
-import { FormPreview } from "@/components/docs/form-editor/form-layout/FormPreview";
+import { useFormSettings } from "../auth/provider/form-settings.ctx";
+import { useMyAutofillUpdate } from "@/hooks/use-my-autofill";
+import { FormDefaultValueCapture } from "@/components/docs/form-editor/form-layout/FormDefaultValueCapture";
 import { getFormFields } from "@/app/api/forms.api";
-import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorModal";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
+import { getViewableForms } from "@/app/api/docs.api";
 
 type FormItem = {
   name: string;
@@ -26,86 +29,83 @@ export default function DocsFormsPage() {
   const queryClient = useQueryClient();
   const profile = useSignatoryProfile();
   const isCoordinator = !!profile.coordinatorId;
-  const { update } = useSignatoryAccountActions();
+  const updateAutofill = useMyAutofillUpdate();
+  const formSettings = useFormSettings();
+  const { openModal, closeModal } = useModal();
   const [togglingName, setTogglingName] = useState<string | null>(null);
+  const [openFormName, setOpenFormName] = useState<string | null>(null);
+  const [openPartyId, setOpenPartyId] = useState<string | null>(null);
+  const [isLoadingForm, setIsLoadingForm] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<any>(null);
 
   const { data: rows = [] } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
     queryFn: async () => {
-      type FormsResponse = {
-        forms?: {
-          [name: string]: {
-            enabled: boolean;
-            party: string;
-            date: string;
+      // Get all viewable form names
+      const response = await getViewableForms();
+
+      const formNames = Array.isArray(response) ? response : response?.forms || [];
+
+      const formItems = await Promise.all(
+        formNames.map(async (name) => {
+          const settings = await formSettings.getFormSettings(name);
+
+          const firstPartyId = Object.keys(settings || {})[0];
+          const partySettings = firstPartyId ? settings[firstPartyId] : {};
+
+          return {
+            name,
+            enabledAutosign: !!partySettings?.autosign,
+            party: firstPartyId ?? "",
+            date: partySettings?.autosign_date ?? "",
           };
-        };
-      };
+        })
+      );
 
-      const res = (await getViewableForms()) as FormsResponse;
-      if (!res || !res.forms) return [];
-
-      // res.forms is an object keyed by form name. Convert to array.
-      const entries = Object.entries(res.forms);
-      return entries.map(([name, obj]) => ({
-        name,
-        enabledAutosign: !!obj?.enabled,
-        party: obj?.party ?? "",
-        date: obj?.date,
-      }));
+      return formItems;
     },
     staleTime: 60_000,
   });
 
-  const { openModal } = useModal();
+  // Load form data when modal opens
+  React.useEffect(() => {
+    if (!openFormName) {
+      setFormData(null);
+      setFormError(null);
+      setIsLoadingForm(false);
+      return;
+    }
 
-  // Open form preview
-  const onPreview = async (name: string) => {
-    // Show loading modal first
-    openModal(
-      `form-preview:${name}`,
-      <div className="flex h-[80dvh] w-full items-center justify-center transition-opacity">
-        <Loader2 className="text-primary h-12 w-12 animate-spin" />
-      </div>,
-      {
-        title: `Preview: ${name}`,
-        panelClassName:
-          "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
-        contentClassName: "flex-1 overflow-hidden p-0",
-        showHeaderDivider: true,
+    const loadForm = async () => {
+      setIsLoadingForm(true);
+      setFormError(null);
+      try {
+        const data = await getFormFields(openFormName);
+        setFormData(data);
+      } catch (err) {
+        console.error("Failed to load form:", err);
+        setFormError("Please try again later or contact support");
+      } finally {
+        setIsLoadingForm(false);
       }
-    );
+    };
 
-    // Load form data
-    try {
-      const formData = await getFormFields(name);
-      const formMetadata = new FormMetadata(formData.formMetadata as unknown as IFormMetadata);
+    loadForm();
+  }, [openFormName]);
 
-      // Update modal with actual content
-      openModal(
-        `form-preview:${name}`,
-        <div className="h-[80dvh] w-full">
-          <FormPreview
-            formName={name}
-            blocks={formData.formMetadata?.schema?.blocks || []}
-            signingParties={formMetadata.getSigningParties()}
-            documentUrl={formData.formUrl || ""}
-            metadata={formData.formMetadata}
-            showTestPdfButton={false}
-          />
-        </div>,
-        {
-          title: `Preview: ${name}`,
-          panelClassName:
-            "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
-          contentClassName: "flex-1 overflow-hidden p-4",
-          showHeaderDivider: true,
-        }
+  // Render modal content based on state
+  const renderModalContent = () => {
+    if (isLoadingForm) {
+      return (
+        <div className="flex h-[80dvh] w-full items-center justify-center transition-opacity">
+          <Loader2 className="text-primary h-12 w-12 animate-spin" />
+        </div>
       );
-    } catch (error) {
-      console.error("Failed to load form:", error);
-      openModal(
-        `form-preview:${name}`,
+    }
+
+    if (formError) {
+      return (
         <div className="flex h-[80vh] items-center justify-center">
           <div className="w-full max-w-sm rounded-xl bg-white p-8 text-center shadow-lg">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
@@ -124,32 +124,45 @@ export default function DocsFormsPage() {
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900">Failed to load form</h3>
-            <p className="mt-2 text-sm text-gray-600">Please try again later or contact support</p>
+            <p className="mt-2 text-sm text-gray-600">{formError}</p>
           </div>
-        </div>,
-        {
-          title: `Preview: ${name}`,
-          panelClassName:
-            "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
-          contentClassName: "flex-1 overflow-hidden p-0",
-          showHeaderDivider: true,
-        }
+        </div>
       );
     }
-  };
 
-  // Open auto-sign editor
-  const onOpenAutoSignForm = (formName: string, party: string, currentValue: boolean) => {
-    openModal(
-      `form-auto-sign:${formName}`,
-      <FormAutosignEditorModal formName={formName} party={party} currentValue={currentValue} />,
-      {
-        title: `Enable Auto-Sign: ${formName}`,
-        panelClassName: "sm:max-w-2xl sm:min-w-[32rem]",
-        useCustomPanel: true,
-      }
+    if (!formData || !openPartyId) {
+      return null;
+    }
+
+    const onSave = async (defaultValues: Record<string, string>) => {
+      await handleSaveDefaultValues(openFormName!, formData.formMetadata, defaultValues);
+      closeModal(`form-default-values:${openFormName!}`);
+    };
+
+    return (
+      <div className="h-[80dvh] w-full">
+        <FormDefaultValueCapture
+          formName={openFormName!}
+          documentUrl={formData.formUrl || ""}
+          metadata={formData.formMetadata as IFormMetadata}
+          onSave={onSave}
+          selectedPartyId={openPartyId}
+        />
+      </div>
     );
   };
+
+  // Update modal whenever content changes
+  React.useEffect(() => {
+    if (!openFormName) return;
+
+    openModal(`form-default-values:${openFormName}`, renderModalContent(), {
+      title: `My Default Values: ${openFormName}`,
+      panelClassName: "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
+      contentClassName: "flex-1 overflow-hidden p-4",
+      showHeaderDivider: true,
+    });
+  }, [openFormName, isLoadingForm, formError, formData, openPartyId]);
 
   const toggleAutoSign = async (formName: string, party: string, currentValue: boolean) => {
     console.log("Toggled auto-sign for", formName);
@@ -175,6 +188,34 @@ export default function DocsFormsPage() {
     }
   };
 
+  const onOpenAutoSignForm = (formName: string, party: string, currentValue: boolean) => {
+    setOpenFormName(formName);
+    setOpenPartyId(party);
+  };
+
+  // Save default values for form fields
+  const handleSaveDefaultValues = async (
+    formName: string,
+    formMetadata: any,
+    defaultValues: Record<string, string>
+  ) => {
+    try {
+      // Get the fields for this form to know which are shared
+      const fm = new FormMetadata(formMetadata);
+      const fields = fm.getFieldsForClientService(openPartyId!);
+
+      // Save to autofill
+      await updateAutofill(formName, fields, defaultValues);
+
+      // Show success message
+      toast.success("Default values saved successfully!", toastPresets.success);
+    } catch (error) {
+      console.error("Failed to save default values:", error);
+      toast.error("Failed to save default values", toastPresets.destructive);
+      throw error;
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
       <div className="mb-6 space-y-2 sm:mb-8">
@@ -191,7 +232,6 @@ export default function DocsFormsPage() {
       </div>
       <MyFormsTableLike
         rows={rows}
-        onPreview={(name) => void onPreview(name)}
         onOpenAutoSignForm={(name, party, currentValue) =>
           void onOpenAutoSignForm(name, party, currentValue)
         }

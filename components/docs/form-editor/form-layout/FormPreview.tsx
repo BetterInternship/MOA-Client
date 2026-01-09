@@ -97,6 +97,7 @@ const FormPreviewContent = ({
           {filteredBlocks.length > 0 ? (
             <FormPreviewRenderer
               formName={formName}
+              formLabel={metadata?.label || ""}
               blocks={filteredBlocks}
               values={values}
               onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
