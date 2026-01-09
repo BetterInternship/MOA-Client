@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { FormProcessDisplayInformation } from "./formProcessDisplayInformation";
+import type { SigningParty } from "./signingParty";
 
 export interface FormProcess {
   prefilled_document_id: string;
@@ -14,4 +15,5 @@ export interface FormProcess {
   latest_document_url: string;
   rejection_reason: string;
   display_information: FormProcessDisplayInformation;
+  signing_parties: SigningParty[];
 }

@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-18 15:17:08
- * @ Modified time: 2026-01-07 10:24:13
+ * @ Modified time: 2026-01-09 11:30:04
  * @ Description:
  *
  * These are the forms a user has generated or initiated.
@@ -10,6 +10,7 @@
 "use client";
 
 import { getAllSignedForms } from "@/app/api/forms.api";
+import { IFormSigningParty } from "@betterinternship/core/forms";
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 
@@ -23,6 +24,7 @@ export interface IMyForm {
   timestamp: string;
   rejection_reason?: string;
   display_information?: Record<string, string>;
+  signing_parties: Omit<IFormSigningParty, "signatory_title">[];
 }
 
 interface IMyForms {
@@ -64,6 +66,7 @@ export const MyFormsContextProvider = ({ children }: { children: React.ReactNode
         rejection_reason: f.form_processes.rejection_reason,
         display_information: f.form_processes.display_information,
         timestamp: f.timestamp,
+        signing_parties: f.form_processes.signing_parties,
       })) ?? [];
 
   return (

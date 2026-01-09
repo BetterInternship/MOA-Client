@@ -9,7 +9,6 @@ import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { HorizontalScroller } from "@/components/shared/horizontal-scroller";
 
 export default function DocsDashboardPage() {
   const { forms, loading, error } = useMyForms();

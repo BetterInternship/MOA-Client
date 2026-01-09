@@ -13,6 +13,7 @@ import { FormPreview } from "@/components/docs/form-editor/form-layout/FormPrevi
 import { getFormFields } from "@/app/api/forms.api";
 import FormAutosignEditorModal from "@/components/docs/forms/FormAutosignEditorModal";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
+import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 
 type FormItem = {
   name: string;
@@ -59,7 +60,7 @@ export default function DocsFormsPage() {
   const { openModal } = useModal();
 
   // Open form preview
-  const onPreview = async (name: string, party: string) => {
+  const onPreview = async (name: string) => {
     // Show loading modal first
     openModal(
       `form-preview:${name}`,
@@ -78,6 +79,7 @@ export default function DocsFormsPage() {
     // Load form data
     try {
       const formData = await getFormFields(name);
+      const formMetadata = new FormMetadata(formData.formMetadata as unknown as IFormMetadata);
 
       // Update modal with actual content
       openModal(
@@ -86,16 +88,7 @@ export default function DocsFormsPage() {
           <FormPreview
             formName={name}
             blocks={formData.formMetadata?.schema?.blocks || []}
-            signingParties={
-              formData.formMetadata?.schema?.blocks
-                ?.flatMap((block) => (block.signing_party_id ? [block.signing_party_id] : []))
-                ?.filter((party, index, self) => self.indexOf(party) === index)
-                ?.map((partyId) => ({
-                  _id: partyId,
-                  name: partyId,
-                  label: partyId,
-                })) || []
-            }
+            signingParties={formMetadata.getSigningParties()}
             documentUrl={formData.formUrl || ""}
             metadata={formData.formMetadata}
             showTestPdfButton={false}
@@ -198,7 +191,7 @@ export default function DocsFormsPage() {
       </div>
       <MyFormsTableLike
         rows={rows}
-        onPreview={(name, party) => void onPreview(name, party)}
+        onPreview={(name) => void onPreview(name)}
         onOpenAutoSignForm={(name, party, currentValue) =>
           void onOpenAutoSignForm(name, party, currentValue)
         }
