@@ -10,7 +10,12 @@ import { toastPresets } from "@/components/sonner-toaster";
 import { useModal } from "@/app/providers/modal-provider";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { useFormSettings } from "../auth/provider/form-settings.ctx";
-import { useMyAutofillUpdate } from "@/hooks/use-my-autofill";
+import {
+  useMyAutofillUpdate,
+  useMyAutofill,
+  getMissingManualFields,
+} from "@/hooks/use-my-autofill";
+import { Button } from "@/components/ui/button";
 import { FormDefaultValueCapture } from "@/components/docs/form-editor/form-layout/FormDefaultValueCapture";
 import { getFormFields } from "@/app/api/forms.api";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
@@ -29,6 +34,7 @@ export default function DocsFormsPage() {
   const profile = useSignatoryProfile();
   const isCoordinator = !!profile.coordinatorId;
   const updateAutofill = useMyAutofillUpdate();
+  const autofillValues = useMyAutofill();
   const formSettings = useFormSettings();
   const { openModal, closeModal } = useModal();
   const [togglingName, setTogglingName] = useState<string | null>(null);
@@ -37,6 +43,7 @@ export default function DocsFormsPage() {
   const [isLoadingForm, setIsLoadingForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>(null);
+  const [shouldEnableAutoSign, setShouldEnableAutoSign] = useState(false);
 
   const { data: rows = [] } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
@@ -136,6 +143,8 @@ export default function DocsFormsPage() {
     const onSave = async (defaultValues: Record<string, string>) => {
       await handleSaveDefaultValues(openFormName!, formData.formMetadata, defaultValues);
       closeModal(`form-default-values:${openFormName!}`);
+      setOpenFormName(null);
+      setOpenPartyId(null);
     };
 
     return (
@@ -156,7 +165,7 @@ export default function DocsFormsPage() {
     if (!openFormName) return;
 
     openModal(`form-default-values:${openFormName}`, renderModalContent(), {
-      title: `My Default Values: ${openFormName}`,
+      title: `My Default Values`,
       panelClassName: "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
       contentClassName: "flex-1 overflow-hidden p-4",
       showHeaderDivider: true,
@@ -164,26 +173,122 @@ export default function DocsFormsPage() {
   }, [openFormName, isLoadingForm, formError, formData, openPartyId]);
 
   const toggleAutoSign = async (formName: string, party: string, currentValue: boolean) => {
-    try {
-      setTogglingName(formName);
-      await formSettings.updateFormSettings(formName, {
-        [party]: {
-          autosign: !currentValue,
-        },
-      });
+    if (currentValue) {
+      // If turning off, just toggle directly
+      try {
+        setTogglingName(formName);
+        await formSettings.updateFormSettings(formName, {
+          [party]: {
+            autosign: false,
+          },
+        });
 
-      // Update the local rows data immediately
-      queryClient.setQueryData(["docs-forms-names"], (oldRows: FormItem[] | undefined) => {
-        if (!oldRows) return oldRows;
-        return oldRows.map((row) =>
-          row.name === formName ? { ...row, enabledAutosign: !currentValue } : row
-        );
-      });
-    } catch (err) {
-      console.error("Failed to toggle auto-sign:", err);
-      alert("Failed to toggle auto-sign. Please try again.");
-    } finally {
-      setTogglingName(null);
+        queryClient.setQueryData(["docs-forms-names"], (oldRows: FormItem[] | undefined) => {
+          if (!oldRows) return oldRows;
+          return oldRows.map((row) =>
+            row.name === formName ? { ...row, enabledAutosign: false } : row
+          );
+        });
+      } catch (err) {
+        console.error("Failed to toggle auto-sign:", err);
+        alert("Failed to toggle auto-sign. Please try again.");
+      } finally {
+        setTogglingName(null);
+      }
+    } else {
+      // If turning on, check autofill values first
+      try {
+        setIsLoadingForm(true);
+        const data = await getFormFields(formName);
+
+        // Get user's autofill values directly from profile (not form context)
+        const profileAutofill = profile.autofill;
+        const formAutofill = {
+          ...(profileAutofill?.shared || {}),
+          ...(profileAutofill?.[formName] || {}),
+        };
+
+        // Get required fields for this party
+        const fm = new FormMetadata(data.formMetadata);
+        const requiredFields = fm.getFieldsForClientService(party);
+
+        // Check if all required manual fields have values
+        const missingFields = getMissingManualFields(requiredFields, formAutofill);
+
+        // Always show modal to review default values
+        setShouldEnableAutoSign(true);
+        const modalContent =
+          missingFields.length > 0 ? (
+            <div>
+              <p className="text-sm text-gray-600">
+                {missingFields.length} required field{missingFields.length !== 1 ? "s" : ""} need
+                {missingFields.length !== 1 ? "" : "s"} default values. You can set these at the "My
+                Default Values" button.
+              </p>
+              <div className="mt-4 flex sm:justify-end">
+                <Button
+                  onClick={() => {
+                    closeModal(`autosign-review:${formName}`);
+                    setOpenFormName(formName);
+                    setOpenPartyId(party);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Set Default Values
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-gray-600">
+                Default values are complete. You can review them at the "My Default Values" button.
+              </p>
+              <div className="mt-4 flex sm:justify-end">
+                <Button
+                  onClick={async () => {
+                    try {
+                      closeModal(`autosign-review:${formName}`);
+                      await formSettings.updateFormSettings(formName, {
+                        [party]: {
+                          autosign: true,
+                        },
+                      });
+
+                      queryClient.setQueryData(
+                        ["docs-forms-names"],
+                        (oldRows: FormItem[] | undefined) => {
+                          if (!oldRows) return oldRows;
+                          return oldRows.map((row) =>
+                            row.name === formName ? { ...row, enabledAutosign: true } : row
+                          );
+                        }
+                      );
+
+                      toast.success("Auto-sign enabled!", toastPresets.success);
+                      setShouldEnableAutoSign(false);
+                    } catch (err) {
+                      console.error("Failed to enable auto-sign:", err);
+                      toast.error("Failed to enable auto-sign", toastPresets.destructive);
+                    }
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Enable
+                </Button>
+              </div>
+            </div>
+          );
+
+        openModal(`autosign-review:${formName}`, modalContent, {
+          title: "Toggle Auto Sign",
+        });
+      } catch (err) {
+        console.error("Failed to check auto-sign:", err);
+        toast.error("Failed to enable auto-sign", toastPresets.destructive);
+      } finally {
+        setIsLoadingForm(false);
+        setTogglingName(null);
+      }
     }
   };
 
@@ -206,8 +311,27 @@ export default function DocsFormsPage() {
       // Save to autofill
       await updateAutofill(formName, fields, defaultValues);
 
-      // Show success message
-      toast.success("Default values saved successfully!", toastPresets.success);
+      // If user came from autosign toggle, enable it now
+      if (shouldEnableAutoSign) {
+        await formSettings.updateFormSettings(formName, {
+          [openPartyId!]: {
+            autosign: true,
+          },
+        });
+
+        queryClient.setQueryData(["docs-forms-names"], (oldRows: FormItem[] | undefined) => {
+          if (!oldRows) return oldRows;
+          return oldRows.map((row) =>
+            row.name === formName ? { ...row, enabledAutosign: true } : row
+          );
+        });
+
+        toast.success("Auto-sign enabled", toastPresets.success);
+        setShouldEnableAutoSign(false);
+      } else {
+        // Show success message
+        toast.success("Default values saved successfully", toastPresets.success);
+      }
     } catch (error) {
       console.error("Failed to save default values:", error);
       toast.error("Failed to save default values", toastPresets.destructive);

@@ -3,6 +3,7 @@ import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
 import { ClientField, ClientPhantomField, FormValues } from "@betterinternship/core/forms";
 import { useCallback, useMemo } from "react";
+import type { IFormField } from "@betterinternship/core/forms";
 
 /**
  * Makes it easier to use the autofill, derived from profile data.
@@ -84,4 +85,25 @@ export const useMyAutofillUpdate = () => {
     },
     [update]
   );
+};
+
+/**
+ * Computes missing manual fields for autosign validation.
+ * Only checks fields with source='manual', ignoring auto/prefill/derived fields.
+ *
+ * @param requiredFields - Array of required fields to check
+ * @param autofillValues - Current autofill values object
+ * @returns Array of fields that are required but missing from autofill
+ */
+export const getMissingManualFields = (
+  requiredFields: IFormField[],
+  autofillValues: Record<string, any>
+): IFormField[] => {
+  return requiredFields.filter((field) => {
+    // Only check fields with source='manual', ignore auto/prefill/derived
+    if (field.source === "manual" && !autofillValues[field.field]) {
+      return true;
+    }
+    return false;
+  });
 };
