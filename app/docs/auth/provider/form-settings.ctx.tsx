@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-30 07:06:04
- * @ Modified time: 2026-01-09 20:47:29
+ * @ Modified time: 2026-01-09 20:50:56
  * @ Description:
  *
  * Makes it easier to manage signatory form settings.
@@ -15,9 +15,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 
 export interface ISignatoryFormSettings {
-  [key: string]: {
-    autosign?: boolean; // Apply autosign -> sign automatically if only signature is needed
-    autofill?: boolean; // Save autofill and use for succeeding forms
+  [signingPartyId: string]: {
+    [setting: string]: number | boolean | string;
   };
 }
 
