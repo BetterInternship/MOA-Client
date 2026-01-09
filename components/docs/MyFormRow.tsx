@@ -1,58 +1,24 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React from "react";
 import { Eye, Check, X, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  ISignatoryFormSettings,
-  useFormSettings,
-} from "@/app/docs/auth/provider/form-settings.ctx";
 
 export type FormItem = { name: string; enabledAutosign: boolean; party: string; date: string };
 
 export default function MyFormRow({
   row,
-  onPreview,
   onOpenAutoSignForm,
+  toggleAutoSign,
+  loading,
   index,
-  isCoordinator,
 }: {
   row: FormItem;
-  onPreview: () => void;
   onOpenAutoSignForm: () => void;
+  toggleAutoSign: () => void;
+  loading?: boolean;
   index?: number;
-  isCoordinator?: boolean;
 }) {
-  const [settings, setSettings] = useState<ISignatoryFormSettings>({});
-  const [loading, setLoading] = useState(true);
-  const formSettings = useFormSettings();
-
-  const updateFormSettings = useCallback(
-    (settings: Partial<ISignatoryFormSettings>) => {
-      console.log("updating...", settings);
-      setLoading(true);
-      void formSettings
-        .updateFormSettings(row.name, {
-          autosign: settings.autosign,
-        })
-        .then(() => formSettings.getFormSettings(row.name))
-        .then((r) => setSettings(r))
-        .then(() => setLoading(false));
-    },
-    [formSettings, row.name, loading]
-  );
-
-  useEffect(() => {
-    if (!loading) return;
-    void formSettings
-      .getFormSettings(row.name)
-      .then((r) => {
-        console.log("response", r);
-        setSettings(r);
-      })
-      .then(() => setLoading(false));
-  }, [formSettings, row.name]);
-
   return (
     <div
       role="row"
@@ -76,23 +42,32 @@ export default function MyFormRow({
       {/* Auto-sign toggle */}
       <div role="cell" className="col-span-2 flex flex-col items-center justify-center gap-1">
         <Button
-          onClick={() => updateFormSettings({ autosign: !settings.autosign })}
+          onClick={toggleAutoSign}
           disabled={!!loading}
           className={
-            settings.autosign ? "bg-supportive text-white" : "bg-muted-foreground text-white"
+            row.enabledAutosign ? "bg-supportive text-white" : "bg-muted-foreground text-white"
           }
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{settings.autosign ? "On" : "Off"}</span>
+            <span className="text-sm font-medium">{row.enabledAutosign ? "On" : "Off"}</span>
             {loading ? (
               <Loader className="animate-spin" />
-            ) : settings.autosign ? (
+            ) : row.enabledAutosign ? (
               <Check className="mt-0.5 h-4 w-4 text-white" />
             ) : (
               <X className="mt-0.5 h-4 w-4 text-white" />
             )}
           </div>
         </Button>
+        {row.date && row.enabledAutosign && (
+          <p className="text-xs text-gray-500">
+            <span className="font-medium">Enabled:</span> {new Date(row.date).toLocaleDateString()}{" "}
+            {new Date(row.date).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
       </div>
     </div>
   );

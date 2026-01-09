@@ -8,7 +8,6 @@ import { Newspaper, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { useModal } from "@/app/providers/modal-provider";
-import { useSignatoryAccountActions } from "@/app/api/signatory.api";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { useFormSettings } from "../auth/provider/form-settings.ctx";
 import { useMyAutofillUpdate } from "@/hooks/use-my-autofill";
@@ -58,7 +57,7 @@ export default function DocsFormsPage() {
             name,
             enabledAutosign: !!partySettings?.autosign,
             party: firstPartyId ?? "",
-            date: partySettings?.autosign_date ?? "",
+            date: partySettings?.autosign_last_update ?? "",
           };
         })
       );
@@ -165,21 +164,21 @@ export default function DocsFormsPage() {
   }, [openFormName, isLoadingForm, formError, formData, openPartyId]);
 
   const toggleAutoSign = async (formName: string, party: string, currentValue: boolean) => {
-    console.log("Toggled auto-sign for", formName);
-
     try {
       setTogglingName(formName);
-      await update.mutateAsync({
-        auto_form_permissions: {
-          [formName]: {
-            enabled: !currentValue,
-            party: party,
-            date: new Date().toISOString(),
-          },
+      await formSettings.updateFormSettings(formName, {
+        [party]: {
+          autosign: !currentValue,
         },
       });
-      await queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
-      await queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+
+      // Update the local rows data immediately
+      queryClient.setQueryData(["docs-forms-names"], (oldRows: FormItem[] | undefined) => {
+        if (!oldRows) return oldRows;
+        return oldRows.map((row) =>
+          row.name === formName ? { ...row, enabledAutosign: !currentValue } : row
+        );
+      });
     } catch (err) {
       console.error("Failed to toggle auto-sign:", err);
       alert("Failed to toggle auto-sign. Please try again.");

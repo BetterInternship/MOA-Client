@@ -80,11 +80,9 @@ export default function MyFormsTableLike({
                   key={r.name}
                   row={r}
                   index={i}
-                  onPreview={() => onPreview(r.name)}
                   onOpenAutoSignForm={() => onOpenAutoSignForm(r.name, r.party, r.enabledAutosign)}
                   toggleAutoSign={() => toggleAutoSign(r.name, r.party, r.enabledAutosign)}
                   loading={togglingName === r.name}
-                  isCoordinator={isCoordinator}
                 />
               );
             })
