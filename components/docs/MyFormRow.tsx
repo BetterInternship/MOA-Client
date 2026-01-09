@@ -23,7 +23,7 @@ export default function MyFormRow({
     <div
       role="row"
       aria-rowindex={index ? index + 2 : undefined}
-      className="group rounded-0 grid grid-cols-12 items-center gap-3 border-b p-3"
+      className="group rounded-0 grid grid-cols-12 items-center gap-3 p-3"
       tabIndex={0}
     >
       {/* Name */}
