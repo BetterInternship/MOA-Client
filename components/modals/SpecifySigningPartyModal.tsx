@@ -105,35 +105,7 @@ export const SpecifySigningPartiesModal = ({
         );
       })}
 
-      <div className="mt-10 flex flex-col gap-2 py-2">
-        {!initialFormSettings.autosign && hasSignature && (
-          <div
-            className="flex flex-row items-center gap-2 hover:cursor-pointer"
-            onClick={() => setSettings({ ...settings, autosign: !settings.autosign })}
-          >
-            <FormCheckbox checked={settings.autosign} />
-            <div className="text-primary flex flex-col italic">
-              <AnimatedShinyText>
-                Automatically sign on my behalf for future requests of this form.
-              </AnimatedShinyText>
-            </div>
-          </div>
-        )}
-
-        {!initialFormSettings.autofill && (
-          <div
-            className="flex flex-row items-center gap-2 hover:cursor-pointer"
-            onClick={() => setSettings({ ...settings, autofill: !settings.autofill })}
-          >
-            <FormCheckbox checked={settings.autofill} />
-            <div className="text-primary flex flex-col italic">
-              <AnimatedShinyText>
-                Save my information for future fillouts of this form.
-              </AnimatedShinyText>
-            </div>
-          </div>
-        )}
-      </div>
+      <div className="mt-10 flex flex-col gap-2 py-2"></div>
 
       <Divider></Divider>
 

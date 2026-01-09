@@ -23,7 +23,12 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import type { ErrorResponse, QueryDocResponse, QueryMoaResponse } from "../../models";
+import type {
+  ErrorResponse,
+  QueryDocResponse,
+  QueryMoaResponse,
+  SignatoryFormtemplatesResponse,
+} from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
@@ -815,7 +820,7 @@ export function useDocsControllerGetStudentMoaSuspense<
 }
 
 export const docsControllerGetEntityForms = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<string[]>({
+  return preconfiguredAxiosFunction<SignatoryFormtemplatesResponse>({
     url: `/api/docs/entity-forms`,
     method: "GET",
     signal,

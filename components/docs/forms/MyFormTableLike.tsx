@@ -43,8 +43,7 @@ export default function MyFormsTableLike({
         </div>
         <div role="columnheader" className="col-span-2 text-slate-600"></div>
         <div role="columnheader" className="col-span-2 text-center text-slate-600">
-          {/* TODO: Turn off for now */}
-          {/* Default values */}
+          Default values
         </div>
         <div role="columnheader" className="col-span-2 text-center text-slate-600">
           Auto-sign
@@ -52,13 +51,13 @@ export default function MyFormsTableLike({
       </div>
       <Card className="p-1">
         {/* Rows */}
-        <div className="space-y-2">
+        <div className="divide-y">
           {rows.length === 0 ? (
             <div className="text-muted-foreground p-4 text-sm">No form templates available.</div>
           ) : (
             forms.map((r, i) => {
               return r.isLoading ? (
-                <div key={r.name} className="border-b p-3">
+                <div key={r.name} className="p-3">
                   <div className="grid grid-cols-12 items-center gap-3">
                     {/* Form name skeleton */}
                     <div className="col-span-6 space-y-2">
@@ -81,11 +80,9 @@ export default function MyFormsTableLike({
                   key={r.name}
                   row={r}
                   index={i}
-                  onPreview={() => onPreview(r.name)}
                   onOpenAutoSignForm={() => onOpenAutoSignForm(r.name, r.party, r.enabledAutosign)}
                   toggleAutoSign={() => toggleAutoSign(r.name, r.party, r.enabledAutosign)}
                   loading={togglingName === r.name}
-                  isCoordinator={isCoordinator}
                 />
               );
             })

@@ -8,10 +8,13 @@ import { getBlockField, isBlockField } from "@/components/docs/forms/utils";
 
 interface FormPreviewRendererProps {
   formName: string;
+  formLabel: string;
   blocks: IFormBlock[];
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
   metadata?: IFormMetadata;
+  selectedFieldId?: string | null;
+  onFieldClick?: (fieldId: string) => void;
 }
 
 /**
@@ -23,16 +26,17 @@ interface FormPreviewRendererProps {
  */
 export const FormPreviewRenderer = ({
   formName,
+  formLabel,
   blocks,
   values,
   onChange,
   metadata,
+  selectedFieldId,
+  onFieldClick,
 }: FormPreviewRendererProps) => {
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [localValues, setLocalValues] = useState<Record<string, string>>({});
-  const hasInitialized = useRef(false);
 
   // Extract actual fields from metadata for proper validation and field types
   const metadataFields = useMemo(() => {
@@ -69,34 +73,21 @@ export const FormPreviewRenderer = ({
     });
   }, [blocks]);
 
-  // Initialize values from prefiller only once on mount
-  useEffect(() => {
-    if (hasInitialized.current) return;
-
-    const initialValues: Record<string, string> = {};
-    metadataFields.forEach((field) => {
-      if (field.prefiller) {
-        try {
-          // Execute the prefiller function from metadata
-          const value = field.prefiller({ signatory: {} });
-          initialValues[field.field] = typeof value === "string" ? value.trim() : String(value);
-        } catch (error) {
-          // Silently skip if prefiller fails
-        }
-      }
-    });
-
-    setLocalValues(initialValues);
-    hasInitialized.current = true;
-  }, [metadataFields]);
-
-  // Merge local values with prop values (prop values take precedence for user input)
+  // Use values prop directly without merging with local state
+  // Parent component handles initialization
   const displayValues = useMemo(() => {
-    return { ...localValues, ...values };
-  }, [localValues, values]);
+    return values;
+  }, [values]);
+
+  // Scroll to selected field when it changes
+  useEffect(() => {
+    if (selectedFieldId && fieldRefs.current[selectedFieldId]) {
+      const element = fieldRefs.current[selectedFieldId];
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [selectedFieldId]);
 
   const handleChange = (key: string, value: string) => {
-    setLocalValues((prev) => ({ ...prev, [key]: value }));
     onChange(key, value);
   };
 
@@ -141,8 +132,8 @@ export const FormPreviewRenderer = ({
   return (
     <div className="relative flex h-full flex-col rounded-[0.33em] border border-gray-300">
       <div ref={scrollContainerRef} className="relative flex flex-1 flex-col overflow-auto">
-        <div className="text-opacity-60 shadow-soft border-r border-b border-gray-300 bg-gray-100 px-7 py-3 text-2xl font-bold tracking-tighter text-gray-700">
-          {formName}
+        <div className="px-7 py-5">
+          <h2 className="text-primary text-2xl font-bold">{formLabel || formName}</h2>
         </div>
         <div className="mt-7 flex-1 space-y-2 border-r border-gray-300 px-7">
           <BlocksRenderer
@@ -154,6 +145,8 @@ export const FormPreviewRenderer = ({
             onBlurValidate={handleBlurValidate}
             fieldRefs={fieldRefs.current}
             fieldMap={fieldMap}
+            selectedFieldId={selectedFieldId}
+            onFieldClick={onFieldClick}
           />
         </div>
       </div>
@@ -170,6 +163,8 @@ const BlocksRenderer = ({
   onBlurValidate,
   fieldRefs,
   fieldMap,
+  selectedFieldId,
+  onFieldClick,
 }: {
   formKey: string;
   // ! TODO: make this use ClientBlock<[any]>[] instead of IFormBlock[]
@@ -181,6 +176,8 @@ const BlocksRenderer = ({
   onBlurValidate?: (fieldKey: string) => void;
   fieldRefs: Record<string, HTMLDivElement | null>;
   fieldMap: Map<string, any>;
+  selectedFieldId?: string | null;
+  onFieldClick?: (fieldId: string) => void;
 }) => {
   if (!blocks.length) return null;
 
@@ -199,11 +196,21 @@ const BlocksRenderer = ({
               ref={(el) => {
                 if (el && blockField) fieldRefs[blockField.field] = el;
               }}
-              className="flex-1 cursor-pointer px-1 py-2 transition-all"
+              onClick={() => {
+                if (blockField) onFieldClick?.(blockField.field);
+              }}
+              className={`flex-1 cursor-pointer px-1 py-2 transition-all ${
+                blockField && selectedFieldId === blockField.field
+                  ? "rounded-[0.33em] ring-2 ring-blue-500 ring-offset-2"
+                  : ""
+              }`}
+              onFocus={() => {
+                if (blockField) onFieldClick?.(blockField.field);
+              }}
             >
               <FieldRenderer
                 field={metadataField}
-                value={values[blockField.field]}
+                value={values[blockField.field] ?? ""}
                 onChange={(v) => onChange(blockField.field, v)}
                 onBlur={() => onBlurValidate?.(blockField.field)}
                 error={errors[blockField.field]}
