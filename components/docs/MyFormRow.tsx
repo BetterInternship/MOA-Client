@@ -9,7 +9,6 @@ export type FormItem = { name: string; enabledAutosign: boolean; party: string; 
 
 export default function MyFormRow({
   row,
-  parties,
   onPreview,
   onOpenAutoSignForm,
   toggleAutoSign,
@@ -18,8 +17,7 @@ export default function MyFormRow({
   isCoordinator,
 }: {
   row: FormItem;
-  parties: string[];
-  onPreview: (party: string) => void;
+  onPreview: () => void;
   onOpenAutoSignForm: () => void;
   toggleAutoSign: () => void;
   index?: number;
@@ -40,19 +38,12 @@ export default function MyFormRow({
           <div className="text-md truncate font-medium">{row.name}</div>
         </div>
         <div className="flex flex-row space-x-2">
-          {isCoordinator &&
-            parties &&
-            parties.map((p) => (
-              <Button
-                key={p}
-                size="sm"
-                onClick={() => onPreview(p)}
-                aria-label={`Preview ${row.name} as ${p}`}
-              >
-                <Eye className="mr-1.5 h-4 w-4" />
-                Preview Forms
-              </Button>
-            ))}
+          {isCoordinator && (
+            <Button size="sm" onClick={() => onPreview()}>
+              <Eye className="mr-1.5 h-4 w-4" />
+              Preview Forms
+            </Button>
+          )}
         </div>
       </div>
       <div role="cell" className="col-span-2"></div>

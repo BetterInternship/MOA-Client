@@ -5,8 +5,6 @@ import MyFormRow, { FormItem } from "../MyFormRow";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { getFormFields } from "@/app/api/forms.api";
-import { Loader2 } from "lucide-react";
-import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 
 export default function MyFormsTableLike({
   rows,
@@ -17,7 +15,7 @@ export default function MyFormsTableLike({
   isCoordinator,
 }: {
   rows: FormItem[];
-  onPreview: (name: string, party: string) => void;
+  onPreview: (name: string) => void;
   onOpenAutoSignForm: (name: string, party: string, currentValue: boolean) => void;
   toggleAutoSign: (name: string, party: string, currentValue: boolean) => void;
   togglingName?: string | null;
@@ -58,10 +56,6 @@ export default function MyFormsTableLike({
             <div className="text-muted-foreground p-4 text-sm">No form templates available.</div>
           ) : (
             forms.map((r, i) => {
-              const formMetadata =
-                r.data?.formMetadata &&
-                new FormMetadata(r.data?.formMetadata as unknown as IFormMetadata);
-              const signingParties = formMetadata?.getSigningParties();
               return r.isLoading ? (
                 <div key={r.name} className="border-b p-3">
                   <div className="grid grid-cols-12 items-center gap-3">
@@ -84,10 +78,9 @@ export default function MyFormsTableLike({
               ) : (
                 <MyFormRow
                   key={r.name}
-                  parties={signingParties?.map((signingParty) => signingParty._id) ?? []}
                   row={r}
                   index={i}
-                  onPreview={(party: string) => onPreview(r.name, party)}
+                  onPreview={() => onPreview(r.name)}
                   onOpenAutoSignForm={() => onOpenAutoSignForm(r.name, r.party, r.enabledAutosign)}
                   toggleAutoSign={() => toggleAutoSign(r.name, r.party, r.enabledAutosign)}
                   loading={togglingName === r.name}
