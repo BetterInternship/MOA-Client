@@ -43,7 +43,8 @@ export default function MyFormsTableLike({
         </div>
         <div role="columnheader" className="col-span-2 text-slate-600"></div>
         <div role="columnheader" className="col-span-2 text-center text-slate-600">
-          Default values
+          {/* TODO: Turn off for now */}
+          {/* Default values */}
         </div>
         <div role="columnheader" className="col-span-2 text-center text-slate-600">
           Auto-sign
