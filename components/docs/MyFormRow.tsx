@@ -65,14 +65,15 @@ export default function MyFormRow({
         <div className="min-w-0 flex-1">
           <div className="text-md truncate font-medium">{row.name}</div>
         </div>
-        <div className="flex flex-row space-x-2">
+        {/* TODO: Bring back later on */}
+        {/* <div className="flex flex-row space-x-2">
           {isCoordinator && (
             <Button size="sm" onClick={() => onPreview()}>
               <Eye className="mr-1.5 h-4 w-4" />
               Preview Forms
             </Button>
           )}
-        </div>
+        </div> */}
       </div>
       <div role="cell" className="col-span-2"></div>
 
