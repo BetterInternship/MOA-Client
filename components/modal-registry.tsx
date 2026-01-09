@@ -53,7 +53,7 @@ export const useModalRegistry = () => {
     },
 
     // Email confirmation modal
-    specifySigningPartiesAndFormSettingsSetup: {
+    specifySigningParties: {
       open: (
         fields: (ClientField<[any]> | ClientPhantomField<[any]>)[],
         formFiller: IFormFiller,

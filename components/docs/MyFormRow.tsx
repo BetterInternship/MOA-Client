@@ -4,7 +4,13 @@ import React from "react";
 import { Eye, Check, X, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export type FormItem = { name: string; label: string; enabledAutosign: boolean; party: string; date: string };
+export type FormItem = {
+  name: string;
+  label: string;
+  enabledAutosign: boolean;
+  party: string;
+  date: string;
+};
 
 export default function MyFormRow({
   row,
