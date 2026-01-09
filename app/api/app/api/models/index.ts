@@ -143,3 +143,5 @@ export * from "./signatureValue";
 export * from "./updateFieldDto";
 export * from "./updateFieldDtoSource";
 export * from "./updateSignatoryDto";
+export * from "./formSignatory";
+export * from "./signingParty";

@@ -5,10 +5,12 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Download, Hourglass, Table2 } from "lucide-react";
+import { ArrowRight, Download, Hourglass, Table2 } from "lucide-react";
 import FormDataModal from "@/components/docs/dashboard/FormDataModal";
 import { useModal } from "@/app/providers/modal-provider";
 import { IMyForm } from "../forms/myforms.ctx";
+import { IFormSignatory } from "@betterinternship/core/forms";
+import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 
 export function getDisplayValue(info: Record<string, unknown>, section: string, key: string) {
   if (!info) return "—";
@@ -54,7 +56,7 @@ export const createBaseFormColumns = (): ColumnDef<IMyForm>[] => [
  *
  * @returns
  */
-const createCoordinatorFormColumns = (): ColumnDef<IMyForm>[] => [
+const createCoordinatorFormColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
   ...createBaseFormColumns(),
   {
     id: "student_id",
@@ -70,7 +72,7 @@ const createCoordinatorFormColumns = (): ColumnDef<IMyForm>[] => [
     cell: (info) => info.getValue(),
     enableSorting: true,
   },
-  ...createActionColumns(),
+  ...createActionColumns(profile),
 ];
 
 /**
@@ -78,9 +80,9 @@ const createCoordinatorFormColumns = (): ColumnDef<IMyForm>[] => [
  *
  * @returns
  */
-const createNonCoordintatorColumns = (): ColumnDef<IMyForm>[] => [
+const createNonCoordintatorColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
   ...createBaseFormColumns(),
-  ...createActionColumns(),
+  ...createActionColumns(profile),
 ];
 
 /**
@@ -88,12 +90,20 @@ const createNonCoordintatorColumns = (): ColumnDef<IMyForm>[] => [
  *
  * @returns
  */
-const createActionColumns = (): ColumnDef<IMyForm>[] => [
+const createActionColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
   {
     id: "actions",
     header: "Actions",
     cell: (info) => {
       const myForm = info.row.original;
+      const lastUnsignedSigningParty = myForm.signing_parties
+        .toSorted((a, b) => a.order - b.order)
+        .find((signingParty) => !signingParty.signed);
+      const mySigningParty = myForm.signing_parties.find(
+        (signingParty) =>
+          signingParty.signatory_account?.email === profile.email && !signingParty.signed
+      );
+
       if (myForm.signed_document_id) {
         return (
           <Button
@@ -105,12 +115,24 @@ const createActionColumns = (): ColumnDef<IMyForm>[] => [
             <Download className="h-4 w-4" />
           </Button>
         );
-      } else {
+      } else if (lastUnsignedSigningParty?._id !== mySigningParty?._id) {
         return (
           <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
             Pending
             <Hourglass className="h-4 w-4" />
           </Button>
+        );
+      } else {
+        const baseUrl = process.env.NEXT_PUBLIC_DOCS_URL;
+        const pendingLink = `${baseUrl}/sign?form-process-id=${myForm.form_process_id}&signing-party-id=${mySigningParty?._id}`;
+        return (
+          <a href={pendingLink} target="_blank">
+            <Button size="sm" variant="outline" className="relative flex items-center gap-1">
+              Sign Now
+              <ArrowRight className="h-4 w-4" />
+              <div className="bg-warning absolute top-[-4px] right-[-4px] aspect-square h-2 w-2 rounded-full"></div>
+            </Button>
+          </a>
         );
       }
     },
@@ -128,7 +150,10 @@ export default function MyFormsTable({
   exportEnabled?: boolean;
   exportLabel?: string;
 }) {
-  const columns = isCoordinator ? createCoordinatorFormColumns() : createNonCoordintatorColumns();
+  const profile = useSignatoryProfile();
+  const columns = isCoordinator
+    ? createCoordinatorFormColumns(profile)
+    : createNonCoordintatorColumns(profile);
   const { openModal } = useModal();
   const modalName = useMemo(
     () => `form-data-${exportLabel ? exportLabel.replace(/\s+/g, "-").toLowerCase() : "all"}`,
