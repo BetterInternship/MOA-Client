@@ -24,6 +24,7 @@ import { getViewableForms } from "@/app/api/docs.api";
 
 type FormItem = {
   name: string;
+  label: string;
   enabledAutosign: boolean;
   party: string;
   order?: number;
@@ -56,12 +57,14 @@ export default function DocsFormsPage() {
       const formItems = await Promise.all(
         formNames.map(async (name) => {
           const settings = await formSettings.getFormSettings(name);
+          const formData = await getFormFields(name);
 
           const firstPartyId = Object.keys(settings || {})[0];
           const partySettings = firstPartyId ? settings[firstPartyId] : {};
 
           return {
             name,
+            label: formData.formMetadata?.label || name,
             enabledAutosign: !!partySettings?.autosign,
             party: firstPartyId ?? "",
             date: partySettings?.autosign_last_update ?? "",

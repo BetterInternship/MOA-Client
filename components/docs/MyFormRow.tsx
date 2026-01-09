@@ -4,7 +4,7 @@ import React from "react";
 import { Eye, Check, X, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export type FormItem = { name: string; enabledAutosign: boolean; party: string; date: string };
+export type FormItem = { name: string; label: string; enabledAutosign: boolean; party: string; date: string };
 
 export default function MyFormRow({
   row,
@@ -28,7 +28,7 @@ export default function MyFormRow({
     >
       {/* Name */}
       <div role="cell" className="col-span-6 min-w-0 items-center space-y-2">
-        <div className="text-md truncate font-medium">{row.name}</div>
+        <div className="text-md truncate font-medium">{row.label}</div>
       </div>
       <div role="cell" className="col-span-2"></div>
 
