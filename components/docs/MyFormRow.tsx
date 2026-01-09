@@ -62,27 +62,15 @@ export default function MyFormRow({
     >
       {/* Name */}
       <div role="cell" className="col-span-6 min-w-0 items-center space-y-2">
-        <div className="min-w-0 flex-1">
-          <div className="text-md truncate font-medium">{row.name}</div>
-        </div>
-        {/* TODO: Bring back later on */}
-        {/* <div className="flex flex-row space-x-2">
-          {isCoordinator && (
-            <Button size="sm" onClick={() => onPreview()}>
-              <Eye className="mr-1.5 h-4 w-4" />
-              Preview Forms
-            </Button>
-          )}
-        </div> */}
+        <div className="text-md truncate font-medium">{row.name}</div>
       </div>
       <div role="cell" className="col-span-2"></div>
 
-      {/* TODO: Hide for now */}
       {/* Form values (eye) */}
       <div role="cell" className="col-span-2 flex items-center justify-center">
-        {/* <Button variant="outline" onClick={onOpenAutoSignForm}>
+        <Button variant="outline" onClick={onOpenAutoSignForm}>
           My Default Values <Eye className="h-3 w-3 text-slate-700" />
-        </Button> */}
+        </Button>
       </div>
 
       {/* Auto-sign toggle */}
