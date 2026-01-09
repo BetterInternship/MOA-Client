@@ -124,7 +124,7 @@ const createActionColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
         );
       } else {
         const baseUrl = process.env.NEXT_PUBLIC_DOCS_URL;
-        const pendingLink = `${baseUrl}/sign?form-process-id=${myForm.form_process_id}&signing-party-id=${mySigningParty?._id}`;
+        const pendingLink = `${baseUrl}sign?form-process-id=${myForm.form_process_id}&signing-party-id=${mySigningParty?._id}`;
         return (
           <a href={pendingLink} target="_blank">
             <Button size="sm" variant="outline" className="relative flex items-center gap-1">
