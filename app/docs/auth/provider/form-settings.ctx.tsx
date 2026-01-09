@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-30 07:06:04
- * @ Modified time: 2026-01-07 22:59:31
+ * @ Modified time: 2026-01-09 10:39:10
  * @ Description:
  *
  * Makes it easier to manage signatory form settings.
@@ -73,6 +73,8 @@ export const FormSettingsProvider = ({ children }: { children: React.ReactNode }
       await queryClient.invalidateQueries({ queryKey: ["form-settings", formName] });
       await queryClient.refetchQueries({ queryKey: ["form-settings", formName], exact: true });
     }
+
+    return result;
   };
 
   return (
