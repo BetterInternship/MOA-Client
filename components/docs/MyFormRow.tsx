@@ -77,11 +77,12 @@ export default function MyFormRow({
       </div>
       <div role="cell" className="col-span-2"></div>
 
+      {/* TODO: Hide for now */}
       {/* Form values (eye) */}
       <div role="cell" className="col-span-2 flex items-center justify-center">
-        <Button variant="outline" onClick={onOpenAutoSignForm}>
+        {/* <Button variant="outline" onClick={onOpenAutoSignForm}>
           My Default Values <Eye className="h-3 w-3 text-slate-700" />
-        </Button>
+        </Button> */}
       </div>
 
       {/* Auto-sign toggle */}
