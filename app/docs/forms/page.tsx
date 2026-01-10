@@ -172,6 +172,10 @@ export default function DocsFormsPage() {
       panelClassName: "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
       contentClassName: "flex-1 overflow-hidden p-4",
       showHeaderDivider: true,
+      onClose: () => {
+        setOpenFormName(null);
+        setOpenPartyId(null);
+      },
     });
   }, [openFormName, isLoadingForm, formError, formData, openPartyId]);
 
