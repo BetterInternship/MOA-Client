@@ -255,32 +255,34 @@ export default function DocsFormsPage() {
               </p>
               <div className="mt-4 flex sm:justify-end">
                 <Button
-                  onClick={async () => {
-                    try {
-                      closeModal(`autosign-review:${formName}`);
-                      await formSettings.updateFormSettings(formName, {
-                        [party]: {
-                          autosign: true,
-                        },
-                      });
+                  onClick={() =>
+                    void (async () => {
+                      try {
+                        closeModal(`autosign-review:${formName}`);
+                        await formSettings.updateFormSettings(formName, {
+                          [party]: {
+                            autosign: true,
+                          },
+                        });
 
-                      queryClient.setQueryData(
-                        ["docs-forms-names"],
-                        (oldRows: FormItem[] | undefined) => {
-                          if (!oldRows) return oldRows;
-                          return oldRows.map((row) =>
-                            row.name === formName ? { ...row, enabledAutosign: true } : row
-                          );
-                        }
-                      );
+                        queryClient.setQueryData(
+                          ["docs-forms-names"],
+                          (oldRows: FormItem[] | undefined) => {
+                            if (!oldRows) return oldRows;
+                            return oldRows.map((row) =>
+                              row.name === formName ? { ...row, enabledAutosign: true } : row
+                            );
+                          }
+                        );
 
-                      toast.success("Auto-sign enabled!", toastPresets.success);
-                      setShouldEnableAutoSign(false);
-                    } catch (err) {
-                      console.error("Failed to enable auto-sign:", err);
-                      toast.error("Failed to enable auto-sign", toastPresets.destructive);
-                    }
-                  }}
+                        toast.success("Auto-sign enabled!", toastPresets.success);
+                        setShouldEnableAutoSign(false);
+                      } catch (err) {
+                        console.error("Failed to enable auto-sign:", err);
+                        toast.error("Failed to enable auto-sign", toastPresets.destructive);
+                      }
+                    })()
+                  }
                   className="w-full sm:w-auto"
                 >
                   Enable

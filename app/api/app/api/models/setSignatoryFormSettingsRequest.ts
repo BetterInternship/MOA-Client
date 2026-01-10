@@ -6,8 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 import type { SetSignatoryFormSettingsRequestSettings } from "./setSignatoryFormSettingsRequestSettings";
+import type { SetSignatoryFormSettingsRequestAudit } from "./setSignatoryFormSettingsRequestAudit";
 
 export interface SetSignatoryFormSettingsRequest {
   formName: string;
   settings: SetSignatoryFormSettingsRequestSettings;
+  audit: SetSignatoryFormSettingsRequestAudit;
 }
