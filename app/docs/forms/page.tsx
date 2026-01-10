@@ -321,27 +321,8 @@ export default function DocsFormsPage() {
       // Save to autofill
       await updateAutofill(formName, fields, defaultValues);
 
-      // If user came from autosign toggle, enable it now
-      if (shouldEnableAutoSign) {
-        await formSettings.updateFormSettings(formName, {
-          [openPartyId!]: {
-            autosign: true,
-          },
-        });
-
-        queryClient.setQueryData(["docs-forms-names"], (oldRows: FormItem[] | undefined) => {
-          if (!oldRows) return oldRows;
-          return oldRows.map((row) =>
-            row.name === formName ? { ...row, enabledAutosign: true } : row
-          );
-        });
-
-        toast.success("Auto-sign enabled", toastPresets.success);
-        setShouldEnableAutoSign(false);
-      } else {
-        // Show success message
-        toast.success("Default values saved successfully", toastPresets.success);
-      }
+      // Show success message
+      toast.success("Default values saved successfully", toastPresets.success);
     } catch (error) {
       console.error("Failed to save default values:", error);
       toast.error("Failed to save default values", toastPresets.destructive);
