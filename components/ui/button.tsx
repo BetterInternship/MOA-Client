@@ -15,6 +15,7 @@ const buttonVariants = cva(
     "text-sm",
     "font-medium",
     "transition-colors",
+    "cursor-pointer",
     "focus:outline-none",
     "focus:ring-transparent",
     "disabled:pointer-events-none",
