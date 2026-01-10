@@ -41,7 +41,7 @@ export default function MyFormRow({
       {/* Form values (eye) */}
       <div role="cell" className="col-span-2 flex items-center justify-center">
         <Button variant="outline" onClick={onOpenAutoSignForm}>
-          My Default Values <Eye className="h-3 w-3 text-slate-700" />
+          My Default Values <Eye className="mt-0.5 h-3 w-3 text-slate-700" />
         </Button>
       </div>
 
