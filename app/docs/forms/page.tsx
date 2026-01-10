@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper, Loader2 } from "lucide-react";
@@ -31,6 +32,7 @@ type FormItem = {
 };
 
 export default function DocsFormsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const profile = useSignatoryProfile();
   const isCoordinator = !!profile.coordinatorId;
@@ -46,7 +48,7 @@ export default function DocsFormsPage() {
   const [formData, setFormData] = useState<any>(null);
   const [shouldEnableAutoSign, setShouldEnableAutoSign] = useState(false);
 
-  const { data: rows = [] } = useQuery<FormItem[]>({
+  const { data: rows = [], isLoading: isLoadingForms } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
     queryFn: async () => {
       // Get all viewable form names
@@ -172,6 +174,10 @@ export default function DocsFormsPage() {
       panelClassName: "sm:min-w-[95vw] sm:max-w-[95vw] sm:w-[95vw] sm:h-[90vh] sm:flex sm:flex-col",
       contentClassName: "flex-1 overflow-hidden p-4",
       showHeaderDivider: true,
+      onClose: () => {
+        setOpenFormName(null);
+        setOpenPartyId(null);
+      },
     });
   }, [openFormName, isLoadingForm, formError, formData, openPartyId]);
 
@@ -223,28 +229,29 @@ export default function DocsFormsPage() {
         const modalContent =
           missingFields.length > 0 ? (
             <div>
-              <p className="text-sm text-gray-600">
-                {missingFields.length} required field{missingFields.length !== 1 ? "s" : ""} need
-                {missingFields.length !== 1 ? "" : "s"} default values. You can set these at the "My
-                Default Values" button.
+              <p className="text-justify text-sm text-gray-600">
+                To enable form automation, this form must be completed manually once. Would you like
+                to sign it manually now?
               </p>
               <div className="mt-4 flex sm:justify-end">
                 <Button
                   onClick={() => {
                     closeModal(`autosign-review:${formName}`);
-                    setOpenFormName(formName);
-                    setOpenPartyId(party);
+                    router.push("/dashboard");
                   }}
                   className="w-full sm:w-auto"
                 >
-                  Set Default Values
+                  Go to forms
                 </Button>
               </div>
             </div>
           ) : (
             <div>
               <p className="text-sm text-gray-600">
-                Default values are complete. You can review them at the "My Default Values" button.
+                Once auto sign is enabled, we will populate the form with your default values and
+                sign it automatically. You will be able to view all signed and pending forms on this
+                dashboard, and you will receive an email notification each time a form is
+                successfully completed.
               </p>
               <div className="mt-4 flex sm:justify-end">
                 <Button
@@ -314,27 +321,8 @@ export default function DocsFormsPage() {
       // Save to autofill
       await updateAutofill(formName, fields, defaultValues);
 
-      // If user came from autosign toggle, enable it now
-      if (shouldEnableAutoSign) {
-        await formSettings.updateFormSettings(formName, {
-          [openPartyId!]: {
-            autosign: true,
-          },
-        });
-
-        queryClient.setQueryData(["docs-forms-names"], (oldRows: FormItem[] | undefined) => {
-          if (!oldRows) return oldRows;
-          return oldRows.map((row) =>
-            row.name === formName ? { ...row, enabledAutosign: true } : row
-          );
-        });
-
-        toast.success("Auto-sign enabled", toastPresets.success);
-        setShouldEnableAutoSign(false);
-      } else {
-        // Show success message
-        toast.success("Default values saved successfully", toastPresets.success);
-      }
+      // Show success message
+      toast.success("Default values saved successfully", toastPresets.success);
     } catch (error) {
       console.error("Failed to save default values:", error);
       toast.error("Failed to save default values", toastPresets.destructive);
@@ -347,7 +335,7 @@ export default function DocsFormsPage() {
       <div className="mb-6 space-y-2 sm:mb-8">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
-          <HeaderText> {isCoordinator ? "Forms Preview" : "My Saved Templates"} </HeaderText>
+          <HeaderText> Form Automation </HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
           {isCoordinator
@@ -358,6 +346,7 @@ export default function DocsFormsPage() {
       </div>
       <MyFormsTableLike
         rows={rows}
+        isLoadingForms={isLoadingForms}
         onOpenAutoSignForm={(name, party, currentValue) =>
           void onOpenAutoSignForm(name, party, currentValue)
         }
