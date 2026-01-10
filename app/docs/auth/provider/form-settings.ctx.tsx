@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-30 07:06:04
- * @ Modified time: 2026-01-09 20:50:56
+ * @ Modified time: 2026-01-11 01:33:20
  * @ Description:
  *
  * Makes it easier to manage signatory form settings.
@@ -11,6 +11,7 @@ import {
   signatoryControllerGetSignatoryFormSettings,
   signatoryControllerSetSignatoryFormSettings,
 } from "@/app/api";
+import { getClientAudit } from "@/lib/audit";
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 
@@ -22,10 +23,7 @@ export interface ISignatoryFormSettings {
 
 interface IFormSettings {
   getFormSettings: (formName: string) => Promise<ISignatoryFormSettings>;
-  updateFormSettings: (
-    formName: string,
-    settings: Partial<ISignatoryFormSettings>
-  ) => Promise<void>;
+  updateFormSettings: (formName: string, settings: ISignatoryFormSettings) => Promise<void>;
 }
 
 const FormSettingsContext = createContext({} as IFormSettings);
@@ -50,7 +48,7 @@ export const FormSettingsProvider = ({ children }: { children: React.ReactNode }
         }),
     });
 
-    return data.settings;
+    return data.settings as ISignatoryFormSettings;
   };
 
   /**
@@ -59,13 +57,11 @@ export const FormSettingsProvider = ({ children }: { children: React.ReactNode }
    * @param formName
    * @param settings
    */
-  const updateFormSettings = async (
-    formName: string,
-    settings: Partial<ISignatoryFormSettings>
-  ) => {
+  const updateFormSettings = async (formName: string, settings: ISignatoryFormSettings) => {
     const result = await signatoryControllerSetSignatoryFormSettings({
       formName,
       settings,
+      audit: getClientAudit(),
     });
 
     if (!result.success) {
@@ -74,8 +70,6 @@ export const FormSettingsProvider = ({ children }: { children: React.ReactNode }
       await queryClient.invalidateQueries({ queryKey: ["form-settings", formName] });
       await queryClient.refetchQueries({ queryKey: ["form-settings", formName], exact: true });
     }
-
-    return result;
   };
 
   return (
