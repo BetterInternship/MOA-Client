@@ -46,7 +46,7 @@ export default function DocsFormsPage() {
   const [formData, setFormData] = useState<any>(null);
   const [shouldEnableAutoSign, setShouldEnableAutoSign] = useState(false);
 
-  const { data: rows = [] } = useQuery<FormItem[]>({
+  const { data: rows = [], isLoading: isLoadingForms } = useQuery<FormItem[]>({
     queryKey: ["docs-forms-names"],
     queryFn: async () => {
       // Get all viewable form names
@@ -358,6 +358,7 @@ export default function DocsFormsPage() {
       </div>
       <MyFormsTableLike
         rows={rows}
+        isLoadingForms={isLoadingForms}
         onOpenAutoSignForm={(name, party, currentValue) =>
           void onOpenAutoSignForm(name, party, currentValue)
         }

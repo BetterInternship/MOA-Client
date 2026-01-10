@@ -8,11 +8,10 @@ import { getFormFields } from "@/app/api/forms.api";
 
 export default function MyFormsTableLike({
   rows,
-  onPreview,
   onOpenAutoSignForm,
   toggleAutoSign,
   togglingName,
-  isCoordinator,
+  isLoadingForms,
 }: {
   rows: FormItem[];
   onPreview: (name: string) => void;
@@ -20,6 +19,7 @@ export default function MyFormsTableLike({
   toggleAutoSign: (name: string, party: string, currentValue: boolean) => void;
   togglingName?: string | null;
   isCoordinator?: boolean;
+  isLoadingForms?: boolean;
 }) {
   // Pull the form data eeeeeeeeeeee
   const forms = rows.map((f) => {
@@ -52,7 +52,27 @@ export default function MyFormsTableLike({
       <Card className="p-1">
         {/* Rows */}
         <div className="divide-y">
-          {rows.length === 0 ? (
+          {isLoadingForms ? (
+            // Show loading skeletons during initial load
+            <div className="p-3">
+              <div className="grid grid-cols-12 items-center gap-3">
+                {/* Form name skeleton */}
+                <div className="col-span-6 space-y-2">
+                  <div className="h-5 w-32 animate-pulse rounded bg-gray-300"></div>
+                  <div className="h-8 w-48 animate-pulse rounded bg-gray-200"></div>
+                </div>
+                <div className="col-span-2"></div>
+                {/* Default values skeleton */}
+                <div className="col-span-2 flex justify-center">
+                  <div className="h-9 w-40 animate-pulse rounded bg-gray-200"></div>
+                </div>
+                {/* Auto-sign skeleton */}
+                <div className="col-span-2 flex justify-center">
+                  <div className="h-9 w-20 animate-pulse rounded bg-gray-200"></div>
+                </div>
+              </div>
+            </div>
+          ) : rows.length === 0 ? (
             <div className="text-muted-foreground p-4 text-sm">No form templates available.</div>
           ) : (
             forms.map((r, i) => {
