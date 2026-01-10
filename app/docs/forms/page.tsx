@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper, Loader2 } from "lucide-react";
@@ -31,6 +32,7 @@ type FormItem = {
 };
 
 export default function DocsFormsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const profile = useSignatoryProfile();
   const isCoordinator = !!profile.coordinatorId;
@@ -227,28 +229,29 @@ export default function DocsFormsPage() {
         const modalContent =
           missingFields.length > 0 ? (
             <div>
-              <p className="text-sm text-gray-600">
-                {missingFields.length} required field{missingFields.length !== 1 ? "s" : ""} need
-                {missingFields.length !== 1 ? "" : "s"} default values. You can set these at the "My
-                Default Values" button.
+              <p className="text-justify text-sm text-gray-600">
+                To enable form automation, this form must be completed manually once. Would you like
+                to sign it manually now?
               </p>
               <div className="mt-4 flex sm:justify-end">
                 <Button
                   onClick={() => {
                     closeModal(`autosign-review:${formName}`);
-                    setOpenFormName(formName);
-                    setOpenPartyId(party);
+                    router.push("/dashboard");
                   }}
                   className="w-full sm:w-auto"
                 >
-                  Set Default Values
+                  Go to forms
                 </Button>
               </div>
             </div>
           ) : (
             <div>
               <p className="text-sm text-gray-600">
-                Default values are complete. You can review them at the "My Default Values" button.
+                Once auto sign is enabled, we will populate the form with your default values and
+                sign it automatically. You will be able to view all signed and pending forms on this
+                dashboard, and you will receive an email notification each time a form is
+                successfully completed.
               </p>
               <div className="mt-4 flex sm:justify-end">
                 <Button
