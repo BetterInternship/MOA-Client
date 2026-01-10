@@ -139,7 +139,7 @@ export default function DocsTopbarUser() {
 
                 <Link href="/forms" className="block w-full">
                   <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
-                    <span>My Saved Templates</span>
+                    <span>Form Automation</span>
                     <ChevronRight className="h-4 w-4 text-gray-300" />
                   </button>
                 </Link>
@@ -213,7 +213,7 @@ export default function DocsTopbarUser() {
         </Link>
 
         <Link href="/forms">
-          <Button variant="ghost">My Saved Templates</Button>
+          <Button variant="ghost">Form Automation</Button>
         </Link>
 
         {profile.god && (

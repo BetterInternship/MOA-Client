@@ -351,7 +351,7 @@ export default function DocsFormsPage() {
       <div className="mb-6 space-y-2 sm:mb-8">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
-          <HeaderText> My Saved Templates </HeaderText>
+          <HeaderText> Form Automation </HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
           {isCoordinator
