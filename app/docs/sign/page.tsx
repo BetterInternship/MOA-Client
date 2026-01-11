@@ -41,6 +41,20 @@ function PageContent() {
     [formFiller, form, autofillValues]
   );
 
+  // Show mobile notice toast on mount
+  useEffect(() => {
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+    if (isMobile) {
+      toast(
+        "Our desktop experience might currently be preferable, so let us know if you have insights about how we can make mobile better! Chat us on Facebook or email us at hello@betterinternship.com if you go through any issues.",
+        {
+          duration: 6000,
+          className: "text-justify",
+        }
+      );
+    }
+  }, []);
+
   // Update the form process stuff
   useEffect(() => {
     const formProcessId = (params.get("form-process-id") || "").trim();
