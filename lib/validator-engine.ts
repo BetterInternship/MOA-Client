@@ -217,10 +217,45 @@ function parseMaxConstraint(code: string): { value: number; message: string } | 
 }
 
 function parseEnumOptions(optionsStr: string): string[] {
-  return optionsStr
-    .split(",")
-    .map((opt) => opt.trim().replace(/^["']|["']$/g, ""))
-    .filter(Boolean);
+  const options: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  let quoteChar = "";
+
+  for (let i = 0; i < optionsStr.length; i++) {
+    const char = optionsStr[i];
+
+    // Toggle quote state
+    if ((char === '"' || char === "'") && (i === 0 || optionsStr[i - 1] !== "\\")) {
+      if (!inQuotes) {
+        inQuotes = true;
+        quoteChar = char;
+        current += char;
+      } else if (char === quoteChar) {
+        inQuotes = false;
+        current += char;
+      } else {
+        current += char;
+      }
+    } else if (char === "," && !inQuotes) {
+      // Found a separator outside quotes
+      const trimmed = current.trim().replace(/^["']|["']$/g, "");
+      if (trimmed) {
+        options.push(trimmed);
+      }
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  // Don't forget the last option
+  const trimmed = current.trim().replace(/^["']|["']$/g, "");
+  if (trimmed) {
+    options.push(trimmed);
+  }
+
+  return options;
 }
 
 function getCoreValidator(code: string): string {
@@ -244,8 +279,9 @@ function buildArrayValidator(
   maxItems?: number,
   maxMessage?: string
 ): string {
-  const optionsStr = options.map((o) => `"${o}"`).join(", ");
-  let code = `z.array(z.enum([${optionsStr}], {message:"This field is required."}))`;
+  // Format options with proper indentation on separate lines
+  const optionsStr = options.map((o) => `"${o}"`).join(",\n      ");
+  let code = `z.array(\n  z.enum(\n    [\n      ${optionsStr}\n    ],\n    { message: "This field is required." }\n  )\n)`;
 
   if (minItems) {
     const msg = minMessage || `Select at least ${minItems} item${minItems > 1 ? "s" : ""}.`;

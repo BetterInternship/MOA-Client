@@ -76,11 +76,17 @@ export function VerificationDetailsCard({ document }: { document: DocResponse })
               value={formatWhen(date)}
             />
           )}
-          {document.signatories?.length && (
+          {document.signatories?.length ? (
             <MetaRow
               icon={<User className="h-4 w-4" />}
               label="Signatories"
               value={<PeopleList list={document.signatories as IFormSignatory[]} />}
+            />
+          ) : (
+            <MetaRow
+              icon={<User className="h-4 w-4" />}
+              label="Signatories"
+              value={<div className="italic ">No signatories</div>}
             />
           )}
         </div>
