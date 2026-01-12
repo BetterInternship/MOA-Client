@@ -1,10 +1,19 @@
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, FileText, Hash, ShieldAlert, ShieldCheck, User, Stamp } from "lucide-react";
+import { Clock, FileText, Hash, PaperclipIcon, ShieldAlert, User } from "lucide-react";
 import { MetaRow } from "./MetaRow";
 import { formatWhen } from "@/lib/format";
-import { SignedDocument } from "@/types/db";
 import { IFormSignatory } from "@betterinternship/core/forms";
+import { Badge } from "../ui/badge";
+
+interface DocResponse {
+  url: string;
+  signatories?: { name: string; title: string }[];
+  date_made?: string;
+  form_label?: string;
+  uploaded_at?: string;
+  code?: string;
+  verification_code?: string;
+}
 
 function PeopleList({ list }: { list?: IFormSignatory[] }) {
   if (!list || list.length === 0) return <>--</>;
@@ -13,7 +22,7 @@ function PeopleList({ list }: { list?: IFormSignatory[] }) {
       {list.map((p, i) => (
         <div key={i}>
           <span className="font-semibold">
-            {p.honorific} {p.name}
+            {p.honorific ?? ""} {p.name}
           </span>
           {p.title && p.name && (
             <>
@@ -27,52 +36,53 @@ function PeopleList({ list }: { list?: IFormSignatory[] }) {
   );
 }
 
-export function VerificationDetailsCard({ signedDocument }: { signedDocument: SignedDocument }) {
-  const isValid = Date.parse(signedDocument.expiry_date) > new Date().getTime();
+export function VerificationDetailsCard({ document }: { document: DocResponse }) {
+  const date = document.date_made || document.uploaded_at;
+  const hasSignatures = !!document.signatories?.length;
 
   return (
     <Card className="bg-white">
-      {/* <CardHeader className="">
-        <CardTitle className="flex items-center gap-2">
-          <Badge variant={isValid ? "success" : "warning"} className="gap-1.5 text-sm">
-            {isValid ? <ShieldCheck className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
-            {isValid ? "Active Document" : "Expired"}
-          </Badge>
-        </CardTitle>
-      </CardHeader> */}
+      {hasSignatures && (
+        <CardHeader className="">
+          <CardTitle className="flex items-center gap-2">
+            <Badge type="supportive" className="gap-1.5 text-sm">
+              {hasSignatures ? (
+                <ShieldAlert className="h-4 w-4" />
+              ) : (
+                <PaperclipIcon className="h-4 w-4" />
+              )}
+              {hasSignatures ? "Signed Document" : "Filled-out Document"}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+      )}
 
       <CardContent className="space-y-5">
         <div className="grid gap-3">
           <MetaRow
             icon={<Hash className="h-4 w-4" />}
             label="Serial"
-            value={signedDocument.verification_code}
+            value={document.verification_code ?? document.code}
           />
           <MetaRow
             icon={<FileText className="h-4 w-4" />}
             label="Title"
-            value={signedDocument.form_label ?? "Signed Document"}
+            value={document.form_label ?? "Unspecified Document"}
           />
-          <MetaRow
-            icon={<Clock className="h-4 w-4" />}
-            label="Signed On"
-            value={formatWhen(signedDocument.effective_date)}
-          />
-          {/* <MetaRow
-            icon={<Clock className="h-4 w-4" />}
-            label="Expires On"
-            value={formatWhen(signedDocument.expiry_date)}
-          /> */}
-          <MetaRow
-            icon={<User className="h-4 w-4" />}
-            label="Signatories"
-            value={<PeopleList list={signedDocument.signatories} />}
-          />
-          {/* <MetaRow
-            icon={<Stamp className="h-4 w-4" />}
-            label="Notarized By"
-            value={<PeopleList list={[{ name: "Atty. Liza Mendoza", title: "Notary Public" }]} />}
-          /> */}
+          {date && (
+            <MetaRow
+              icon={<Clock className="h-4 w-4" />}
+              label="Signed On"
+              value={formatWhen(date)}
+            />
+          )}
+          {document.signatories?.length && (
+            <MetaRow
+              icon={<User className="h-4 w-4" />}
+              label="Signatories"
+              value={<PeopleList list={document.signatories as IFormSignatory[]} />}
+            />
+          )}
         </div>
       </CardContent>
     </Card>

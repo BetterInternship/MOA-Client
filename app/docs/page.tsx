@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { VerificationDetailsCard } from "@/components/docs/VerificationDetailsCard";
 import { PdfViewerPanel } from "@/components/docs/PdfViewerPanel";
-import { useDocsControllerGetByVerificationCode } from "../api";
-import { SignedDocument } from "@/types/db";
+import { SignedOrExternalDocumentInfo, useDocsControllerGetByVerificationCode } from "../api";
 import { useSearchParams } from "next/navigation";
 
 const SerialSchema = z
@@ -31,7 +30,8 @@ export default function VerifyDocsPage() {
 function VerifyDocsPageContent() {
   const [serial, setSerial] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<SignedDocument | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  const [result, setResult] = useState<SignedOrExternalDocumentInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const signedDocument = useDocsControllerGetByVerificationCode(serial);
   const searchParams = useSearchParams();
@@ -43,7 +43,7 @@ function VerifyDocsPageContent() {
 
   useEffect(() => {
     const doc = signedDocument.data?.signedDocument;
-    if (doc) setResult((doc as SignedDocument) ?? {});
+    if (doc) setResult(doc ?? {});
     setLoading(signedDocument.isFetching);
   }, [signedDocument]);
 
@@ -140,7 +140,7 @@ function VerifyDocsPageContent() {
           <div className="grid gap-6 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
             {/* Left: document data */}
             <div>
-              <VerificationDetailsCard signedDocument={result} />
+              <VerificationDetailsCard document={result} />
             </div>
             {/* Right: PDF viewer */}
             <div className="sticky top-24 self-start">
