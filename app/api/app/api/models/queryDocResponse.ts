@@ -5,10 +5,10 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { QueryDocResponseSignedDocument } from "./queryDocResponseSignedDocument";
+import type { SignedOrExternalDocumentInfo } from "./signedOrExternalDocumentInfo";
 
 export interface QueryDocResponse {
   success: boolean;
   message: string;
-  signedDocument: QueryDocResponseSignedDocument;
+  signedDocument: SignedOrExternalDocumentInfo;
 }

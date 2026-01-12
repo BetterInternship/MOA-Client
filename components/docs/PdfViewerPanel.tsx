@@ -2,8 +2,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { File as FileIcon } from "lucide-react";
+import { File as FileIcon, Loader2 } from "lucide-react";
 import { ExternalLink, Download } from "lucide-react";
+import { useState } from "react";
 
 export function PdfViewerPanel({
   title,
@@ -14,6 +15,30 @@ export function PdfViewerPanel({
   viewUrl: string;
   downloadUrl?: string;
 }) {
+  const [loading, setLoading] = useState(false);
+  async function downloadPdf(url: string, filename: string = "document.pdf") {
+    setLoading(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const blob = await response.blob(); // get file data
+      const blobUrl = URL.createObjectURL(blob); // create local URL
+
+      const a = document.createElement("a"); // create anchor
+      a.href = blobUrl;
+      a.download = (filename || url.split("/").pop()) ?? ""; // default name
+      document.body.appendChild(a);
+      a.click(); // trigger download
+
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl); // clean up
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+    setLoading(false);
+  }
+
   return (
     <Card className="overflow-hidden rounded-md border bg-white shadow">
       <CardHeader className="">
@@ -25,29 +50,14 @@ export function PdfViewerPanel({
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2 text-sm">
-            <Button asChild variant="outline">
-              <Link
-                href={viewUrl}
-                target="_blank"
-                rel="noopener"
-                className="inline-flex items-center"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Open in new tab
-              </Link>
-            </Button>
-
             {downloadUrl && (
-              <Button asChild>
-                <Link
-                  href={downloadUrl}
-                  target="_blank"
-                  rel="noopener"
-                  className="inline-flex items-center"
-                >
+              <Button disabled={loading} onClick={() => void downloadPdf(viewUrl, `${title}.pdf`)}>
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
                   <Download className="mr-2 h-4 w-4" />
-                  Download PDF
-                </Link>
+                )}
+                Download PDF
               </Button>
             )}
           </div>
