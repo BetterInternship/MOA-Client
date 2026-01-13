@@ -26,7 +26,15 @@ function formRowsToRowEntries(rows: FormRow[]): RowEntry[][] {
   });
 }
 
-export default function FormDataModal({ rows, label }: { rows: FormRow[]; label: string }) {
+export default function FormDataModal({
+  rows,
+  label,
+  formName,
+}: {
+  rows: FormRow[];
+  label: string;
+  formName?: string;
+}) {
   const tableData = useMemo(() => {
     if (!rows || rows.length === 0) return [];
     return formRowsToRowEntries(rows);

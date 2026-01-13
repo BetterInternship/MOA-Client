@@ -233,7 +233,11 @@ export default function MyFormsTable({
           // Open modal with filtered data
           openModal(
             modalName,
-            <FormDataModal rows={exportedForms} label={exportLabel ?? "Form Data"} />,
+            <FormDataModal
+              rows={exportedForms}
+              label={exportLabel ?? "Form Data"}
+              formName={exportFormName}
+            />,
             {
               title: `${exportLabel ?? "Form Data"} (${exportedForms.length} forms)`,
               panelClassName: "sm:max-w-6xl sm:w-[92vw]",
