@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, FileText, Hash, PaperclipIcon, ShieldAlert, User } from "lucide-react";
 import { MetaRow } from "./MetaRow";
 import { formatWhen } from "@/lib/format";
-import { IFormSignatory } from "@betterinternship/core/forms";
+import { IFormSignee } from "@betterinternship/core/forms";
 import { Badge } from "../ui/badge";
 
 interface DocResponse {
@@ -15,21 +15,19 @@ interface DocResponse {
   verification_code?: string;
 }
 
-function PeopleList({ list }: { list?: IFormSignatory[] }) {
+function PeopleList({ list }: { list?: IFormSignee[] }) {
   if (!list || list.length === 0) return <>--</>;
   return (
-    <div className="space-y-1">
+    <div className="space-y-3">
       {list.map((p, i) => (
         <div key={i}>
-          <span className="font-semibold">
-            {p.honorific ?? ""} {p.name}
-          </span>
-          {p.title && p.name && (
-            <>
-              {" "}
-              — <span className="text-muted-foreground">{p.title}</span>
-            </>
-          )}
+          <span className="font-semibold">{p.name}</span>
+          <div className="flex flex-col">
+            {p.title && <div className="text-xs text-gray-500">{p.title}</div>}
+            {p.signedDate && (
+              <code className="text-xs text-gray-500">{formatWhen(p.signedDate)}</code>
+            )}
+          </div>
         </div>
       ))}
     </div>
@@ -39,6 +37,7 @@ function PeopleList({ list }: { list?: IFormSignatory[] }) {
 export function VerificationDetailsCard({ document }: { document: DocResponse }) {
   const date = document.date_made || document.uploaded_at;
   const hasSignatures = !!document.signatories?.length;
+  console.log(document);
 
   return (
     <Card className="bg-white">
@@ -80,7 +79,7 @@ export function VerificationDetailsCard({ document }: { document: DocResponse })
             <MetaRow
               icon={<User className="h-4 w-4" />}
               label="Signatories"
-              value={<PeopleList list={document.signatories as IFormSignatory[]} />}
+              value={<PeopleList list={document.signatories as []} />}
             />
           ) : (
             <MetaRow
