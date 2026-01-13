@@ -5,12 +5,22 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Download, Hourglass, Table2 } from "lucide-react";
+import { ArrowRight, Download, Hourglass, Table2, Loader2 } from "lucide-react";
 import FormDataModal from "@/components/docs/dashboard/FormDataModal";
 import { useModal } from "@/app/providers/modal-provider";
 import { IMyForm } from "../forms/myforms.ctx";
 import { IFormSignatory } from "@betterinternship/core/forms";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
+import { useFormsControllerGetBulkFormProcesses, ExportableFormsResponse } from "@/app/api";
+import { toast } from "sonner";
+
+export type FormRow = {
+  form_label: string;
+  form_name: string;
+  timestamp: string;
+  url?: string;
+  inputs?: Record<string, unknown>;
+};
 
 export function getDisplayValue(info: Record<string, unknown>, section: string, key: string) {
   if (!info) return "—";
@@ -160,16 +170,43 @@ export default function MyFormsTable({
     [exportLabel]
   );
 
+  const mutation = useFormsControllerGetBulkFormProcesses({
+    mutation: {
+      onSuccess: (response: ExportableFormsResponse) => {
+        if (!response?.processes || response.processes.length === 0) {
+          toast.error("No processes found");
+          return;
+        }
+
+        // Transform response data to FormDataModal format
+        const exportedForms: FormRow[] = response.processes.map((process) => ({
+          form_label: process.formLabel,
+          form_name: process.formName,
+          timestamp: process.createdAt,
+          url: (typeof process.documentUrl === "string" ? process.documentUrl : "") || "",
+          inputs: process.inputs,
+        }));
+
+        openModal(
+          modalName,
+          <FormDataModal rows={exportedForms} label={exportLabel ?? "Form Data"} />,
+          {
+            title: exportLabel ?? "Form Data",
+            panelClassName: "sm:max-w-6xl sm:w-[92vw]",
+          }
+        );
+      },
+      onError: () => {
+        toast.error("Failed to load export data");
+      },
+    },
+  });
+
+  const { mutate: getExportData, isPending } = mutation;
+
   const handleOpenExport = useCallback(() => {
-    openModal(
-      modalName,
-      <FormDataModal rows={rows} label={exportLabel ?? "Form Data"} />, // content
-      {
-        title: exportLabel ?? "Form Data",
-        panelClassName: "sm:max-w-6xl sm:w-[92vw]",
-      }
-    );
-  }, [exportLabel, modalName, openModal, rows]);
+    getExportData({ data: { signatoryId: profile.id } });
+  }, [getExportData, profile.id]);
 
   return (
     <DataTable
@@ -180,9 +217,18 @@ export default function MyFormsTable({
       pageSizes={[20, 50]}
       toolbarActions={
         exportEnabled ? (
-          <Button className="inline-flex h-10 items-center gap-2" onClick={handleOpenExport}>
-            <Table2 className="h-4 w-4" />
-            Export CSV
+          <Button
+            className="inline-flex h-10 items-center gap-2"
+            onClick={handleOpenExport}
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            disabled={isPending}
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Table2 className="h-4 w-4" />
+            )}
+            {isPending ? "Loading..." : "Export CSV"}
           </Button>
         ) : null
       }

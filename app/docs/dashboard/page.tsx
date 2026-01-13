@@ -107,7 +107,12 @@ export default function DocsDashboardPage() {
             {/* Content */}
             {activeTab === "all" && (
               <Card className="space-y-3 p-3">
-                <MyFormsTable rows={forms} isCoordinator={isCoordinator} />
+                <MyFormsTable
+                  rows={forms}
+                  isCoordinator={isCoordinator}
+                  exportEnabled
+                  exportLabel="All Signed Forms"
+                />
               </Card>
             )}
 
@@ -117,6 +122,8 @@ export default function DocsDashboardPage() {
                   <MyFormsTable
                     rows={forms.filter((form) => form.label === tab.label)}
                     isCoordinator={isCoordinator}
+                    exportEnabled
+                    exportLabel={tab.label}
                   />
                 </Card>
               ) : null

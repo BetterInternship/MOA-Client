@@ -28,6 +28,7 @@ import type {
   CancelFormDto,
   ContinueFormDto,
   ErrorResponse,
+  ExportableFormsResponse,
   FieldRegistryResponse,
   FieldRequestResponse,
   FormDocumentResponse,
@@ -42,6 +43,7 @@ import type {
   FormsControllerGetLatestFormDocumentAndMetadataParams,
   FormsControllerGetRegistryFormDocumentParams,
   FormsControllerGetRegistryFormMetadataParams,
+  GetExportForSignatoryDto,
   InitiateFormDto,
   RegisterFieldDto,
   RegisterFormSchemaDto,
@@ -3206,6 +3208,80 @@ export const useFormsControllerGenerateTestForm = <TError = ErrorResponse, TCont
   TContext
 > => {
   const mutationOptions = getFormsControllerGenerateTestFormMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerGetBulkFormProcesses = (
+  getExportForSignatoryDto: GetExportForSignatoryDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<ExportableFormsResponse>({
+    url: `/api/forms/bulk-processes`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: getExportForSignatoryDto,
+    signal,
+  });
+};
+
+export const getFormsControllerGetBulkFormProcessesMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerGetBulkFormProcesses>>,
+    TError,
+    { data: GetExportForSignatoryDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerGetBulkFormProcesses>>,
+  TError,
+  { data: GetExportForSignatoryDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerGetBulkFormProcesses"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerGetBulkFormProcesses>>,
+    { data: GetExportForSignatoryDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerGetBulkFormProcesses(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerGetBulkFormProcessesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerGetBulkFormProcesses>>
+>;
+export type FormsControllerGetBulkFormProcessesMutationBody = GetExportForSignatoryDto;
+export type FormsControllerGetBulkFormProcessesMutationError = ErrorResponse;
+
+export const useFormsControllerGetBulkFormProcesses = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerGetBulkFormProcesses>>,
+      TError,
+      { data: GetExportForSignatoryDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerGetBulkFormProcesses>>,
+  TError,
+  { data: GetExportForSignatoryDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerGetBulkFormProcessesMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
