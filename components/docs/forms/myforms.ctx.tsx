@@ -16,6 +16,7 @@ import { createContext, useContext } from "react";
 
 export interface IMyForm {
   label: string;
+  name: string;
   form_process_id: string;
   prefilled_document_id?: string | null;
   pending_document_id?: string | null;
@@ -58,6 +59,7 @@ export const MyFormsContextProvider = ({ children }: { children: React.ReactNode
       ?.filter((f) => !!f.form_processes)
       ?.map((f) => ({
         label: f.form_label,
+        name: f.form_name,
         form_process_id: f.form_process_id,
         prefilled_document_id: f.form_processes.prefilled_document_id,
         pending_document_id: f.form_processes.pending_document_id,

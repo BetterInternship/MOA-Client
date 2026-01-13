@@ -2919,8 +2919,8 @@
       },
       "GetExportForSignatoryDto": {
         "type": "object",
-        "properties": { "signatoryId": { "type": "string" } },
-        "required": ["signatoryId"]
+        "properties": { "signatoryId": { "type": "string" }, "formName": { "type": "string" } },
+        "required": ["signatoryId", "formName"]
       },
       "ExportableFormDto": {
         "type": "object",

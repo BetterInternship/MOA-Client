@@ -18,12 +18,15 @@ export default function DocsDashboardPage() {
   const [activeTab, setActiveTab] = useState("all");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Temp solution, in the future, lets look at the coordinator forms + autofill forms
   const formTabs = useMemo(() => {
-    return forms.reduce<{ id: string; label: string }[]>((acc, form: IMyForm) => {
+    return forms.reduce<{ id: string; label: string; formName: string }[]>((acc, form: IMyForm) => {
       const id = form.label;
       if (!id || !!acc.find((tab) => tab.id === id)) return acc;
-      acc.push({ id, label: form.label || "Untitled Form" });
+      acc.push({
+        id,
+        label: form.label || "Untitled Form",
+        formName: form.name, // Use actual form name
+      });
       return acc;
     }, []);
   }, [forms]);
@@ -107,12 +110,7 @@ export default function DocsDashboardPage() {
             {/* Content */}
             {activeTab === "all" && (
               <Card className="space-y-3 p-3">
-                <MyFormsTable
-                  rows={forms}
-                  isCoordinator={isCoordinator}
-                  exportEnabled
-                  exportLabel="All Signed Forms"
-                />
+                <MyFormsTable rows={forms} isCoordinator={isCoordinator} />
               </Card>
             )}
 
@@ -124,6 +122,7 @@ export default function DocsDashboardPage() {
                     isCoordinator={isCoordinator}
                     exportEnabled
                     exportLabel={tab.label}
+                    exportFormName={tab.formName}
                   />
                 </Card>
               ) : null

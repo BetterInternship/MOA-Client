@@ -8,4 +8,5 @@
 
 export interface GetExportForSignatoryDto {
   signatoryId: string;
+  formName: string;
 }
