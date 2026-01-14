@@ -151,6 +151,7 @@ function PageContent() {
                   values={finalValues}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
+                  scale={0.7}
                 />
               ) : (
                 <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -222,6 +223,7 @@ function PageContent() {
                   values={finalValues}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
+                  scale={0.7}
                 />
               ) : (
                 <div className="p-4 text-sm text-gray-500">No preview available</div>
