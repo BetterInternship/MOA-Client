@@ -26,20 +26,34 @@ function formRowsToRowEntries(rows: FormRow[]): RowEntry[][] {
   });
 }
 
-export default function FormDataModal({ rows, label }: { rows: FormRow[]; label: string }) {
-  const tableData = useMemo(() => formRowsToRowEntries(rows), [rows]);
+export default function FormDataModal({
+  rows,
+  label,
+  formName,
+}: {
+  rows: FormRow[];
+  label: string;
+  formName?: string;
+}) {
+  const tableData = useMemo(() => {
+    if (!rows || rows.length === 0) return [];
+    return formRowsToRowEntries(rows);
+  }, [rows]);
+
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
 
   const handleColumnsExtracted = (columns: string[]) => {
+    if (!columns || columns.length === 0) return;
     setAvailableColumns(columns);
-    // initialize only once to avoid clobbering reorder/hide; set if empty
+    // Initialize only once to avoid clobbering reorder/hide; set if empty
     if (visibleColumns.length === 0) {
       setVisibleColumns(columns);
     }
   };
 
   const handleToggleColumn = (columnName: string) => {
+    if (!columnName) return;
     setVisibleColumns((prev) => {
       if (prev.includes(columnName)) {
         return prev.filter((c) => c !== columnName);
@@ -61,23 +75,36 @@ export default function FormDataModal({ rows, label }: { rows: FormRow[]; label:
   };
 
   const handleColumnOrderChange = (newOrder: string[]) => {
+    if (!newOrder || newOrder.length === 0) return;
     setVisibleColumns(newOrder);
-    // keep availableColumns aligned to the new order for future toggles
+    // Keep availableColumns aligned to the new order for future toggles
     const remainder = availableColumns.filter((c) => !newOrder.includes(c));
     setAvailableColumns([...newOrder, ...remainder]);
   };
 
-  const hasData = tableData.length > 0;
+  const handleResetColumns = () => {
+    if (availableColumns.length > 0) {
+      setVisibleColumns([...availableColumns]);
+    }
+  };
+
+  const hasData = tableData && tableData.length > 0;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="space-y-1">
-        <p className="text-sm text-gray-600">
+    <div className="flex h-full flex-col gap-4">
+      {/* Info Section */}
+      <div className="space-y-2 px-1">
+        <h3 className="text-foreground text-sm font-semibold">Export Data</h3>
+        <p className="text-muted-foreground text-xs">
           Reorder or hide fields, then export the visible data as CSV.
+        </p>
+        <p className="text-muted-foreground text-xs">
+          Total records: <span className="font-medium">{tableData.length}</span>
         </p>
       </div>
 
-      <div className="flex flex-wrap justify-between gap-2">
+      {/* Controls Section */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <div className="flex gap-2">
           {availableColumns.length > 0 && (
             <FieldVisibilityToggle
@@ -91,21 +118,24 @@ export default function FormDataModal({ rows, label }: { rows: FormRow[]; label:
             variant="outline"
             size="sm"
             className="gap-2"
-            onClick={() => {
-              // reset columns to initial state
-              setVisibleColumns(availableColumns);
-            }}
-            disabled={!availableColumns.length}
+            onClick={handleResetColumns}
+            disabled={!availableColumns.length || visibleColumns.length === availableColumns.length}
+            title="Reset to all columns"
           >
             <RotateCcw className="h-4 w-4" />
-            Reset columns
+            Reset
           </Button>
         </div>
 
-        <CsvExporter tableData={tableData} visibleColumns={visibleColumns} />
+        <CsvExporter
+          tableData={tableData}
+          visibleColumns={visibleColumns}
+          recordCount={tableData.length}
+        />
       </div>
 
-      <div className="max-h-[70vh] overflow-auto rounded-[0.33em]">
+      {/* Table Section */}
+      <div className="bg-muted/50 flex-1 overflow-auto rounded-md border">
         {hasData ? (
           <Table
             table={tableData}
@@ -114,7 +144,12 @@ export default function FormDataModal({ rows, label }: { rows: FormRow[]; label:
             onColumnOrderChange={handleColumnOrderChange}
           />
         ) : (
-          <div className="p-6 text-sm text-gray-600">No data available.</div>
+          <div className="flex h-full items-center justify-center p-8">
+            <div className="text-muted-foreground text-center text-sm">
+              <p className="font-medium">No data available</p>
+              <p className="mt-1 text-xs">Check your filters and try again</p>
+            </div>
+          </div>
         )}
       </div>
     </div>

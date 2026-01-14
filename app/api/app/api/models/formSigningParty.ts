@@ -14,5 +14,5 @@ export interface FormSigningParty {
   signatory_title: string;
   signatory_account: FormSigningPartySignatoryAccount;
   signatory_source: SignatorySource;
-  signed: boolean;
+  signed?: boolean;
 }

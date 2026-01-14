@@ -5,12 +5,22 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Download, Hourglass, Table2 } from "lucide-react";
+import { ArrowRight, Download, Hourglass, Table2, Loader2 } from "lucide-react";
 import FormDataModal from "@/components/docs/dashboard/FormDataModal";
 import { useModal } from "@/app/providers/modal-provider";
 import { IMyForm } from "../forms/myforms.ctx";
 import { IFormSignatory } from "@betterinternship/core/forms";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
+import { useFormsControllerGetBulkFormProcesses, ExportableFormsResponse } from "@/app/api";
+import { toast } from "sonner";
+
+export type FormRow = {
+  form_label: string;
+  form_name: string;
+  timestamp: string;
+  url?: string;
+  inputs?: Record<string, unknown>;
+};
 
 export function getDisplayValue(info: Record<string, unknown>, section: string, key: string) {
   if (!info) return "—";
@@ -144,11 +154,13 @@ export default function MyFormsTable({
   isCoordinator,
   exportEnabled = false,
   exportLabel,
+  exportFormName,
 }: {
   rows: IMyForm[];
   isCoordinator: boolean;
   exportEnabled?: boolean;
   exportLabel?: string;
+  exportFormName?: string;
 }) {
   const profile = useSignatoryProfile();
   const columns = isCoordinator
@@ -160,16 +172,99 @@ export default function MyFormsTable({
     [exportLabel]
   );
 
+  // Export mutation handler
+  const mutation = useFormsControllerGetBulkFormProcesses({
+    mutation: {
+      onSuccess: (response) => {
+        try {
+          const data = (response as ExportableFormsResponse) ?? null;
+
+          // Validate response structure
+          if (!data || !Array.isArray(data.processes)) {
+            toast.error("Invalid response format");
+            return;
+          }
+
+          if (data.processes.length === 0) {
+            toast.info("No signed forms available to export");
+            return;
+          }
+
+          // Debug: Log what we received
+          console.log("Export response received:", {
+            totalProcesses: data.processes.length,
+            processes: data.processes,
+          });
+
+          // Transform response data with validation (just check if process exists)
+          const exportedForms: FormRow[] = data.processes
+            .filter((process) => {
+              // Just validate that process exists and has at least an id
+              return process && (process.id || process.formLabel || process.formName);
+            })
+            .map((process) => {
+              // Log each form being added
+              console.log("Processing form:", {
+                id: process.id,
+                formLabel: process.formLabel,
+                formName: process.formName,
+                createdAt: process.createdAt,
+              });
+
+              return {
+                form_label: process.formLabel || "Unknown",
+                form_name: process.formName || "Unknown",
+                timestamp: process.createdAt || new Date().toISOString(),
+                url: (typeof process.documentUrl === "string" ? process.documentUrl : "") || "",
+                inputs: process.inputs || {},
+              };
+            });
+
+          if (exportedForms.length === 0) {
+            toast.warning("No valid forms found in response");
+            return;
+          }
+
+          if (exportedForms.length === 0) {
+            toast.warning("No valid forms found in response");
+            return;
+          }
+
+          // Open modal with filtered data
+          openModal(
+            modalName,
+            <FormDataModal
+              rows={exportedForms}
+              label={exportLabel ?? "Form Data"}
+              formName={exportFormName}
+            />,
+            {
+              title: `${exportLabel ?? "Form Data"} (${exportedForms.length} forms)`,
+              panelClassName: "sm:max-w-6xl sm:w-[92vw]",
+            }
+          );
+        } catch (error) {
+          console.error("Error processing export data:", error);
+          toast.error("Error processing export data");
+        }
+      },
+      onError: (error) => {
+        console.error("Export error:", error);
+        toast.error("Failed to load export data. Please try again.");
+      },
+    },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { mutate: getExportData, isPending } = mutation;
+
   const handleOpenExport = useCallback(() => {
-    openModal(
-      modalName,
-      <FormDataModal rows={rows} label={exportLabel ?? "Form Data"} />, // content
-      {
-        title: exportLabel ?? "Form Data",
-        panelClassName: "sm:max-w-6xl sm:w-[92vw]",
-      }
-    );
-  }, [exportLabel, modalName, openModal, rows]);
+    if (!profile?.id || !exportFormName) {
+      toast.error("Profile information not available");
+      return;
+    }
+    getExportData({ data: { signatoryId: profile.id, formName: exportFormName } });
+  }, [getExportData, profile?.id, exportFormName]);
 
   return (
     <DataTable
@@ -180,9 +275,18 @@ export default function MyFormsTable({
       pageSizes={[20, 50]}
       toolbarActions={
         exportEnabled ? (
-          <Button className="inline-flex h-10 items-center gap-2" onClick={handleOpenExport}>
-            <Table2 className="h-4 w-4" />
-            Export CSV
+          <Button
+            className="inline-flex h-10 items-center gap-2"
+            onClick={handleOpenExport}
+            disabled={isPending || !profile?.id}
+            title={isPending ? "Loading..." : "Export signed forms"}
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Table2 className="h-4 w-4" />
+            )}
+            {isPending ? "Loading..." : "Export CSV"}
           </Button>
         ) : null
       }
