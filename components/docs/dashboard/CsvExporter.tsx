@@ -42,12 +42,12 @@ export default function CsvExporter({ tableData, visibleColumns, recordCount }: 
         const rowData = visibleColumns.map((col) => {
           const entry = rowEntries.find((e) => e.col === col);
           let value = entry?.value ?? "";
-          
+
           // Handle different types
           if (typeof value === "object") {
             value = JSON.stringify(value);
           }
-          
+
           // Escape quotes and wrap in quotes
           const escaped = String(value).replace(/"/g, '""');
           return `"${escaped}"`;
@@ -72,24 +72,24 @@ export default function CsvExporter({ tableData, visibleColumns, recordCount }: 
       // Generate CSV locally instead of calling API
       const csvContent = generateCsvContent();
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      
+
       // Create download link
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
-      
+
       const timestamp = new Date().toISOString().split("T")[0];
       const filename = `export_${timestamp}_${Date.now()}.csv`;
-      
+
       link.setAttribute("href", url);
       link.setAttribute("download", filename);
       link.style.visibility = "hidden";
-      
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       URL.revokeObjectURL(url);
-      
+
       toast.success(`Exported ${tableData.length} record(s) as CSV`);
     } catch (error) {
       console.error("Export error:", error);
@@ -122,3 +122,4 @@ export default function CsvExporter({ tableData, visibleColumns, recordCount }: 
       )}
     </Button>
   );
+}
