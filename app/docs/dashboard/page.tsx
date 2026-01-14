@@ -25,7 +25,7 @@ export default function DocsDashboardPage() {
       acc.push({
         id,
         label: form.label || "Untitled Form",
-        formName: form.name, // Use actual form name
+        formName: form.name,
       });
       return acc;
     }, []);

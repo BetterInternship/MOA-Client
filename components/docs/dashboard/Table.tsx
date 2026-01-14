@@ -26,6 +26,9 @@ export default function Table({
   const data = useMemo(() => flattenData(table), [table]);
   const allColumns = useMemo(() => getColumns(data), [data]);
 
+  // Filter/transform some data
+  
+
   // Notify parent of available columns in useEffect (not during render)
   useEffect(() => {
     if (onColumnsExtracted && allColumns.length > 0) {
