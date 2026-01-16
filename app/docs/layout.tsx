@@ -1,6 +1,7 @@
 "use client";
 
 import Header from "@/components/docs/Header";
+import { CompleteProfileModalTrigger } from "@/components/CompleteProfileModalTrigger";
 import { Providers } from "./providers";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -29,6 +30,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <Providers>
+        <CompleteProfileModalTrigger />
         <body
           className="flex h-[100svh]! w-[100vw] flex-col justify-evenly overflow-x-hidden bg-white"
           suppressHydrationWarning
