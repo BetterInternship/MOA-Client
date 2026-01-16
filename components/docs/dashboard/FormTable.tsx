@@ -190,12 +190,6 @@ export default function MyFormsTable({
             return;
           }
 
-          // Debug: Log what we received
-          console.log("Export response received:", {
-            totalProcesses: data.processes.length,
-            processes: data.processes,
-          });
-
           // Transform response data with validation (just check if process exists)
           const exportedForms: FormRow[] = data.processes
             .filter((process) => {
@@ -203,14 +197,6 @@ export default function MyFormsTable({
               return process && (process.id || process.formLabel || process.formName);
             })
             .map((process) => {
-              // Log each form being added
-              console.log("Processing form:", {
-                id: process.id,
-                formLabel: process.formLabel,
-                formName: process.formName,
-                createdAt: process.createdAt,
-              });
-
               return {
                 form_label: process.formLabel || "Unknown",
                 form_name: process.formName || "Unknown",
@@ -219,11 +205,6 @@ export default function MyFormsTable({
                 inputs: process.inputs || {},
               };
             });
-
-          if (exportedForms.length === 0) {
-            toast.warning("No valid forms found in response");
-            return;
-          }
 
           if (exportedForms.length === 0) {
             toast.warning("No valid forms found in response");

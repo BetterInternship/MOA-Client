@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 interface TableProps {
   table: RowEntry[][];
   visibleColumns?: string[];
+  fieldLabels: Record<string, string>;
   onColumnsExtracted?: (columns: string[]) => void;
   onColumnOrderChange?: (newOrder: string[]) => void;
 }
@@ -12,6 +13,7 @@ interface TableProps {
 export default function Table({
   table,
   visibleColumns,
+  fieldLabels,
   onColumnsExtracted,
   onColumnOrderChange,
 }: TableProps) {
@@ -22,9 +24,16 @@ export default function Table({
     direction: "asc" | "desc";
   }>({ column: null, direction: "asc" });
 
+  // Debug: log fieldLabels
+  useEffect(() => {
+    console.log("[DEBUG] Table received fieldLabels:", fieldLabels);
+  }, [fieldLabels]);
+
   // Flatten the data and extract columns
   const data = useMemo(() => flattenData(table), [table]);
   const allColumns = useMemo(() => getColumns(data), [data]);
+
+  // Filter/transform some data
 
   // Notify parent of available columns in useEffect (not during render)
   useEffect(() => {
@@ -123,6 +132,10 @@ export default function Table({
     return sortConfig.direction === "asc" ? "↑" : "↓";
   };
 
+  const getColumnLabel = (columnName: string): string => {
+    return fieldLabels?.[columnName] || columnName;
+  };
+
   return (
     <div className="overflow-x-auto rounded-[0.33em] border border-gray-300">
       <table className="min-w-full bg-white">
@@ -142,7 +155,7 @@ export default function Table({
                 onClick={() => handleSortToggle(columnName)}
               >
                 <span className="flex items-center gap-1">
-                  {columnName}
+                  {getColumnLabel(columnName)}
                   <span className="text-xs text-gray-500">{sortIcon(columnName)}</span>
                 </span>
               </th>

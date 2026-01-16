@@ -9,6 +9,7 @@ import { IFormFiller } from "./docs/forms/form-filler.ctx";
 import { SpecifySigningPartiesModal } from "./modals/SpecifySigningPartyModal";
 import { FormContinuationSuccessModal } from "./modals/FormContinuationSuccessModal";
 import { FormRejectionPromptModal } from "./modals/FormRejectionPromptModal";
+import { CompleteProfileModal } from "./docs/modals/CompleteProfileModal";
 import { ISignatoryFormSettings } from "@/app/docs/auth/provider/form-settings.ctx";
 import { SetupFormSettings } from "./modals/SetupFormSettings";
 
@@ -106,6 +107,16 @@ export const useModalRegistry = () => {
           title: "Reject to Sign This Form",
         }),
       close: () => close("form-rejection-prompt"),
+    },
+
+    // Complete profile modal
+    completeProfile: {
+      open: () =>
+        open("complete-profile", <CompleteProfileModal close={() => close("complete-profile")} />, {
+          hasClose: false,
+          allowBackdropClick: false,
+        }),
+      close: () => close("complete-profile"),
     },
   };
 

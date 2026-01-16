@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Table from "@/components/docs/dashboard/Table";
 import CsvExporter from "@/components/docs/dashboard/CsvExporter";
@@ -8,6 +8,8 @@ import FieldVisibilityToggle from "@/components/docs/dashboard/FieldVisibilityTo
 import { FormRow } from "@/components/docs/dashboard/FormTable";
 import { RowEntry } from "@/lib/types";
 import { RotateCcw } from "lucide-react";
+import { formsControllerGetLatestFormDocumentAndMetadata } from "@/app/api";
+import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 
 function formRowsToRowEntries(rows: FormRow[]): RowEntry[][] {
   return rows.map((row) => {
@@ -42,6 +44,50 @@ export default function FormDataModal({
 
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  const [fieldLabels, setFieldLabels] = useState<Record<string, string>>({});
+
+  // Fetch form metadata to get field labels
+  useEffect(() => {
+    if (!formName) return;
+
+    const fetchMetadata = async () => {
+      try {
+        const response = await formsControllerGetLatestFormDocumentAndMetadata({
+          name: formName,
+        });
+
+        if (response?.formMetadata) {
+          const fm = new FormMetadata(response.formMetadata as unknown as IFormMetadata);
+          const labels: Record<string, string> = {
+            form_label: "Form Label",
+            form_name: "Form Name",
+            timestamp: "Created At",
+            url: "Document URL",
+          };
+
+          // Get all fields from the form metadata (includes labels)
+          const fieldsForClient = fm.getFieldsForClientService();
+
+          console.log("[DEBUG] FormMetadata fieldsForClient:", fieldsForClient);
+
+          // Add client fields with labels
+          fieldsForClient.forEach((field: any) => {
+            if (field.field && field.label) {
+              labels[field.field] = field.label;
+            }
+          });
+
+          console.log("[DEBUG] Final fieldLabels:", labels);
+          setFieldLabels(labels);
+        }
+      } catch (error) {
+        console.error("Failed to fetch form metadata:", error);
+        // Continue without metadata - will fall back to field names
+      }
+    };
+
+    fetchMetadata();
+  }, [formName]);
 
   const handleColumnsExtracted = (columns: string[]) => {
     if (!columns || columns.length === 0) return;
@@ -140,6 +186,7 @@ export default function FormDataModal({
           <Table
             table={tableData}
             visibleColumns={visibleColumns}
+            fieldLabels={fieldLabels}
             onColumnsExtracted={handleColumnsExtracted}
             onColumnOrderChange={handleColumnOrderChange}
           />
