@@ -28,7 +28,8 @@ export type ValidatorRuleType =
   | "date"
   | "minDate"
   | "maxDate"
-  | "plainText";
+  | "plainText"
+  | "customRefine";
 
 export interface ValidatorRule {
   id: string;
@@ -42,6 +43,7 @@ export interface ValidatorRule {
     maxItems?: number;
     minMessage?: string;
     maxMessage?: string;
+    customCode?: string;
   };
 }
 
@@ -81,6 +83,8 @@ const REGEX_PATTERNS = {
   regex: /\.regex\(\s*\/([^/]+)\/([gimuy]*)[^)]*message\s*:\s*"([^"]+)"/,
   regexConstructor:
     /\.regex\(\s*new\s+RegExp\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)[^)]*message\s*:\s*"([^"]+)"/,
+  customRefine:
+    /\.refine\(\s*(function|\([^)]*\)\s*=>|date\s*=>\s*{[\s\S]*?})\s*,\s*\{\s*message\s*:\s*"([^"]+)"/,
 } as const;
 
 // ============================================================================
@@ -191,6 +195,12 @@ const RULE_DEFINITIONS: Record<
     description: "Title case and characters only (A–Z, 0–9, spaces, basic punctuation)",
     needsValue: false,
     valueType: "none",
+  },
+  customRefine: {
+    label: "Custom Validation",
+    description: "Advanced validation logic",
+    needsValue: true,
+    valueType: "string",
   },
 };
 
@@ -393,6 +403,13 @@ function buildDateValidatorChain(rules: ValidatorRule[]): string {
     code += `.max(new Date("${dateValue}"), { message: "${msg}" })`;
   }
 
+  const customRefineRule = rules.find((r) => r.type === "customRefine");
+  if (customRefineRule && customRefineRule.params?.customCode) {
+    const refineCode = customRefineRule.params.customCode;
+    const message = customRefineRule.params?.message || "Validation failed";
+    code += `.refine((date) => { ${refineCode} }, { message: "${message}" })`;
+  }
+
   return code;
 }
 
@@ -539,6 +556,23 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     }
   }
 
+  // Custom refine pattern - for complex validation logic
+  {
+    // Look for .refine() pattern and extract just the function body
+    // Match: .refine(date => { ...body... }, { message: "..." })
+    const refineMatch = sanitized.match(
+      /\.refine\(\s*\w+\s*=>\s*\{\s*([\s\S]*?)\s*\}\s*,\s*\{\s*message\s*:\s*"([^"]+)"/
+    );
+    if (refineMatch) {
+      const rule = createValidatorRule("customRefine");
+      rule.params = {
+        customCode: refineMatch[1].trim(),
+        message: refineMatch[2],
+      };
+      rules.push(rule);
+    }
+  }
+
   return { rules };
 }
 
@@ -573,7 +607,8 @@ export function validatorConfigToZodCode(config: ValidatorConfig): string {
 
   // Check for date type
   const isDateType = config.rules.some(
-    (r) => r.type === "date" || r.type === "minDate" || r.type === "maxDate"
+    (r) =>
+      r.type === "date" || r.type === "minDate" || r.type === "maxDate" || r.type === "customRefine"
   );
 
   if (isDateType) {
@@ -652,6 +687,8 @@ export function getRuleDescription(rule: ValidatorRule): string {
     }
     case "trim":
       return "Whitespace will be trimmed";
+    case "customRefine":
+      return `Custom: ${String(rule.params?.message || "Custom validation")}`;
     default:
       return def.label;
   }
