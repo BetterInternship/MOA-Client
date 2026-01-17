@@ -44,6 +44,8 @@ export interface ValidatorRule {
     minMessage?: string;
     maxMessage?: string;
     customCode?: string;
+    usesContext?: boolean;
+    refineType?: "refine" | "superRefine";
   };
 }
 
@@ -407,7 +409,20 @@ function buildDateValidatorChain(rules: ValidatorRule[]): string {
   if (customRefineRule && customRefineRule.params?.customCode) {
     const refineCode = customRefineRule.params.customCode;
     const message = customRefineRule.params?.message || "Validation failed";
-    code += `.refine((date) => { ${refineCode} }, { message: "${message}" })`;
+    const refineType = customRefineRule.params?.refineType || "refine";
+    
+    if (refineType === "superRefine") {
+      // superRefine pattern: (date, ctx) => with ctx.addIssue
+      code += `.superRefine((date, ctx) => { ${refineCode} })`;
+    } else {
+      // refine pattern: can be (date) or (date, ctx)
+      const usesContext = customRefineRule.params?.usesContext;
+      if (usesContext) {
+        code += `.refine((date, ctx) => { ${refineCode} }, { message: "${message}" })`;
+      } else {
+        code += `.refine((date) => { ${refineCode} }, { message: "${message}" })`;
+      }
+    }
   }
 
   return code;
@@ -556,18 +571,45 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     }
   }
 
-  // Custom refine pattern - for complex validation logic
+  // Custom refine/superRefine pattern - for complex validation logic
   {
-    // Look for .refine() pattern and extract just the function body
-    // Match: .refine(date => { ...body... }, { message: "..." })
+    // Try .refine() first
+    // Match both patterns:
+    // 1. .refine(date => { ...body... }, { message: "..." })
+    // 2. .refine((date, ctx) => { ...body... }, { message: "..." })
     const refineMatch = sanitized.match(
-      /\.refine\(\s*\w+\s*=>\s*\{\s*([\s\S]*?)\s*\}\s*,\s*\{\s*message\s*:\s*"([^"]+)"/
+      /\.refine\(\s*\(?\s*\w+(?:\s*,\s*\w+)?\s*\)?\s*=>\s*\{\s*([\s\S]*?)\s*\}\s*,\s*\{\s*message\s*:\s*"([^"]+)"/
     );
     if (refineMatch) {
       const rule = createValidatorRule("customRefine");
+      const codeBody = refineMatch[1].trim();
+      const usesContext = /ctx\s*\.\s*context/.test(codeBody);
       rule.params = {
-        customCode: refineMatch[1].trim(),
+        customCode: codeBody,
         message: refineMatch[2],
+        usesContext,
+        refineType: "refine",
+      };
+      rules.push(rule);
+      return { rules };
+    }
+
+    // Try .superRefine() pattern - use greedy matching to capture all nested braces
+    // Match: .superRefine((date, ctx) => { ...body with nested braces... })
+    const superRefineMatch = sanitized.match(
+      /\.superRefine\(\s*\(?\s*\w+(?:\s*,\s*\w+)?\s*\)?\s*=>\s*\{([\s\S]*)\}\s*\)/
+    );
+    if (superRefineMatch) {
+      const rule = createValidatorRule("customRefine");
+      const codeBody = superRefineMatch[1].trim();
+      // Extract message from ctx.addIssue if present
+      const messageMatch = codeBody.match(/message\s*:\s*"([^"]+)"/);
+      const message = messageMatch ? messageMatch[1] : "Validation failed";
+      rule.params = {
+        customCode: codeBody,
+        message,
+        usesContext: true,
+        refineType: "superRefine",
       };
       rules.push(rule);
     }
