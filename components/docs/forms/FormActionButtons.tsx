@@ -81,7 +81,10 @@ export function FormActionButtons() {
               modalRegistry.specifySigningParties.close();
               modalRegistry.formContinuationSuccess.open();
             }),
-          autofillValues
+          updateAutofill,
+          {},
+          autofillValues,
+          form.formMetadata.getSigningParties()
         );
       } else {
         // No contacts needed, submit directly

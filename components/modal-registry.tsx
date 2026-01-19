@@ -4,6 +4,7 @@ import {
   ClientField,
   ClientPhantomField,
   FormValues,
+  IFormSigningParty,
 } from "@betterinternship/core/forms";
 import { IFormFiller } from "./docs/forms/form-filler.ctx";
 import { SpecifySigningPartiesModal } from "./modals/SpecifySigningPartyModal";
@@ -62,7 +63,8 @@ export const useModalRegistry = () => {
         handleSubmit: (finalValues: FormValues, settings: ISignatoryFormSettings) => Promise<any>,
         handleUpdateAutofill: (finalValues: FormValues) => Promise<any>,
         formSettings: ISignatoryFormSettings,
-        autofillValues?: FormValues
+        autofillValues?: FormValues,
+        signingParties?: IFormSigningParty[]
       ) =>
         open(
           "specify-signing-parties",
@@ -75,6 +77,7 @@ export const useModalRegistry = () => {
             handleSubmit={handleSubmit}
             handleUpdateAutofill={handleUpdateAutofill}
             close={() => close("specify-signing-parties")}
+            signingParties={signingParties}
           />,
           {
             title: (

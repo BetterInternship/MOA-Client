@@ -28,7 +28,8 @@ export type ValidatorRuleType =
   | "date"
   | "minDate"
   | "maxDate"
-  | "plainText";
+  | "plainText"
+  | "customRefine";
 
 export interface ValidatorRule {
   id: string;
@@ -42,6 +43,9 @@ export interface ValidatorRule {
     maxItems?: number;
     minMessage?: string;
     maxMessage?: string;
+    customCode?: string;
+    usesContext?: boolean;
+    refineType?: "refine" | "superRefine";
   };
 }
 
@@ -81,6 +85,8 @@ const REGEX_PATTERNS = {
   regex: /\.regex\(\s*\/([^/]+)\/([gimuy]*)[^)]*message\s*:\s*"([^"]+)"/,
   regexConstructor:
     /\.regex\(\s*new\s+RegExp\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)[^)]*message\s*:\s*"([^"]+)"/,
+  customRefine:
+    /\.refine\(\s*(function|\([^)]*\)\s*=>|date\s*=>\s*{[\s\S]*?})\s*,\s*\{\s*message\s*:\s*"([^"]+)"/,
 } as const;
 
 // ============================================================================
@@ -191,6 +197,12 @@ const RULE_DEFINITIONS: Record<
     description: "Title case and characters only (A–Z, 0–9, spaces, basic punctuation)",
     needsValue: false,
     valueType: "none",
+  },
+  customRefine: {
+    label: "Custom Validation",
+    description: "Advanced validation logic",
+    needsValue: true,
+    valueType: "string",
   },
 };
 
@@ -393,6 +405,26 @@ function buildDateValidatorChain(rules: ValidatorRule[]): string {
     code += `.max(new Date("${dateValue}"), { message: "${msg}" })`;
   }
 
+  const customRefineRule = rules.find((r) => r.type === "customRefine");
+  if (customRefineRule && customRefineRule.params?.customCode) {
+    const refineCode = customRefineRule.params.customCode;
+    const message = customRefineRule.params?.message || "Validation failed";
+    const refineType = customRefineRule.params?.refineType || "refine";
+    
+    if (refineType === "superRefine") {
+      // superRefine pattern: (date, ctx) => with ctx.addIssue
+      code += `.superRefine((date, ctx) => { ${refineCode} })`;
+    } else {
+      // refine pattern: can be (date) or (date, ctx)
+      const usesContext = customRefineRule.params?.usesContext;
+      if (usesContext) {
+        code += `.refine((date, ctx) => { ${refineCode} }, { message: "${message}" })`;
+      } else {
+        code += `.refine((date) => { ${refineCode} }, { message: "${message}" })`;
+      }
+    }
+  }
+
   return code;
 }
 
@@ -539,6 +571,50 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     }
   }
 
+  // Custom refine/superRefine pattern - for complex validation logic
+  {
+    // Try .refine() first
+    // Match both patterns:
+    // 1. .refine(date => { ...body... }, { message: "..." })
+    // 2. .refine((date, ctx) => { ...body... }, { message: "..." })
+    const refineMatch = sanitized.match(
+      /\.refine\(\s*\(?\s*\w+(?:\s*,\s*\w+)?\s*\)?\s*=>\s*\{\s*([\s\S]*?)\s*\}\s*,\s*\{\s*message\s*:\s*"([^"]+)"/
+    );
+    if (refineMatch) {
+      const rule = createValidatorRule("customRefine");
+      const codeBody = refineMatch[1].trim();
+      const usesContext = /ctx\s*\.\s*context/.test(codeBody);
+      rule.params = {
+        customCode: codeBody,
+        message: refineMatch[2],
+        usesContext,
+        refineType: "refine",
+      };
+      rules.push(rule);
+      return { rules };
+    }
+
+    // Try .superRefine() pattern - use greedy matching to capture all nested braces
+    // Match: .superRefine((date, ctx) => { ...body with nested braces... })
+    const superRefineMatch = sanitized.match(
+      /\.superRefine\(\s*\(?\s*\w+(?:\s*,\s*\w+)?\s*\)?\s*=>\s*\{([\s\S]*)\}\s*\)/
+    );
+    if (superRefineMatch) {
+      const rule = createValidatorRule("customRefine");
+      const codeBody = superRefineMatch[1].trim();
+      // Extract message from ctx.addIssue if present
+      const messageMatch = codeBody.match(/message\s*:\s*"([^"]+)"/);
+      const message = messageMatch ? messageMatch[1] : "Validation failed";
+      rule.params = {
+        customCode: codeBody,
+        message,
+        usesContext: true,
+        refineType: "superRefine",
+      };
+      rules.push(rule);
+    }
+  }
+
   return { rules };
 }
 
@@ -573,7 +649,8 @@ export function validatorConfigToZodCode(config: ValidatorConfig): string {
 
   // Check for date type
   const isDateType = config.rules.some(
-    (r) => r.type === "date" || r.type === "minDate" || r.type === "maxDate"
+    (r) =>
+      r.type === "date" || r.type === "minDate" || r.type === "maxDate" || r.type === "customRefine"
   );
 
   if (isDateType) {
@@ -652,6 +729,8 @@ export function getRuleDescription(rule: ValidatorRule): string {
     }
     case "trim":
       return "Whitespace will be trimmed";
+    case "customRefine":
+      return `Custom: ${String(rule.params?.message || "Custom validation")}`;
     default:
       return def.label;
   }
