@@ -6,17 +6,15 @@ import {
   ClientPhantomField,
   FormErrors,
   FormValues,
+  IFormSigningParty,
 } from "@betterinternship/core/forms";
 import { TextLoader } from "@/components/ui/loader";
 import { IFormFiller } from "../docs/forms/form-filler.ctx";
 import { getBlockField } from "../docs/forms/utils";
 import { FieldRenderer } from "../docs/forms/FieldRenderer";
-import { Divider } from "../ui/divider";
-import { FormCheckbox } from "../docs/forms/EditForm";
 import { ISignatoryFormSettings } from "@/app/docs/auth/provider/form-settings.ctx";
-import { AnimatedShinyText } from "../ui/animated-shiny-text";
-import { useMyAutofillUpdate } from "@/hooks/use-my-autofill";
-
+import { SigningPartyTimeline } from "../docs/forms/SignignPartyTimeline";
+import { ChevronDown } from "lucide-react";
 export const SpecifySigningPartiesModal = ({
   fields,
   formFiller,
@@ -26,6 +24,7 @@ export const SpecifySigningPartiesModal = ({
   handleSubmit,
   handleUpdateAutofill,
   close,
+  signingParties,
 }: {
   fields: (ClientField<[any]> | ClientPhantomField<[any]>)[];
   formFiller: IFormFiller;
@@ -38,12 +37,15 @@ export const SpecifySigningPartiesModal = ({
   ) => Promise<any>;
   handleUpdateAutofill: (finalValues: FormValues) => Promise<any>;
   close: () => void;
+  signingParties?: IFormSigningParty[];
 }) => {
+  console.log("signingParties", signingParties);
   const [settings, setSettings] = useState<ISignatoryFormSettings>({});
   const [errors, setErrors] = useState<FormErrors>({});
   const [signingPartyValues, setSigningPartyValues] = useState<FormValues>({});
   const [busy, setBusy] = useState(false);
   const hasSignature = fields.some((field) => field.type === "signature");
+  const [isProcessStoryOpen, setIsProcessStoryOpen] = useState(false);
 
   const handleClick = async () => {
     setBusy(true);
@@ -105,9 +107,24 @@ export const SpecifySigningPartiesModal = ({
         );
       })}
 
-      <div className="mt-10 flex flex-col gap-2 py-2"></div>
+      {/* Process Story */}
+      <button
+        onClick={() => setIsProcessStoryOpen(!isProcessStoryOpen)}
+        className="hover:text-primary mt-4 flex w-full items-center gap-2 text-xs text-gray-600 transition-colors"
+      >
+        <span className="">View signing order</span>
+        <ChevronDown
+          className={`h-4 w-4 flex-shrink-0 transition-transform ${
+            isProcessStoryOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
 
-      <Divider></Divider>
+      {isProcessStoryOpen && (
+        <div className="px-2 pb-2">
+          <SigningPartyTimeline signingParties={signingParties} />
+        </div>
+      )}
 
       <div className="mt-4 flex gap-2 self-end">
         {!busy && (
