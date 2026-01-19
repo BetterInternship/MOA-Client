@@ -39,7 +39,6 @@ export const SpecifySigningPartiesModal = ({
   close: () => void;
   signingParties?: IFormSigningParty[];
 }) => {
-  console.log("signingParties", signingParties);
   const [settings, setSettings] = useState<ISignatoryFormSettings>({});
   const [errors, setErrors] = useState<FormErrors>({});
   const [signingPartyValues, setSigningPartyValues] = useState<FormValues>({});
@@ -83,10 +82,10 @@ export const SpecifySigningPartiesModal = ({
   };
 
   return (
-    <div className="flex max-w-prose min-w-[100%] flex-col space-y-2 px-5">
-      <div className="text-warning py-4 text-sm">
-        This form also requires the signature of other parties. <br />
-        Specify their emails below so we can send them this form on your behalf.
+    <div className="flex max-w-prose min-w-[100%] flex-col space-y-2">
+      <div className="text-justify text-sm leading-relaxed">
+        This form requires signatures from other parties. Enter their emails so we can send the
+        form. If you’re also one of the signatories below, you may enter your email again.
       </div>
 
       {signingPartyBlocks.map((block) => {
