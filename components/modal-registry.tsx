@@ -80,11 +80,7 @@ export const useModalRegistry = () => {
             signingParties={signingParties}
           />,
           {
-            title: (
-              <div className="px-5 py-1 text-3xl font-bold tracking-tight">
-                Next Signing Parties
-              </div>
-            ),
+            title: "Next Signing Parties",
             closeOnEsc: false,
             allowBackdropClick: false,
             hasClose: false,
