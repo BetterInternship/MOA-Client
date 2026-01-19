@@ -22,6 +22,8 @@ import { getFormFields } from "@/app/api/forms.api";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";
 import { FormMetadata, IFormMetadata } from "@betterinternship/core/forms";
 import { getViewableForms } from "@/app/api/docs.api";
+import { CompleteProfileModal } from "@/components/docs/modals/CompleteProfileModal";
+import useModalRegistry from "@/components/modal-registry";
 
 type FormItem = {
   name: string;
@@ -40,6 +42,7 @@ export default function DocsFormsPage() {
   const autofillValues = useMyAutofill();
   const formSettings = useFormSettings();
   const { openModal, closeModal } = useModal();
+  const modalRegistry = useModalRegistry();
   const [togglingName, setTogglingName] = useState<string | null>(null);
   const [openFormName, setOpenFormName] = useState<string | null>(null);
   const [openPartyId, setOpenPartyId] = useState<string | null>(null);
@@ -181,6 +184,112 @@ export default function DocsFormsPage() {
     });
   }, [openFormName, isLoadingForm, formError, formData, openPartyId]);
 
+  // Helper function to show autosign modal (without profile name check)
+  const showAutosignModal = async (formName: string, party: string, preloadedData?: any) => {
+    try {
+      // Use preloaded data if available, otherwise fetch
+      const data =
+        preloadedData ||
+        (await (async () => {
+          setIsLoadingForm(true);
+          const result = await getFormFields(formName);
+          setIsLoadingForm(false);
+          return result;
+        })());
+
+      // Get user's autofill values directly from profile (not form context)
+      const profileAutofill = profile.autofill;
+      const formAutofill = {
+        ...(profileAutofill?.shared || {}),
+        ...(profileAutofill?.[formName] || {}),
+      };
+
+      // Get required fields for this party
+      const fm = new FormMetadata(data.formMetadata);
+      const requiredFields = fm.getFieldsForClientService(party);
+
+      // Check if all required manual fields have values
+      const missingFields = getMissingManualFields(requiredFields, formAutofill);
+
+      // Always show modal to review default values
+      setShouldEnableAutoSign(true);
+      const modalContent =
+        missingFields.length > 0 ? (
+          <div>
+            <p className="text-justify text-sm text-gray-600">
+              To enable form automation, this form must be completed manually once. Would you like
+              to sign it manually now?
+            </p>
+            <div className="mt-4 flex sm:justify-end">
+              <Button
+                onClick={() => {
+                  closeModal(`autosign-review:${formName}`);
+                  router.push("/dashboard");
+                }}
+                className="w-full sm:w-auto"
+              >
+                Go to forms
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-gray-600">
+              Once auto sign is enabled, we will populate the form with your default values and sign
+              it automatically. You will be able to view all signed and pending forms on this
+              dashboard, and you will receive an email notification each time a form is successfully
+              completed.
+            </p>
+            <div className="mt-4 flex sm:justify-end">
+              <Button
+                onClick={() =>
+                  void (async () => {
+                    try {
+                      closeModal(`autosign-review:${formName}`);
+                      await formSettings.updateFormSettings(formName, {
+                        [party]: {
+                          autosign: true,
+                        },
+                      });
+
+                      queryClient.setQueryData(
+                        ["docs-forms-names"],
+                        (oldRows: FormItem[] | undefined) => {
+                          if (!oldRows) return oldRows;
+                          return oldRows.map((row) =>
+                            row.name === formName ? { ...row, enabledAutosign: true } : row
+                          );
+                        }
+                      );
+
+                      toast.success("Auto-sign enabled!", toastPresets.success);
+                      setShouldEnableAutoSign(false);
+                    } catch (err) {
+                      console.error("Failed to enable auto-sign:", err);
+                      toast.error("Failed to enable auto-sign", toastPresets.destructive);
+                    }
+                  })()
+                }
+                className="w-full sm:w-auto"
+              >
+                Enable
+              </Button>
+            </div>
+          </div>
+        );
+
+      openModal(`autosign-review:${formName}`, modalContent, {
+        title: "Toggle Auto Sign",
+      });
+    } catch (err) {
+      console.error("Failed to check auto-sign:", err);
+      toast.error("Failed to enable auto-sign", toastPresets.destructive);
+    } finally {
+      setIsLoadingForm(false);
+      setTogglingName(null);
+    }
+  };
+
   const toggleAutoSign = async (formName: string, party: string, currentValue: boolean) => {
     if (currentValue) {
       // If turning off, just toggle directly
@@ -205,102 +314,37 @@ export default function DocsFormsPage() {
         setTogglingName(null);
       }
     } else {
-      // If turning on, check autofill values first
-      try {
-        setIsLoadingForm(true);
-        const data = await getFormFields(formName);
+      // If turning on, check if user has a name first
+      if (!profile.name) {
+        // Pre-fetch form data while user fills profile
+        let preloadedData: any = null;
+        try {
+          preloadedData = await getFormFields(formName);
+        } catch (err) {
+          console.error("Failed to preload form data:", err);
+        }
 
-        // Get user's autofill values directly from profile (not form context)
-        const profileAutofill = profile.autofill;
-        const formAutofill = {
-          ...(profileAutofill?.shared || {}),
-          ...(profileAutofill?.[formName] || {}),
-        };
-
-        // Get required fields for this party
-        const fm = new FormMetadata(data.formMetadata);
-        const requiredFields = fm.getFieldsForClientService(party);
-
-        // Check if all required manual fields have values
-        const missingFields = getMissingManualFields(requiredFields, formAutofill);
-
-        // Always show modal to review default values
-        setShouldEnableAutoSign(true);
-        const modalContent =
-          missingFields.length > 0 ? (
-            <div>
-              <p className="text-justify text-sm text-gray-600">
-                To enable form automation, this form must be completed manually once. Would you like
-                to sign it manually now?
-              </p>
-              <div className="mt-4 flex sm:justify-end">
-                <Button
-                  onClick={() => {
-                    closeModal(`autosign-review:${formName}`);
-                    router.push("/dashboard");
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  Go to forms
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm text-gray-600">
-                Once auto sign is enabled, we will populate the form with your default values and
-                sign it automatically. You will be able to view all signed and pending forms on this
-                dashboard, and you will receive an email notification each time a form is
-                successfully completed.
-              </p>
-              <div className="mt-4 flex sm:justify-end">
-                <Button
-                  onClick={() =>
-                    void (async () => {
-                      try {
-                        closeModal(`autosign-review:${formName}`);
-                        await formSettings.updateFormSettings(formName, {
-                          [party]: {
-                            autosign: true,
-                          },
-                        });
-
-                        queryClient.setQueryData(
-                          ["docs-forms-names"],
-                          (oldRows: FormItem[] | undefined) => {
-                            if (!oldRows) return oldRows;
-                            return oldRows.map((row) =>
-                              row.name === formName ? { ...row, enabledAutosign: true } : row
-                            );
-                          }
-                        );
-
-                        toast.success("Auto-sign enabled!", toastPresets.success);
-                        setShouldEnableAutoSign(false);
-                      } catch (err) {
-                        console.error("Failed to enable auto-sign:", err);
-                        toast.error("Failed to enable auto-sign", toastPresets.destructive);
-                      }
-                    })()
-                  }
-                  className="w-full sm:w-auto"
-                >
-                  Enable
-                </Button>
-              </div>
-            </div>
-          );
-
-        openModal(`autosign-review:${formName}`, modalContent, {
-          title: "Toggle Auto Sign",
-        });
-      } catch (err) {
-        console.error("Failed to check auto-sign:", err);
-        toast.error("Failed to enable auto-sign", toastPresets.destructive);
-      } finally {
-        setIsLoadingForm(false);
-        setTogglingName(null);
+        // Show complete profile modal
+        openModal(
+          "complete-profile-before-autosign",
+          <CompleteProfileModal
+            close={() => {
+              closeModal("complete-profile-before-autosign");
+            }}
+            onSuccess={async () => {
+              // After profile is updated, show autosign modal with preloaded data
+              await showAutosignModal(formName, party, preloadedData);
+            }}
+          />,
+          {
+            title: "Complete Your Profile",
+          }
+        );
+        return;
       }
+
+      // Profile name exists, show autosign modal
+      await showAutosignModal(formName, party);
     }
   };
 
