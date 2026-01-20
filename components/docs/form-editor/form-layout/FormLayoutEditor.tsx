@@ -12,8 +12,9 @@ import { EditableDynamicForm } from "./EditableDynamicForm";
 import { PartiesPanel } from "./PartiesPanel";
 import { SubscribersPanel } from "./SubscribersPanel";
 import { FormPreview } from "./FormPreview";
+import { FontConstantsPanel } from "./FontConstantsPanel";
 import { ResizableSidebar, SidebarMenuItem } from "@/components/shared/resizable-sidebar";
-import { FileText, Users, Mail, Eye } from "lucide-react";
+import { FileText, Users, Mail, Eye, Palette } from "lucide-react";
 
 // Utility to generate unique IDs for blocks
 const generateBlockId = () => `block-${Math.random().toString(36).substr(2, 9)}`;
@@ -41,7 +42,7 @@ interface FormLayoutEditorProps {
   onMetadataChange?: (metadata: IFormMetadata) => void;
 }
 
-type SectionType = "tester" | "preview" | "parties" | "subscribers";
+type SectionType = "tester" | "preview" | "parties" | "subscribers" | "fonts";
 
 const MENU_ITEMS: SidebarMenuItem[] = [
   {
@@ -63,6 +64,11 @@ const MENU_ITEMS: SidebarMenuItem[] = [
     id: "subscribers",
     label: "Subscribers",
     icon: <Mail className="h-5 w-5" />,
+  },
+  {
+    id: "fonts",
+    label: "Font Constants",
+    icon: <Palette className="h-5 w-5" />,
   },
 ];
 
@@ -88,7 +94,46 @@ export const FormLayoutEditor = ({
     Array.isArray(metadata.subscribers) ? metadata.subscribers : []
   );
 
+  // Font overrides state
+  const [overrideFonts, setOverrideFonts] = useState(false);
+  const [textFont, setTextFont] = useState<string>("");
+  const [signatureFont, setSignatureFont] = useState<string>("");
+
   const [orderedBlocks, setOrderedBlocks] = useState<IFormBlock[]>(() => ensureBlockIds(blocks));
+
+  // Initialize font state from metadata
+  useEffect(() => {
+    const formFields = blocks.filter(
+      (block) => block.block_type === "form_field" && block.field_schema
+    );
+
+    if (formFields.length > 0) {
+      // Find a text field and a signature field to get their fonts
+      let foundTextFont: string | undefined;
+      let foundSignatureFont: string | undefined;
+
+      for (const block of formFields) {
+        const fieldSchema = (block as any).field_schema;
+        if (fieldSchema?.font) {
+          if (fieldSchema.type === "signature" && !foundSignatureFont) {
+            foundSignatureFont = fieldSchema.font;
+          } else if (fieldSchema.type !== "signature" && !foundTextFont) {
+            foundTextFont = fieldSchema.font;
+          }
+        }
+      }
+
+      // If we found fonts, set them in state and enable override
+      if (foundTextFont || foundSignatureFont) {
+        if (foundTextFont) setTextFont(foundTextFont);
+        if (foundSignatureFont) setSignatureFont(foundSignatureFont);
+        // Only enable override if we found at least one font
+        if (foundTextFont || foundSignatureFont) {
+          setOverrideFonts(true);
+        }
+      }
+    }
+  }, []); // Run only once on mount
 
   // Sync parties and subscribers when metadata changes
   useEffect(() => {
@@ -300,6 +345,51 @@ export const FormLayoutEditor = ({
               onMetadataChange?.({
                 ...metadata,
                 subscribers: updatedSubscribers,
+              });
+            }}
+          />
+        );
+      case "fonts":
+        return (
+          <FontConstantsPanel
+            overrideFonts={overrideFonts}
+            onOverrideFontsChange={(override) => {
+              setOverrideFonts(override);
+              if (!override) {
+                // Clear font overrides when disabled
+                setTextFont("");
+                setSignatureFont("");
+              }
+            }}
+            textFont={textFont}
+            onTextFontChange={setTextFont}
+            signatureFont={signatureFont}
+            onSignatureFontChange={setSignatureFont}
+            onApplyFonts={(textF, sigF) => {
+              // Update all fields with the selected fonts
+              const updatedBlocks = blocks.map((block) => {
+                if (block.block_type === "form_field" && block.field_schema) {
+                  const fieldSchema = block.field_schema;
+                  // Apply textFont to "text" type fields, sigFont to "signature" type fields, otherwise apply textFont as default
+                  const fontToApply = fieldSchema.type === "signature" ? sigF : textF;
+
+                  return {
+                    ...block,
+                    field_schema: {
+                      ...fieldSchema,
+                      font: fontToApply,
+                    },
+                  };
+                }
+                return block;
+              });
+
+              onMetadataChange?.({
+                ...metadata,
+                schema: {
+                  ...metadata.schema,
+                  blocks: updatedBlocks,
+                },
               });
             }}
           />
