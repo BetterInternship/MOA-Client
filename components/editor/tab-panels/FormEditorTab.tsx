@@ -48,9 +48,9 @@ export function FormEditorTab() {
   };
 
   return (
-    <div className="bg-background flex h-full w-full gap-4 p-4">
+    <div className="bg-background flex h-full w-full">
       {/* Left Panel - Fields List */}
-      <div className="bg-card flex w-80 flex-col gap-4 overflow-hidden rounded-lg border">
+      <div className="bg-card flex w-80 flex-col overflow-hidden border-r">
         <FieldsPanel
           blocks={filteredBlocks}
           selectedPartyId={selectedPartyId}
@@ -63,12 +63,12 @@ export function FormEditorTab() {
       </div>
 
       {/* Middle Panel - PDF Viewer */}
-      <div className="flex-1 overflow-hidden rounded-lg border">
+      <div className="flex-1 overflow-hidden border-r">
         <PdfViewer />
       </div>
 
       {/* Right Panel - Block Editor */}
-      <div className="bg-card flex w-96 flex-col overflow-hidden rounded-lg border">
+      <div className="bg-card flex w-96 flex-col overflow-hidden">
         <RevampedBlockEditor
           block={selectedBlock || null}
           onUpdate={handleBlockUpdate}
