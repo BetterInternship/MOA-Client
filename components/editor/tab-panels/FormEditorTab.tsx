@@ -13,6 +13,17 @@ export function FormEditorTab() {
   const [selectedPartyId, setSelectedPartyId] = useState<string | "all">("all");
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [selectedParentGroup, setSelectedParentGroup] = useState<{
+    fieldName: string;
+    partyId: string;
+    label?: string;
+    type?: string;
+    source?: string;
+    tooltip_label?: string;
+    shared?: boolean;
+    prefiller?: string;
+    validator?: string;
+  } | null>(null);
 
   // Local fields state for smooth dragging (syncs to context via debounce)
   const [fields, setFields] = useState<FormField[]>([]);
@@ -117,7 +128,7 @@ export function FormEditorTab() {
       return formMetadata.schema.blocks;
     }
     return formMetadata.schema.blocks.filter((block) => {
-      const schema = block.field_schema || block.phantom_field_schema;
+      const schema = block.field_schema;
       return schema?.signing_party_id === selectedPartyId;
     });
   }, [formMetadata.schema.blocks, selectedPartyId]);
@@ -127,11 +138,80 @@ export function FormEditorTab() {
     ? formMetadata.schema.blocks.find((b) => b._id === selectedBlockId)
     : null;
 
+  const handleBlockSelect = (blockId: string) => {
+    setSelectedBlockId(blockId || null);
+    // Clear parent group selection when a child is selected
+    setSelectedParentGroup(null);
+  };
+
+  const handleParentGroupSelect = (group: { fieldName: string; partyId: string } | null) => {
+    if (group) {
+      // Get the first block of this group to extract all metadata fields
+      const firstBlock = formMetadata?.schema.blocks.find((b) => {
+        const schema = b.field_schema || b.phantom_field_schema;
+        return schema?.field === group.fieldName && schema?.signing_party_id === group.partyId;
+      });
+
+      const schema = firstBlock?.field_schema || firstBlock?.phantom_field_schema;
+      setSelectedParentGroup({
+        ...group,
+        label: schema?.label,
+        type: schema?.type,
+        source: schema?.source,
+        tooltip_label: schema?.tooltip_label,
+        shared: schema?.shared,
+        prefiller: schema?.prefiller,
+        validator: schema?.validator,
+      });
+    } else {
+      setSelectedParentGroup(null);
+    }
+  };
+
   const handleBlockUpdate = (updatedBlock: IFormBlock) => {
     const updatedBlocks = formMetadata.schema.blocks.map((b) =>
       b._id === updatedBlock._id ? updatedBlock : b
     );
     updateBlocks(updatedBlocks);
+  };
+
+  const handleParentUpdate = (group: { fieldName: string; partyId: string }, updates: any) => {
+    // Apply updates to all blocks that match this parent group
+    const updatedBlocks = formMetadata.schema.blocks.map((block) => {
+      const schema = block.field_schema;
+      if (schema?.field === group.fieldName && schema?.signing_party_id === group.partyId) {
+        return {
+          ...block,
+          field_schema: {
+            ...block.field_schema,
+            field: updates.fieldName !== undefined ? updates.fieldName : block.field_schema.field,
+            label: updates.label !== undefined ? updates.label : block.field_schema.label,
+            type: updates.type !== undefined ? updates.type : block.field_schema.type,
+            source: updates.source !== undefined ? updates.source : block.field_schema.source,
+            tooltip_label:
+              updates.tooltip_label !== undefined
+                ? updates.tooltip_label
+                : block.field_schema.tooltip_label,
+            shared: updates.shared !== undefined ? updates.shared : block.field_schema.shared,
+            prefiller:
+              updates.prefiller !== undefined ? updates.prefiller : block.field_schema.prefiller,
+            validator:
+              updates.validator !== undefined ? updates.validator : block.field_schema.validator,
+          },
+        };
+      }
+      return block;
+    });
+
+    updateBlocks(updatedBlocks);
+    setSelectedParentGroup((prev) =>
+      prev
+        ? {
+            ...prev,
+            ...updates,
+          }
+        : null
+    );
   };
 
   return (
@@ -142,10 +222,11 @@ export function FormEditorTab() {
           blocks={filteredBlocks}
           selectedPartyId={selectedPartyId}
           onPartyChange={setSelectedPartyId}
-          onBlockSelect={setSelectedBlockId}
+          onBlockSelect={handleBlockSelect}
           selectedBlockId={selectedBlockId}
           signingParties={formMetadata.signing_parties || []}
           onAddField={() => {}}
+          onParentGroupSelect={handleParentGroupSelect}
         />
       </div>
 
@@ -153,7 +234,7 @@ export function FormEditorTab() {
       <div className="flex-1 overflow-hidden border-r">
         <PdfViewer
           fields={fields}
-          selectedFieldId={selectedFieldId}
+          selectedFieldId={selectedFieldId || ""}
           onFieldSelect={setSelectedFieldId}
           onFieldChange={handleFieldChange}
         />
@@ -165,6 +246,8 @@ export function FormEditorTab() {
           block={selectedBlock || null}
           onUpdate={handleBlockUpdate}
           signingParties={formMetadata.signing_parties || []}
+          parentGroup={selectedParentGroup}
+          onParentUpdate={handleParentUpdate}
         />
       </div>
     </div>

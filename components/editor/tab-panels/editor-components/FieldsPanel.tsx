@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 interface FieldsPanelProps {
   blocks: IFormBlock[];
@@ -24,6 +25,7 @@ interface FieldsPanelProps {
   selectedBlockId: string | null;
   signingParties: IFormSigningParty[];
   onAddField: () => void;
+  onParentGroupSelect?: (group: { fieldName: string; partyId: string } | null) => void;
 }
 
 // Color palette for signing parties
@@ -46,11 +48,23 @@ export function FieldsPanel({
   onBlockSelect,
   selectedBlockId,
   signingParties,
-  onAddField,
+  onAddField: _onAddField,
+  onParentGroupSelect,
 }: FieldsPanelProps) {
   const { registry } = useFieldTemplateContext();
   const [showLibrary, setShowLibrary] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroupExpanded = (groupKey: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupKey)) {
+      newExpanded.delete(groupKey);
+    } else {
+      newExpanded.add(groupKey);
+    }
+    setExpandedGroups(newExpanded);
+  };
 
   // Group blocks by field name and party
   const groupedFields = useMemo(() => {
@@ -65,7 +79,7 @@ export function FieldsPanel({
     > = {};
 
     blocks.forEach((block) => {
-      const schema = block.field_schema || block.phantom_field_schema;
+      const schema = block.field_schema;
       if (!schema) return;
 
       const fieldName = schema.field || "Unnamed";
@@ -94,9 +108,7 @@ export function FieldsPanel({
     const query = searchQuery.toLowerCase();
     return registry.filter(
       (field) =>
-        field.name?.toLowerCase().includes(query) ||
-        field.label?.toLowerCase().includes(query) ||
-        field.description?.toLowerCase().includes(query)
+        field.name?.toLowerCase().includes(query) || field.label?.toLowerCase().includes(query)
     );
   }, [registry, searchQuery]);
 
@@ -194,21 +206,6 @@ export function FieldsPanel({
                         </h4>
                         <p className="text-muted-foreground font-mono text-xs">{field.name}</p>
                       </div>
-
-                      {field.description && (
-                        <p className="text-muted-foreground line-clamp-2 text-xs">
-                          {field.description}
-                        </p>
-                      )}
-
-                      {/* Field Type Badge */}
-                      {field.field_type && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          <span className="bg-secondary text-secondary-foreground inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
-                            {field.field_type}
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </Card>
                 ))}
@@ -227,51 +224,65 @@ export function FieldsPanel({
               </p>
             ) : (
               groupedFields.map((group) => {
-                const partyIdx = signingParties.findIndex((p) => p._id === group.partyId);
-                const partyColor = getPartyColor(partyIdx);
+                const groupKey = `${group.fieldName}-${group.partyId}`;
+                const isExpanded = expandedGroups.has(groupKey);
 
                 return (
-                  <div key={`${group.fieldName}-${group.partyId}`} className="space-y-2">
+                  <div key={groupKey} className="space-y-2">
                     {/* Parent Card - Field Group */}
                     <Card
+                      onClick={() => {
+                        onBlockSelect("");
+                        onParentGroupSelect?.({
+                          fieldName: group.fieldName,
+                          partyId: group.partyId,
+                        });
+                        toggleGroupExpanded(groupKey);
+                      }}
                       className={cn(
-                        "cursor-pointer border p-3 transition-all",
-                        partyColor,
-                        "hover:shadow-md"
+                        "border-l-primary/60 bg-muted/30 cursor-pointer border border-l-4 p-2 transition-all hover:shadow-md"
                       )}
                     >
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-semibold">{group.fieldName}</h4>
-                        <p className="text-xs opacity-75">{group.partyName}</p>
-                        <p className="text-xs opacity-60">
-                          {group.instances.length} instance
-                          {group.instances.length !== 1 ? "s" : ""}
-                        </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="truncate text-sm font-semibold">{group.fieldName}</h4>
+                          <p className="text-muted-foreground truncate text-xs">
+                            {group.partyName}
+                          </p>
+                        </div>
+                        <Badge type="default" className="flex-shrink-0 text-xs">
+                          {group.instances.length}
+                        </Badge>
                       </div>
                     </Card>
 
                     {/* Child Cards - Instances */}
-                    <div className="ml-2 space-y-2">
-                      {group.instances.map((block, idx) => (
-                        <Card
-                          key={block._id}
-                          onClick={() => onBlockSelect(block._id || "")}
-                          className={cn(
-                            "cursor-pointer border p-2 text-sm transition-all",
-                            selectedBlockId === block._id
-                              ? "ring-primary bg-primary/5 ring-2"
-                              : "hover:bg-secondary/50"
-                          )}
-                        >
-                          <p className="font-medium">Instance {idx + 1}</p>
-                          <p className="text-muted-foreground text-xs">
-                            Page{" "}
-                            {(block.field_schema?.page || block.phantom_field_schema?.page || 0) +
-                              1}
-                          </p>
-                        </Card>
-                      ))}
-                    </div>
+                    {isExpanded && (
+                      <div className="ml-4 space-y-1 border-l-2 pl-3">
+                        {group.instances.map((block) => {
+                          const x = Math.round(block.field_schema?.x || 0);
+                          const y = Math.round(block.field_schema?.y || 0);
+                          const page = (block.field_schema?.page || 0) + 1;
+
+                          return (
+                            <Card
+                              key={block._id}
+                              onClick={() => onBlockSelect(block._id || "")}
+                              className={cn(
+                                "cursor-pointer border p-2 text-xs transition-all",
+                                selectedBlockId === block._id
+                                  ? "ring-primary bg-primary/5 ring-2"
+                                  : "hover:bg-secondary/50"
+                              )}
+                            >
+                              <p className="text-muted-foreground font-mono">
+                                p{page} • ({x}, {y})
+                              </p>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })
