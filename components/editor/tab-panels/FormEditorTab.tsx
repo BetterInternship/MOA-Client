@@ -89,20 +89,53 @@ export function FormEditorTab() {
     }, 50);
   }, [formMetadata, fields, updateBlocks]);
 
-  // Debounce sync to context (100ms delay)
+  // Debounce sync to context (100ms delay) OR immediate for drag operations
   const handleFieldChange = useCallback(
     (fieldId: string, updates: Partial<FormField>) => {
       setFields((prevFields) =>
         prevFields.map((f) => (f._id === fieldId ? { ...f, ...updates } : f))
       );
 
-      // Clear existing timeout and set new one
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current);
+      // Check if this is a drag operation (only x/y changed)
+      const isDragOperation =
+        (updates.x !== undefined || updates.y !== undefined) &&
+        updates.w === undefined &&
+        updates.h === undefined;
+
+      if (isDragOperation) {
+        // For drag operations, sync immediately to context (real-time coordinate updates)
+        if (!formMetadata) return;
+
+        isSyncingRef.current = true;
+
+        const updatedBlocks = formMetadata.schema.blocks.map((block) => {
+          if (block.block_type === "form_field" && block.field_schema && block._id === fieldId) {
+            return {
+              ...block,
+              field_schema: {
+                ...block.field_schema,
+                x: updates.x !== undefined ? updates.x : block.field_schema.x,
+                y: updates.y !== undefined ? updates.y : block.field_schema.y,
+              },
+            };
+          }
+          return block;
+        });
+
+        updateBlocks(updatedBlocks);
+
+        setTimeout(() => {
+          isSyncingRef.current = false;
+        }, 50);
+      } else {
+        // For other operations (resize, etc), use debounce
+        if (syncTimeoutRef.current) {
+          clearTimeout(syncTimeoutRef.current);
+        }
+        syncTimeoutRef.current = setTimeout(syncFieldsToContext, 100);
       }
-      syncTimeoutRef.current = setTimeout(syncFieldsToContext, 100);
     },
-    [syncFieldsToContext]
+    [formMetadata, updateBlocks, syncFieldsToContext]
   );
 
   // Cleanup timeout on unmount
@@ -175,6 +208,42 @@ export function FormEditorTab() {
     updateBlocks(updatedBlocks);
   };
 
+  // Handle field selection from PDF - show block editor with coordinates
+  const handleFieldSelectFromPdf = (fieldId: string) => {
+    setSelectedFieldId(fieldId);
+    setSelectedBlockId(fieldId); // Also set block ID so editor shows coordinates
+    setSelectedParentGroup(null); // Clear parent group selection
+  };
+
+  // Handle new field creation - select it immediately to show in block editor
+  const handleFieldCreate = (field: FormField) => {
+    // First create the field in the form
+    if (formMetadata) {
+      const generateUniqueId = () => `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const uniqueId = generateUniqueId();
+      const newBlock: IFormBlock = {
+        _id: uniqueId,
+        block_type: "form_field",
+        field_schema: {
+          field: field.label,
+          label: field.label,
+          type: field.type,
+          x: field.x || 0,
+          y: field.y || 0,
+          w: field.w || 100,
+          h: field.h || 30,
+          page: field.page || 1,
+        },
+      };
+      updateBlocks([...formMetadata.schema.blocks, newBlock]);
+      
+      // Then select it in the editor
+      setSelectedFieldId(uniqueId);
+      setSelectedBlockId(uniqueId);
+      setSelectedParentGroup(null);
+    }
+  };
+
   const handleParentUpdate = (group: { fieldName: string; partyId: string }, updates: any) => {
     // Apply updates to all blocks that match this parent group
     const updatedBlocks = formMetadata.schema.blocks.map((block) => {
@@ -235,8 +304,9 @@ export function FormEditorTab() {
         <PdfViewer
           fields={fields}
           selectedFieldId={selectedFieldId || ""}
-          onFieldSelect={setSelectedFieldId}
+          onFieldSelect={handleFieldSelectFromPdf}
           onFieldChange={handleFieldChange}
+          onFieldCreate={handleFieldCreate}
         />
       </div>
 

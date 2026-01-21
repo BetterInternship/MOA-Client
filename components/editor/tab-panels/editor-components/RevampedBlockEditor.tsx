@@ -2,6 +2,7 @@
 
 import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { useState, useEffect } from "react";
+import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { Card } from "@/components/ui/card";
 import {
   FormInput,
@@ -38,6 +39,7 @@ export function RevampedBlockEditor({
   parentGroup,
   onParentUpdate,
 }: RevampedBlockEditorProps) {
+  const { formMetadata, updateBlocks } = useFormEditor();
   const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(block);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function RevampedBlockEditor({
   }, [block]);
 
   const handleFieldChange = (key: string, value: any) => {
-    if (!editedBlock) return;
+    if (!editedBlock || !formMetadata) return;
 
     const schema = editedBlock.field_schema || editedBlock.phantom_field_schema;
     if (!schema) return;
@@ -77,8 +79,15 @@ export function RevampedBlockEditor({
       }
     }
 
+    // Update local state for immediate UI feedback
     setEditedBlock(updated);
     onUpdate(updated);
+
+    // Sync to context for real-time PDF updates
+    const updatedBlocks = formMetadata.schema.blocks.map((b) =>
+      b._id === updated._id ? updated : b
+    );
+    updateBlocks(updatedBlocks);
   };
 
   if (!editedBlock && !parentGroup) {
@@ -230,11 +239,13 @@ export function RevampedBlockEditor({
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="X"
+              type="number"
               value={String((schema?.x || 0).toFixed(1))}
               setter={(value) => handleFieldChange("x", parseFloat(value))}
             />
             <FormInput
               label="Y"
+              type="number"
               value={String((schema?.y || 0).toFixed(1))}
               setter={(value) => handleFieldChange("y", parseFloat(value))}
             />
@@ -247,11 +258,13 @@ export function RevampedBlockEditor({
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="Width"
+              type="number"
               value={String((schema?.w || 100).toFixed(1))}
               setter={(value) => handleFieldChange("w", parseFloat(value))}
             />
             <FormInput
               label="Height"
+              type="number"
               value={String((schema?.h || 20).toFixed(1))}
               setter={(value) => handleFieldChange("h", parseFloat(value))}
             />
@@ -264,6 +277,7 @@ export function RevampedBlockEditor({
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="Font Size"
+              type="number"
               value={String((schema?.font_size || 12).toFixed(1))}
               setter={(value) => handleFieldChange("font_size", parseFloat(value))}
             />
