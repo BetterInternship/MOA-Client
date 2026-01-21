@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
@@ -285,73 +285,84 @@ export function PdfViewer({
 
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
-  };
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
 
-    // Check for field drag data first
-    const fieldData = e.dataTransfer.getData("field");
-    if (fieldData) {
-      try {
-        const draggedField = JSON.parse(fieldData);
+      // Check for field drag data first
+      const fieldData = e.dataTransfer.getData("field");
+      if (fieldData) {
+        try {
+          const draggedField = JSON.parse(fieldData);
 
-        // Get the drop position relative to the PDF
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+          // Get the drop position relative to the PDF
+          const rect = e.currentTarget.getBoundingClientRect();
+          const displayX = e.clientX - rect.left;
+          const displayY = e.clientY - rect.top;
 
-        // Create field with dropped field data
-        if (onFieldCreate) {
-          onFieldCreate({
-            id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),
-            label: draggedField.label || draggedField.name || "New Field",
-            type: draggedField.field_type || draggedField.type || "text",
-            page: selectedPage,
-            x: x / scale,
-            y: y / scale,
-            w: 100,
-            h: 30,
-          } as FormField);
+          // Default field dimensions
+          const fieldWidth = 100;
+          const fieldHeight = 30;
+
+          // Place field's CENTER at the drop point (better UX, like design tools)
+          const pdfX = (displayX - fieldWidth / 2) / scale;
+          const pdfY = (displayY - fieldHeight / 2) / scale;
+
+          // Create field with dropped field data
+          if (onFieldCreate) {
+            onFieldCreate({
+              id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),
+              label: draggedField.label || draggedField.name || "New Field",
+              type: draggedField.field_type || draggedField.type || "text",
+              page: selectedPage,
+              x: Math.max(0, pdfX),
+              y: Math.max(0, pdfY),
+              w: 100,
+              h: 30,
+            } as FormField);
+          }
+        } catch (err) {
+          console.error("Error parsing field data:", err);
         }
-      } catch (err) {
-        console.error("Error parsing field data:", err);
+        return;
       }
-      return;
-    }
 
-    // Original PDF file drop handling
-    const files = e.dataTransfer.files;
-    if (files.length === 0) return;
+      // Original PDF file drop handling
+      const files = e.dataTransfer.files;
+      if (files.length === 0) return;
 
-    // Get the first PDF file
-    const file = Array.from(files).find((f) => f.type === "application/pdf") || files[0];
-    if (!file) return;
+      // Get the first PDF file
+      const file = Array.from(files).find((f) => f.type === "application/pdf") || files[0];
+      if (!file) return;
 
-    const url = URL.createObjectURL(file);
-    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    objectUrlRef.current = url;
+      const url = URL.createObjectURL(file);
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = url;
 
-    setFileName(file.name);
-    setPendingUrl(url);
-    setSourceUrl(url);
+      setFileName(file.name);
+      setPendingUrl(url);
+      setSourceUrl(url);
 
-    if (onFileSelect) {
-      onFileSelect(file);
-    }
-  };
+      if (onFileSelect) {
+        onFileSelect(file);
+      }
+    },
+    [scale, selectedPage, onFieldCreate, onFileSelect]
+  );
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
@@ -455,7 +466,7 @@ export function PdfViewer({
             <div className="flex flex-col items-center gap-4">
               {pagesArray.map((page) => (
                 <PdfPageCanvas
-                  key={`${page}-${fields.map((f) => f.id).join(",")}`}
+                  key={page}
                   pdf={pdfDoc}
                   pageNumber={page}
                   scale={scale}
@@ -509,424 +520,469 @@ type PdfPageCanvasProps = {
   onFieldClickInPdf?: (fieldId: string) => void;
 };
 
-const PdfPageCanvas = ({
-  pdf,
-  pageNumber,
-  scale,
-  isSelected,
-  isVisible,
-  onVisible,
-  onHover,
-  onClick,
-  registerPageRef,
-  fields = [],
-  selectedFieldId,
-  onFieldSelect,
-  onFieldChange,
-  isPlacingField = false,
-  placementFieldType = "signature",
-  onHoverPlacement,
-  onPlaceField,
-  hoverPointDuringPlacement,
-  registry = [],
-  onFieldClickInPdf,
-}: PdfPageCanvasProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const viewportRef = useRef<PageViewport | null>(null);
-  const [rendering, setRendering] = useState<boolean>(false);
-  const [localHover, setLocalHover] = useState<PointerLocation | null>(null);
-  const [forceRender, setForceRender] = useState<number>(0);
+const PdfPageCanvas = memo(
+  ({
+    pdf,
+    pageNumber,
+    scale,
+    isSelected,
+    isVisible,
+    onVisible,
+    onHover,
+    onClick,
+    registerPageRef,
+    fields = [],
+    selectedFieldId,
+    onFieldSelect,
+    onFieldChange,
+    isPlacingField = false,
+    placementFieldType = "signature",
+    onHoverPlacement,
+    onPlaceField,
+    hoverPointDuringPlacement,
+    registry = [],
+    onFieldClickInPdf,
+  }: PdfPageCanvasProps) => {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const viewportRef = useRef<PageViewport | null>(null);
+    const [rendering, setRendering] = useState<boolean>(false);
+    const [localHover, setLocalHover] = useState<PointerLocation | null>(null);
+    const [forceRender, setForceRender] = useState<number>(0);
 
-  useEffect(() => registerPageRef(pageNumber, containerRef.current), [pageNumber, registerPageRef]);
-
-  // Force re-render of field positions when scale changes
-  useEffect(() => {
-    setForceRender((prev) => prev + 1);
-  }, [scale]);
-
-  useEffect(() => {
-    const element = containerRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) onVisible(pageNumber);
-        });
-      },
-      { threshold: 0.6 }
+    useEffect(
+      () => registerPageRef(pageNumber, containerRef.current),
+      [pageNumber, registerPageRef]
     );
 
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [onVisible, pageNumber]);
+    // Force re-render of field positions when scale changes
+    useEffect(() => {
+      setForceRender((prev) => prev + 1);
+    }, [scale]);
 
-  useEffect(() => {
-    let renderTask: RenderTask | null = null;
-    let cancelled = false;
-    setRendering(true);
+    useEffect(() => {
+      const element = containerRef.current;
+      if (!element) return;
 
-    pdf
-      .getPage(pageNumber)
-      .then((page: PDFPageProxy) => {
-        if (cancelled) return;
-        const viewport = page.getViewport({ scale });
-        viewportRef.current = viewport;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) onVisible(pageNumber);
+          });
+        },
+        { threshold: 0.6 }
+      );
 
-        const canvas = canvasRef.current;
-        const context = canvas?.getContext("2d");
-        if (!canvas || !context) return;
+      observer.observe(element);
+      return () => observer.disconnect();
+    }, [onVisible, pageNumber]);
 
-        const outputScale = window.devicePixelRatio || 1;
-        canvas.width = viewport.width * outputScale;
-        canvas.height = viewport.height * outputScale;
-        canvas.style.width = `${viewport.width}px`;
-        canvas.style.height = `${viewport.height}px`;
+    useEffect(() => {
+      let renderTask: RenderTask | null = null;
+      let cancelled = false;
+      setRendering(true);
 
-        const renderContext = {
-          canvasContext: context,
-          viewport,
-          transform: [outputScale, 0, 0, outputScale, 0, 0],
-        } as const;
+      pdf
+        .getPage(pageNumber)
+        .then((page: PDFPageProxy) => {
+          if (cancelled) return;
+          const viewport = page.getViewport({ scale });
+          viewportRef.current = viewport;
 
-        renderTask = page.render(renderContext);
-        return renderTask.promise;
-      })
-      .catch((err) => {
-        if (err?.name === "RenderingCancelledException") return;
-        console.error("Failed to render page", err);
-      })
-      .finally(() => {
-        if (!cancelled) setRendering(false);
-      });
+          const canvas = canvasRef.current;
+          const context = canvas?.getContext("2d");
+          if (!canvas || !context) return;
 
-    return () => {
-      cancelled = true;
-      renderTask?.cancel();
-    };
-  }, [pdf, pageNumber, scale]);
+          const outputScale = window.devicePixelRatio || 1;
+          canvas.width = viewport.width * outputScale;
+          canvas.height = viewport.height * outputScale;
+          canvas.style.width = `${viewport.width}px`;
+          canvas.style.height = `${viewport.height}px`;
 
-  const extractLocation = (
-    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
-  ): PointerLocation | null => {
-    const canvas = canvasRef.current;
-    const viewport = viewportRef.current;
-    if (!canvas || !viewport) return null;
+          const renderContext = {
+            canvasContext: context,
+            viewport,
+            transform: [outputScale, 0, 0, outputScale, 0, 0],
+          } as const;
 
-    const rect = canvas.getBoundingClientRect();
-    const containerRect = canvas.parentElement?.getBoundingClientRect();
-    if (!containerRect) return null;
+          renderTask = page.render(renderContext);
+          return renderTask.promise;
+        })
+        .catch((err) => {
+          if (err?.name === "RenderingCancelledException") return;
+          console.error("Failed to render page", err);
+        })
+        .finally(() => {
+          if (!cancelled) setRendering(false);
+        });
 
-    // Coordinates relative to canvas for PDF calculation
-    const cssX = event.clientX - rect.left;
-    const cssY = event.clientY - rect.top;
-
-    // Coordinates relative to container for crosshair overlay
-    const displayX = event.clientX - containerRect.left;
-    const displayY = event.clientY - containerRect.top;
-
-    const outputScale = window.devicePixelRatio || 1;
-    const scaledX = (cssX * canvas.width) / rect.width;
-    const scaledY = (cssY * canvas.height) / rect.height;
-    const [pdfX, pdfYBottom] = viewport.convertToPdfPoint(
-      scaledX / outputScale,
-      scaledY / outputScale
-    ) as [number, number];
-
-    // Convert from PDF bottom-left origin to top-left origin -- this is for the PDF generator
-    // Use original (unzoomed) PDF height for the flip calculation
-    const actualPdfHeight = viewport.height / scale;
-    const pdfY = actualPdfHeight - pdfYBottom;
-
-    return {
-      page: pageNumber,
-      pdfX,
-      pdfY,
-      displayX,
-      displayY,
-      viewportWidth: viewport.width,
-      viewportHeight: viewport.height,
-    };
-  };
-
-  // Inverse of extractLocation: convert PDF coords to display position
-  const pdfToDisplay = (pdfX: number, pdfY: number) => {
-    const canvas = canvasRef.current;
-    const viewport = viewportRef.current;
-    if (!canvas || !viewport) return null;
-
-    const rect = canvas.getBoundingClientRect();
-    const containerRect = canvas.parentElement?.getBoundingClientRect();
-    if (!containerRect) return null;
-
-    const outputScale = window.devicePixelRatio || 1;
-    const actualPdfHeight = viewport.height / scale;
-    const pdfYBottom = actualPdfHeight - pdfY;
-
-    const viewportPoint = viewport.convertToViewportPoint(pdfX, pdfYBottom);
-    if (!viewportPoint) return null;
-    const [viewportX, viewportY] = viewportPoint;
-
-    // Convert viewport coordinates to CSS pixels
-    // Multiply by outputScale to account for device pixel ratio (same as extractLocation does in reverse)
-    const cssX = (viewportX * outputScale * rect.width) / canvas.width;
-    const cssY = (viewportY * outputScale * rect.height) / canvas.height;
-
-    return {
-      displayX: rect.left - containerRect.left + cssX,
-      displayY: rect.top - containerRect.top + cssY,
-    };
-  };
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    const location = extractLocation(event);
-    setLocalHover(location);
-    onHover(location);
-
-    // Update placement hover preview
-    if (isPlacingField && onHoverPlacement) {
-      onHoverPlacement(location);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setLocalHover(null);
-    onHover(null);
-    if (isPlacingField && onHoverPlacement) {
-      onHoverPlacement(null);
-    }
-  };
-
-  const handleClick = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    const location = extractLocation(event);
-    if (!location) return;
-
-    // Handle field placement mode
-    if (isPlacingField && onPlaceField) {
-      const defaultSize = { w: 100, h: 40 };
-      const fieldName = getFieldName(placementFieldType, registry);
-      const fieldLabel = getFieldLabel(placementFieldType, registry);
-      const registryEntry = registry.find((r) => r.id === placementFieldType);
-      const newField: FormField = {
-        id: placementFieldType,
-        field: fieldName,
-        label: fieldLabel,
-        type: registryEntry?.type || "text",
-        page: pageNumber,
-        x: location.pdfX,
-        y: location.pdfY,
-        ...defaultSize,
+      return () => {
+        cancelled = true;
+        renderTask?.cancel();
       };
-      onPlaceField(newField);
-      return;
-    }
+    }, [pdf, pageNumber, scale]);
 
-    // Normal click behavior
-    onClick(location);
-  };
+    const extractLocation = (
+      event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+    ): PointerLocation | null => {
+      const canvas = canvasRef.current;
+      const viewport = viewportRef.current;
+      if (!canvas || !viewport) return null;
 
-  // Convert display pixel deltas to PDF coordinate deltas
-  const displayDeltaToPdfDelta = (displayDeltaX: number, displayDeltaY: number) => {
-    const canvas = canvasRef.current;
-    const viewport = viewportRef.current;
-    if (!canvas || !viewport) return { pdfDeltaX: 0, pdfDeltaY: 0 };
+      const rect = canvas.getBoundingClientRect();
+      const containerRect = canvas.parentElement?.getBoundingClientRect();
+      if (!containerRect) return null;
 
-    const rect = canvas.getBoundingClientRect();
-    const outputScale = window.devicePixelRatio || 1;
+      // Coordinates relative to canvas for PDF calculation
+      const cssX = event.clientX - rect.left;
+      const cssY = event.clientY - rect.top;
 
-    // Convert display pixels to canvas internal pixels, then to viewport space
-    const canvasDeltaX = (displayDeltaX * canvas.width) / rect.width;
-    const canvasDeltaY = (displayDeltaY * canvas.height) / rect.height;
+      // Coordinates relative to container for crosshair overlay
+      const displayX = event.clientX - containerRect.left;
+      const displayY = event.clientY - containerRect.top;
 
-    // Convert to viewport space
-    const viewportDeltaX = canvasDeltaX / outputScale;
-    const viewportDeltaY = canvasDeltaY / outputScale;
+      const outputScale = window.devicePixelRatio || 1;
+      const scaledX = (cssX * canvas.width) / rect.width;
+      const scaledY = (cssY * canvas.height) / rect.height;
+      const [pdfX, pdfYBottom] = viewport.convertToPdfPoint(
+        scaledX / outputScale,
+        scaledY / outputScale
+      ) as [number, number];
 
-    // Viewport space maps directly to PDF space (after zoom adjustment)
-    const pdfDeltaX = viewportDeltaX / scale;
-    const pdfDeltaY = viewportDeltaY / scale;
+      // Convert from PDF bottom-left origin to top-left origin -- this is for the PDF generator
+      // Use original (unzoomed) PDF height for the flip calculation
+      const actualPdfHeight = viewport.height / scale;
+      const pdfY = actualPdfHeight - pdfYBottom;
 
-    return { pdfDeltaX, pdfDeltaY };
-  };
+      return {
+        page: pageNumber,
+        pdfX,
+        pdfY,
+        displayX,
+        displayY,
+        viewportWidth: viewport.width,
+        viewportHeight: viewport.height,
+      };
+    };
 
-  const handleFieldDrag = (fieldId: string, displayDeltaX: number, displayDeltaY: number) => {
-    if (!onFieldChange) {
-      console.warn("handleFieldDrag: onFieldChange is not defined!");
-      return;
-    }
+    // Inverse of extractLocation: convert PDF coords to display position
+    const pdfToDisplay = (pdfX: number, pdfY: number) => {
+      const canvas = canvasRef.current;
+      const viewport = viewportRef.current;
+      if (!canvas || !viewport) return null;
 
-    const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
-    // Find field by _id or id (both should be the same now)
-    const field = fields.find((f) => f._id === fieldId || f.id === fieldId);
-    if (!field) {
-      console.warn("handleFieldDrag: field not found", {
-        fieldId,
-        availableFields: fields.map((f) => ({ id: f._id || f.id, label: f.label })),
-      });
-      return;
-    }
+      const rect = canvas.getBoundingClientRect();
+      const containerRect = canvas.parentElement?.getBoundingClientRect();
+      if (!containerRect) return null;
 
-    const newX = Math.max(0, field.x + pdfDeltaX);
-    const newY = Math.max(0, field.y + pdfDeltaY);
+      const outputScale = window.devicePixelRatio || 1;
+      const actualPdfHeight = viewport.height / scale;
+      const pdfYBottom = actualPdfHeight - pdfY;
 
-    onFieldChange(fieldId, { x: newX, y: newY });
-  };
+      const viewportPoint = viewport.convertToViewportPoint(pdfX, pdfYBottom);
+      if (!viewportPoint) return null;
+      const [viewportX, viewportY] = viewportPoint;
 
-  const handleFieldResize = (
-    fieldId: string,
-    handle: "nw" | "ne" | "sw" | "se",
-    displayDeltaX: number,
-    displayDeltaY: number
-  ) => {
-    if (!onFieldChange) return;
+      // Convert viewport coordinates to CSS pixels
+      // Multiply by outputScale to account for device pixel ratio (same as extractLocation does in reverse)
+      const cssX = (viewportX * outputScale * rect.width) / canvas.width;
+      const cssY = (viewportY * outputScale * rect.height) / canvas.height;
 
-    const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
-    // Find field by stable _id or fallback to old format for legacy fields
-    const field = fields.find((f) => f._id === fieldId || `${f.field}:${f.page}` === fieldId);
-    if (!field) return;
+      return {
+        displayX: rect.left - containerRect.left + cssX,
+        displayY: rect.top - containerRect.top + cssY,
+      };
+    };
 
-    const updates: Partial<FormField> = {};
-    const minSize = 10; // Minimum width/height in PDF units
+    const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+      const location = extractLocation(event);
+      setLocalHover(location);
+      onHover(location);
 
-    // Handle corner resizes: adjust position and size based on which corner is dragged
-    if (handle === "nw") {
-      // Top-left: move position and shrink size
-      updates.x = Math.max(0, field.x + pdfDeltaX);
-      updates.y = Math.max(0, field.y + pdfDeltaY);
-      updates.w = Math.max(minSize, field.w - pdfDeltaX);
-      updates.h = Math.max(minSize, field.h - pdfDeltaY);
-    } else if (handle === "ne") {
-      // Top-right: move top, grow/shrink width and height
-      updates.y = Math.max(0, field.y + pdfDeltaY);
-      updates.w = Math.max(minSize, field.w + pdfDeltaX);
-      updates.h = Math.max(minSize, field.h - pdfDeltaY);
-    } else if (handle === "sw") {
-      // Bottom-left: move left, grow/shrink width and height
-      updates.x = Math.max(0, field.x + pdfDeltaX);
-      updates.w = Math.max(minSize, field.w - pdfDeltaX);
-      updates.h = Math.max(minSize, field.h + pdfDeltaY);
-    } else if (handle === "se") {
-      // Bottom-right: grow/shrink both dimensions
-      updates.w = Math.max(minSize, field.w + pdfDeltaX);
-      updates.h = Math.max(minSize, field.h + pdfDeltaY);
-    }
+      // Update placement hover preview
+      if (isPlacingField && onHoverPlacement) {
+        onHoverPlacement(location);
+      }
+    };
 
-    onFieldChange?.(fieldId, updates);
-  };
+    const handleMouseLeave = () => {
+      setLocalHover(null);
+      onHover(null);
+      if (isPlacingField && onHoverPlacement) {
+        onHoverPlacement(null);
+      }
+    };
 
-  return (
-    <div
-      ref={containerRef}
-      data-page={pageNumber}
-      className={cn(
-        "relative w-full max-w-4xl overflow-hidden rounded-[0.33em] border bg-white shadow-sm transition-colors",
-        isSelected ? "border-primary/80 ring-primary/50 ring-1" : "border-border"
-      )}
-    >
-      <div className="text-muted-foreground flex items-center justify-between border-b px-3 py-2 text-xs">
-        <span>Page {pageNumber}</span>
-      </div>
-      <div className="relative flex justify-center bg-slate-50">
-        <canvas
-          ref={canvasRef}
-          className="block"
-          style={{ cursor: isPlacingField ? "crosshair" : "default" }}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          onClick={handleClick}
-        />
-        {rendering && (
-          <div className="text-muted-foreground absolute inset-0 flex items-center justify-center bg-white/70 text-xs">
-            Rendering…
-          </div>
+    const handleClick = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+      const location = extractLocation(event);
+      if (!location) return;
+
+      // Handle field placement mode
+      if (isPlacingField && onPlaceField) {
+        const defaultSize = { w: 100, h: 40 };
+        const fieldName = getFieldName(placementFieldType, registry);
+        const fieldLabel = getFieldLabel(placementFieldType, registry);
+        const registryEntry = registry.find((r) => r.id === placementFieldType);
+        const newField: FormField = {
+          id: placementFieldType,
+          field: fieldName,
+          label: fieldLabel,
+          type: registryEntry?.type || "text",
+          page: pageNumber,
+          x: location.pdfX,
+          y: location.pdfY,
+          ...defaultSize,
+        };
+        onPlaceField(newField);
+        return;
+      }
+
+      // Normal click behavior
+      onClick(location);
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const fieldData = e.dataTransfer.getData("field");
+      if (!fieldData || !onPlaceField) return;
+
+      try {
+        const draggedField = JSON.parse(fieldData);
+        const location = extractLocation(e as any);
+        if (!location) return;
+
+        // Place field center at drop point
+        const fieldWidth = 100;
+        const fieldHeight = 30;
+        
+        const newField: FormField = {
+          id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),
+          field: draggedField.field || draggedField.name || "field",
+          label: draggedField.label || draggedField.name || "New Field",
+          type: draggedField.field_type || draggedField.type || "text",
+          page: pageNumber,
+          x: location.pdfX - fieldWidth / 2,
+          y: location.pdfY - fieldHeight / 2,
+          w: fieldWidth,
+          h: fieldHeight,
+        };
+        onPlaceField(newField);
+      } catch (err) {
+        console.error("Error dropping field:", err);
+      }
+    };
+
+    // Convert display pixel deltas to PDF coordinate deltas
+    const displayDeltaToPdfDelta = (displayDeltaX: number, displayDeltaY: number) => {
+      const canvas = canvasRef.current;
+      const viewport = viewportRef.current;
+      if (!canvas || !viewport) return { pdfDeltaX: 0, pdfDeltaY: 0 };
+
+      const rect = canvas.getBoundingClientRect();
+      const outputScale = window.devicePixelRatio || 1;
+
+      // Convert display pixels to canvas internal pixels, then to viewport space
+      const canvasDeltaX = (displayDeltaX * canvas.width) / rect.width;
+      const canvasDeltaY = (displayDeltaY * canvas.height) / rect.height;
+
+      // Convert to viewport space
+      const viewportDeltaX = canvasDeltaX / outputScale;
+      const viewportDeltaY = canvasDeltaY / outputScale;
+
+      // Viewport space maps directly to PDF space (after zoom adjustment)
+      const pdfDeltaX = viewportDeltaX / scale;
+      const pdfDeltaY = viewportDeltaY / scale;
+
+      return { pdfDeltaX, pdfDeltaY };
+    };
+
+    const handleFieldDrag = (fieldId: string, displayDeltaX: number, displayDeltaY: number) => {
+      if (!onFieldChange) {
+        console.warn("handleFieldDrag: onFieldChange is not defined!");
+        return;
+      }
+
+      const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
+      // Find field by _id or id (both should be the same now)
+      const field = fields.find((f) => f._id === fieldId || f.id === fieldId);
+      if (!field) {
+        console.warn("handleFieldDrag: field not found", {
+          fieldId,
+          availableFields: fields.map((f) => ({ id: f._id || f.id, label: f.label })),
+        });
+        return;
+      }
+
+      const newX = Math.max(0, field.x + pdfDeltaX);
+      const newY = Math.max(0, field.y + pdfDeltaY);
+
+      onFieldChange(fieldId, { x: newX, y: newY });
+    };
+
+    const handleFieldResize = (
+      fieldId: string,
+      handle: "nw" | "ne" | "sw" | "se",
+      displayDeltaX: number,
+      displayDeltaY: number
+    ) => {
+      if (!onFieldChange) return;
+
+      const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
+      // Find field by stable _id or fallback to old format for legacy fields
+      const field = fields.find((f) => f._id === fieldId || `${f.field}:${f.page}` === fieldId);
+      if (!field) return;
+
+      const updates: Partial<FormField> = {};
+      const minSize = 10; // Minimum width/height in PDF units
+
+      // Handle corner resizes: adjust position and size based on which corner is dragged
+      if (handle === "nw") {
+        // Top-left: move position and shrink size
+        updates.x = Math.max(0, field.x + pdfDeltaX);
+        updates.y = Math.max(0, field.y + pdfDeltaY);
+        updates.w = Math.max(minSize, field.w - pdfDeltaX);
+        updates.h = Math.max(minSize, field.h - pdfDeltaY);
+      } else if (handle === "ne") {
+        // Top-right: move top, grow/shrink width and height
+        updates.y = Math.max(0, field.y + pdfDeltaY);
+        updates.w = Math.max(minSize, field.w + pdfDeltaX);
+        updates.h = Math.max(minSize, field.h - pdfDeltaY);
+      } else if (handle === "sw") {
+        // Bottom-left: move left, grow/shrink width and height
+        updates.x = Math.max(0, field.x + pdfDeltaX);
+        updates.w = Math.max(minSize, field.w - pdfDeltaX);
+        updates.h = Math.max(minSize, field.h + pdfDeltaY);
+      } else if (handle === "se") {
+        // Bottom-right: grow/shrink both dimensions
+        updates.w = Math.max(minSize, field.w + pdfDeltaX);
+        updates.h = Math.max(minSize, field.h + pdfDeltaY);
+      }
+
+      onFieldChange?.(fieldId, updates);
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        data-page={pageNumber}
+        className={cn(
+          "relative w-full max-w-4xl overflow-hidden rounded-[0.33em] border bg-white shadow-sm transition-colors",
+          isSelected ? "border-primary/80 ring-primary/50 ring-1" : "border-border"
         )}
+      >
+        <div className="text-muted-foreground flex items-center justify-between border-b px-3 py-2 text-xs">
+          <span>Page {pageNumber}</span>
+        </div>
+        <div className="relative flex justify-center bg-slate-50">
+          <canvas
+            ref={canvasRef}
+            className="block"
+            style={{ cursor: isPlacingField ? "crosshair" : "default" }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onClick={handleClick}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          />
+          {rendering && (
+            <div className="text-muted-foreground absolute inset-0 flex items-center justify-center bg-white/70 text-xs">
+              Rendering…
+            </div>
+          )}
 
-        {/* Render form fields */}
-        <div className="pointer-events-none absolute inset-0 z-10" key={forceRender}>
-          {fields.map((field) => {
-            if (field.page !== pageNumber) return null;
+          {/* Render form fields */}
+          <div className="pointer-events-none absolute inset-0 z-10" key={forceRender}>
+            {fields.map((field) => {
+              if (field.page !== pageNumber) return null;
 
-            const fieldId = field._id || field.id;
-            const pos = pdfToDisplay(field.x, field.y);
-            if (!pos) return null;
+              const fieldId = field._id || field.id;
+              const pos = pdfToDisplay(field.x, field.y);
+              if (!pos) return null;
 
-            return (
-              <div
-                key={fieldId}
-                className="pointer-events-auto relative z-20"
-                style={{
-                  position: "absolute",
-                  left: `${pos.displayX}px`,
-                  top: `${pos.displayY}px`,
-                  width: `${field.w * scale}px`,
-                  height: `${field.h * scale}px`,
-                }}
-                title={`PDF: (${field.x.toFixed(1)}, ${field.y.toFixed(1)}) → Display: (${pos.displayX.toFixed(1)}, ${pos.displayY.toFixed(1)})`}
-              >
-                <FieldBox
-                  field={field}
-                  isSelected={selectedFieldId === fieldId}
-                  onSelect={() => {
-                    onFieldSelect?.(fieldId);
-                    onFieldClickInPdf?.(fieldId);
+              return (
+                <div
+                  key={fieldId}
+                  className="pointer-events-auto relative z-20"
+                  style={{
+                    position: "absolute",
+                    left: `${pos.displayX}px`,
+                    top: `${pos.displayY}px`,
+                    width: `${field.w * scale}px`,
+                    height: `${field.h * scale}px`,
                   }}
-                  onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
-                  onDragEnd={() => {}}
-                  onResize={(handle, deltaX, deltaY) =>
-                    handleFieldResize(fieldId, handle, deltaX, deltaY)
-                  }
-                  onResizeEnd={() => {}}
+                  title={`PDF: (${field.x.toFixed(1)}, ${field.y.toFixed(1)}) → Display: (${pos.displayX.toFixed(1)}, ${pos.displayY.toFixed(1)})`}
+                >
+                  <FieldBox
+                    field={field}
+                    isSelected={selectedFieldId === fieldId}
+                    onSelect={() => {
+                      onFieldSelect?.(fieldId);
+                      onFieldClickInPdf?.(fieldId);
+                    }}
+                    onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
+                    onDragEnd={() => {}}
+                    onResize={(handle, deltaX, deltaY) =>
+                      handleFieldResize(fieldId, handle, deltaX, deltaY)
+                    }
+                    onResizeEnd={() => {}}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Ghost field preview during placement mode */}
+          {isPlacingField &&
+            hoverPointDuringPlacement &&
+            (() => {
+              const hoverLoc = hoverPointDuringPlacement;
+              if (!hoverLoc || hoverLoc.page !== pageNumber) return null;
+
+              const defaultSize = { w: 100, h: 12 };
+              const pos = pdfToDisplay(hoverLoc.pdfX, hoverLoc.pdfY);
+              if (!pos) return null;
+
+              // Look up the label from registry
+              const label = getFieldLabel(placementFieldType, registry);
+
+              return (
+                <GhostField
+                  displayX={pos.displayX}
+                  displayY={pos.displayY}
+                  width={defaultSize.w * scale}
+                  height={defaultSize.h * scale}
+                  label={label}
                 />
-              </div>
-            );
-          })}
-        </div>
+              );
+            })()}
 
-        {/* Ghost field preview during placement mode */}
-        {isPlacingField &&
-          hoverPointDuringPlacement &&
-          (() => {
-            const hoverLoc = hoverPointDuringPlacement;
-            if (!hoverLoc || hoverLoc.page !== pageNumber) return null;
-
-            const defaultSize = { w: 100, h: 12 };
-            const pos = pdfToDisplay(hoverLoc.pdfX, hoverLoc.pdfY);
-            if (!pos) return null;
-
-            // Look up the label from registry
-            const label = getFieldLabel(placementFieldType, registry);
-
-            return (
-              <GhostField
-                displayX={pos.displayX}
-                displayY={pos.displayY}
-                width={defaultSize.w * scale}
-                height={defaultSize.h * scale}
-                label={label}
+          {/* Crosshair overlay */}
+          {localHover && (
+            <div className="pointer-events-none absolute inset-0">
+              <div
+                className="bg-primary/50 absolute h-full w-px"
+                style={{ left: `${localHover.displayX}px` }}
               />
-            );
-          })()}
-
-        {/* Crosshair overlay */}
+              <div
+                className="border-primary/50 absolute w-full border-t"
+                style={{ top: `${localHover.displayY}px` }}
+              />
+            </div>
+          )}
+        </div>
         {localHover && (
-          <div className="pointer-events-none absolute inset-0">
-            <div
-              className="bg-primary/50 absolute h-full w-px"
-              style={{ left: `${localHover.displayX}px` }}
-            />
-            <div
-              className="border-primary/50 absolute w-full border-t"
-              style={{ top: `${localHover.displayY}px` }}
-            />
+          <div className="bg-muted/30 text-muted-foreground border-t px-3 py-2 text-[11px]">
+            Hover p{pageNumber}: x={localHover.pdfX.toFixed(2)}, y={localHover.pdfY.toFixed(2)}
           </div>
         )}
       </div>
-      {localHover && (
-        <div className="bg-muted/30 text-muted-foreground border-t px-3 py-2 text-[11px]">
-          Hover p{pageNumber}: x={localHover.pdfX.toFixed(2)}, y={localHover.pdfY.toFixed(2)}
-        </div>
-      )}
-    </div>
-  );
-};
+    );
+  }
+);

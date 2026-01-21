@@ -42,6 +42,8 @@ export const FieldBox = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const dragState = useRef<{ startX: number; startY: number } | null>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const elementRef = useRef<HTMLDivElement>(null);
   const resizeState = useRef<{
     startX: number;
     startY: number;
@@ -57,20 +59,33 @@ export const FieldBox = ({
     e.preventDefault();
 
     dragState.current = { startX: e.clientX, startY: e.clientY };
+    dragOffsetRef.current = { x: 0, y: 0 };
     setIsDragging(true);
 
     const handleMove = (moveEvent: MouseEvent) => {
-      if (!dragState.current || !onDrag) return;
+      if (!dragState.current || !elementRef.current) return;
 
       const deltaX = moveEvent.clientX - dragState.current.startX;
       const deltaY = moveEvent.clientY - dragState.current.startY;
 
-      onDrag(deltaX, deltaY);
+      // Update visual offset using ref (no re-render)
+      dragOffsetRef.current = { x: deltaX, y: deltaY };
+      elementRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
     };
 
     const handleUp = () => {
+      // Only call onDrag once at the end with the final delta
+      if (onDrag && dragState.current) {
+        onDrag(dragOffsetRef.current.x, dragOffsetRef.current.y);
+      }
       dragState.current = null;
       setIsDragging(false);
+
+      if (elementRef.current) {
+        elementRef.current.style.transform = "";
+      }
+      dragOffsetRef.current = { x: 0, y: 0 };
+
       onDragEnd?.();
       document.removeEventListener("mousemove", handleMove);
       document.removeEventListener("mouseup", handleUp);
@@ -114,6 +129,7 @@ export const FieldBox = ({
 
   return (
     <div
+      ref={elementRef}
       className={cn(
         "group absolute inset-0 border transition-colors",
         isSelected ? "border-primary bg-primary/20" : "border-amber-400 bg-amber-400/15",
