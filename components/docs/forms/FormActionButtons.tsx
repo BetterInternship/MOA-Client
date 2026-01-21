@@ -112,20 +112,18 @@ export function FormActionButtons() {
 
   return (
     <div className="flex items-start justify-end gap-2 pt-2">
-      {!!needsToSign && (
-        <Button
-          onClick={() => void handleReject()}
-          variant="outline"
-          scheme="destructive"
-          className="w-full text-xs sm:w-auto"
-          disabled={busy}
-        >
-          <TextLoader loading={busy}>
-            <span className="sm:hidden">Reject</span>
-            <span className="hidden sm:inline">Reject Form</span>
-          </TextLoader>
-        </Button>
-      )}
+      <Button
+        onClick={() => void handleReject()}
+        variant="outline"
+        scheme="destructive"
+        className="w-full text-xs sm:w-auto"
+        disabled={busy}
+      >
+        <TextLoader loading={busy}>
+          <span className="sm:hidden">Reject</span>
+          <span className="hidden sm:inline">Reject Form</span>
+        </TextLoader>
+      </Button>
       <Button
         onClick={() => void handleSubmit()}
         variant="default"
