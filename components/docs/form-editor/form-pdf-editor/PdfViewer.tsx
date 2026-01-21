@@ -23,9 +23,15 @@ import {
   getFieldName,
 } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FieldRegistryEntry } from "@/app/api";
+import type { IFormBlock } from "@betterinternship/core/forms";
+import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { Button } from "@/components/ui/button";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const generateUniqueId = () => {
+  return `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
 
 export type { FormField };
 
@@ -56,21 +62,109 @@ type PdfViewerProps = {
   onFileSelect?: (file: File) => void;
   registry?: FieldRegistryEntry[];
   onFieldClickInPdf?: (fieldId: string) => void;
+  useContext?: boolean;
 };
 
 export function PdfViewer({
   initialUrl,
-  fields = [],
-  selectedFieldId,
-  onFieldSelect,
-  onFieldChange,
-  onFieldCreate,
+  fields: propsFields,
+  selectedFieldId: propsSelectedFieldId,
+  onFieldSelect: propsOnFieldSelect,
+  onFieldChange: propsOnFieldChange,
+  onFieldCreate: propsOnFieldCreate,
   isPlacingField = false,
   placementFieldType = "signature",
   onFileSelect,
   registry = [],
   onFieldClickInPdf,
+  useContext: useContextMode = true,
 }: PdfViewerProps) {
+  // Use context if available and enabled
+  let contextValue;
+  try {
+    contextValue = useContextMode ? useFormEditor() : null;
+  } catch (err) {
+    console.warn("FormEditor context not available, using props mode");
+    contextValue = null;
+  }
+  const formMetadata = contextValue?.formMetadata;
+  const updateBlocks = contextValue?.updateBlocks;
+
+  // Use context data if available, otherwise use props
+  const fields =
+    propsFields ||
+    (formMetadata?.schema.blocks.map((block) => ({
+      id: block._id,
+      _id: block._id, // Add this so both id and _id are set
+      label: (block.field_schema || block.phantom_field_schema)?.label || "Field",
+      type: (block.field_schema || block.phantom_field_schema)?.type || "text",
+      x: (block.field_schema || block.phantom_field_schema)?.x || 0,
+      y: (block.field_schema || block.phantom_field_schema)?.y || 0,
+      w: (block.field_schema || block.phantom_field_schema)?.w || 100,
+      h: (block.field_schema || block.phantom_field_schema)?.h || 30,
+      page: (block.field_schema || block.phantom_field_schema)?.page || 1,
+    })) ??
+      []);
+
+  const selectedFieldId = propsSelectedFieldId;
+  const onFieldSelect = propsOnFieldSelect;
+
+  const onFieldChange =
+    propsOnFieldChange ||
+    ((fieldId: string, updates: Partial<FormField>) => {
+      // Use context to update field position/size
+      if (updateBlocks && formMetadata) {
+        const updatedBlocks = formMetadata.schema.blocks.map((block) => {
+          if (block._id === fieldId) {
+            const schema = block.field_schema || block.phantom_field_schema;
+            return {
+              ...block,
+              field_schema: schema
+                ? {
+                    ...schema,
+                    ...updates,
+                  }
+                : schema,
+              phantom_field_schema: !schema
+                ? {
+                    label: updates.label || "Field",
+                    type: updates.type || "text",
+                    ...updates,
+                  }
+                : block.phantom_field_schema,
+            };
+          }
+          return block;
+        });
+        updateBlocks(updatedBlocks);
+      }
+    });
+
+  const onFieldCreate =
+    propsOnFieldCreate ||
+    ((field: FormField) => {
+      // Use context to update if available
+      if (updateBlocks && formMetadata) {
+        const uniqueId = generateUniqueId();
+        const newBlock: IFormBlock = {
+          _id: uniqueId,
+          block_type: "form_field",
+          field_schema: {
+            field: field.label,
+            label: field.label,
+            type: field.type,
+            x: field.x || 0,
+            y: field.y || 0,
+            w: field.w || 100,
+            h: field.h || 30,
+          },
+        };
+        updateBlocks([...formMetadata.schema.blocks, newBlock]);
+      } else {
+        console.warn("Cannot create field: updateBlocks or formMetadata not available");
+      }
+    });
+
   const searchParams = useSearchParams();
   const [pendingUrl, setPendingUrl] = useState<string>(initialUrl ?? "");
   const [sourceUrl, setSourceUrl] = useState<string | null>(pendingUrl);
@@ -208,6 +302,37 @@ export function PdfViewer({
     e.stopPropagation();
     setIsDragging(false);
 
+    // Check for field drag data first
+    const fieldData = e.dataTransfer.getData("field");
+    if (fieldData) {
+      try {
+        const draggedField = JSON.parse(fieldData);
+
+        // Get the drop position relative to the PDF
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Create field with dropped field data
+        if (onFieldCreate) {
+          onFieldCreate({
+            id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),
+            label: draggedField.label || draggedField.name || "New Field",
+            type: draggedField.field_type || draggedField.type || "text",
+            page: selectedPage,
+            x: x / scale,
+            y: y / scale,
+            w: 100,
+            h: 30,
+          } as FormField);
+        }
+      } catch (err) {
+        console.error("Error parsing field data:", err);
+      }
+      return;
+    }
+
+    // Original PDF file drop handling
     const files = e.dataTransfer.files;
     if (files.length === 0) return;
 
@@ -320,11 +445,17 @@ export function PdfViewer({
         )}
 
         {pdfDoc && (
-          <div className="h-full overflow-y-auto p-4" aria-live="polite">
+          <div
+            className="h-full overflow-y-auto p-4"
+            aria-live="polite"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <div className="flex flex-col items-center gap-4">
               {pagesArray.map((page) => (
                 <PdfPageCanvas
-                  key={page}
+                  key={`${page}-${fields.map((f) => f.id).join(",")}`}
                   pdf={pdfDoc}
                   pageNumber={page}
                   scale={scale}
@@ -620,12 +751,21 @@ const PdfPageCanvas = ({
   };
 
   const handleFieldDrag = (fieldId: string, displayDeltaX: number, displayDeltaY: number) => {
-    if (!onFieldChange) return;
+    if (!onFieldChange) {
+      console.warn("handleFieldDrag: onFieldChange is not defined!");
+      return;
+    }
 
     const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
-    // Find field by stable _id or fallback to old format for legacy fields
-    const field = fields.find((f) => f._id === fieldId || `${f.field}:${f.page}` === fieldId);
-    if (!field) return;
+    // Find field by _id or id (both should be the same now)
+    const field = fields.find((f) => f._id === fieldId || f.id === fieldId);
+    if (!field) {
+      console.warn("handleFieldDrag: field not found", {
+        fieldId,
+        availableFields: fields.map((f) => ({ id: f._id || f.id, label: f.label })),
+      });
+      return;
+    }
 
     const newX = Math.max(0, field.x + pdfDeltaX);
     const newY = Math.max(0, field.y + pdfDeltaY);
@@ -703,19 +843,18 @@ const PdfPageCanvas = ({
         )}
 
         {/* Render form fields */}
-        <div className="pointer-events-none absolute inset-0" key={forceRender}>
+        <div className="pointer-events-none absolute inset-0 z-10" key={forceRender}>
           {fields.map((field) => {
             if (field.page !== pageNumber) return null;
 
-            // Use stable _id if available, fallback to field name and page
-            const fieldId = field._id || `${field.field}:${field.page}`;
+            const fieldId = field._id || field.id;
             const pos = pdfToDisplay(field.x, field.y);
             if (!pos) return null;
 
             return (
               <div
                 key={fieldId}
-                className="pointer-events-auto"
+                className="pointer-events-auto relative z-20"
                 style={{
                   position: "absolute",
                   left: `${pos.displayX}px`,

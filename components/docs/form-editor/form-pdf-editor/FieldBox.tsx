@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export type FormField = {
   id: string;
-  _id?: string; // Unique block ID for stable field identification
+  _id?: string;
   field: string;
   label: string;
   type: string;
@@ -39,117 +39,81 @@ export const FieldBox = ({
   onResize,
   onResizeEnd,
 }: FieldBoxProps) => {
-  const boxRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [isResizing, setIsResizing] = useState(false);
-  const [resizeHandle, setResizeHandle] = useState<"nw" | "ne" | "sw" | "se" | null>(null);
-  const [resizeStart, setResizeStart] = useState<{ x: number; y: number } | null>(null);
+  const dragState = useRef<{ startX: number; startY: number } | null>(null);
+  const resizeState = useRef<{
+    startX: number;
+    startY: number;
+    handle: "nw" | "ne" | "sw" | "se";
+  } | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!isSelected || !onDrag) return;
+    if (!isSelected && onSelect) {
+      onSelect();
+    }
+
     e.stopPropagation();
     e.preventDefault();
 
-    // Capture pointer to this element so we track events even if cursor goes off-screen
-    if (boxRef.current && "setPointerCapture" in boxRef.current) {
-      const pointerEvent = e.nativeEvent as PointerEvent;
-      boxRef.current.setPointerCapture(pointerEvent.pointerId);
-    }
-
+    dragState.current = { startX: e.clientX, startY: e.clientY };
     setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !dragStart || !onDrag) return;
+    const handleMove = (moveEvent: MouseEvent) => {
+      if (!dragState.current || !onDrag) return;
 
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
+      const deltaX = moveEvent.clientX - dragState.current.startX;
+      const deltaY = moveEvent.clientY - dragState.current.startY;
 
-    onDrag(deltaX, deltaY);
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
+      onDrag(deltaX, deltaY);
+    };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    setDragStart(null);
-    if (isDragging && onDragEnd) {
-      onDragEnd();
-    }
-    if (isResizing && onResizeEnd) {
-      onResizeEnd();
-    }
-    setIsResizing(false);
-    setResizeHandle(null);
-    setResizeStart(null);
+    const handleUp = () => {
+      dragState.current = null;
+      setIsDragging(false);
+      onDragEnd?.();
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+    };
+
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleUp);
   };
 
   const handleResizeStart = (e: React.MouseEvent, handle: "nw" | "ne" | "sw" | "se") => {
-    if (!isSelected || !onResize) return;
+    if (!isSelected && onSelect) {
+      onSelect();
+    }
+
     e.stopPropagation();
     e.preventDefault();
 
-    // Capture pointer to this element
-    if (boxRef.current && "setPointerCapture" in boxRef.current) {
-      const pointerEvent = e.nativeEvent as PointerEvent;
-      boxRef.current.setPointerCapture(pointerEvent.pointerId);
-    }
-
+    resizeState.current = { startX: e.clientX, startY: e.clientY, handle };
     setIsResizing(true);
-    setResizeHandle(handle);
-    setResizeStart({ x: e.clientX, y: e.clientY });
-  };
 
-  const handleResizeMove = (e: React.MouseEvent) => {
-    if (!isResizing || !resizeHandle || !resizeStart || !onResize) return;
+    const handleMove = (moveEvent: MouseEvent) => {
+      if (!resizeState.current || !onResize) return;
 
-    const deltaX = e.clientX - resizeStart.x;
-    const deltaY = e.clientY - resizeStart.y;
+      const deltaX = moveEvent.clientX - resizeState.current.startX;
+      const deltaY = moveEvent.clientY - resizeState.current.startY;
 
-    onResize(resizeHandle, deltaX, deltaY);
-    setResizeStart({ x: e.clientX, y: e.clientY });
-  };
-
-  // Global document event listeners for drag and resize
-  useEffect(() => {
-    if (!isDragging && !isResizing) return;
-
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (isDragging && dragStart && onDrag) {
-        const deltaX = e.clientX - dragStart.x;
-        const deltaY = e.clientY - dragStart.y;
-        onDrag(deltaX, deltaY);
-        setDragStart({ x: e.clientX, y: e.clientY });
-      }
-      if (isResizing && resizeHandle && resizeStart && onResize) {
-        const deltaX = e.clientX - resizeStart.x;
-        const deltaY = e.clientY - resizeStart.y;
-        onResize(resizeHandle, deltaX, deltaY);
-        setResizeStart({ x: e.clientX, y: e.clientY });
-      }
+      onResize(resizeState.current.handle, deltaX, deltaY);
     };
 
-    const handleGlobalMouseUp = () => {
-      setIsDragging(false);
-      setDragStart(null);
+    const handleUp = () => {
+      resizeState.current = null;
       setIsResizing(false);
-      setResizeHandle(null);
-      setResizeStart(null);
+      onResizeEnd?.();
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
     };
 
-    document.addEventListener("mousemove", handleGlobalMouseMove);
-    document.addEventListener("mouseup", handleGlobalMouseUp);
-
-    return () => {
-      document.removeEventListener("mousemove", handleGlobalMouseMove);
-      document.removeEventListener("mouseup", handleGlobalMouseUp);
-    };
-  }, [isDragging, dragStart, isResizing, resizeHandle, resizeStart, onDrag, onResize]);
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleUp);
+  };
 
   return (
     <div
-      ref={boxRef}
       className={cn(
         "group absolute inset-0 border transition-colors",
         isSelected ? "border-primary bg-primary/20" : "border-amber-400 bg-amber-400/15",
@@ -157,17 +121,6 @@ export const FieldBox = ({
       )}
       onClick={onSelect}
       onMouseDown={handleMouseDown}
-      onMouseMove={(e) => {
-        handleMouseMove(e);
-        handleResizeMove(e);
-      }}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={() => {
-        // Don't clear drag/resize on mouse leave during active drag/resize
-        if (!isDragging && !isResizing) {
-          handleMouseUp();
-        }
-      }}
       role="button"
       tabIndex={0}
       title={field.label}
@@ -191,41 +144,24 @@ export const FieldBox = ({
       {/* Resize handles - only show when selected */}
       {isSelected && (
         <>
-          {/* Corner handles - bigger and easier to grab */}
           <div
             className="bg-primary absolute -top-2 -left-2 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              handleResizeStart(e, "nw");
-            }}
+            onMouseDown={(e) => handleResizeStart(e, "nw")}
             style={{ pointerEvents: "auto" }}
           />
           <div
             className="bg-primary absolute -top-2 -right-2 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              handleResizeStart(e, "ne");
-            }}
+            onMouseDown={(e) => handleResizeStart(e, "ne")}
             style={{ pointerEvents: "auto" }}
           />
           <div
             className="bg-primary absolute -bottom-2 -left-2 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              handleResizeStart(e, "sw");
-            }}
+            onMouseDown={(e) => handleResizeStart(e, "sw")}
             style={{ pointerEvents: "auto" }}
           />
           <div
             className="bg-primary absolute -right-2 -bottom-2 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              handleResizeStart(e, "se");
-            }}
+            onMouseDown={(e) => handleResizeStart(e, "se")}
             style={{ pointerEvents: "auto" }}
           />
         </>
