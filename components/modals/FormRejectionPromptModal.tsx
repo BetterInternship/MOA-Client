@@ -33,7 +33,7 @@ export const FormRejectionPromptModal = ({ formProcessId }: { formProcessId: str
   return (
     <div className="flex w-full flex-col items-center space-y-5">
       <span>
-        Provide a valid reason why you wish not to sign this form. We will inform the person who
+        Provide a valid reason why you wish not to fill this form. We will inform the person who
         initiated this form through email.
       </span>
       <FormTextarea
@@ -48,7 +48,7 @@ export const FormRejectionPromptModal = ({ formProcessId }: { formProcessId: str
           scheme="destructive"
           disabled={!reason.trim()}
           onClick={() => {
-            handleReject();
+            void handleReject();
           }}
         >
           <TextLoader loading={loading}>{"Reject"}</TextLoader>

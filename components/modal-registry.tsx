@@ -103,7 +103,7 @@ export const useModalRegistry = () => {
     formRejectionPrompt: {
       open: (formProcessId: string) =>
         open("form-rejection-prompt", <FormRejectionPromptModal formProcessId={formProcessId} />, {
-          title: "Reject to Sign This Form",
+          title: "Reject to Fill This Form",
         }),
       close: () => close("form-rejection-prompt"),
     },
