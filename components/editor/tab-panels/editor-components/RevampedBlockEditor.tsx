@@ -10,7 +10,14 @@ import {
   FormCheckbox,
 } from "@/components/docs/forms/EditForm";
 import { Button } from "@/components/ui/button";
-import { BiAlignLeft, BiAlignMiddle, BiAlignRight, BiVerticalBottom, BiVerticalCenter, BiVerticalTop } from "react-icons/bi";
+import {
+  BiAlignLeft,
+  BiAlignMiddle,
+  BiAlignRight,
+  BiVerticalBottom,
+  BiVerticalCenter,
+  BiVerticalTop,
+} from "react-icons/bi";
 import { BLOCK_TYPES } from "@betterinternship/core/forms";
 import { capitalize } from "@/lib/string-utils";
 import { ValidatorBuilder } from "@/components/docs/form-editor/ValidatorBuilder";
@@ -103,8 +110,6 @@ export function RevampedBlockEditor({
 
         {/* Content */}
         <div className="flex-1 space-y-4 overflow-auto p-4">
-   
-
           <FormInput
             label="Field Name"
             value={parentGroup.fieldName || ""}
@@ -182,9 +187,7 @@ export function RevampedBlockEditor({
           </div>
 
           <ValidatorBuilder
-            config={
-              validator ? zodCodeToValidatorConfig(validator) : { rules: [] }
-            }
+            config={validator ? zodCodeToValidatorConfig(validator) : { rules: [] }}
             rawZodCode={validator}
             onConfigChange={(newConfig) => {
               const zodCode = validatorConfigToZodCode(newConfig);
@@ -198,7 +201,6 @@ export function RevampedBlockEditor({
       </div>
     );
   }
-
 
   if (!editedBlock) {
     return (
@@ -217,7 +219,6 @@ export function RevampedBlockEditor({
       <div className="bg-card flex items-center justify-between border-b p-3.5">
         <div>
           <h3 className="text-sm font-semibold">Position & Layout</h3>
-      
         </div>
       </div>
 
@@ -225,7 +226,7 @@ export function RevampedBlockEditor({
       <div className="flex-1 space-y-4 overflow-auto p-4">
         {/* Coordinates Section */}
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-muted-foreground">Coordinates</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold">Coordinates</h4>
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="X"
@@ -242,7 +243,7 @@ export function RevampedBlockEditor({
 
         {/* Size Section */}
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-muted-foreground">Size</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold">Size</h4>
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="Width"
@@ -259,7 +260,7 @@ export function RevampedBlockEditor({
 
         {/* Typography Section */}
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-muted-foreground">Typography & Text</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold">Typography & Text</h4>
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="Font Size"
@@ -280,10 +281,10 @@ export function RevampedBlockEditor({
 
         {/* Alignment Section */}
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-muted-foreground">Alignment</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold">Alignment</h4>
           <div className="flex gap-2">
             {/* Horizontal Alignment */}
-            <div className="flex gap-1 flex-1">
+            <div className="flex flex-1 gap-1">
               <Button
                 size="sm"
                 variant={schema?.horizontal_alignment === "left" ? "default" : "outline"}
@@ -312,9 +313,9 @@ export function RevampedBlockEditor({
                 <BiAlignRight className="h-4 w-4" />
               </Button>
             </div>
-            
+
             {/* Vertical Alignment */}
-            <div className="flex gap-1 flex-1">
+            <div className="flex flex-1 gap-1">
               <Button
                 size="sm"
                 variant={schema?.vertical_alignment === "top" ? "default" : "outline"}
@@ -347,8 +348,8 @@ export function RevampedBlockEditor({
         </div>
 
         {/* Text Options */}
-        <div className="space-y-2">
-        </div>
+        <div className="space-y-2"></div>
       </div>
     </div>
   );
+}
