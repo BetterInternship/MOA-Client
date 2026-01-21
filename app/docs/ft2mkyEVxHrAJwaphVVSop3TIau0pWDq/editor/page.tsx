@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import { useModal } from "@/app/providers/modal-provider";
@@ -39,13 +39,23 @@ const BLANK_FORM_METADATA: IFormMetadata = {
   subscribers: [],
 };
 
-export default function FormEditorPage() {
+function FormEditorLoadingFallback() {
+  return (
+    <div className="bg-background flex h-screen items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <Loader />
+        <p className="text-muted-foreground text-sm">Loading editor...</p>
+      </div>
+    </div>
+  );
+}
+
+function FormEditorContent() {
   const searchParams = useSearchParams();
   const formId = searchParams.get("id") || searchParams.get("form_id");
   const [formMetadata, setFormMetadata] = useState<IFormMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { openModal } = useModal();
 
   // Fetch form metadata if ID is provided
   const { data: fetchedData } = useFormsControllerGetLatestFormDocumentAndMetadata(formId || "", {
@@ -131,5 +141,13 @@ export default function FormEditorPage() {
         </div>
       </div>
     </FormEditorProvider>
+  );
+}
+
+export default function FormEditorPage() {
+  return (
+    <Suspense fallback={<FormEditorLoadingFallback />}>
+      <FormEditorContent />
+    </Suspense>
   );
 }
