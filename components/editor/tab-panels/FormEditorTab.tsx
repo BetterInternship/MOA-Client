@@ -260,7 +260,14 @@ export function FormEditorTab() {
     // Apply updates to all blocks that match this parent group
     const updatedBlocks = formMetadata.schema.blocks.map((block) => {
       const schema = block.field_schema;
-      if (schema?.field === group.fieldName && block.signing_party_id === group.partyId) {
+
+      const matches =
+        schema?.field === group.fieldName &&
+        (block.signing_party_id === group.partyId ||
+          (block.signing_party_id === "" && group.partyId === "unknown") ||
+          (block.signing_party_id === "unknown" && group.partyId === ""));
+
+      if (matches) {
         const updated: IFormBlock = {
           ...block,
           field_schema: {
@@ -296,6 +303,9 @@ export function FormEditorTab() {
         ? {
             ...prev,
             ...updates,
+            // If signing_party_id is updated, also update partyId to keep them in sync
+            partyId:
+              updates.signing_party_id !== undefined ? updates.signing_party_id : prev.partyId,
           }
         : null
     );
@@ -306,7 +316,7 @@ export function FormEditorTab() {
       {/* Left Panel - Fields List */}
       <div className="bg-card flex w-80 flex-col overflow-hidden border-r">
         <FieldsPanel
-          blocks={filteredBlocks}
+          blocks={formMetadata.schema.blocks}
           selectedPartyId={selectedPartyId}
           onPartyChange={setSelectedPartyId}
           onBlockSelect={handleBlockSelect}

@@ -99,8 +99,14 @@ export function FieldsPanel({
       groups[key].instances.push(block);
     });
 
-    return Object.values(groups);
-  }, [blocks, signingParties]);
+    // Filter by selected party
+    const allGroups = Object.values(groups);
+    if (selectedPartyId === "all") {
+      return allGroups;
+    }
+    const filtered = allGroups.filter((group) => group.partyId === selectedPartyId);
+    return filtered;
+  }, [blocks, signingParties, selectedPartyId]);
 
   // Filter fields based on search
   const filteredFields = useMemo(() => {

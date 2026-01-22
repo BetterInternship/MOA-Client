@@ -100,13 +100,15 @@ export function RevampedBlockEditor({
 
   // Handle parent group editing - Show form-level properties
   if (parentGroup && !editedBlock) {
-    const label = (parentGroup as any).label || "";
-    const fieldType = (parentGroup as any).type || "text";
-    const source = (parentGroup as any).source || "manual";
-    const tooltipLabel = (parentGroup as any).tooltip_label || "";
-    const shared = (parentGroup as any).shared || false;
-    const prefiller = (parentGroup as any).prefiller || "";
-    const validator = (parentGroup as any).validator || "";
+    const label = parentGroup.label || "";
+    const fieldType = parentGroup.type || "text";
+    const source = parentGroup.source || "manual";
+    const tooltipLabel = parentGroup.tooltip_label || "";
+    const shared = parentGroup.shared || false;
+    const prefiller = parentGroup.prefiller || "";
+    const validator = parentGroup.validator || "  ";
+    const blockType = parentGroup.block_type || "form_field";
+    const signingPartyId = parentGroup.signing_party_id || "";
 
     return (
       <div className="flex h-full flex-col overflow-hidden">
@@ -126,6 +128,38 @@ export function RevampedBlockEditor({
               onParentUpdate?.(parentGroup, { fieldName: value });
             }}
             placeholder="e.g., full_name"
+          />
+
+          <FormDropdown
+            label="Block Type"
+            value={blockType}
+            options={BLOCK_TYPES.map((type) => ({
+              id: type,
+              name: type
+                .split("_")
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" "),
+            }))}
+            setter={(value) => {
+              onParentUpdate?.(parentGroup, { block_type: value });
+            }}
+            required={false}
+          />
+
+          <FormDropdown
+            label="Signing Party"
+            value={signingPartyId}
+            options={[
+              { id: "", name: "Unassigned" },
+              ...(formMetadata?.signing_parties || []).map((party) => ({
+                id: party._id,
+                name: party.signatory_title || party._id,
+              })),
+            ]}
+            setter={(value) => {
+              onParentUpdate?.(parentGroup, { signing_party_id: value });
+            }}
+            required={false}
           />
 
           <FormInput
