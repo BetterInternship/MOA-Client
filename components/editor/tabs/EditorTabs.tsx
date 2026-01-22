@@ -52,22 +52,22 @@ export function EditorTabs() {
   const { activeTab, setActiveTab } = useFormEditor();
 
   return (
-    <div className="bg-card flex w-20 flex-col border-r pt-2">
+    <div className="flex w-22 flex-col border-r pt-2">
       <div className="flex flex-col gap-1 px-2">
         {TAB_CONFIG.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex flex-col items-center justify-center gap-1.5 rounded-md px-1.5 py-3 transition-all duration-200",
+              "flex flex-col items-center justify-center gap-1.5 rounded-[0.33em] p-2 transition-all duration-200",
               activeTab === tab.id
                 ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                : "text-muted-foreground hover:text-foreground hover:bg-primary/5"
             )}
             title={tab.label}
           >
             {tab.icon}
-            <span className="max-w-[60px] text-center text-[10px] leading-tight font-medium">
+            <span className="max-w-[60px] truncate text-center text-[10px] leading-tight break-words whitespace-normal">
               {tab.shortLabel}
             </span>
           </button>
