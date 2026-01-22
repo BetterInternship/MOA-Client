@@ -2,7 +2,7 @@
 
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { IFormBlock, type IFormSigningParty } from "@betterinternship/core/forms";
+import { IFormBlock } from "@betterinternship/core/forms";
 import { PdfViewer } from "@/components/docs/form-editor/form-pdf-editor/PdfViewer";
 import { FieldsPanel } from "./editor-components/FieldsPanel";
 import { RevampedBlockEditor } from "./editor-components/RevampedBlockEditor";
@@ -10,12 +10,14 @@ import type { FormField } from "@/components/docs/form-editor/form-pdf-editor/Fi
 
 export function FormEditorTab() {
   const { formMetadata, updateBlocks } = useFormEditor();
-  const [selectedPartyId, setSelectedPartyId] = useState<string | "all">("all");
+  const [selectedPartyId, setSelectedPartyId] = useState<"all" | string>("all");
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [selectedParentGroup, setSelectedParentGroup] = useState<{
     fieldName: string;
     partyId: string;
+    block_type: string;
+    signing_party_id?: string;
     label?: string;
     type?: string;
     source?: string;
@@ -161,8 +163,7 @@ export function FormEditorTab() {
       return formMetadata.schema.blocks;
     }
     return formMetadata.schema.blocks.filter((block) => {
-      const schema = block.field_schema;
-      return schema?.signing_party_id === selectedPartyId;
+      return block.signing_party_id === selectedPartyId;
     });
   }, [formMetadata.schema.blocks, selectedPartyId]);
 
@@ -182,12 +183,14 @@ export function FormEditorTab() {
       // Get the first block of this group to extract all metadata fields
       const firstBlock = formMetadata?.schema.blocks.find((b) => {
         const schema = b.field_schema || b.phantom_field_schema;
-        return schema?.field === group.fieldName && schema?.signing_party_id === group.partyId;
+        return schema?.field === group.fieldName && b.signing_party_id === group.partyId;
       });
 
       const schema = firstBlock?.field_schema || firstBlock?.phantom_field_schema;
       setSelectedParentGroup({
         ...group,
+        block_type: firstBlock?.block_type || "form_field",
+        signing_party_id: firstBlock?.signing_party_id,
         label: schema?.label,
         type: schema?.type,
         source: schema?.source,
@@ -219,24 +222,33 @@ export function FormEditorTab() {
   const handleFieldCreate = (field: FormField) => {
     // First create the field in the form
     if (formMetadata) {
-      const generateUniqueId = () => `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const generateUniqueId = () =>
+        `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const uniqueId = generateUniqueId();
+      // Assign to selected party if not "all"
+      const signingPartyId = selectedPartyId !== "all" ? selectedPartyId : "";
+
       const newBlock: IFormBlock = {
         _id: uniqueId,
         block_type: "form_field",
+        signing_party_id: signingPartyId,
+        order: formMetadata.schema.blocks.length,
         field_schema: {
           field: field.label,
           label: field.label,
-          type: field.type,
+          type: (field.type as "text" | "signature" | "image") || "text",
           x: field.x || 0,
           y: field.y || 0,
           w: field.w || 100,
           h: field.h || 30,
           page: field.page || 1,
+          tooltip_label: "",
+          shared: true,
+          source: "manual",
         },
       };
       updateBlocks([...formMetadata.schema.blocks, newBlock]);
-      
+
       // Then select it in the editor
       setSelectedFieldId(uniqueId);
       setSelectedBlockId(uniqueId);
@@ -248,26 +260,32 @@ export function FormEditorTab() {
     // Apply updates to all blocks that match this parent group
     const updatedBlocks = formMetadata.schema.blocks.map((block) => {
       const schema = block.field_schema;
-      if (schema?.field === group.fieldName && schema?.signing_party_id === group.partyId) {
-        return {
+      if (schema?.field === group.fieldName && block.signing_party_id === group.partyId) {
+        const updated: IFormBlock = {
           ...block,
           field_schema: {
-            ...block.field_schema,
-            field: updates.fieldName !== undefined ? updates.fieldName : block.field_schema.field,
-            label: updates.label !== undefined ? updates.label : block.field_schema.label,
-            type: updates.type !== undefined ? updates.type : block.field_schema.type,
-            source: updates.source !== undefined ? updates.source : block.field_schema.source,
+            ...schema,
+            field: updates.fieldName !== undefined ? updates.fieldName : schema.field,
+            label: updates.label !== undefined ? updates.label : schema.label,
+            type: updates.type !== undefined ? updates.type : schema.type,
+            source: updates.source !== undefined ? updates.source : schema.source,
             tooltip_label:
-              updates.tooltip_label !== undefined
-                ? updates.tooltip_label
-                : block.field_schema.tooltip_label,
-            shared: updates.shared !== undefined ? updates.shared : block.field_schema.shared,
-            prefiller:
-              updates.prefiller !== undefined ? updates.prefiller : block.field_schema.prefiller,
-            validator:
-              updates.validator !== undefined ? updates.validator : block.field_schema.validator,
+              updates.tooltip_label !== undefined ? updates.tooltip_label : schema.tooltip_label,
+            shared: updates.shared !== undefined ? updates.shared : schema.shared,
+            prefiller: updates.prefiller !== undefined ? updates.prefiller : schema.prefiller,
+            validator: updates.validator !== undefined ? updates.validator : schema.validator,
           },
         };
+
+        // Update block-level properties
+        if (updates.block_type !== undefined) {
+          updated.block_type = updates.block_type;
+        }
+        if (updates.signing_party_id !== undefined) {
+          updated.signing_party_id = updates.signing_party_id;
+        }
+
+        return updated;
       }
       return block;
     });
@@ -294,7 +312,7 @@ export function FormEditorTab() {
           onBlockSelect={handleBlockSelect}
           selectedBlockId={selectedBlockId}
           signingParties={formMetadata.signing_parties || []}
-          onAddField={() => {}}
+          onAddField={handleFieldCreate}
           onParentGroupSelect={handleParentGroupSelect}
         />
       </div>

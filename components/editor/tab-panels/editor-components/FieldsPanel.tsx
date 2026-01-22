@@ -19,12 +19,12 @@ import { Badge } from "@/components/ui/badge";
 
 interface FieldsPanelProps {
   blocks: IFormBlock[];
-  selectedPartyId: string | "all";
-  onPartyChange: (partyId: string | "all") => void;
+  selectedPartyId: "all" | string;
+  onPartyChange: (partyId: "all" | string) => void;
   onBlockSelect: (blockId: string) => void;
   selectedBlockId: string | null;
   signingParties: IFormSigningParty[];
-  onAddField: () => void;
+  onAddField: (field: IFormBlock) => void;
   onParentGroupSelect?: (group: { fieldName: string; partyId: string } | null) => void;
 }
 
@@ -83,7 +83,7 @@ export function FieldsPanel({
       if (!schema) return;
 
       const fieldName = schema.field || "Unnamed";
-      const partyId = schema.signing_party_id || "unknown";
+      const partyId = block.signing_party_id || "unknown";
       const party = signingParties.find((p) => p._id === partyId);
       const partyName = party?.signatory_title || "Unknown Party";
 
@@ -117,25 +117,48 @@ export function FieldsPanel({
     e.dataTransfer.setData("field", JSON.stringify(fieldData));
   };
 
+  const handleFieldAdd = (field: any) => {
+    _onAddField(field);
+  };
+
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
+      {/* Persistent Header - Party Selection & Add Button */}
       <div className="space-y-3 border-b p-4">
-        {showLibrary ? (
-          <>
-            <Button
-              onClick={() => {
-                setShowLibrary(false);
-                setSearchQuery("");
-              }}
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Fields
-            </Button>
+        <div className="flex items-center gap-2">
+          <Select value={selectedPartyId} onValueChange={onPartyChange}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select party..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Parties</SelectItem>
+              {signingParties.map((party, idx) => (
+                <SelectItem key={party._id} value={party._id}>
+                  <span className={`rounded px-2 py-1 text-sm ${getPartyColor(idx)}`}>
+                    {party.signatory_title}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
+        <Button
+          onClick={() => setShowLibrary(!showLibrary)}
+          variant="outline"
+          size="sm"
+          className="w-full gap-2"
+        >
+          {showLibrary ? <ArrowLeft className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {showLibrary ? "Back to Fields" : "Add Field"}
+        </Button>
+      </div>
+
+      {/* Content - Switches between library and fields list */}
+      <div className="flex-1 overflow-auto p-4">
+        {showLibrary ? (
+          // Field Library
+          <div className="space-y-3">
             {/* Search Bar */}
             <div className="relative">
               <SearchIcon className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
@@ -147,45 +170,7 @@ export function FieldsPanel({
                 autoFocus
               />
             </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <Select value={selectedPartyId} onValueChange={onPartyChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select party..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Parties</SelectItem>
-                  {signingParties.map((party, idx) => (
-                    <SelectItem key={party._id} value={party._id}>
-                      <span className={`rounded px-2 py-1 text-sm ${getPartyColor(idx)}`}>
-                        {party.signatory_title}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <Button
-              onClick={() => setShowLibrary(true)}
-              variant="outline"
-              size="sm"
-              className="w-full gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Field
-            </Button>
-          </>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-4">
-        {showLibrary ? (
-          // Field Library
-          <div className="space-y-3">
             {filteredFields.length === 0 ? (
               <div className="flex h-full items-center justify-center">
                 <p className="text-muted-foreground text-sm">No fields found</p>
@@ -197,6 +182,7 @@ export function FieldsPanel({
                     key={field.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, field)}
+                    onClick={() => handleFieldAdd(field)}
                     className="hover:border-primary/30 hover:bg-primary/5 cursor-move border-2 border-transparent p-3 transition-all hover:shadow-md"
                   >
                     <div className="space-y-1.5">
