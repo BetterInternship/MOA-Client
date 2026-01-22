@@ -328,7 +328,7 @@ export function FormEditorTab() {
   return (
     <div className="bg-background flex h-full w-full">
       {/* Left Panel - Fields List */}
-      <div className="bg-card flex w-80 flex-col overflow-hidden border-r">
+      <div className="bg-card flex w-[350px] flex-col overflow-hidden border-r">
         <FieldsPanel
           blocks={formMetadata.schema.blocks}
           selectedPartyId={selectedPartyId}

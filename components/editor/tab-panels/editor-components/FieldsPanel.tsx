@@ -1,13 +1,6 @@
 "use client";
 
 import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowLeft, Search as SearchIcon } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -120,24 +113,8 @@ export function FieldsPanel({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Persistent Header - Party Selection & Add Button */}
-      <div className="space-y-3 border-b p-4">
-        <div className="flex items-center gap-2">
-          <Select value={selectedPartyId} onValueChange={onPartyChange}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select party..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Parties</SelectItem>
-              {signingParties.map((party, idx) => (
-                <SelectItem key={party._id} value={party._id}>
-                  <span className="rounded px-2 py-1 text-sm">{party.signatory_title}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
+      {/* Header with Add Field Button */}
+      <div className="border-b p-3">
         <Button
           onClick={() => setShowLibrary(!showLibrary)}
           variant="outline"
@@ -149,10 +126,9 @@ export function FieldsPanel({
         </Button>
       </div>
 
-      {/* Content - Switches between library and fields list */}
-      <div className="flex-1 overflow-auto p-4">
-        {showLibrary ? (
-          // Field Library
+      {showLibrary ? (
+        // Field Library View
+        <div className="flex-1 overflow-auto p-4">
           <div className="space-y-3">
             {/* Search Bar */}
             <div className="relative">
@@ -196,93 +172,112 @@ export function FieldsPanel({
               </>
             )}
           </div>
-        ) : (
-          // Fields List
-          <div className="space-y-3">
+        </div>
+      ) : (
+        // Minimalist Tabs Layout - Parties on left, fields on right
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left Sidebar - Party Tabs  */}
+          <div className="flex w-1/3 flex-col overflow-y-auto border-r">
+            {signingParties.map((party) => {
+              const partyColor = getPartyColorByIndex(Math.max(0, party.order - 1));
+              const isSelected = selectedPartyId === party._id;
+
+              return (
+                <button
+                  key={party._id}
+                  onClick={() => onPartyChange(party._id)}
+                  className={cn(
+                    "flex w-full items-start justify-start border-l-[5px] p-2 text-sm transition-all",
+                    isSelected ? "shadow-md" : "hover:bg-gray-100"
+                  )}
+                  style={{
+                    backgroundColor: isSelected ? partyColor.hex + "30" : partyColor.hex + "15",
+                    borderLeftColor: partyColor.hex,
+                    overflowWrap: "break-word",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {party.signatory_title}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Content - Fields for Selected Party (2/3) */}
+          <div className="flex-1 overflow-auto p-4">
             {groupedFields.length === 0 ? (
               <p className="text-muted-foreground py-4 text-center text-xs">
                 No fields for this party
               </p>
             ) : (
-              groupedFields.map((group) => {
-                const groupKey = `${group.fieldName}-${group.partyId}`;
-                const isExpanded = expandedGroups.has(groupKey);
-                const partyColor = getPartyColorByIndex(Math.max(0, group.partyOrder - 1));
+              <div className="space-y-3">
+                {groupedFields.map((group) => {
+                  const groupKey = `${group.fieldName}-${group.partyId}`;
+                  const isExpanded = expandedGroups.has(groupKey);
+                  const partyColor = getPartyColorByIndex(Math.max(0, group.partyOrder - 1));
 
-                return (
-                  <div key={groupKey} className="space-y-2">
-                    {/* Parent Card - Field Group */}
-                    <Card
-                      onClick={() => {
-                        onBlockSelect("");
-                        onParentGroupSelect?.({
-                          fieldName: group.fieldName,
-                          partyId: group.partyId,
-                        });
-                        toggleGroupExpanded(groupKey);
-                      }}
-                      className={cn(
-                        "cursor-pointer border border-l-4 p-2 transition-all hover:shadow-md",
-                        `${partyColor.bg} ${partyColor.border}`
-                      )}
-                      style={{
-                        borderLeftColor: partyColor.hex,
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <h4 className="truncate text-sm font-semibold">{group.fieldName}</h4>
-                          <p className="text-muted-foreground truncate text-xs">
-                            {group.partyName}
-                          </p>
+                  return (
+                    <div key={groupKey} className="space-y-2">
+                      {/* Parent Card - Field Group */}
+                      <Card
+                        onClick={() => {
+                          onBlockSelect("");
+                          onParentGroupSelect?.({
+                            fieldName: group.fieldName,
+                            partyId: group.partyId,
+                          });
+                          toggleGroupExpanded(groupKey);
+                        }}
+                        className={cn(
+                          "cursor-pointer border border-l-4 p-2 transition-all hover:shadow-md",
+                          `${partyColor.bg} ${partyColor.border}`
+                        )}
+                        style={{
+                          borderLeftColor: partyColor.hex,
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="truncate text-sm font-semibold">{group.fieldName}</h4>
+                          </div>
                         </div>
-                        <Badge
-                          type="default"
-                          className="flex-shrink-0 text-xs"
-                          style={{
-                            backgroundColor: partyColor.hex,
-                            color: "white",
-                          }}
-                        >
-                          {group.instances.length}
-                        </Badge>
-                      </div>
-                    </Card>
+                      </Card>
 
-                    {/* Child Cards - Instances */}
-                    {isExpanded && (
-                      <div className="ml-4 space-y-1 border-l-2 pl-3">
-                        {group.instances.map((block) => {
-                          const x = Math.round(block.field_schema?.x || 0);
-                          const y = Math.round(block.field_schema?.y || 0);
-                          const page = (block.field_schema?.page || 0) + 1;
+                      {/* Child Cards - Instances */}
+                      {isExpanded && (
+                        <div className="ml-4 space-y-1 border-l-2 pl-3">
+                          {group.instances.map((block) => {
+                            const x = Math.round(block.field_schema?.x || 0);
+                            const y = Math.round(block.field_schema?.y || 0);
+                            const page = (block.field_schema?.page || 0) + 1;
 
-                          return (
-                            <Card
-                              key={block._id}
-                              onClick={() => onBlockSelect(block._id || "")}
-                              className={cn(
-                                "cursor-pointer border p-2 text-xs transition-all",
-                                selectedBlockId === block._id
-                                  ? "ring-primary bg-primary/5 ring-2"
-                                  : "hover:bg-secondary/50"
-                              )}
-                            >
-                              <p className="text-muted-foreground font-mono">
-                                p{page} • ({x}, {y})
-                              </p>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+                            return (
+                              <Card
+                                key={block._id}
+                                onClick={() => onBlockSelect(block._id || "")}
+                                className={cn(
+                                  "cursor-pointer border p-2 text-xs transition-all",
+                                  selectedBlockId === block._id
+                                    ? "ring-primary bg-primary/5 ring-2"
+                                    : "hover:bg-secondary/50"
+                                )}
+                              >
+                                <p className="text-muted-foreground font-mono">
+                                  p{page} • ({x}, {y})
+                                </p>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
