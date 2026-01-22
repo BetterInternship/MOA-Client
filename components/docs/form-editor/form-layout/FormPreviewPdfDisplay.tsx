@@ -4,15 +4,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
-import { type IFormBlock } from "@betterinternship/core/forms";
+import { type IFormBlock, type IFormSigningParty } from "@betterinternship/core/forms";
 import { Loader } from "@/components/ui/loader";
 import { ZoomIn, ZoomOut } from "lucide-react";
+import { getPartyColorByIndex } from "@/lib/party-colors";
 
 interface FormPreviewPdfDisplayProps {
   documentUrl: string;
   blocks: IFormBlock[];
   values: Record<string, string>;
   scale?: number;
+  signingParties?: IFormSigningParty[];
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -27,6 +29,7 @@ export const FormPreviewPdfDisplay = ({
   blocks,
   values,
   scale: initialScale = 1.0,
+  signingParties = [],
 }: FormPreviewPdfDisplayProps) => {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
@@ -337,6 +340,12 @@ const PdfPageWithFields = ({
           const value = values[schema.field] || "";
           const isFilled = value.trim().length > 0;
 
+          // Get signing party color
+          const partyId = block.signing_party_id || "unknown";
+          const party = signingParties.find((p) => p._id === partyId);
+          const partyOrder = party?.order || 0;
+          const partyColor = getPartyColorByIndex(Math.max(0, partyOrder - 1));
+
           // Calculate dynamic font size based on box dimensions
           const baseFontSize = Math.min(
             Math.max(heightPixels * 0.6, 6), // Use 60% of box height, min 6px
@@ -346,11 +355,7 @@ const PdfPageWithFields = ({
           return (
             <div
               key={block._id}
-              className={`absolute border ${
-                isFilled
-                  ? "border-green-400 bg-green-50"
-                  : "border-dashed border-blue-400 bg-blue-50"
-              }`}
+              className="absolute border"
               style={{
                 left: `${displayPos.displayX}px`,
                 top: `${displayPos.displayY}px`,
@@ -358,6 +363,9 @@ const PdfPageWithFields = ({
                 height: `${Math.max(heightPixels, 10)}px`,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                borderColor: isFilled ? partyColor.hex : partyColor.hex,
+                borderStyle: isFilled ? "solid" : "dashed",
+                backgroundColor: isFilled ? partyColor.hex + "30" : partyColor.hex + "15",
                 whiteSpace: "nowrap",
                 display: "flex",
                 alignItems: "center",

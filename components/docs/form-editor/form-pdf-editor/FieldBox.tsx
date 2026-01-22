@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { getPartyColorByIndex } from "@/lib/party-colors";
 
 export type FormField = {
   id: string;
@@ -18,6 +19,7 @@ export type FormField = {
   align_v?: "top" | "middle" | "bottom";
   size?: number;
   wrap?: boolean;
+  signing_party_order?: number; // Add color support
 };
 
 export type FieldBoxProps = {
@@ -49,6 +51,10 @@ export const FieldBox = ({
     startY: number;
     handle: "nw" | "ne" | "sw" | "se";
   } | null>(null);
+
+  const partyOrder = field.signing_party_order || 1;
+  const colorIndex = partyOrder - 1;
+  const partyColor = getPartyColorByIndex(colorIndex);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isSelected && onSelect) {
@@ -130,17 +136,17 @@ export const FieldBox = ({
   return (
     <div
       ref={elementRef}
-      className={cn(
-        "group absolute inset-0 border transition-colors",
-        isSelected ? "border-primary bg-primary/20" : "border-amber-400 bg-amber-400/15",
-        isDragging && "bg-primary/30"
-      )}
+      className={cn("group absolute inset-0 border transition-colors")}
       onClick={onSelect}
       onMouseDown={handleMouseDown}
       role="button"
       tabIndex={0}
       title={field.label}
       style={{
+        borderColor: partyColor.hex,
+        borderStyle: "solid",
+        borderWidth: "2px",
+        backgroundColor: isSelected ? partyColor.hex + "50" : partyColor.hex + "75",
         cursor: isDragging ? "grabbing" : isResizing ? "grabbing" : isSelected ? "grab" : "pointer",
       }}
     >
@@ -161,24 +167,36 @@ export const FieldBox = ({
       {isSelected && (
         <>
           <div
-            className="bg-primary absolute -top-2 -left-2 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
+            className="absolute -top-2 -left-2 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
             onMouseDown={(e) => handleResizeStart(e, "nw")}
-            style={{ pointerEvents: "auto" }}
+            style={{
+              backgroundColor: partyColor.hex,
+              pointerEvents: "auto",
+            }}
           />
           <div
-            className="bg-primary absolute -top-2 -right-2 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
+            className="absolute -top-2 -right-2 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
             onMouseDown={(e) => handleResizeStart(e, "ne")}
-            style={{ pointerEvents: "auto" }}
+            style={{
+              backgroundColor: partyColor.hex,
+              pointerEvents: "auto",
+            }}
           />
           <div
-            className="bg-primary absolute -bottom-2 -left-2 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
+            className="absolute -bottom-2 -left-2 hidden h-3 w-3 cursor-nesw-resize rounded-full group-hover:block"
             onMouseDown={(e) => handleResizeStart(e, "sw")}
-            style={{ pointerEvents: "auto" }}
+            style={{
+              backgroundColor: partyColor.hex,
+              pointerEvents: "auto",
+            }}
           />
           <div
-            className="bg-primary absolute -right-2 -bottom-2 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
+            className="absolute -right-2 -bottom-2 hidden h-3 w-3 cursor-nwse-resize rounded-full group-hover:block"
             onMouseDown={(e) => handleResizeStart(e, "se")}
-            style={{ pointerEvents: "auto" }}
+            style={{
+              backgroundColor: partyColor.hex,
+              pointerEvents: "auto",
+            }}
           />
         </>
       )}

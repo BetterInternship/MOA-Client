@@ -23,7 +23,7 @@ import {
   getFieldName,
 } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import type { FieldRegistryEntry } from "@/app/api";
-import type { IFormBlock } from "@betterinternship/core/forms";
+import type { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { Button } from "@/components/ui/button";
 
@@ -63,6 +63,7 @@ type PdfViewerProps = {
   registry?: FieldRegistryEntry[];
   onFieldClickInPdf?: (fieldId: string) => void;
   useContext?: boolean;
+  signingParties?: IFormSigningParty[];
 };
 
 export function PdfViewer({
@@ -78,6 +79,7 @@ export function PdfViewer({
   registry = [],
   onFieldClickInPdf,
   useContext: useContextMode = true,
+  signingParties: propsSigningParties,
 }: PdfViewerProps) {
   // Use context if available and enabled
   let contextValue;
@@ -90,20 +92,36 @@ export function PdfViewer({
   const formMetadata = contextValue?.formMetadata;
   const updateBlocks = contextValue?.updateBlocks;
 
+  // Define signingParties first, before using it in fields mapping
+  const signingParties = propsSigningParties ?? formMetadata?.signing_parties ?? [];
+
   // Use context data if available, otherwise use props
   const fields =
     propsFields ||
-    (formMetadata?.schema.blocks.map((block) => ({
-      id: block._id,
-      _id: block._id, // Add this so both id and _id are set
-      label: (block.field_schema || block.phantom_field_schema)?.label || "Field",
-      type: (block.field_schema || block.phantom_field_schema)?.type || "text",
-      x: (block.field_schema || block.phantom_field_schema)?.x || 0,
-      y: (block.field_schema || block.phantom_field_schema)?.y || 0,
-      w: (block.field_schema || block.phantom_field_schema)?.w || 100,
-      h: (block.field_schema || block.phantom_field_schema)?.h || 30,
-      page: (block.field_schema || block.phantom_field_schema)?.page || 1,
-    })) ??
+    (formMetadata?.schema.blocks.map((block) => {
+      // Find the signing party order for this block
+      let signing_party_order = 1; // default
+      if (block.signing_party_id && signingParties.length > 0) {
+        const party = signingParties.find((p) => p._id === block.signing_party_id);
+        if (party) {
+          signing_party_order = party.order;
+        }
+      }
+
+      const field = {
+        id: block._id,
+        _id: block._id,
+        label: (block.field_schema || block.phantom_field_schema)?.label || "Field",
+        type: (block.field_schema || block.phantom_field_schema)?.type || "text",
+        x: (block.field_schema || block.phantom_field_schema)?.x || 0,
+        y: (block.field_schema || block.phantom_field_schema)?.y || 0,
+        w: (block.field_schema || block.phantom_field_schema)?.w || 100,
+        h: (block.field_schema || block.phantom_field_schema)?.h || 30,
+        page: (block.field_schema || block.phantom_field_schema)?.page || 1,
+        signing_party_order,
+      };
+      return field;
+    }) ??
       []);
 
   const selectedFieldId = propsSelectedFieldId;
@@ -487,6 +505,7 @@ export function PdfViewer({
                   onPlaceField={onFieldCreate}
                   registry={registry}
                   onFieldClickInPdf={onFieldClickInPdf}
+                  signingParties={signingParties}
                 />
               ))}
             </div>
@@ -518,6 +537,7 @@ type PdfPageCanvasProps = {
   onPlaceField?: (field: FormField) => void;
   registry?: FieldRegistryEntry[];
   onFieldClickInPdf?: (fieldId: string) => void;
+  signingParties?: IFormSigningParty[];
 };
 
 const PdfPageCanvas = memo(
@@ -542,6 +562,7 @@ const PdfPageCanvas = memo(
     hoverPointDuringPlacement,
     registry = [],
     onFieldClickInPdf,
+    signingParties = [],
   }: PdfPageCanvasProps) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -761,7 +782,7 @@ const PdfPageCanvas = memo(
         // Place field center at drop point
         const fieldWidth = 100;
         const fieldHeight = 30;
-        
+
         const newField: FormField = {
           id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),
           field: draggedField.field || draggedField.name || "field",

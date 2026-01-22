@@ -3,7 +3,6 @@
 import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { useState, useEffect } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
-import { Card } from "@/components/ui/card";
 import {
   FormInput,
   FormTextarea,
@@ -20,14 +19,12 @@ import {
   BiVerticalTop,
 } from "react-icons/bi";
 import { BLOCK_TYPES } from "@betterinternship/core/forms";
-import { capitalize } from "@/lib/string-utils";
 import { ValidatorBuilder } from "@/components/docs/form-editor/ValidatorBuilder";
 import { zodCodeToValidatorConfig, validatorConfigToZodCode } from "@/lib/validator-engine";
 
 interface RevampedBlockEditorProps {
   block: IFormBlock | null;
   onUpdate: (block: IFormBlock) => void;
-  signingParties: IFormSigningParty[];
   parentGroup?: { fieldName: string; partyId: string } | null;
   onParentUpdate?: (group: { fieldName: string; partyId: string }, updates: any) => void;
 }
@@ -35,7 +32,6 @@ interface RevampedBlockEditorProps {
 export function RevampedBlockEditor({
   block,
   onUpdate,
-  signingParties,
   parentGroup,
   onParentUpdate,
 }: RevampedBlockEditorProps) {
@@ -151,9 +147,10 @@ export function RevampedBlockEditor({
             value={signingPartyId}
             options={[
               { id: "", name: "Unassigned" },
-              ...(formMetadata?.signing_parties || []).map((party) => ({
+              ...(formMetadata?.signing_parties || []).map((party, idx) => ({
                 id: party._id,
                 name: party.signatory_title || party._id,
+                order: idx,
               })),
             ]}
             setter={(value) => {

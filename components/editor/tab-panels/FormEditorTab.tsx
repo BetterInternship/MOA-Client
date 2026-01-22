@@ -42,18 +42,32 @@ export function FormEditorTab() {
     if (formMetadata?.schema.blocks) {
       const newFields = formMetadata.schema.blocks
         .filter((block) => block.block_type === "form_field" && block.field_schema)
-        .map((block) => ({
-          id: block._id,
-          _id: block._id,
-          field: block.field_schema?.field || "",
-          label: block.field_schema?.label || "Field",
-          type: block.field_schema?.type || "text",
-          page: block.field_schema?.page || 1,
-          x: block.field_schema?.x || 0,
-          y: block.field_schema?.y || 0,
-          w: block.field_schema?.w || 100,
-          h: block.field_schema?.h || 30,
-        }));
+        .map((block) => {
+          // Find the signing party order for this block
+          let signing_party_order = 1; // default to first party
+          if (block.signing_party_id && formMetadata.signing_parties) {
+            const party = formMetadata.signing_parties.find(
+              (p) => p._id === block.signing_party_id
+            );
+            if (party) {
+              signing_party_order = party.order;
+            }
+          }
+
+          return {
+            id: block._id,
+            _id: block._id,
+            field: block.field_schema?.field || "",
+            label: block.field_schema?.label || "Field",
+            type: block.field_schema?.type || "text",
+            page: block.field_schema?.page || 1,
+            x: block.field_schema?.x || 0,
+            y: block.field_schema?.y || 0,
+            w: block.field_schema?.w || 100,
+            h: block.field_schema?.h || 30,
+            signing_party_order,
+          };
+        });
       setFields(newFields);
     }
   }, [formMetadata?.schema.blocks]);
@@ -335,6 +349,7 @@ export function FormEditorTab() {
           onFieldSelect={handleFieldSelectFromPdf}
           onFieldChange={handleFieldChange}
           onFieldCreate={handleFieldCreate}
+          signingParties={formMetadata.signing_parties || []}
         />
       </div>
 
@@ -343,7 +358,6 @@ export function FormEditorTab() {
         <RevampedBlockEditor
           block={selectedBlock || null}
           onUpdate={handleBlockUpdate}
-          signingParties={formMetadata.signing_parties || []}
           parentGroup={selectedParentGroup}
           onParentUpdate={handleParentUpdate}
         />

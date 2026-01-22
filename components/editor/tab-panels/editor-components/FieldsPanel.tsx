@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { getPartyColorByIndex } from "@/lib/party-colors";
 
 interface FieldsPanelProps {
   blocks: IFormBlock[];
@@ -27,19 +28,6 @@ interface FieldsPanelProps {
   onAddField: (field: IFormBlock) => void;
   onParentGroupSelect?: (group: { fieldName: string; partyId: string } | null) => void;
 }
-
-// Color palette for signing parties
-const getPartyColor = (index: number): string => {
-  const colors = [
-    "bg-blue-100 border-blue-300 text-blue-900",
-    "bg-red-100 border-red-300 text-red-900",
-    "bg-green-100 border-green-300 text-green-900",
-    "bg-purple-100 border-purple-300 text-purple-900",
-    "bg-yellow-100 border-yellow-300 text-yellow-900",
-    "bg-pink-100 border-pink-300 text-pink-900",
-  ];
-  return colors[index % colors.length];
-};
 
 export function FieldsPanel({
   blocks,
@@ -74,6 +62,7 @@ export function FieldsPanel({
         fieldName: string;
         partyId: string;
         partyName: string;
+        partyOrder: number;
         instances: IFormBlock[];
       }
     > = {};
@@ -86,6 +75,7 @@ export function FieldsPanel({
       const partyId = block.signing_party_id || "unknown";
       const party = signingParties.find((p) => p._id === partyId);
       const partyName = party?.signatory_title || "Unknown Party";
+      const partyOrder = party?.order || 0;
 
       const key = `${fieldName}-${partyId}`;
       if (!groups[key]) {
@@ -93,6 +83,7 @@ export function FieldsPanel({
           fieldName,
           partyId,
           partyName,
+          partyOrder,
           instances: [],
         };
       }
@@ -140,9 +131,7 @@ export function FieldsPanel({
               <SelectItem value="all">All Parties</SelectItem>
               {signingParties.map((party, idx) => (
                 <SelectItem key={party._id} value={party._id}>
-                  <span className={`rounded px-2 py-1 text-sm ${getPartyColor(idx)}`}>
-                    {party.signatory_title}
-                  </span>
+                  <span className="rounded px-2 py-1 text-sm">{party.signatory_title}</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -218,6 +207,7 @@ export function FieldsPanel({
               groupedFields.map((group) => {
                 const groupKey = `${group.fieldName}-${group.partyId}`;
                 const isExpanded = expandedGroups.has(groupKey);
+                const partyColor = getPartyColorByIndex(Math.max(0, group.partyOrder - 1));
 
                 return (
                   <div key={groupKey} className="space-y-2">
@@ -232,8 +222,12 @@ export function FieldsPanel({
                         toggleGroupExpanded(groupKey);
                       }}
                       className={cn(
-                        "border-l-primary/60 bg-muted/30 cursor-pointer border border-l-4 p-2 transition-all hover:shadow-md"
+                        "cursor-pointer border border-l-4 p-2 transition-all hover:shadow-md",
+                        `${partyColor.bg} ${partyColor.border}`
                       )}
+                      style={{
+                        borderLeftColor: partyColor.hex,
+                      }}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -242,7 +236,14 @@ export function FieldsPanel({
                             {group.partyName}
                           </p>
                         </div>
-                        <Badge type="default" className="flex-shrink-0 text-xs">
+                        <Badge
+                          type="default"
+                          className="flex-shrink-0 text-xs"
+                          style={{
+                            backgroundColor: partyColor.hex,
+                            color: "white",
+                          }}
+                        >
                           {group.instances.length}
                         </Badge>
                       </div>

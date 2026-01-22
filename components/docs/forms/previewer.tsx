@@ -13,9 +13,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
-import { type IFormBlock } from "@betterinternship/core/forms";
+import { type IFormBlock, type IFormSigningParty } from "@betterinternship/core/forms";
 import { Loader } from "@/components/ui/loader";
 import { ZoomIn, ZoomOut } from "lucide-react";
+import { getPartyColorByIndex } from "@/lib/party-colors";
 
 // Load Roboto font from Google Fonts and wait for it to load
 if (typeof window !== "undefined") {
@@ -313,6 +314,7 @@ interface FormPreviewPdfDisplayProps {
   scale?: number;
   onFieldClick?: (fieldName: string) => void;
   selectedFieldId?: string;
+  signingParties?: IFormSigningParty[];
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -329,6 +331,7 @@ export const FormPreviewPdfDisplay = ({
   scale: initialScale = 1.0,
   onFieldClick,
   selectedFieldId,
+  signingParties = [],
 }: FormPreviewPdfDisplayProps) => {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
@@ -728,11 +731,17 @@ const PdfPageWithFields = ({
 
           const isSelected = animatingFieldId === fieldName || selectedFieldId === fieldName;
 
+          // Get signing party color
+          const partyId = block.signing_party_id || "unknown";
+          const party = signingParties.find((p) => p._id === partyId);
+          const partyOrder = party?.order || 0;
+          const partyColor = getPartyColorByIndex(Math.max(0, partyOrder - 1));
+
           return (
             <div
               key={fieldName}
               onClick={() => onFieldClick?.(fieldName)}
-              className={`absolute cursor-pointer text-black transition-all ${isSelected ? "bg-green-300" : "bg-blue-200"} `}
+              className="absolute cursor-pointer text-black transition-all"
               style={{
                 left: `${displayPos.displayX}px`,
                 top: `${displayPos.displayY}px`,
@@ -740,6 +749,7 @@ const PdfPageWithFields = ({
                 minHeight: `${Math.max(heightPixels, 10)}px`,
                 overflow: "visible",
                 display: "flex",
+                backgroundColor: isSelected ? partyColor.hex + "50" : partyColor.hex + "20",
                 alignItems:
                   align_v === "middle"
                     ? "center"
