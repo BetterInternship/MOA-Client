@@ -100,7 +100,7 @@ function FormEditorContent() {
   }
 
   return (
-    <div className="bg-background flex h-screen w-screen flex-col overflow-hidden">
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <EditorToolbar />
 
       {/* Main Content Area */}
