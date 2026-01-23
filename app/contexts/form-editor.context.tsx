@@ -8,12 +8,45 @@ import {
   IFormSubscriber,
 } from "@betterinternship/core/forms";
 
+const BLANK_FORM_METADATA: IFormMetadata = {
+  name: "new-form",
+  label: "New Form",
+  schema_version: 1,
+  schema: {
+    blocks: [],
+  },
+  signing_parties: [
+    {
+      _id: "initiator",
+      order: 1,
+      signatory_title: "initiator",
+    },
+  ],
+  subscribers: [],
+};
+
 export type EditorTab = "editor" | "preview" | "metadata" | "parties" | "subscribers" | "settings";
+
+interface FormDocumentType {
+  name: string;
+  label: string;
+  version: number;
+  base_document_id: string;
+  time_generated: string;
+}
 
 interface FormEditorContextType {
   // Metadata
   formMetadata: IFormMetadata | null;
   setFormMetadata: (metadata: IFormMetadata) => void;
+
+  // Fetched Data
+  formDocument: FormDocumentType | null;
+  setFormDocument: (document: FormDocumentType | null) => void;
+  formVersion: number | null;
+  setFormVersion: (version: number | null) => void;
+  documentUrl: string | null;
+  setDocumentUrl: (url: string | null) => void;
 
   // UI State
   activeTab: EditorTab;
@@ -32,12 +65,15 @@ const FormEditorContext = createContext<FormEditorContextType | undefined>(undef
 
 export function FormEditorProvider({
   children,
-  initialMetadata,
+  initialMetadata = BLANK_FORM_METADATA,
 }: {
   children: ReactNode;
-  initialMetadata: IFormMetadata;
+  initialMetadata?: IFormMetadata;
 }) {
   const [formMetadata, setFormMetadata] = useState<IFormMetadata>(initialMetadata);
+  const [formDocument, setFormDocument] = useState<FormDocumentType | null>(null);
+  const [formVersion, setFormVersion] = useState<number | null>(null);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<EditorTab>("editor");
   const [isEditing, setIsEditing] = useState(false);
 
@@ -75,6 +111,12 @@ export function FormEditorProvider({
   const value: FormEditorContextType = {
     formMetadata,
     setFormMetadata,
+    formDocument,
+    setFormDocument,
+    formVersion,
+    setFormVersion,
+    documentUrl,
+    setDocumentUrl,
     activeTab,
     setActiveTab,
     isEditing,

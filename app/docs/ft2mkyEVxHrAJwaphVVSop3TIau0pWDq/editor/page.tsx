@@ -16,7 +16,7 @@ import {
   formsControllerRegisterForm,
 } from "@/app/api";
 import { type IFormMetadata } from "@betterinternship/core/forms";
-import { FormEditorProvider } from "@/app/contexts/form-editor.context";
+import { FormEditorProvider, useFormEditor } from "@/app/contexts/form-editor.context";
 import { EditorToolbar } from "@/components/editor/toolbar/EditorToolbar";
 import { EditorTabs } from "@/components/editor/tabs/EditorTabs";
 import { EditorContent } from "@/components/editor/tabs/EditorContent";
@@ -53,7 +53,8 @@ function FormEditorLoadingFallback() {
 function FormEditorContent() {
   const searchParams = useSearchParams();
   const formName = searchParams.get("form_name");
-  const [formMetadata, setFormMetadata] = useState<IFormMetadata | null>(null);
+  const { setFormMetadata, setFormDocument, setFormVersion, setDocumentUrl, formMetadata } =
+    useFormEditor();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -68,13 +69,22 @@ function FormEditorContent() {
 
         if (formName && fetchedData?.formMetadata) {
           setFormMetadata(fetchedData.formMetadata);
+          setFormDocument(fetchedData.formDocument || null);
+          setFormVersion(fetchedData.formVersion || null);
+          setDocumentUrl(fetchedData.documentUrl || null);
         } else {
           setFormMetadata(BLANK_FORM_METADATA);
+          setFormDocument(null);
+          setFormVersion(null);
+          setDocumentUrl(null);
         }
       } catch (error) {
         console.error("Error loading form:", error);
         toast.error("Failed to load form", toastPresets.destructive);
         setFormMetadata(BLANK_FORM_METADATA);
+        setFormDocument(null);
+        setFormVersion(null);
+        setDocumentUrl(null);
       } finally {
         setIsLoading(false);
       }
@@ -120,25 +130,25 @@ function FormEditorContent() {
   }
 
   return (
-    <FormEditorProvider initialMetadata={formMetadata}>
-      <div className="bg-background flex h-screen w-screen flex-col overflow-hidden">
-        <EditorToolbar onSave={() => handleSave(formMetadata)} isSaving={isSaving} />
+    <div className="bg-background flex h-screen w-screen flex-col overflow-hidden">
+      <EditorToolbar onSave={() => handleSave(formMetadata)} isSaving={isSaving} />
 
-        {/* Main Content Area */}
-        <div className="flex flex-1 overflow-hidden">
-          <EditorTabs />
+      {/* Main Content Area */}
+      <div className="flex flex-1 overflow-hidden">
+        <EditorTabs />
 
-          <EditorContent />
-        </div>
+        <EditorContent />
       </div>
-    </FormEditorProvider>
+    </div>
   );
 }
 
 export default function FormEditorPage() {
   return (
     <Suspense fallback={<FormEditorLoadingFallback />}>
-      <FormEditorContent />
+      <FormEditorProvider>
+        <FormEditorContent />
+      </FormEditorProvider>
     </Suspense>
   );
 }

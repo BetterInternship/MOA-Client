@@ -2706,9 +2706,10 @@
           "name": { "type": "string" },
           "label": { "type": "string" },
           "version": { "type": "number" },
-          "base_document_id": { "type": "string" }
+          "base_document_id": { "type": "string" },
+          "time_generated": { "type": "string" }
         },
-        "required": ["name", "label", "version", "base_document_id"]
+        "required": ["name", "label", "version", "base_document_id", "time_generated"]
       },
       "FormLatestResponse": {
         "type": "object",

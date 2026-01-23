@@ -12,7 +12,7 @@ interface EditorToolbarProps {
 }
 
 export function EditorToolbar({ onSave, isSaving = false }: EditorToolbarProps) {
-  const { formMetadata } = useFormEditor();
+  const { formMetadata, formDocument } = useFormEditor();
 
   const handleSave = async () => {
     try {
@@ -26,24 +26,18 @@ export function EditorToolbar({ onSave, isSaving = false }: EditorToolbarProps) 
     }
   };
 
-  // Format the date nicely
-  const getLastEditedDate = () => {
-    const now = new Date();
-    return now.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
   return (
     <div className="bg-card flex items-center justify-between border-b px-6 py-3">
       <div className="flex flex-col gap-0.5">
         <h1 className="text-sm font-semibold">{formMetadata?.label || "New Form"}</h1>
         <div className="flex items-center gap-2">
-          <p className="text-muted-foreground text-xs">v{formMetadata?.schema_version || 1}</p>
-          <span className="text-muted-foreground/40 text-xs">•</span>
-          <p className="text-muted-foreground text-xs">{getLastEditedDate()}</p>
+          <p className="text-muted-foreground text-xs">v{formDocument?.version || 0}</p>
+          {formDocument?.time_generated && (
+            <>
+              <span className="text-muted-foreground/40 text-xs">•</span>
+              <p className="text-muted-foreground text-xs">{formDocument?.time_generated || ""}</p>
+            </>
+          )}
         </div>
       </div>
 
