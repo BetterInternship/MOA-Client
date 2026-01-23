@@ -17,6 +17,14 @@
         "tags": ["App"]
       }
     },
+    "/api/health": {
+      "get": {
+        "operationId": "AppController_getHealth",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "tags": ["App"]
+      }
+    },
     "/api/auth/self": {
       "post": {
         "operationId": "AuthController_entitySelf",
@@ -2599,7 +2607,7 @@
           },
           "order": { "type": "number" },
           "signing_party_id": { "type": "string" },
-          "text_content": { "type": "object" },
+          "text_content": { "type": "string" },
           "field_schema": { "$ref": "#/components/schemas/FormField" },
           "phantom_field_schema": { "$ref": "#/components/schemas/FormPhantomField" }
         },
@@ -2608,7 +2616,6 @@
           "block_type",
           "order",
           "signing_party_id",
-          "text_content",
           "field_schema",
           "phantom_field_schema"
         ]
@@ -2619,6 +2626,37 @@
           "blocks": { "type": "array", "items": { "$ref": "#/components/schemas/FormBlock" } }
         },
         "required": ["blocks"]
+      },
+      "FormSignatory": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "title": { "type": "string" },
+          "honorific": { "type": "string" }
+        },
+        "required": ["email"]
+      },
+      "SignatorySource": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "label": { "type": "string" },
+          "tooltip_label": { "type": "string" }
+        },
+        "required": ["_id", "label", "tooltip_label"]
+      },
+      "FormSigningParty": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "order": { "type": "number" },
+          "signatory_title": { "type": "string" },
+          "signatory_account": { "$ref": "#/components/schemas/FormSignatory" },
+          "signatory_source": { "$ref": "#/components/schemas/SignatorySource" },
+          "signed": { "type": "boolean" }
+        },
+        "required": ["_id", "order", "signatory_title", "signatory_account", "signatory_source"]
       },
       "FormSubscriber": {
         "type": "object",
@@ -2633,12 +2671,16 @@
           "label": { "type": "string" },
           "version": { "type": "number" },
           "schema": { "$ref": "#/components/schemas/Form" },
+          "signing_parties": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FormSigningParty" }
+          },
           "subscribers": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/FormSubscriber" }
           }
         },
-        "required": ["schema_version", "name", "label", "version", "schema"]
+        "required": ["schema_version", "name", "label", "version", "schema", "signing_parties"]
       },
       "FormMetadataResponse": {
         "type": "object",
@@ -2686,27 +2728,6 @@
           "formVersion",
           "documentUrl"
         ]
-      },
-      "SignatorySource": {
-        "type": "object",
-        "properties": {
-          "_id": { "type": "string" },
-          "label": { "type": "string" },
-          "tooltip_label": { "type": "string" }
-        },
-        "required": ["_id", "label", "tooltip_label"]
-      },
-      "FormSigningParty": {
-        "type": "object",
-        "properties": {
-          "_id": { "type": "string" },
-          "order": { "type": "number" },
-          "signatory_title": { "type": "string" },
-          "signatory_account": { "type": "object" },
-          "signatory_source": { "$ref": "#/components/schemas/SignatorySource" },
-          "signed": { "type": "boolean" }
-        },
-        "required": ["_id", "order", "signatory_title", "signatory_account", "signatory_source"]
       },
       "RegisterFormSchemaDto": {
         "type": "object",
@@ -2993,16 +3014,6 @@
         "type": "object",
         "properties": { "profile": { "$ref": "#/components/schemas/SignatoryProfile" } },
         "required": ["profile"]
-      },
-      "FormSignatory": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "email": { "type": "string" },
-          "title": { "type": "string" },
-          "honorific": { "type": "string" }
-        },
-        "required": ["name", "email", "title", "honorific"]
       },
       "SigningParty": {
         "type": "object",

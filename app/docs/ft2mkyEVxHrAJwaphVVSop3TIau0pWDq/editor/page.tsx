@@ -52,25 +52,23 @@ function FormEditorLoadingFallback() {
 
 function FormEditorContent() {
   const searchParams = useSearchParams();
-  const formId = searchParams.get("id") || searchParams.get("form_id");
+  const formName = searchParams.get("form_name");
   const [formMetadata, setFormMetadata] = useState<IFormMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch form metadata if ID is provided
-  const { data: fetchedData } = useFormsControllerGetLatestFormDocumentAndMetadata(formId || "", {
-    enabled: !!formId,
+  const { data: fetchedData } = useFormsControllerGetLatestFormDocumentAndMetadata({
+    name: formName || "",
   });
 
   useEffect(() => {
-    const initForm = async () => {
+    const initForm = () => {
       try {
         setIsLoading(true);
 
-        if (formId && fetchedData?.metadata) {
-          setFormMetadata(fetchedData.metadata);
+        if (formName && fetchedData?.formMetadata) {
+          setFormMetadata(fetchedData.formMetadata);
         } else {
-          // Use blank form template
           setFormMetadata(BLANK_FORM_METADATA);
         }
       } catch (error) {
@@ -83,16 +81,12 @@ function FormEditorContent() {
     };
 
     initForm();
-  }, [formId, fetchedData]);
+  }, [formName, fetchedData]);
 
   const handleSave = async (metadata: IFormMetadata) => {
     setIsSaving(true);
     try {
-      await formsControllerRegisterForm({
-        body: {
-          metadata,
-        },
-      });
+      await formsControllerRegisterForm(metadata);
       toast.success("Form saved successfully!", toastPresets.success);
     } catch (error) {
       console.error("Save error:", error);
@@ -128,15 +122,12 @@ function FormEditorContent() {
   return (
     <FormEditorProvider initialMetadata={formMetadata}>
       <div className="bg-background flex h-screen w-screen flex-col overflow-hidden">
-        {/* Toolbar */}
         <EditorToolbar onSave={() => handleSave(formMetadata)} isSaving={isSaving} />
 
         {/* Main Content Area */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Vertical Tabs Sidebar */}
           <EditorTabs />
 
-          {/* Tab Content */}
           <EditorContent />
         </div>
       </div>
