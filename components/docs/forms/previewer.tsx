@@ -494,6 +494,7 @@ export const FormPreviewPdfDisplay = ({
               onFieldClick={onFieldClick}
               animatingFieldId={animatingFieldId}
               selectedFieldId={selectedFieldId}
+              signingParties={signingParties}
             />
           ))}
         </div>
@@ -514,6 +515,7 @@ interface PdfPageWithFieldsProps {
   onFieldClick?: (fieldName: string) => void;
   animatingFieldId?: string | null;
   selectedFieldId?: string;
+  signingParties?: IFormSigningParty[];
 }
 
 const PdfPageWithFields = ({
@@ -528,6 +530,7 @@ const PdfPageWithFields = ({
   onFieldClick,
   animatingFieldId,
   selectedFieldId,
+  signingParties = [],
 }: PdfPageWithFieldsProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
