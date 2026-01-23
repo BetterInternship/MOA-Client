@@ -13,8 +13,8 @@ import { getPartyColorByIndex } from "@/lib/party-colors";
 
 interface FieldsPanelProps {
   blocks: IFormBlock[];
-  selectedPartyId: "all" | string;
-  onPartyChange: (partyId: "all" | string) => void;
+  selectedPartyId: string | null;
+  onPartyChange: (partyId: string | null) => void;
   onBlockSelect: (blockId: string) => void;
   selectedBlockId: string | null;
   signingParties: IFormSigningParty[];
@@ -85,8 +85,8 @@ export function FieldsPanel({
 
     // Filter by selected party
     const allGroups = Object.values(groups);
-    if (selectedPartyId === "all") {
-      return allGroups;
+    if (selectedPartyId === null) {
+      return [];
     }
     const filtered = allGroups.filter((group) => group.partyId === selectedPartyId);
     return filtered;

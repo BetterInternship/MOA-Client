@@ -116,7 +116,7 @@ export function PdfViewer({
         x: (block.field_schema || block.phantom_field_schema)?.x || 0,
         y: (block.field_schema || block.phantom_field_schema)?.y || 0,
         w: (block.field_schema || block.phantom_field_schema)?.w || 100,
-        h: (block.field_schema || block.phantom_field_schema)?.h || 30,
+        h: (block.field_schema || block.phantom_field_schema)?.h || 12,
         page: (block.field_schema || block.phantom_field_schema)?.page || 1,
         signing_party_order,
       };
@@ -174,7 +174,7 @@ export function PdfViewer({
             x: field.x || 0,
             y: field.y || 0,
             w: field.w || 100,
-            h: field.h || 30,
+            h: field.h || 12,
           },
         };
         updateBlocks([...formMetadata.schema.blocks, newBlock]);
@@ -334,7 +334,7 @@ export function PdfViewer({
 
           // Default field dimensions
           const fieldWidth = 100;
-          const fieldHeight = 30;
+          const fieldHeight = 12;
 
           // Place field's CENTER at the drop point (better UX, like design tools)
           const pdfX = (displayX - fieldWidth / 2) / scale;
@@ -350,7 +350,7 @@ export function PdfViewer({
               x: Math.max(0, pdfX),
               y: Math.max(0, pdfY),
               w: 100,
-              h: 30,
+              h: 12,
             } as FormField);
           }
         } catch (err) {
@@ -781,7 +781,7 @@ const PdfPageCanvas = memo(
 
         // Place field center at drop point
         const fieldWidth = 100;
-        const fieldHeight = 30;
+        const fieldHeight = 12;
 
         const newField: FormField = {
           id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),

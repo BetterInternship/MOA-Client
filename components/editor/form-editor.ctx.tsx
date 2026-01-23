@@ -1,7 +1,12 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { IFormMetadata, IFormBlock, IFormSigningParty, IFormSubscriber } from "@betterinternship/core/forms";
+import {
+  IFormMetadata,
+  IFormBlock,
+  IFormSigningParty,
+  IFormSubscriber,
+} from "@betterinternship/core/forms";
 
 export type EditorTab = "editor" | "preview" | "metadata" | "parties" | "subscribers" | "settings";
 
@@ -25,7 +30,13 @@ interface FormEditorContextType {
 
 const FormEditorContext = createContext<FormEditorContextType | undefined>(undefined);
 
-export function FormEditorProvider({ children, initialMetadata }: { children: ReactNode; initialMetadata: IFormMetadata }) {
+export function FormEditorProvider({
+  children,
+  initialMetadata,
+}: {
+  children: ReactNode;
+  initialMetadata: IFormMetadata;
+}) {
   const [formMetadata, setFormMetadata] = useState<IFormMetadata>(initialMetadata);
   const [activeTab, setActiveTab] = useState<EditorTab>("editor");
   const [isEditing, setIsEditing] = useState(false);
