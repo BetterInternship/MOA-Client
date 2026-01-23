@@ -3,28 +3,9 @@
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
-import { toast } from "sonner";
-import { toastPresets } from "@/components/sonner-toaster";
 
-interface EditorToolbarProps {
-  onSave?: () => Promise<void> | void;
-  isSaving?: boolean;
-}
-
-export function EditorToolbar({ onSave, isSaving = false }: EditorToolbarProps) {
-  const { formMetadata, formDocument } = useFormEditor();
-
-  const handleSave = async () => {
-    try {
-      if (onSave) {
-        await onSave();
-      }
-      toast.success("Form saved successfully!", toastPresets.success);
-    } catch (error) {
-      toast.error("Failed to save form", toastPresets.destructive);
-      console.error("Save error:", error);
-    }
-  };
+export function EditorToolbar() {
+  const { formMetadata, formDocument, isSaving, saveForm } = useFormEditor();
 
   return (
     <div className="bg-card flex items-center justify-between border-b px-6 py-3">
@@ -41,7 +22,7 @@ export function EditorToolbar({ onSave, isSaving = false }: EditorToolbarProps) 
         </div>
       </div>
 
-      <Button onClick={handleSave} disabled={isSaving} size="sm" className="gap-2">
+      <Button onClick={() => void saveForm()} disabled={isSaving} size="sm" className="gap-2">
         <Save className="h-4 w-4" />
         {isSaving ? "Saving..." : "Save Form"}
       </Button>

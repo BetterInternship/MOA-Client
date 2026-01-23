@@ -11,10 +11,7 @@ import { Loader } from "@/components/ui/loader";
 import { useModal } from "@/app/providers/modal-provider";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
-import {
-  useFormsControllerGetLatestFormDocumentAndMetadata,
-  formsControllerRegisterForm,
-} from "@/app/api";
+import { useFormsControllerGetLatestFormDocumentAndMetadata } from "@/app/api";
 import { type IFormMetadata } from "@betterinternship/core/forms";
 import { FormEditorProvider, useFormEditor } from "@/app/contexts/form-editor.context";
 import { EditorToolbar } from "@/components/editor/toolbar/EditorToolbar";
@@ -53,10 +50,8 @@ function FormEditorLoadingFallback() {
 function FormEditorContent() {
   const searchParams = useSearchParams();
   const formName = searchParams.get("form_name");
-  const { setFormMetadata, setFormDocument, setFormVersion, setDocumentUrl, formMetadata } =
-    useFormEditor();
+  const { setFormMetadata, setFormDocument, setFormVersion, setDocumentUrl } = useFormEditor();
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
   const { data: fetchedData } = useFormsControllerGetLatestFormDocumentAndMetadata({
     name: formName || "",
@@ -93,20 +88,6 @@ function FormEditorContent() {
     initForm();
   }, [formName, fetchedData]);
 
-  const handleSave = async (metadata: IFormMetadata) => {
-    setIsSaving(true);
-    try {
-      await formsControllerRegisterForm(metadata);
-      toast.success("Form saved successfully!", toastPresets.success);
-    } catch (error) {
-      console.error("Save error:", error);
-      toast.error("Failed to save form", toastPresets.destructive);
-      throw error;
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="bg-background flex h-screen items-center justify-center">
@@ -118,20 +99,9 @@ function FormEditorContent() {
     );
   }
 
-  if (!formMetadata) {
-    return (
-      <div className="bg-background flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="mb-2 text-lg font-semibold">Failed to load form</h2>
-          <p className="text-muted-foreground text-sm">Please try again</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-background flex h-screen w-screen flex-col overflow-hidden">
-      <EditorToolbar onSave={() => handleSave(formMetadata)} isSaving={isSaving} />
+      <EditorToolbar />
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">

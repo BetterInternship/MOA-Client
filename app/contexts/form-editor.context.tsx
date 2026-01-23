@@ -1,6 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
+import { formsControllerRegisterForm } from "@/app/api";
 import {
   IFormMetadata,
   IFormBlock,
@@ -53,12 +56,14 @@ interface FormEditorContextType {
   setActiveTab: (tab: EditorTab) => void;
   isEditing: boolean;
   setIsEditing: (editing: boolean) => void;
+  isSaving: boolean;
 
   // Form operations
   updateFormMetadata: (updates: Partial<IFormMetadata>) => void;
   updateBlocks: (blocks: IFormBlock[]) => void;
   updateSigningParties: (parties: IFormSigningParty[]) => void;
   updateSubscribers: (subscribers: IFormSubscriber[]) => void;
+  saveForm: () => Promise<void>;
 }
 
 const FormEditorContext = createContext<FormEditorContextType | undefined>(undefined);
@@ -76,6 +81,7 @@ export function FormEditorProvider({
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<EditorTab>("editor");
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const updateFormMetadata = useCallback((updates: Partial<IFormMetadata>) => {
     setFormMetadata((prev) => ({
@@ -108,6 +114,21 @@ export function FormEditorProvider({
     }));
   }, []);
 
+  const saveForm = useCallback(async () => {
+    if (!formMetadata) return;
+    setIsSaving(true);
+    try {
+      await formsControllerRegisterForm(formMetadata);
+      toast.success("Form saved successfully!", toastPresets.success);
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Failed to save form", toastPresets.destructive);
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [formMetadata]);
+
   const value: FormEditorContextType = {
     formMetadata,
     setFormMetadata,
@@ -121,10 +142,12 @@ export function FormEditorProvider({
     setActiveTab,
     isEditing,
     setIsEditing,
+    isSaving,
     updateFormMetadata,
     updateBlocks,
     updateSigningParties,
     updateSubscribers,
+    saveForm,
   };
 
   return <FormEditorContext.Provider value={value}>{children}</FormEditorContext.Provider>;
