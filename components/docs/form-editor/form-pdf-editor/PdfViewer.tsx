@@ -16,7 +16,7 @@ import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/type
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
 import { FieldBox, type FormField } from "./FieldBox";
-import { FieldRegistryEntry } from "@/app/api";
+import { FieldRegistryEntryDetails } from "@/app/api";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { Button } from "@/components/ui/button";
@@ -119,7 +119,10 @@ export function PdfViewer() {
       const fieldData = e.dataTransfer.getData("field");
       if (fieldData) {
         try {
-          const draggedField = JSON.parse(fieldData) as FieldRegistryEntry;
+          const draggedField = JSON.parse(fieldData) as FieldRegistryEntryDetails;
+
+          console.log("Dragged field data:", draggedField);
+          console.log("Prefiller value:", draggedField.prefiller);
 
           const rect = e.currentTarget.getBoundingClientRect();
           const displayX = e.clientX - rect.left;
@@ -132,7 +135,9 @@ export function PdfViewer() {
             signing_party_id: selectedPartyId || "",
             order: 0,
             field_schema: {
-              field: draggedField.name || "field",
+              field: draggedField.preset
+                ? `${draggedField.name}:${draggedField.preset}`
+                : draggedField.name || "field",
               label: draggedField.label || "New Field",
               tooltip_label: draggedField.tooltip_label || "",
               type: draggedField.type,
@@ -143,8 +148,12 @@ export function PdfViewer() {
               h: 12,
               shared: draggedField.shared ?? true,
               source: draggedField.source || "manual",
+              ...(draggedField.prefiller && { prefiller: draggedField.prefiller }),
+              ...(draggedField.validator && { validator: draggedField.validator }),
             },
           };
+
+          console.log("Created block field_schema:", newBlock.field_schema);
           handleBlockCreate(newBlock);
         } catch (err) {
           console.error("Error parsing field data:", err);
@@ -499,7 +508,10 @@ const PdfPageCanvas = memo(
       if (!fieldData) return;
 
       try {
-        const draggedField = JSON.parse(fieldData) as FieldRegistryEntry;
+        const draggedField = JSON.parse(fieldData) as FieldRegistryEntryDetails;
+
+        console.log("Canvas: Dragged field data:", draggedField);
+        console.log("Canvas: Prefiller value:", draggedField.prefiller);
 
         const location = extractLocation(e);
         if (!location) return;
@@ -514,7 +526,9 @@ const PdfPageCanvas = memo(
           signing_party_id: selectedPartyId || "",
           order: 0,
           field_schema: {
-            field: draggedField.name || "field",
+            field: draggedField.preset
+              ? `${draggedField.name}:${draggedField.preset}`
+              : draggedField.name || "field",
             label: draggedField.label || "New Field",
             tooltip_label: draggedField.tooltip_label || "",
             type: draggedField.type,
@@ -525,8 +539,12 @@ const PdfPageCanvas = memo(
             h: fieldHeight,
             shared: draggedField.shared ?? true,
             source: draggedField.source || "manual",
+            ...(draggedField.prefiller && { prefiller: draggedField.prefiller }),
+            ...(draggedField.validator && { validator: draggedField.validator }),
           },
         };
+
+        console.log("Canvas: Created block field_schema:", newBlock.field_schema);
         handleBlockCreate(newBlock);
       } catch (err) {
         console.error("Error dropping field:", err);

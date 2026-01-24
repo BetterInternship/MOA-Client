@@ -238,7 +238,13 @@ export function FieldsPanel({
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <h4 className="truncate text-sm font-semibold">{group.fieldName}</h4>
+                            <h4 className="truncate text-sm font-semibold">
+                              {registry.find(
+                                (f) =>
+                                  `${f.name}:${f.preset}` === group.fieldName ||
+                                  f.name === group.fieldName
+                              )?.label || group.fieldName}
+                            </h4>
                           </div>
                         </div>
                       </Card>
