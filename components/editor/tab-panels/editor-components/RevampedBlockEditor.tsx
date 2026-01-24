@@ -267,128 +267,120 @@ export function RevampedBlockEditor({
         {/* Coordinates Section */}
         <div className="space-y-2">
           <h4 className="text-muted-foreground text-xs font-semibold">Coordinates</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <FormInput
-              label="X"
-              type="number"
-              value={String((schema?.x || 0).toFixed(1))}
-              setter={(value) => handleFieldChange("x", parseFloat(value))}
-            />
-            <FormInput
-              label="Y"
-              type="number"
-              value={String((schema?.y || 0).toFixed(1))}
-              setter={(value) => handleFieldChange("y", parseFloat(value))}
-            />
-          </div>
+          <FormInput
+            label="X"
+            type="number"
+            value={String((schema?.x || 0).toFixed(1))}
+            setter={(value) => handleFieldChange("x", parseFloat(value))}
+          />
+          <FormInput
+            label="Y"
+            type="number"
+            value={String((schema?.y || 0).toFixed(1))}
+            setter={(value) => handleFieldChange("y", parseFloat(value))}
+          />
         </div>
 
         {/* Size Section */}
         <div className="space-y-2">
           <h4 className="text-muted-foreground text-xs font-semibold">Size</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <FormInput
-              label="Width"
-              type="number"
-              value={String((schema?.w || 100).toFixed(1))}
-              setter={(value) => handleFieldChange("w", parseFloat(value))}
-            />
-            <FormInput
-              label="Height"
-              type="number"
-              value={String((schema?.h || 20).toFixed(1))}
-              setter={(value) => handleFieldChange("h", parseFloat(value))}
-            />
-          </div>
+          <FormInput
+            label="Width"
+            type="number"
+            value={String((schema?.w || 100).toFixed(1))}
+            setter={(value) => handleFieldChange("w", parseFloat(value))}
+          />
+          <FormInput
+            label="Height"
+            type="number"
+            value={String((schema?.h || 20).toFixed(1))}
+            setter={(value) => handleFieldChange("h", parseFloat(value))}
+          />
         </div>
 
         {/* Typography Section */}
         <div className="space-y-2">
           <h4 className="text-muted-foreground text-xs font-semibold">Typography & Text</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <FormInput
-              label="Font Size"
-              type="number"
-              value={String((schema?.font_size || 12).toFixed(1))}
-              setter={(value) => handleFieldChange("font_size", parseFloat(value))}
-            />
-            <FormDropdown
-              label="Text Wrapping"
-              value={schema?.text_wrapping ? "wrap" : "no-wrap"}
-              options={[
-                { id: "no-wrap", name: "No Wrap" },
-                { id: "wrap", name: "Wrap" },
-              ]}
-              setter={(value) => handleFieldChange("text_wrapping", value === "wrap")}
-            />
-          </div>
+          <FormInput
+            label="Font Size"
+            type="number"
+            value={String((schema?.font_size || 12).toFixed(1))}
+            setter={(value) => handleFieldChange("font_size", parseFloat(value))}
+          />
+          <FormDropdown
+            label="Text Wrapping"
+            value={schema?.text_wrapping ? "wrap" : "no-wrap"}
+            options={[
+              { id: "no-wrap", name: "No Wrap" },
+              { id: "wrap", name: "Wrap" },
+            ]}
+            setter={(value) => handleFieldChange("text_wrapping", value === "wrap")}
+          />
         </div>
 
         {/* Alignment Section */}
         <div className="space-y-2">
           <h4 className="text-muted-foreground text-xs font-semibold">Alignment</h4>
-          <div className="flex gap-2">
-            {/* Horizontal Alignment */}
-            <div className="flex flex-1 gap-1">
-              <Button
-                size="sm"
-                variant={schema?.horizontal_alignment === "left" ? "default" : "outline"}
-                onClick={() => handleFieldChange("horizontal_alignment", "left")}
-                title="Align Left"
-                className="h-8 flex-1"
-              >
-                <BiAlignLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={schema?.horizontal_alignment === "center" ? "default" : "outline"}
-                onClick={() => handleFieldChange("horizontal_alignment", "center")}
-                title="Align Center"
-                className="h-8 flex-1"
-              >
-                <BiAlignMiddle className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={schema?.horizontal_alignment === "right" ? "default" : "outline"}
-                onClick={() => handleFieldChange("horizontal_alignment", "right")}
-                title="Align Right"
-                className="h-8 flex-1"
-              >
-                <BiAlignRight className="h-4 w-4" />
-              </Button>
-            </div>
+          {/* Horizontal Alignment */}
+          <div className="flex flex-1 gap-1">
+            <Button
+              size="sm"
+              variant={schema?.horizontal_alignment === "left" ? "default" : "outline"}
+              onClick={() => handleFieldChange("horizontal_alignment", "left")}
+              title="Align Left"
+              className="h-8 flex-1"
+            >
+              <BiAlignLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant={schema?.horizontal_alignment === "center" ? "default" : "outline"}
+              onClick={() => handleFieldChange("horizontal_alignment", "center")}
+              title="Align Center"
+              className="h-8 flex-1"
+            >
+              <BiAlignMiddle className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant={schema?.horizontal_alignment === "right" ? "default" : "outline"}
+              onClick={() => handleFieldChange("horizontal_alignment", "right")}
+              title="Align Right"
+              className="h-8 flex-1"
+            >
+              <BiAlignRight className="h-4 w-4" />
+            </Button>
+          </div>
 
-            {/* Vertical Alignment */}
-            <div className="flex flex-1 gap-1">
-              <Button
-                size="sm"
-                variant={schema?.vertical_alignment === "top" ? "default" : "outline"}
-                onClick={() => handleFieldChange("vertical_alignment", "top")}
-                title="Align Top"
-                className="h-8 flex-1"
-              >
-                <BiVerticalTop className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={schema?.vertical_alignment === "middle" ? "default" : "outline"}
-                onClick={() => handleFieldChange("vertical_alignment", "middle")}
-                title="Align Middle"
-                className="h-8 flex-1"
-              >
-                <BiVerticalCenter className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={schema?.vertical_alignment === "bottom" ? "default" : "outline"}
-                onClick={() => handleFieldChange("vertical_alignment", "bottom")}
-                title="Align Bottom"
-                className="h-8 flex-1"
-              >
-                <BiVerticalBottom className="h-4 w-4" />
-              </Button>
-            </div>
+          {/* Vertical Alignment */}
+          <div className="flex flex-1 gap-1">
+            <Button
+              size="sm"
+              variant={schema?.vertical_alignment === "top" ? "default" : "outline"}
+              onClick={() => handleFieldChange("vertical_alignment", "top")}
+              title="Align Top"
+              className="h-8 flex-1"
+            >
+              <BiVerticalTop className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant={schema?.vertical_alignment === "middle" ? "default" : "outline"}
+              onClick={() => handleFieldChange("vertical_alignment", "middle")}
+              title="Align Middle"
+              className="h-8 flex-1"
+            >
+              <BiVerticalCenter className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant={schema?.vertical_alignment === "bottom" ? "default" : "outline"}
+              onClick={() => handleFieldChange("vertical_alignment", "bottom")}
+              title="Align Bottom"
+              className="h-8 flex-1"
+            >
+              <BiVerticalBottom className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 

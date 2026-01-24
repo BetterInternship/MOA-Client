@@ -34,7 +34,7 @@ function FormEditorTabContent() {
 
   return (
     <div className="bg-background flex h-full w-full">
-      <div className="bg-card flex flex-shrink-0 basis-[380px] flex-col overflow-hidden border-r">
+      <div className="bg-card flex flex-shrink-0 basis-[330px] flex-col overflow-hidden border-r">
         <FieldsPanel
           blocks={formMetadata.schema.blocks}
           selectedPartyId={selectedPartyId}
@@ -52,7 +52,7 @@ function FormEditorTabContent() {
         <PdfViewer />
       </div>
 
-      <div className="bg-card flex flex-shrink-0 basis-80 flex-col overflow-hidden border-l">
+      <div className="bg-card flex flex-shrink-0 basis-60 flex-col overflow-hidden border-l">
         <RevampedBlockEditor
           block={selectedBlock || null}
           onUpdate={handleBlockUpdate}

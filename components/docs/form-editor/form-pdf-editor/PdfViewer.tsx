@@ -259,13 +259,13 @@ export function PdfViewer() {
 
         {pdfDoc && (
           <div
-            className="h-full overflow-y-auto p-4"
+            className="h-full overflow-auto p-4"
             aria-live="polite"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
-            <div className="flex flex-col items-center gap-4">
+            <div className="inline-flex flex-col items-start gap-4">
               {pagesArray.map((page) => (
                 <PdfPageCanvas
                   key={page}
