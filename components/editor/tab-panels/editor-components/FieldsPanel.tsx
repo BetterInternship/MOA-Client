@@ -134,12 +134,12 @@ export function FieldsPanel({
           <div className="space-y-3">
             {/* Search Bar */}
             <div className="relative">
-              <SearchIcon className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
+              <SearchIcon className="text-muted-foreground absolute top-2.5 left-3 z-9999 h-4 w-4" />
               <Input
                 placeholder="Search fields..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-9"
                 autoFocus
               />
             </div>
