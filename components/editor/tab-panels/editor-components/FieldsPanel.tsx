@@ -360,17 +360,18 @@ export function FieldsPanel({
                   key={party._id}
                   onClick={() => onPartyChange(party._id)}
                   className={cn(
-                    "flex w-full items-start justify-start border-l-[5px] p-2 text-sm transition-all",
-                    isSelected ? "shadow-md" : "hover:bg-gray-100"
+                    "flex w-full items-start justify-start border-l-[3px] px-1 py-2 text-xs transition-all",
+                    isSelected ? "shadow-sm" : "hover:bg-gray-50"
                   )}
                   style={{
-                    backgroundColor: isSelected ? partyColor.hex + "30" : partyColor.hex + "15",
-                    borderLeftColor: partyColor.hex,
+                    backgroundColor: isSelected ? partyColor.hex + "25" : "transparent",
+                    borderLeftColor: isSelected ? partyColor.hex : "transparent",
                     overflowWrap: "break-word",
                     wordBreak: "break-word",
                   }}
+                  title={party.signatory_title}
                 >
-                  {party.signatory_title}
+                  <span className="line-clamp-2">{party.signatory_title}</span>
                 </button>
               );
             })}

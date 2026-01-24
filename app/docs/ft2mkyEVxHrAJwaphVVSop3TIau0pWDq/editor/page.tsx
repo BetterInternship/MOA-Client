@@ -17,6 +17,8 @@ import { FormEditorProvider, useFormEditor } from "@/app/contexts/form-editor.co
 import { EditorToolbar } from "@/components/editor/toolbar/EditorToolbar";
 import { EditorTabs } from "@/components/editor/tabs/EditorTabs";
 import { EditorContent } from "@/components/editor/tabs/EditorContent";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Blank form metadata for new forms
 const BLANK_FORM_METADATA: IFormMetadata = {
@@ -52,6 +54,7 @@ function FormEditorContent() {
   const formName = searchParams.get("form_name");
   const { setFormMetadata, setFormDocument, setFormVersion, setDocumentUrl } = useFormEditor();
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditorTabsVisible, setIsEditorTabsVisible] = useState(true);
 
   const { data: fetchedData } = useFormsControllerGetLatestFormDocumentAndMetadata({
     name: formName || "",
@@ -105,10 +108,24 @@ function FormEditorContent() {
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
-        <EditorTabs />
+        {isEditorTabsVisible && <EditorTabs />}
 
         <EditorContent />
       </div>
+
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed bottom-4 left-6 h-10 w-10 rounded-full shadow-lg"
+        onClick={() => setIsEditorTabsVisible(!isEditorTabsVisible)}
+        title={isEditorTabsVisible ? "Hide Editor Tabs" : "Show Editor Tabs"}
+      >
+        {isEditorTabsVisible ? (
+          <ChevronLeft className="h-4 w-4" />
+        ) : (
+          <ChevronRight className="h-4 w-4" />
+        )}
+      </Button>
     </div>
   );
 }
