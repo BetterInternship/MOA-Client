@@ -82,7 +82,7 @@ export function FieldsPanel({
       newGroups[currentIndex],
     ];
 
-    // Flatten back to blocks preserving order
+    // Flatten back to blocks preserving new order
     const reorderedBlocks = newGroups.flatMap((group) => group.instances);
     handleReorderBlocks(reorderedBlocks);
   };
@@ -117,15 +117,17 @@ export function FieldsPanel({
 
     if (draggedIdx === -1 || targetIdx === -1) return;
 
+    // Swap the groups
     const newGroups = [...groupedFields];
     [newGroups[draggedIdx], newGroups[targetIdx]] = [newGroups[targetIdx], newGroups[draggedIdx]];
 
+    // Flatten back to blocks preserving new order
     const reorderedBlocks = newGroups.flatMap((group) => group.instances);
-    onBlocksReorder?.(reorderedBlocks);
+    handleReorderBlocks(reorderedBlocks);
     setDraggedGroupKey(null);
   };
 
-  // Group blocks by field name and party
+  // Group blocks by field name and party, maintaining block order
   const groupedFields = useMemo(() => {
     const groups: Record<
       string,
@@ -135,10 +137,11 @@ export function FieldsPanel({
         partyName: string;
         partyOrder: number;
         instances: IFormBlock[];
+        firstIndex: number; // Track first appearance in blocks array for sorting
       }
     > = {};
 
-    blocks.forEach((block) => {
+    blocks.forEach((block, index) => {
       const schema = block.field_schema;
       if (!schema) return;
 
@@ -156,18 +159,20 @@ export function FieldsPanel({
           partyName,
           partyOrder,
           instances: [],
+          firstIndex: index,
         };
       }
       groups[key].instances.push(block);
     });
 
-    // Filter by selected party
+    // Filter by selected party and sort by first appearance in blocks array
     const allGroups = Object.values(groups);
     if (selectedPartyId === null) {
       return [];
     }
     const filtered = allGroups.filter((group) => group.partyId === selectedPartyId);
-    return filtered;
+    // Sort by firstIndex to maintain block order
+    return filtered.sort((a, b) => a.firstIndex - b.firstIndex);
   }, [blocks, signingParties, selectedPartyId]);
 
   // Filter fields based on search
