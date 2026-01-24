@@ -3,13 +3,12 @@
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
  * @ Modified time: 2025-12-26 01:41:33
- * @ Description: PDF editor component - handles field placement and editing on PDF documents
+ * @ Description: PDF editor component - pure rendering via contexts
  */
 
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
-import { useSearchParams } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
 import { GlobalWorkerOptions, version as pdfjsVersion } from "pdfjs-dist";
@@ -17,22 +16,10 @@ import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/type
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
 import { FieldBox, type FormField } from "./FieldBox";
-import { GhostField } from "./GhostField";
-import {
-  getFieldLabel,
-  getFieldName,
-} from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
-import type { FieldRegistryEntry } from "@/app/api";
-import type { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
-import { useFormEditor } from "@/app/contexts/form-editor.context";
+import { FieldRegistryEntry } from "@/app/api";
+import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { Button } from "@/components/ui/button";
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-const generateUniqueId = () => `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-export type { FormField };
 
 export type PointerLocation = {
   page: number;
@@ -44,61 +31,25 @@ export type PointerLocation = {
   viewportHeight: number;
 };
 
-type PdfViewerProps = {
-  initialUrl?: string;
-  fields?: FormField[];
-  selectedFieldId?: string;
-  onFieldSelect?: (fieldId: string) => void;
-  onFieldChange?: (fieldId: string, updates: Partial<FormField>) => void;
-  onFieldCreate?: (field: FormField) => void;
-  onFieldDelete?: (fieldId: string) => void;
-  onFieldDuplicate?: (fieldId: string) => void;
-  isPlacingField?: boolean;
-  placementFieldType?: string;
-  onPlacementFieldTypeChange?: (type: string) => void;
-  onStartPlacing?: () => void;
-  onCancelPlacing?: () => void;
-  onFileSelect?: (file: File) => void;
-  registry?: FieldRegistryEntry[];
-  onFieldClickInPdf?: (fieldId: string) => void;
-  useContext?: boolean;
-  signingParties?: IFormSigningParty[];
-};
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-export function PdfViewer({
-  initialUrl,
-  fields: propsFields,
-  selectedFieldId: propsSelectedFieldId,
-  onFieldSelect: propsOnFieldSelect,
-  onFieldChange: propsOnFieldChange,
-  onFieldCreate: propsOnFieldCreate,
-  isPlacingField = false,
-  placementFieldType = "signature",
-  onFileSelect,
-  registry = [],
-  onFieldClickInPdf,
-  useContext: useContextMode = true,
-  signingParties: propsSigningParties,
-}: PdfViewerProps) {
-  // Get form editor context for metadata and block updates
-  let contextValue;
-  try {
-    contextValue = useContextMode ? useFormEditor() : null;
-  } catch (err) {
-    contextValue = null;
-  }
-
-  const formMetadata = contextValue?.formMetadata;
-  const updateBlocks = contextValue?.updateBlocks;
-
-  // Get all PDF state and file handling from PdfViewerContext
+/**
+ * PdfViewer - Context-driven PDF editor component
+ * Uses PdfViewerContext for PDF state and FormEditorContext for form data
+ * Pure presentation component - all logic is in contexts
+ */
+export function PdfViewer() {
   const {
-    documentFile,
-    setDocumentFile,
+    fields,
+    selectedFieldId,
+    handleFieldSelectFromPdf,
+    handleFieldChange,
+    handleFieldCreate,
+  } = useFormEditorTab();
+
+  const {
     pdfDoc,
     pageCount,
-    selectedPage,
-    setSelectedPage,
     visiblePage,
     setVisiblePage,
     scale,
@@ -108,155 +59,37 @@ export function PdfViewer({
     isDragging,
     setIsDragging,
     handleFileUpload,
+    registry,
   } = usePdfViewer();
 
-  // Signing parties
-  const signingParties = propsSigningParties ?? formMetadata?.signing_parties ?? [];
-
-  // Build fields from context or props
-  const fields = useMemo(() => {
-    if (propsFields) return propsFields;
-
-    return (
-      formMetadata?.schema.blocks.map((block) => {
-        let signing_party_order = 1;
-        if (block.signing_party_id && signingParties.length > 0) {
-          const party = signingParties.find((p) => p._id === block.signing_party_id);
-          if (party) signing_party_order = party.order;
-        }
-
-        return {
-          id: block._id,
-          _id: block._id,
-          label: (block.field_schema || block.phantom_field_schema)?.label || "Field",
-          type: (block.field_schema || block.phantom_field_schema)?.type || "text",
-          x: (block.field_schema || block.phantom_field_schema)?.x || 0,
-          y: (block.field_schema || block.phantom_field_schema)?.y || 0,
-          w: (block.field_schema || block.phantom_field_schema)?.w || 100,
-          h: (block.field_schema || block.phantom_field_schema)?.h || 12,
-          page: (block.field_schema || block.phantom_field_schema)?.page || 1,
-          signing_party_order,
-        };
-      }) ?? []
-    );
-  }, [propsFields, formMetadata?.schema.blocks, signingParties]);
-
-  const selectedFieldId = propsSelectedFieldId;
-  const onFieldSelect = propsOnFieldSelect;
-
-  // Handle field changes via context
-  const onFieldChange = useCallback(
-    (fieldId: string, updates: Partial<FormField>) => {
-      if (propsOnFieldChange) {
-        propsOnFieldChange(fieldId, updates);
-        return;
-      }
-
-      if (updateBlocks && formMetadata) {
-        const updatedBlocks = formMetadata.schema.blocks.map((block) => {
-          if (block._id === fieldId) {
-            const schema = block.field_schema || block.phantom_field_schema;
-            return {
-              ...block,
-              field_schema: schema ? { ...schema, ...updates } : schema,
-              phantom_field_schema: !schema
-                ? { label: updates.label || "Field", type: updates.type || "text", ...updates }
-                : block.phantom_field_schema,
-            };
-          }
-          return block;
-        });
-        updateBlocks(updatedBlocks);
-      }
-    },
-    [propsOnFieldChange, updateBlocks, formMetadata]
-  );
-
-  // Handle field creation via context
-  const onFieldCreate = useCallback(
-    (field: FormField) => {
-      if (propsOnFieldCreate) {
-        propsOnFieldCreate(field);
-        return;
-      }
-
-      if (updateBlocks && formMetadata) {
-        const uniqueId = generateUniqueId();
-        const newBlock: IFormBlock = {
-          _id: uniqueId,
-          block_type: "form_field",
-          field_schema: {
-            field: field.label,
-            label: field.label,
-            type: field.type,
-            x: field.x || 0,
-            y: field.y || 0,
-            w: field.w || 100,
-            h: field.h || 12,
-          },
-        };
-        updateBlocks([...formMetadata.schema.blocks, newBlock]);
-      }
-    },
-    [propsOnFieldCreate, updateBlocks, formMetadata]
-  );
-
-  // PDF worker setup
+  // Setup PDF worker
   useEffect(() => {
     if (typeof window === "undefined") return;
     const workerFile = pdfjsVersion.startsWith("4") ? "pdf.worker.min.mjs" : "pdf.worker.min.js";
     GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/${workerFile}`;
   }, []);
 
-  // Load initial URL if no document file is provided
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    const urlFromQuery = searchParams.get("url");
-    if (urlFromQuery && !pdfDoc && !documentFile) {
-      // Fetch and load from URL
-      fetch(urlFromQuery)
-        .then((res) => res.blob())
-        .then((blob) => {
-          const file = new File([blob], "document.pdf", { type: "application/pdf" });
-          setDocumentFile(file);
-        })
-        .catch((err) => console.error("Failed to load PDF from URL:", err));
-    }
-  }, [searchParams, pdfDoc, documentFile, setDocumentFile]);
-
-  // Handle file upload
+  // File upload handler
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    handleFileUpload(file);
-    if (onFileSelect) {
-      onFileSelect(file);
-    }
+    if (file) handleFileUpload(file);
   };
 
   const handleZoom = (direction: "in" | "out") => {
     const delta = direction === "in" ? 0.1 : -0.1;
-    setScale((prev) => clamp(parseFloat((prev + delta).toFixed(2)), 0.5, 3));
-  };
-
-  const handleJumpToPage = (page: number) => {
-    if (!page || page < 1 || page > pageCount) return;
-    setSelectedPage(page);
+    const newScale = clamp(parseFloat((scale + delta).toFixed(2)), 0.5, 3);
+    setScale(newScale);
   };
 
   const pagesArray = useMemo(
     () => Array.from({ length: pageCount }, (_, idx) => idx + 1),
     [pageCount]
   );
-
   const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
-
   const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
     pageRefs.current.set(page, node);
   }, []);
 
-  // Drag and drop handlers
   const handleDragOver = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -284,40 +117,45 @@ export function PdfViewer({
       const fieldData = e.dataTransfer.getData("field");
       if (fieldData) {
         try {
-          const draggedField = JSON.parse(fieldData);
+          const draggedField = JSON.parse(fieldData) as Record<string, unknown>;
           const rect = e.currentTarget.getBoundingClientRect();
           const displayX = e.clientX - rect.left;
           const displayY = e.clientY - rect.top;
 
-          if (onFieldCreate) {
-            onFieldCreate({
-              id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),
-              label: draggedField.label || draggedField.name || "New Field",
-              type: draggedField.field_type || draggedField.type || "text",
-              page: selectedPage,
-              x: Math.max(0, (displayX - 50) / scale),
-              y: Math.max(0, (displayY - 6) / scale),
-              w: 100,
-              h: 12,
-            } as FormField);
-          }
+          handleFieldCreate({
+            id:
+              (draggedField._id as string | undefined) ||
+              (draggedField.name as string | undefined) ||
+              Math.random().toString(36).substr(2, 9),
+            field:
+              (draggedField.field as string | undefined) ||
+              (draggedField.name as string | undefined) ||
+              "field",
+            label:
+              (draggedField.label as string | undefined) ||
+              (draggedField.name as string | undefined) ||
+              "New Field",
+            type:
+              (draggedField.field_type as string | undefined) ||
+              (draggedField.type as string | undefined) ||
+              "text",
+            page: visiblePage,
+            x: Math.max(0, (displayX - 50) / scale),
+            y: Math.max(0, (displayY - 6) / scale),
+            w: 100,
+            h: 12,
+          });
         } catch (err) {
           console.error("Error parsing field data:", err);
         }
         return;
       }
 
-      // Handle PDF file drops
       const files = e.dataTransfer.files;
       const file = Array.from(files).find((f) => f.type === "application/pdf") || files[0];
-      if (file) {
-        handleFileUpload(file);
-        if (onFileSelect) {
-          onFileSelect(file);
-        }
-      }
+      if (file) handleFileUpload(file);
     },
-    [scale, selectedPage, onFieldCreate, onFileSelect, setIsDragging, handleFileUpload]
+    [scale, visiblePage, handleFieldCreate, setIsDragging, handleFileUpload]
   );
 
   return (
@@ -424,20 +262,15 @@ export function PdfViewer({
                   pdf={pdfDoc}
                   pageNumber={page}
                   scale={scale}
-                  isSelected={page === selectedPage}
-                  isVisible={page === visiblePage}
+                  isSelected={page === visiblePage}
+                  _isVisible={page === visiblePage}
                   onVisible={setVisiblePage}
                   registerPageRef={registerPageRef}
                   fields={fields}
                   selectedFieldId={selectedFieldId}
-                  onFieldSelect={onFieldSelect}
-                  onFieldChange={onFieldChange}
-                  isPlacingField={isPlacingField}
-                  placementFieldType={placementFieldType}
-                  onPlaceField={onFieldCreate}
-                  registry={registry}
-                  onFieldClickInPdf={onFieldClickInPdf}
-                  signingParties={signingParties}
+                  onFieldSelect={handleFieldSelectFromPdf}
+                  onFieldChange={handleFieldChange}
+                  _registry={registry}
                 />
               ))}
             </div>
@@ -453,19 +286,14 @@ type PdfPageCanvasProps = {
   pageNumber: number;
   scale: number;
   isSelected: boolean;
-  isVisible: boolean;
+  _isVisible: boolean;
   onVisible: (page: number) => void;
   registerPageRef: (page: number, node: HTMLDivElement | null) => void;
-  fields?: FormField[];
-  selectedFieldId?: string;
-  onFieldSelect?: (fieldId: string) => void;
-  onFieldChange?: (fieldId: string, updates: Partial<FormField>) => void;
-  isPlacingField?: boolean;
-  placementFieldType?: string;
-  onPlaceField?: (field: FormField) => void;
-  registry?: FieldRegistryEntry[];
-  onFieldClickInPdf?: (fieldId: string) => void;
-  signingParties?: IFormSigningParty[];
+  fields: FormField[];
+  selectedFieldId: string | null | undefined;
+  onFieldSelect: (fieldId: string) => void;
+  onFieldChange: (fieldId: string, updates: Partial<FormField>) => void;
+  _registry: FieldRegistryEntry[];
 };
 
 const PdfPageCanvas = memo(
@@ -474,20 +302,16 @@ const PdfPageCanvas = memo(
     pageNumber,
     scale,
     isSelected,
-    isVisible,
+    _isVisible,
     onVisible,
     registerPageRef,
-    fields = [],
+    fields,
     selectedFieldId,
     onFieldSelect,
     onFieldChange,
-    isPlacingField = false,
-    placementFieldType = "signature",
-    onPlaceField,
-    registry = [],
-    onFieldClickInPdf,
-    signingParties = [],
+    _registry,
   }: PdfPageCanvasProps) => {
+    const { handleFieldCreate } = useFormEditorTab();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const viewportRef = useRef<PageViewport | null>(null);
@@ -547,13 +371,18 @@ const PdfPageCanvas = memo(
             canvasContext: context,
             viewport,
             transform: [outputScale, 0, 0, outputScale, 0, 0],
-          } as const;
+          } as {
+            canvasContext: CanvasRenderingContext2D;
+            viewport: PageViewport;
+            transform: number[];
+          };
 
           renderTask = page.render(renderContext);
           return renderTask.promise;
         })
-        .catch((err) => {
-          if (err?.name === "RenderingCancelledException") return;
+        .catch((err: any) => {
+          const errorObj = err as { name?: string };
+          if (errorObj?.name === "RenderingCancelledException") return;
           console.error("Failed to render page", err);
         })
         .finally(() => {
@@ -567,7 +396,7 @@ const PdfPageCanvas = memo(
     }, [pdf, pageNumber, scale]);
 
     const extractLocation = (
-      event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+      event: React.MouseEvent<HTMLCanvasElement, MouseEvent> | React.DragEvent<HTMLCanvasElement>
     ): PointerLocation | null => {
       const canvas = canvasRef.current;
       const viewport = viewportRef.current;
@@ -625,7 +454,7 @@ const PdfPageCanvas = memo(
 
       const viewportPoint = viewport.convertToViewportPoint(pdfX, pdfYBottom);
       if (!viewportPoint) return null;
-      const [viewportX, viewportY] = viewportPoint;
+      const [viewportX, viewportY] = viewportPoint as [number, number];
 
       // Convert viewport coordinates to CSS pixels
       // Multiply by outputScale to account for device pixel ratio (same as extractLocation does in reverse)
@@ -650,24 +479,7 @@ const PdfPageCanvas = memo(
     const handleClick = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
       const location = extractLocation(event);
       if (!location) return;
-
-      if (isPlacingField && onPlaceField) {
-        const defaultSize = { w: 100, h: 40 };
-        const fieldName = getFieldName(placementFieldType, registry);
-        const fieldLabel = getFieldLabel(placementFieldType, registry);
-        const registryEntry = registry.find((r) => r.id === placementFieldType);
-        const newField: FormField = {
-          id: placementFieldType,
-          field: fieldName,
-          label: fieldLabel,
-          type: registryEntry?.type || "text",
-          page: pageNumber,
-          x: location.pdfX,
-          y: location.pdfY,
-          ...defaultSize,
-        };
-        onPlaceField(newField);
-      }
+      // Click handled through field box interactions
     };
 
     const handleDragOver = (e: React.DragEvent<HTMLCanvasElement>) => {
@@ -680,29 +492,40 @@ const PdfPageCanvas = memo(
       e.stopPropagation();
 
       const fieldData = e.dataTransfer.getData("field");
-      if (!fieldData || !onPlaceField) return;
+      if (!fieldData) return;
 
       try {
-        const draggedField = JSON.parse(fieldData);
-        const location = extractLocation(e as any);
+        const draggedField = JSON.parse(fieldData) as Record<string, unknown>;
+        const location = extractLocation(e);
         if (!location) return;
 
-        // Place field center at drop point
         const fieldWidth = 100;
         const fieldHeight = 12;
 
         const newField: FormField = {
-          id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),
-          field: draggedField.field || draggedField.name || "field",
-          label: draggedField.label || draggedField.name || "New Field",
-          type: draggedField.field_type || draggedField.type || "text",
+          id:
+            (draggedField._id as string | undefined) ||
+            (draggedField.name as string | undefined) ||
+            Math.random().toString(36).substr(2, 9),
+          field:
+            (draggedField.field as string | undefined) ||
+            (draggedField.name as string | undefined) ||
+            "field",
+          label:
+            (draggedField.label as string | undefined) ||
+            (draggedField.name as string | undefined) ||
+            "New Field",
+          type:
+            (draggedField.field_type as string | undefined) ||
+            (draggedField.type as string | undefined) ||
+            "text",
           page: pageNumber,
           x: location.pdfX - fieldWidth / 2,
           y: location.pdfY - fieldHeight / 2,
           w: fieldWidth,
           h: fieldHeight,
         };
-        onPlaceField(newField);
+        handleFieldCreate(newField);
       } catch (err) {
         console.error("Error dropping field:", err);
       }
@@ -813,7 +636,7 @@ const PdfPageCanvas = memo(
           <canvas
             ref={canvasRef}
             className="block"
-            style={{ cursor: isPlacingField ? "crosshair" : "default" }}
+            style={{ cursor: "pointer" }}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
@@ -852,7 +675,6 @@ const PdfPageCanvas = memo(
                     isSelected={selectedFieldId === fieldId}
                     onSelect={() => {
                       onFieldSelect?.(fieldId);
-                      onFieldClickInPdf?.(fieldId);
                     }}
                     onDrag={(deltaX, deltaY) => handleFieldDrag(fieldId, deltaX, deltaY)}
                     onDragEnd={() => {}}

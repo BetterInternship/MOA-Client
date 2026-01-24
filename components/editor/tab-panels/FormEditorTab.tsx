@@ -13,15 +13,10 @@ function FormEditorTabContent() {
     selectedPartyId,
     setSelectedPartyId,
     selectedBlockId,
-    selectedFieldId,
     selectedParentGroup,
-    fields,
     handleBlockSelect,
     handleParentGroupSelect,
     handleBlockUpdate,
-    handleFieldSelectFromPdf,
-    handleFieldChange,
-    handleFieldCreate,
     handleParentUpdate,
   } = useFormEditorTab();
 
@@ -47,22 +42,13 @@ function FormEditorTabContent() {
           onBlockSelect={handleBlockSelect}
           selectedBlockId={selectedBlockId}
           signingParties={formMetadata.signing_parties || []}
-          onAddField={handleFieldCreate}
+          onAddField={() => {}}
           onParentGroupSelect={handleParentGroupSelect}
         />
       </div>
 
       <div className="flex-1 overflow-hidden border-r">
-        <PdfViewer
-          fields={fields}
-          selectedFieldId={selectedFieldId || ""}
-          onFieldSelect={handleFieldSelectFromPdf}
-          onFieldChange={handleFieldChange}
-          onFieldCreate={(field) => {
-            handleFieldCreate(field);
-          }}
-          signingParties={formMetadata.signing_parties || []}
-        />
+        <PdfViewer />
       </div>
 
       <div className="bg-card flex w-96 flex-col overflow-hidden">

@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
 import { getDocument } from "pdfjs-dist";
+import type { FieldRegistryEntry } from "@/app/api";
 
 export interface PdfViewerContextType {
   // File state
@@ -38,15 +39,13 @@ export interface PdfViewerContextType {
   error: string | null;
   setError: (error: string | null) => void;
 
-  // Hover state during field placement
-  hoverPoint: { x: number; y: number } | null;
-  setHoverPoint: (point: { x: number; y: number } | null) => void;
-  hoverPointDuringPlacement: { x: number; y: number } | null;
-  setHoverPointDuringPlacement: (point: { x: number; y: number } | null) => void;
-
   // Dragging state
   isDragging: boolean;
   setIsDragging: (dragging: boolean) => void;
+
+  // Field registry and placement
+  registry: FieldRegistryEntry[];
+  setRegistry: (registry: FieldRegistryEntry[]) => void;
 
   // File upload handler
   handleFileUpload: (file: File) => void;
@@ -84,15 +83,11 @@ export function PdfViewerProvider({
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Hover state during field placement
-  const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(null);
-  const [hoverPointDuringPlacement, setHoverPointDuringPlacement] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-
   // Dragging state
   const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  // Field registry
+  const [registry, setRegistry] = useState<FieldRegistryEntry[]>([]);
 
   // Ref to track loaded file
   const loadingTaskRef = useRef<any>(null);
@@ -131,9 +126,9 @@ export function PdfViewerProvider({
               setVisiblePage(1);
               setError(null);
             })
-            .catch((err) => {
+            .catch((err: any) => {
               console.error("Failed to load PDF", err);
-              setError(err?.message ?? "Failed to load PDF document");
+              setError((err as { message?: string })?.message ?? "Failed to load PDF document");
               setPdfDoc(null);
               setPageCount(0);
             });
@@ -166,9 +161,9 @@ export function PdfViewerProvider({
                 setLastLoadedFileName(documentFile.name);
               }
             })
-            .catch((err) => {
+            .catch((err: any) => {
               console.error("Failed to load PDF", err);
-              setError(err?.message ?? "Failed to load PDF document");
+              setError((err as { message?: string })?.message ?? "Failed to load PDF document");
               setPdfDoc(null);
               setPageCount(0);
             })
@@ -185,6 +180,7 @@ export function PdfViewerProvider({
   useEffect(() => {
     return () => {
       if (loadingTaskRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         loadingTaskRef.current.destroy();
       }
     };
@@ -210,12 +206,10 @@ export function PdfViewerProvider({
       setIsLoadingDoc,
       error,
       setError,
-      hoverPoint,
-      setHoverPoint,
-      hoverPointDuringPlacement,
-      setHoverPointDuringPlacement,
       isDragging,
       setIsDragging,
+      registry,
+      setRegistry,
       handleFileUpload,
     };
   }, [
@@ -228,9 +222,8 @@ export function PdfViewerProvider({
     scale,
     isLoadingDoc,
     error,
-    hoverPoint,
-    hoverPointDuringPlacement,
     isDragging,
+    registry,
     handleFileUpload,
   ]);
 
