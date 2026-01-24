@@ -6,20 +6,17 @@ import { getPartyColorByIndex } from "@/lib/party-colors";
 
 export type FormField = {
   id: string;
-  _id?: string;
   field: string;
   label: string;
-  type: string;
+  tooltip_label?: string;
+  type: "text" | "signature" | "image";
   page: number;
   x: number;
   y: number;
   w: number;
   h: number;
-  align_h?: "left" | "center" | "right";
-  align_v?: "top" | "middle" | "bottom";
-  size?: number;
-  wrap?: boolean;
-  signing_party_order?: number; // Add color support
+  isPhantom?: boolean;
+  signing_party_order?: number;
 };
 
 export type FieldBoxProps = {

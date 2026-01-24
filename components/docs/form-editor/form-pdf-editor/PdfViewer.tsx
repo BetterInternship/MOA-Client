@@ -20,6 +20,7 @@ import { FieldRegistryEntry } from "@/app/api";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { Button } from "@/components/ui/button";
+import { IFormBlock } from "@betterinternship/core/forms";
 
 export type PointerLocation = {
   page: number;
@@ -40,11 +41,12 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  */
 export function PdfViewer() {
   const {
-    fields,
+    blocks,
     selectedFieldId,
+    selectedPartyId,
     handleFieldSelectFromPdf,
-    handleFieldChange,
-    handleFieldCreate,
+    handleBlockCreate,
+    handleBlockUpdate,
   } = useFormEditorTab();
 
   const {
@@ -117,34 +119,33 @@ export function PdfViewer() {
       const fieldData = e.dataTransfer.getData("field");
       if (fieldData) {
         try {
-          const draggedField = JSON.parse(fieldData) as Record<string, unknown>;
+          const draggedField = JSON.parse(fieldData) as FieldRegistryEntry;
+
           const rect = e.currentTarget.getBoundingClientRect();
           const displayX = e.clientX - rect.left;
           const displayY = e.clientY - rect.top;
 
-          handleFieldCreate({
-            id:
-              (draggedField._id as string | undefined) ||
-              (draggedField.name as string | undefined) ||
-              Math.random().toString(36).substr(2, 9),
-            field:
-              (draggedField.field as string | undefined) ||
-              (draggedField.name as string | undefined) ||
-              "field",
-            label:
-              (draggedField.label as string | undefined) ||
-              (draggedField.name as string | undefined) ||
-              "New Field",
-            type:
-              (draggedField.field_type as string | undefined) ||
-              (draggedField.type as string | undefined) ||
-              "text",
-            page: visiblePage,
-            x: Math.max(0, (displayX - 50) / scale),
-            y: Math.max(0, (displayY - 6) / scale),
-            w: 100,
-            h: 12,
-          });
+          const uniqueId = Math.random().toString(36).substr(2, 9);
+          const newBlock: IFormBlock = {
+            _id: uniqueId,
+            block_type: "form_field",
+            signing_party_id: selectedPartyId || "",
+            order: 0,
+            field_schema: {
+              field: draggedField.name || "field",
+              label: draggedField.label || "New Field",
+              tooltip_label: draggedField.tooltip_label || "",
+              type: draggedField.type,
+              page: visiblePage,
+              x: Math.max(0, (displayX - 50) / scale),
+              y: Math.max(0, (displayY - 6) / scale),
+              w: 100,
+              h: 12,
+              shared: draggedField.shared ?? true,
+              source: draggedField.source || "manual",
+            },
+          };
+          handleBlockCreate(newBlock);
         } catch (err) {
           console.error("Error parsing field data:", err);
         }
@@ -155,7 +156,7 @@ export function PdfViewer() {
       const file = Array.from(files).find((f) => f.type === "application/pdf") || files[0];
       if (file) handleFileUpload(file);
     },
-    [scale, visiblePage, handleFieldCreate, setIsDragging, handleFileUpload]
+    [scale, visiblePage, selectedPartyId, handleBlockCreate, setIsDragging, handleFileUpload]
   );
 
   return (
@@ -266,10 +267,11 @@ export function PdfViewer() {
                   _isVisible={page === visiblePage}
                   onVisible={setVisiblePage}
                   registerPageRef={registerPageRef}
-                  fields={fields}
+                  blocks={blocks}
                   selectedFieldId={selectedFieldId}
                   onFieldSelect={handleFieldSelectFromPdf}
-                  onFieldChange={handleFieldChange}
+                  onBlockUpdate={handleBlockUpdate}
+                  selectedPartyId={selectedPartyId}
                   _registry={registry}
                 />
               ))}
@@ -289,10 +291,11 @@ type PdfPageCanvasProps = {
   _isVisible: boolean;
   onVisible: (page: number) => void;
   registerPageRef: (page: number, node: HTMLDivElement | null) => void;
-  fields: FormField[];
+  blocks: IFormBlock[];
   selectedFieldId: string | null | undefined;
   onFieldSelect: (fieldId: string) => void;
-  onFieldChange: (fieldId: string, updates: Partial<FormField>) => void;
+  onBlockUpdate: (block: IFormBlock) => void;
+  selectedPartyId: string | null;
   _registry: FieldRegistryEntry[];
 };
 
@@ -305,13 +308,14 @@ const PdfPageCanvas = memo(
     _isVisible,
     onVisible,
     registerPageRef,
-    fields,
+    blocks,
     selectedFieldId,
     onFieldSelect,
-    onFieldChange,
+    onBlockUpdate,
+    selectedPartyId,
     _registry,
   }: PdfPageCanvasProps) => {
-    const { handleFieldCreate } = useFormEditorTab();
+    const { handleBlockCreate } = useFormEditorTab();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const viewportRef = useRef<PageViewport | null>(null);
@@ -495,37 +499,35 @@ const PdfPageCanvas = memo(
       if (!fieldData) return;
 
       try {
-        const draggedField = JSON.parse(fieldData) as Record<string, unknown>;
+        const draggedField = JSON.parse(fieldData) as FieldRegistryEntry;
+
         const location = extractLocation(e);
         if (!location) return;
 
         const fieldWidth = 100;
         const fieldHeight = 12;
+        const uniqueId = Math.random().toString(36).substr(2, 9);
 
-        const newField: FormField = {
-          id:
-            (draggedField._id as string | undefined) ||
-            (draggedField.name as string | undefined) ||
-            Math.random().toString(36).substr(2, 9),
-          field:
-            (draggedField.field as string | undefined) ||
-            (draggedField.name as string | undefined) ||
-            "field",
-          label:
-            (draggedField.label as string | undefined) ||
-            (draggedField.name as string | undefined) ||
-            "New Field",
-          type:
-            (draggedField.field_type as string | undefined) ||
-            (draggedField.type as string | undefined) ||
-            "text",
-          page: pageNumber,
-          x: location.pdfX - fieldWidth / 2,
-          y: location.pdfY - fieldHeight / 2,
-          w: fieldWidth,
-          h: fieldHeight,
+        const newBlock: IFormBlock = {
+          _id: uniqueId,
+          block_type: "form_field",
+          signing_party_id: selectedPartyId || "",
+          order: 0,
+          field_schema: {
+            field: draggedField.name || "field",
+            label: draggedField.label || "New Field",
+            tooltip_label: draggedField.tooltip_label || "",
+            type: draggedField.type,
+            page: pageNumber,
+            x: location.pdfX - fieldWidth / 2,
+            y: location.pdfY - fieldHeight / 2,
+            w: fieldWidth,
+            h: fieldHeight,
+            shared: draggedField.shared ?? true,
+            source: draggedField.source || "manual",
+          },
         };
-        handleFieldCreate(newField);
+        handleBlockCreate(newBlock);
       } catch (err) {
         console.error("Error dropping field:", err);
       }
@@ -556,26 +558,30 @@ const PdfPageCanvas = memo(
     };
 
     const handleFieldDrag = (fieldId: string, displayDeltaX: number, displayDeltaY: number) => {
-      if (!onFieldChange) {
-        console.warn("handleFieldDrag: onFieldChange is not defined!");
-        return;
-      }
-
       const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
-      // Find field by _id or id (both should be the same now)
-      const field = fields.find((f) => f._id === fieldId || f.id === fieldId);
-      if (!field) {
-        console.warn("handleFieldDrag: field not found", {
+      // Find block by _id
+      const block = blocks.find((b) => b._id === fieldId);
+      if (!block || !block.field_schema) {
+        console.warn("handleFieldDrag: block or field_schema not found", {
           fieldId,
-          availableFields: fields.map((f) => ({ id: f._id || f.id, label: f.label })),
+          availableFields: blocks.map((b) => ({ id: b._id, label: b.field_schema?.label })),
         });
         return;
       }
 
-      const newX = Math.max(0, field.x + pdfDeltaX);
-      const newY = Math.max(0, field.y + pdfDeltaY);
+      const newX = Math.max(0, block.field_schema.x + pdfDeltaX);
+      const newY = Math.max(0, block.field_schema.y + pdfDeltaY);
 
-      onFieldChange(fieldId, { x: newX, y: newY });
+      // Update via onBlockUpdate
+      const updatedBlock: IFormBlock = {
+        ...block,
+        field_schema: {
+          ...block.field_schema,
+          x: newX,
+          y: newY,
+        },
+      };
+      onBlockUpdate(updatedBlock);
     };
 
     const handleFieldResize = (
@@ -584,40 +590,52 @@ const PdfPageCanvas = memo(
       displayDeltaX: number,
       displayDeltaY: number
     ) => {
-      if (!onFieldChange) return;
-
       const { pdfDeltaX, pdfDeltaY } = displayDeltaToPdfDelta(displayDeltaX, displayDeltaY);
-      // Find field by stable _id or fallback to old format for legacy fields
-      const field = fields.find((f) => f._id === fieldId || `${f.field}:${f.page}` === fieldId);
-      if (!field) return;
+      const block = blocks.find((b) => b._id === fieldId);
+      if (!block || !block.field_schema) return;
 
-      const updates: Partial<FormField> = {};
       const minSize = 10; // Minimum width/height in PDF units
+      const fieldSchema = block.field_schema;
+
+      let newX = fieldSchema.x;
+      let newY = fieldSchema.y;
+      let newW = fieldSchema.w;
+      let newH = fieldSchema.h;
 
       // Handle corner resizes: adjust position and size based on which corner is dragged
       if (handle === "nw") {
         // Top-left: move position and shrink size
-        updates.x = Math.max(0, field.x + pdfDeltaX);
-        updates.y = Math.max(0, field.y + pdfDeltaY);
-        updates.w = Math.max(minSize, field.w - pdfDeltaX);
-        updates.h = Math.max(minSize, field.h - pdfDeltaY);
+        newX = Math.max(0, fieldSchema.x + pdfDeltaX);
+        newY = Math.max(0, fieldSchema.y + pdfDeltaY);
+        newW = Math.max(minSize, fieldSchema.w - pdfDeltaX);
+        newH = Math.max(minSize, fieldSchema.h - pdfDeltaY);
       } else if (handle === "ne") {
         // Top-right: move top, grow/shrink width and height
-        updates.y = Math.max(0, field.y + pdfDeltaY);
-        updates.w = Math.max(minSize, field.w + pdfDeltaX);
-        updates.h = Math.max(minSize, field.h - pdfDeltaY);
+        newY = Math.max(0, fieldSchema.y + pdfDeltaY);
+        newW = Math.max(minSize, fieldSchema.w + pdfDeltaX);
+        newH = Math.max(minSize, fieldSchema.h - pdfDeltaY);
       } else if (handle === "sw") {
         // Bottom-left: move left, grow/shrink width and height
-        updates.x = Math.max(0, field.x + pdfDeltaX);
-        updates.w = Math.max(minSize, field.w - pdfDeltaX);
-        updates.h = Math.max(minSize, field.h + pdfDeltaY);
+        newX = Math.max(0, fieldSchema.x + pdfDeltaX);
+        newW = Math.max(minSize, fieldSchema.w - pdfDeltaX);
+        newH = Math.max(minSize, fieldSchema.h + pdfDeltaY);
       } else if (handle === "se") {
         // Bottom-right: grow/shrink both dimensions
-        updates.w = Math.max(minSize, field.w + pdfDeltaX);
-        updates.h = Math.max(minSize, field.h + pdfDeltaY);
+        newW = Math.max(minSize, fieldSchema.w + pdfDeltaX);
+        newH = Math.max(minSize, fieldSchema.h + pdfDeltaY);
       }
 
-      onFieldChange?.(fieldId, updates);
+      const updatedBlock: IFormBlock = {
+        ...block,
+        field_schema: {
+          ...fieldSchema,
+          x: newX,
+          y: newY,
+          w: newW,
+          h: newH,
+        },
+      };
+      onBlockUpdate(updatedBlock);
     };
 
     return (
@@ -651,12 +669,27 @@ const PdfPageCanvas = memo(
 
           {/* Render form fields */}
           <div className="pointer-events-none absolute inset-0 z-10" key={forceRender}>
-            {fields.map((field) => {
-              if (field.page !== pageNumber) return null;
+            {blocks.map((block) => {
+              const schema = block.field_schema;
+              if (!schema || schema.page !== pageNumber) return null;
 
-              const fieldId = field._id || field.id;
-              const pos = pdfToDisplay(field.x, field.y);
+              const fieldId = block._id;
+              const pos = pdfToDisplay(schema.x, schema.y);
               if (!pos) return null;
+
+              // Convert block to FormField for FieldBox
+              const field: FormField = {
+                id: fieldId,
+                field: schema.field,
+                label: schema.label,
+                tooltip_label: schema.tooltip_label || "",
+                type: schema.type,
+                page: schema.page,
+                x: schema.x,
+                y: schema.y,
+                w: schema.w,
+                h: schema.h,
+              };
 
               return (
                 <div
@@ -666,8 +699,8 @@ const PdfPageCanvas = memo(
                     position: "absolute",
                     left: `${pos.displayX}px`,
                     top: `${pos.displayY}px`,
-                    width: `${field.w * scale}px`,
-                    height: `${field.h * scale}px`,
+                    width: `${schema.w * scale}px`,
+                    height: `${schema.h * scale}px`,
                   }}
                 >
                   <FieldBox
