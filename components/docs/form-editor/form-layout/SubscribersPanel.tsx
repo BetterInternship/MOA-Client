@@ -19,7 +19,7 @@ const generateId = () => `sub-${Math.random().toString(36).substr(2, 9)}`;
 
 export const SubscribersPanel = ({ subscribers, onSubscribersChange }: SubscribersPanelProps) => {
   const safeSubscribers = Array.isArray(subscribers) ? subscribers : [];
-  
+
   // Use a ref to track IDs consistently across renders
   const idMapRef = useRef<Map<string, string>>(new Map());
 
@@ -83,7 +83,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
     const newSubscriber: IFormSubscriber = { email: "" } as IFormSubscriber;
     const newArray = [...safeSubscribers, newSubscriber];
     onSubscribersChange(newArray);
-    
+
     // Immediately enter edit mode for the new subscriber
     setTimeout(() => {
       setEditingId(getSubscriberId(newSubscriber, newArray.length - 1));

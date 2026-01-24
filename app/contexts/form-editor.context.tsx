@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { formsControllerRegisterForm } from "@/app/api";
@@ -120,11 +121,14 @@ export function FormEditorProvider({
     }));
   }, []);
 
+  const queryClient = useQueryClient();
+
   const saveForm = useCallback(async () => {
     if (!formMetadata) return;
     setIsSaving(true);
     try {
       await formsControllerRegisterForm(formMetadata);
+      queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
       toast.success("Form saved successfully!", toastPresets.success);
     } catch (error) {
       console.error("Save error:", error);
@@ -133,7 +137,7 @@ export function FormEditorProvider({
     } finally {
       setIsSaving(false);
     }
-  }, [formMetadata]);
+  }, [formMetadata, queryClient]);
 
   const value: FormEditorContextType = useMemo(() => {
     return {
