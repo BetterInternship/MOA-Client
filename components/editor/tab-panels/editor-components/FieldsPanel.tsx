@@ -82,9 +82,15 @@ export function FieldsPanel({
       newGroups[currentIndex],
     ];
 
-    // Flatten back to blocks preserving new order
-    const reorderedBlocks = newGroups.flatMap((group) => group.instances);
-    handleReorderBlocks(reorderedBlocks);
+    // Flatten reordered groups for selected party
+    const reorderedSelectedPartyBlocks = newGroups.flatMap((group) => group.instances);
+
+    // Preserve blocks from all other parties that aren't selected
+    const otherPartyBlocks = blocks.filter((block) => block.signing_party_id !== selectedPartyId);
+
+    // Combine: reordered selected party blocks + unchanged other party blocks
+    const finalBlocks = [...reorderedSelectedPartyBlocks, ...otherPartyBlocks];
+    handleReorderBlocks(finalBlocks);
   };
 
   // Delete a group (all its instances)
@@ -121,9 +127,15 @@ export function FieldsPanel({
     const newGroups = [...groupedFields];
     [newGroups[draggedIdx], newGroups[targetIdx]] = [newGroups[targetIdx], newGroups[draggedIdx]];
 
-    // Flatten back to blocks preserving new order
-    const reorderedBlocks = newGroups.flatMap((group) => group.instances);
-    handleReorderBlocks(reorderedBlocks);
+    // Flatten reordered groups for selected party
+    const reorderedSelectedPartyBlocks = newGroups.flatMap((group) => group.instances);
+
+    // Preserve blocks from all other parties that aren't selected
+    const otherPartyBlocks = blocks.filter((block) => block.signing_party_id !== selectedPartyId);
+
+    // Combine: reordered selected party blocks + unchanged other party blocks
+    const finalBlocks = [...reorderedSelectedPartyBlocks, ...otherPartyBlocks];
+    handleReorderBlocks(finalBlocks);
     setDraggedGroupKey(null);
   };
 

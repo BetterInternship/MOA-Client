@@ -31,7 +31,9 @@ export function EditorToolbar() {
           {formDocument?.time_generated && (
             <>
               <span className="text-muted-foreground/40 text-xs">•</span>
-              <p className="text-muted-foreground text-xs">{formatTimestamp(formDocument.time_generated)}</p>
+              <p className="text-muted-foreground text-xs">
+                {formatTimestamp(formDocument.time_generated)}
+              </p>
             </>
           )}
         </div>
