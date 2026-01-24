@@ -92,16 +92,23 @@ function FormEditorContent() {
                 const file = new File([blob], fileName, { type: "application/pdf" });
                 setDocumentFile(file);
                 setLastLoadedFileName(fileName);
+                // Loading complete only after PDF is loaded
+                setIsLoading(false);
               })
               .catch((err) => {
                 console.error("Failed to fetch PDF:", err);
+                setIsLoading(false);
               });
+          } else {
+            // No PDF to load, loading complete
+            setIsLoading(false);
           }
         } else {
           setFormMetadata(BLANK_FORM_METADATA);
           setFormDocument(null);
           setFormVersion(null);
           setDocumentUrl(null);
+          setIsLoading(false);
         }
       } catch (error) {
         console.error("Error loading form:", error);
@@ -110,7 +117,6 @@ function FormEditorContent() {
         setFormDocument(null);
         setFormVersion(null);
         setDocumentUrl(null);
-      } finally {
         setIsLoading(false);
       }
     };

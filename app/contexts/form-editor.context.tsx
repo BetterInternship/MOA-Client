@@ -129,6 +129,7 @@ export function FormEditorProvider({
     try {
       await formsControllerRegisterForm(formMetadata);
       queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/forms/form-latest", { name: formMetadata.name }] });
       toast.success("Form saved successfully!", toastPresets.success);
     } catch (error) {
       console.error("Save error:", error);
