@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { formsControllerRegisterForm } from "@/app/api";
@@ -50,6 +50,10 @@ interface FormEditorContextType {
   setFormVersion: (version: number | null) => void;
   documentUrl: string | null;
   setDocumentUrl: (url: string | null) => void;
+  documentFile: File | null;
+  setDocumentFile: (file: File | null) => void;
+  lastLoadedFileName: string | null;
+  setLastLoadedFileName: (name: string | null) => void;
 
   // UI State
   activeTab: EditorTab;
@@ -79,6 +83,8 @@ export function FormEditorProvider({
   const [formDocument, setFormDocument] = useState<FormDocumentType | null>(null);
   const [formVersion, setFormVersion] = useState<number | null>(null);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [lastLoadedFileName, setLastLoadedFileName] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<EditorTab>("editor");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -129,26 +135,47 @@ export function FormEditorProvider({
     }
   }, [formMetadata]);
 
-  const value: FormEditorContextType = {
+  const value: FormEditorContextType = useMemo(() => {
+    return {
+      formMetadata,
+      setFormMetadata,
+      formDocument,
+      setFormDocument,
+      formVersion,
+      setFormVersion,
+      documentUrl,
+      setDocumentUrl,
+      documentFile,
+      setDocumentFile,
+      lastLoadedFileName,
+      setLastLoadedFileName,
+      activeTab,
+      setActiveTab,
+      isEditing,
+      setIsEditing,
+      isSaving,
+      updateFormMetadata,
+      updateBlocks,
+      updateSigningParties,
+      updateSubscribers,
+      saveForm,
+    };
+  }, [
     formMetadata,
-    setFormMetadata,
     formDocument,
-    setFormDocument,
     formVersion,
-    setFormVersion,
     documentUrl,
-    setDocumentUrl,
+    documentFile,
+    lastLoadedFileName,
     activeTab,
-    setActiveTab,
     isEditing,
-    setIsEditing,
     isSaving,
     updateFormMetadata,
     updateBlocks,
     updateSigningParties,
     updateSubscribers,
     saveForm,
-  };
+  ]);
 
   return <FormEditorContext.Provider value={value}>{children}</FormEditorContext.Provider>;
 }

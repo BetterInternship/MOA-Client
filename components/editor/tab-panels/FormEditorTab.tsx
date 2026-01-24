@@ -2,7 +2,7 @@
 
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { FormEditorTabProvider, useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
-import { IFormBlock } from "@betterinternship/core/forms";
+import { PdfViewerProvider } from "@/app/contexts/pdf-viewer.context";
 import { PdfViewer } from "@/components/docs/form-editor/form-pdf-editor/PdfViewer";
 import { FieldsPanel } from "./editor-components/FieldsPanel";
 import { RevampedBlockEditor } from "./editor-components/RevampedBlockEditor";
@@ -39,7 +39,6 @@ function FormEditorTabContent() {
 
   return (
     <div className="bg-background flex h-full w-full">
-      {/* Left Panel - Fields List */}
       <div className="bg-card flex w-[350px] flex-col overflow-hidden border-r">
         <FieldsPanel
           blocks={formMetadata.schema.blocks}
@@ -53,7 +52,6 @@ function FormEditorTabContent() {
         />
       </div>
 
-      {/* Middle Panel - PDF Viewer */}
       <div className="flex-1 overflow-hidden border-r">
         <PdfViewer
           fields={fields}
@@ -67,7 +65,6 @@ function FormEditorTabContent() {
         />
       </div>
 
-      {/* Right Panel - Block Editor */}
       <div className="bg-card flex w-96 flex-col overflow-hidden">
         <RevampedBlockEditor
           block={selectedBlock || null}
@@ -81,9 +78,19 @@ function FormEditorTabContent() {
 }
 
 export function FormEditorTab() {
+  const { documentFile, setDocumentFile, lastLoadedFileName, setLastLoadedFileName } =
+    useFormEditor();
+
   return (
-    <FormEditorTabProvider>
-      <FormEditorTabContent />
-    </FormEditorTabProvider>
+    <PdfViewerProvider
+      documentFile={documentFile}
+      setDocumentFile={setDocumentFile}
+      lastLoadedFileName={lastLoadedFileName}
+      setLastLoadedFileName={setLastLoadedFileName}
+    >
+      <FormEditorTabProvider>
+        <FormEditorTabContent />
+      </FormEditorTabProvider>
+    </PdfViewerProvider>
   );
 }

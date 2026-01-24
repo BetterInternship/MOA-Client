@@ -3,7 +3,7 @@
  * @ Create Time: 2025-12-16 16:03:54
  * @ Modified by: Your name
  * @ Modified time: 2025-12-26 01:41:33
- * @ Description: pdf viewer component using pdfjs
+ * @ Description: PDF editor component - handles field placement and editing on PDF documents
  */
 
 "use client";
@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
-import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
+import { GlobalWorkerOptions, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
@@ -25,13 +25,12 @@ import {
 import type { FieldRegistryEntry } from "@/app/api";
 import type { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
+import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { Button } from "@/components/ui/button";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-const generateUniqueId = () => {
-  return `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-};
+const generateUniqueId = () => `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 export type { FormField };
 
@@ -81,74 +80,87 @@ export function PdfViewer({
   useContext: useContextMode = true,
   signingParties: propsSigningParties,
 }: PdfViewerProps) {
-  // Use context if available and enabled
+  // Get form editor context for metadata and block updates
   let contextValue;
   try {
     contextValue = useContextMode ? useFormEditor() : null;
   } catch (err) {
-    console.warn("FormEditor context not available, using props mode");
     contextValue = null;
   }
+
   const formMetadata = contextValue?.formMetadata;
   const updateBlocks = contextValue?.updateBlocks;
 
-  // Define signingParties first, before using it in fields mapping
+  // Get all PDF state and file handling from PdfViewerContext
+  const {
+    documentFile,
+    setDocumentFile,
+    pdfDoc,
+    pageCount,
+    selectedPage,
+    setSelectedPage,
+    visiblePage,
+    setVisiblePage,
+    scale,
+    setScale,
+    isLoadingDoc,
+    error,
+    isDragging,
+    setIsDragging,
+    handleFileUpload,
+  } = usePdfViewer();
+
+  // Signing parties
   const signingParties = propsSigningParties ?? formMetadata?.signing_parties ?? [];
 
-  // Use context data if available, otherwise use props
-  const fields =
-    propsFields ||
-    (formMetadata?.schema.blocks.map((block) => {
-      // Find the signing party order for this block
-      let signing_party_order = 1; // default
-      if (block.signing_party_id && signingParties.length > 0) {
-        const party = signingParties.find((p) => p._id === block.signing_party_id);
-        if (party) {
-          signing_party_order = party.order;
-        }
-      }
+  // Build fields from context or props
+  const fields = useMemo(() => {
+    if (propsFields) return propsFields;
 
-      const field = {
-        id: block._id,
-        _id: block._id,
-        label: (block.field_schema || block.phantom_field_schema)?.label || "Field",
-        type: (block.field_schema || block.phantom_field_schema)?.type || "text",
-        x: (block.field_schema || block.phantom_field_schema)?.x || 0,
-        y: (block.field_schema || block.phantom_field_schema)?.y || 0,
-        w: (block.field_schema || block.phantom_field_schema)?.w || 100,
-        h: (block.field_schema || block.phantom_field_schema)?.h || 12,
-        page: (block.field_schema || block.phantom_field_schema)?.page || 1,
-        signing_party_order,
-      };
-      return field;
-    }) ??
-      []);
+    return (
+      formMetadata?.schema.blocks.map((block) => {
+        let signing_party_order = 1;
+        if (block.signing_party_id && signingParties.length > 0) {
+          const party = signingParties.find((p) => p._id === block.signing_party_id);
+          if (party) signing_party_order = party.order;
+        }
+
+        return {
+          id: block._id,
+          _id: block._id,
+          label: (block.field_schema || block.phantom_field_schema)?.label || "Field",
+          type: (block.field_schema || block.phantom_field_schema)?.type || "text",
+          x: (block.field_schema || block.phantom_field_schema)?.x || 0,
+          y: (block.field_schema || block.phantom_field_schema)?.y || 0,
+          w: (block.field_schema || block.phantom_field_schema)?.w || 100,
+          h: (block.field_schema || block.phantom_field_schema)?.h || 12,
+          page: (block.field_schema || block.phantom_field_schema)?.page || 1,
+          signing_party_order,
+        };
+      }) ?? []
+    );
+  }, [propsFields, formMetadata?.schema.blocks, signingParties]);
 
   const selectedFieldId = propsSelectedFieldId;
   const onFieldSelect = propsOnFieldSelect;
 
-  const onFieldChange =
-    propsOnFieldChange ||
-    ((fieldId: string, updates: Partial<FormField>) => {
-      // Use context to update field position/size
+  // Handle field changes via context
+  const onFieldChange = useCallback(
+    (fieldId: string, updates: Partial<FormField>) => {
+      if (propsOnFieldChange) {
+        propsOnFieldChange(fieldId, updates);
+        return;
+      }
+
       if (updateBlocks && formMetadata) {
         const updatedBlocks = formMetadata.schema.blocks.map((block) => {
           if (block._id === fieldId) {
             const schema = block.field_schema || block.phantom_field_schema;
             return {
               ...block,
-              field_schema: schema
-                ? {
-                    ...schema,
-                    ...updates,
-                  }
-                : schema,
+              field_schema: schema ? { ...schema, ...updates } : schema,
               phantom_field_schema: !schema
-                ? {
-                    label: updates.label || "Field",
-                    type: updates.type || "text",
-                    ...updates,
-                  }
+                ? { label: updates.label || "Field", type: updates.type || "text", ...updates }
                 : block.phantom_field_schema,
             };
           }
@@ -156,12 +168,18 @@ export function PdfViewer({
         });
         updateBlocks(updatedBlocks);
       }
-    });
+    },
+    [propsOnFieldChange, updateBlocks, formMetadata]
+  );
 
-  const onFieldCreate =
-    propsOnFieldCreate ||
-    ((field: FormField) => {
-      // Use context to update if available
+  // Handle field creation via context
+  const onFieldCreate = useCallback(
+    (field: FormField) => {
+      if (propsOnFieldCreate) {
+        propsOnFieldCreate(field);
+        return;
+      }
+
       if (updateBlocks && formMetadata) {
         const uniqueId = generateUniqueId();
         const newBlock: IFormBlock = {
@@ -178,93 +196,44 @@ export function PdfViewer({
           },
         };
         updateBlocks([...formMetadata.schema.blocks, newBlock]);
-      } else {
-        console.warn("Cannot create field: updateBlocks or formMetadata not available");
       }
-    });
+    },
+    [propsOnFieldCreate, updateBlocks, formMetadata]
+  );
 
-  const searchParams = useSearchParams();
-  const [pendingUrl, setPendingUrl] = useState<string>(initialUrl ?? "");
-  const [sourceUrl, setSourceUrl] = useState<string | null>(pendingUrl);
-  const [fileName, setFileName] = useState<string>("");
-  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
-  const [pageCount, setPageCount] = useState<number>(0);
-  const [scale, setScale] = useState<number>(1.1);
-  const [visiblePage, setVisiblePage] = useState<number>(1);
-  const [selectedPage, setSelectedPage] = useState<number>(1);
-  const [hoverPoint, setHoverPoint] = useState<PointerLocation | null>(null);
-  const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hoverPointDuringPlacement, setHoverPointDuringPlacement] =
-    useState<PointerLocation | null>(null);
-
-  const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
-  const objectUrlRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const urlFromQuery = searchParams.get("url");
-    if (urlFromQuery) {
-      setPendingUrl(urlFromQuery);
-      setSourceUrl(urlFromQuery);
-    }
-  }, [searchParams]);
-
-  // Update URL when initialUrl prop changes
-  useEffect(() => {
-    if (initialUrl) {
-      setPendingUrl(initialUrl);
-      setSourceUrl(initialUrl);
-    }
-  }, [initialUrl]);
-
+  // PDF worker setup
   useEffect(() => {
     if (typeof window === "undefined") return;
     const workerFile = pdfjsVersion.startsWith("4") ? "pdf.worker.min.mjs" : "pdf.worker.min.js";
     GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/${workerFile}`;
   }, []);
 
+  // Load initial URL if no document file is provided
+  const searchParams = useSearchParams();
   useEffect(() => {
-    if (!sourceUrl) return;
+    const urlFromQuery = searchParams.get("url");
+    if (urlFromQuery && !pdfDoc && !documentFile) {
+      // Fetch and load from URL
+      fetch(urlFromQuery)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const file = new File([blob], "document.pdf", { type: "application/pdf" });
+          setDocumentFile(file);
+        })
+        .catch((err) => console.error("Failed to load PDF from URL:", err));
+    }
+  }, [searchParams, pdfDoc, documentFile, setDocumentFile]);
 
-    setIsLoadingDoc(true);
-    let cancelled = false;
-    const loadingTask = getDocument({ url: sourceUrl });
+  // Handle file upload
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    loadingTask.promise
-      .then((doc) => {
-        if (cancelled) return;
-        setPdfDoc(doc);
-        setPageCount(doc.numPages);
-        setSelectedPage(1);
-        setVisiblePage(1);
-        setError(null);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        console.error("Failed to load PDF", err);
-        setError(err?.message ?? "Failed to load PDF document");
-        setPdfDoc(null);
-        setPageCount(0);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingDoc(false);
-      });
-
-    return () => {
-      cancelled = true;
-      loadingTask.destroy();
-    };
-  }, [sourceUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    };
-  }, []);
-
-  const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
-    pageRefs.current.set(page, node);
-  }, []);
+    handleFileUpload(file);
+    if (onFileSelect) {
+      onFileSelect(file);
+    }
+  };
 
   const handleZoom = (direction: "in" | "out") => {
     const delta = direction === "in" ? 0.1 : -0.1;
@@ -274,26 +243,6 @@ export function PdfViewer({
   const handleJumpToPage = (page: number) => {
     if (!page || page < 1 || page > pageCount) return;
     setSelectedPage(page);
-    const node = pageRefs.current.get(page);
-    node?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const url = URL.createObjectURL(file);
-    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    objectUrlRef.current = url;
-
-    setFileName(file.name);
-    setPendingUrl(url);
-    setSourceUrl(url);
-
-    // Call the callback to notify parent about file selection
-    if (onFileSelect) {
-      onFileSelect(file);
-    }
   };
 
   const pagesArray = useMemo(
@@ -301,19 +250,30 @@ export function PdfViewer({
     [pageCount]
   );
 
-  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
+  const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
+    pageRefs.current.set(page, node);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
+  // Drag and drop handlers
+  const handleDragOver = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+    },
+    [setIsDragging]
+  );
+
+  const handleDragLeave = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+    },
+    [setIsDragging]
+  );
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -321,34 +281,22 @@ export function PdfViewer({
       e.stopPropagation();
       setIsDragging(false);
 
-      // Check for field drag data first
       const fieldData = e.dataTransfer.getData("field");
       if (fieldData) {
         try {
           const draggedField = JSON.parse(fieldData);
-
-          // Get the drop position relative to the PDF
           const rect = e.currentTarget.getBoundingClientRect();
           const displayX = e.clientX - rect.left;
           const displayY = e.clientY - rect.top;
 
-          // Default field dimensions
-          const fieldWidth = 100;
-          const fieldHeight = 12;
-
-          // Place field's CENTER at the drop point (better UX, like design tools)
-          const pdfX = (displayX - fieldWidth / 2) / scale;
-          const pdfY = (displayY - fieldHeight / 2) / scale;
-
-          // Create field with dropped field data
           if (onFieldCreate) {
             onFieldCreate({
               id: draggedField._id || draggedField.name || Math.random().toString(36).substr(2, 9),
               label: draggedField.label || draggedField.name || "New Field",
               type: draggedField.field_type || draggedField.type || "text",
               page: selectedPage,
-              x: Math.max(0, pdfX),
-              y: Math.max(0, pdfY),
+              x: Math.max(0, (displayX - 50) / scale),
+              y: Math.max(0, (displayY - 6) / scale),
               w: 100,
               h: 12,
             } as FormField);
@@ -359,32 +307,22 @@ export function PdfViewer({
         return;
       }
 
-      // Original PDF file drop handling
+      // Handle PDF file drops
       const files = e.dataTransfer.files;
-      if (files.length === 0) return;
-
-      // Get the first PDF file
       const file = Array.from(files).find((f) => f.type === "application/pdf") || files[0];
-      if (!file) return;
-
-      const url = URL.createObjectURL(file);
-      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = url;
-
-      setFileName(file.name);
-      setPendingUrl(url);
-      setSourceUrl(url);
-
-      if (onFileSelect) {
-        onFileSelect(file);
+      if (file) {
+        handleFileUpload(file);
+        if (onFileSelect) {
+          onFileSelect(file);
+        }
       }
     },
-    [scale, selectedPage, onFieldCreate, onFileSelect]
+    [scale, selectedPage, onFieldCreate, onFileSelect, setIsDragging, handleFileUpload]
   );
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
-      {/* Header with zoom controls */}
+      {/* Header */}
       <div className="flex-shrink-0 border-b bg-white px-4 py-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1"></div>
@@ -392,7 +330,6 @@ export function PdfViewer({
             <button
               onClick={() => handleZoom("out")}
               disabled={scale <= 0.5}
-              title="Zoom Out"
               className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ZoomOut className="h-4 w-4" />
@@ -403,7 +340,6 @@ export function PdfViewer({
             <button
               onClick={() => handleZoom("in")}
               disabled={scale >= 3}
-              title="Zoom In"
               className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ZoomIn className="h-4 w-4" />
@@ -421,7 +357,7 @@ export function PdfViewer({
         </div>
       </div>
 
-      {/* PDF Viewer Canvas */}
+      {/* PDF Canvas */}
       <div className="relative flex-1 overflow-hidden bg-white">
         {isLoadingDoc && (
           <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center">
@@ -491,8 +427,6 @@ export function PdfViewer({
                   isSelected={page === selectedPage}
                   isVisible={page === visiblePage}
                   onVisible={setVisiblePage}
-                  onHover={setHoverPoint}
-                  onClick={() => {}}
                   registerPageRef={registerPageRef}
                   fields={fields}
                   selectedFieldId={selectedFieldId}
@@ -500,8 +434,6 @@ export function PdfViewer({
                   onFieldChange={onFieldChange}
                   isPlacingField={isPlacingField}
                   placementFieldType={placementFieldType}
-                  hoverPointDuringPlacement={hoverPointDuringPlacement}
-                  onHoverPlacement={setHoverPointDuringPlacement}
                   onPlaceField={onFieldCreate}
                   registry={registry}
                   onFieldClickInPdf={onFieldClickInPdf}
@@ -523,8 +455,6 @@ type PdfPageCanvasProps = {
   isSelected: boolean;
   isVisible: boolean;
   onVisible: (page: number) => void;
-  onHover: (loc: PointerLocation | null) => void;
-  onClick: (loc: PointerLocation) => void;
   registerPageRef: (page: number, node: HTMLDivElement | null) => void;
   fields?: FormField[];
   selectedFieldId?: string;
@@ -532,8 +462,6 @@ type PdfPageCanvasProps = {
   onFieldChange?: (fieldId: string, updates: Partial<FormField>) => void;
   isPlacingField?: boolean;
   placementFieldType?: string;
-  onHoverPlacement?: (loc: PointerLocation | null) => void;
-  hoverPointDuringPlacement?: PointerLocation | null;
   onPlaceField?: (field: FormField) => void;
   registry?: FieldRegistryEntry[];
   onFieldClickInPdf?: (fieldId: string) => void;
@@ -548,8 +476,6 @@ const PdfPageCanvas = memo(
     isSelected,
     isVisible,
     onVisible,
-    onHover,
-    onClick,
     registerPageRef,
     fields = [],
     selectedFieldId,
@@ -557,9 +483,7 @@ const PdfPageCanvas = memo(
     onFieldChange,
     isPlacingField = false,
     placementFieldType = "signature",
-    onHoverPlacement,
     onPlaceField,
-    hoverPointDuringPlacement,
     registry = [],
     onFieldClickInPdf,
     signingParties = [],
@@ -576,7 +500,6 @@ const PdfPageCanvas = memo(
       [pageNumber, registerPageRef]
     );
 
-    // Force re-render of field positions when scale changes
     useEffect(() => {
       setForceRender((prev) => prev + 1);
     }, [scale]);
@@ -718,27 +641,16 @@ const PdfPageCanvas = memo(
     const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
       const location = extractLocation(event);
       setLocalHover(location);
-      onHover(location);
-
-      // Update placement hover preview
-      if (isPlacingField && onHoverPlacement) {
-        onHoverPlacement(location);
-      }
     };
 
     const handleMouseLeave = () => {
       setLocalHover(null);
-      onHover(null);
-      if (isPlacingField && onHoverPlacement) {
-        onHoverPlacement(null);
-      }
     };
 
     const handleClick = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
       const location = extractLocation(event);
       if (!location) return;
 
-      // Handle field placement mode
       if (isPlacingField && onPlaceField) {
         const defaultSize = { w: 100, h: 40 };
         const fieldName = getFieldName(placementFieldType, registry);
@@ -755,11 +667,7 @@ const PdfPageCanvas = memo(
           ...defaultSize,
         };
         onPlaceField(newField);
-        return;
       }
-
-      // Normal click behavior
-      onClick(location);
     };
 
     const handleDragOver = (e: React.DragEvent<HTMLCanvasElement>) => {
@@ -938,7 +846,6 @@ const PdfPageCanvas = memo(
                     width: `${field.w * scale}px`,
                     height: `${field.h * scale}px`,
                   }}
-                  title={`PDF: (${field.x.toFixed(1)}, ${field.y.toFixed(1)}) → Display: (${pos.displayX.toFixed(1)}, ${pos.displayY.toFixed(1)})`}
                 >
                   <FieldBox
                     field={field}
@@ -959,32 +866,7 @@ const PdfPageCanvas = memo(
             })}
           </div>
 
-          {/* Ghost field preview during placement mode */}
-          {isPlacingField &&
-            hoverPointDuringPlacement &&
-            (() => {
-              const hoverLoc = hoverPointDuringPlacement;
-              if (!hoverLoc || hoverLoc.page !== pageNumber) return null;
-
-              const defaultSize = { w: 100, h: 12 };
-              const pos = pdfToDisplay(hoverLoc.pdfX, hoverLoc.pdfY);
-              if (!pos) return null;
-
-              // Look up the label from registry
-              const label = getFieldLabel(placementFieldType, registry);
-
-              return (
-                <GhostField
-                  displayX={pos.displayX}
-                  displayY={pos.displayY}
-                  width={defaultSize.w * scale}
-                  height={defaultSize.h * scale}
-                  label={label}
-                />
-              );
-            })()}
-
-          {/* Crosshair overlay */}
+          {/* Crosshair overlay on hover */}
           {localHover && (
             <div className="pointer-events-none absolute inset-0">
               <div
@@ -1000,10 +882,11 @@ const PdfPageCanvas = memo(
         </div>
         {localHover && (
           <div className="bg-muted/30 text-muted-foreground border-t px-3 py-2 text-[11px]">
-            Hover p{pageNumber}: x={localHover.pdfX.toFixed(2)}, y={localHover.pdfY.toFixed(2)}
+            Page {pageNumber}: x={localHover.pdfX.toFixed(2)}, y={localHover.pdfY.toFixed(2)}
           </div>
         )}
       </div>
     );
   }
 );
+PdfPageCanvas.displayName = "PdfPageCanvas";
