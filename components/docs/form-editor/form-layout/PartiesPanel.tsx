@@ -63,6 +63,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
 
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
+    const sourceFieldErrors: {
+      sourceId?: string;
+      sourceFieldLabel?: string;
+      sourceFieldTooltip?: string;
+    } = {};
 
     // Validate party name
     if (!editValues._id || editValues._id.trim() === "") {
@@ -74,18 +79,16 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
       errors.order = "Order must be at least 1";
     }
 
-    // Order 1 (Initiator) doesn't need signatory fields, skip validation
     if (editValues.order !== 1) {
-      // Validate based on credential mode
       if (credentialMode === "source") {
         if (!editValues.signatory_source?._id || editValues.signatory_source._id.trim() === "") {
-          errors.source = "Source ID is required";
+          sourceFieldErrors.sourceId = "Source ID is required";
         }
         if (
           !editValues.signatory_source?.label ||
           editValues.signatory_source.label.trim() === ""
         ) {
-          errors.source = "Source label is required";
+          sourceFieldErrors.sourceFieldLabel = "Source field label is required";
         }
       } else if (credentialMode === "account") {
         const emailValidation = validateEmail(editValues.signatory_account?.email || "");
@@ -96,7 +99,8 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     }
 
     setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    setSourceErrors(sourceFieldErrors);
+    return Object.keys(errors).length === 0 && Object.keys(sourceFieldErrors).length === 0;
   };
 
   const handleSaveEdit = () => {
@@ -119,7 +123,7 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
 
     const updatedParties = safeParties.map((p, idx) => {
       if (idx === editingIndex) {
-        let party = { ...p, ...editValues } as IFormSigningParty;
+        const party = { ...p, ...editValues } as IFormSigningParty;
         // Default signatory_title to _id if empty
         if (!party.signatory_title || party.signatory_title.trim() === "") {
           party.signatory_title = party._id;
