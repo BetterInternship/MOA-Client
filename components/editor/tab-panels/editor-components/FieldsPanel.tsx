@@ -407,7 +407,7 @@ export function FieldsPanel({
                           toggleGroupExpanded(groupKey);
                         }}
                         className={cn(
-                          "cursor-move border border-l-4 p-3 transition-all hover:shadow-md",
+                          "cursor-move border border-l-4 p-2 transition-all hover:shadow-md",
                           draggedGroupKey === groupKey ? "bg-gray-100 opacity-50" : "",
                           selectedParentGroup?.fieldName === group.fieldName &&
                             selectedParentGroup?.partyId === group.partyId
@@ -422,7 +422,7 @@ export function FieldsPanel({
                         <div className="space-y-3">
                           {/* Header with drag handle and title */}
                           <div className="flex items-start justify-start gap-2">
-                            <GripVertical className="mt-1 h-4 w-4 flex-shrink-0 text-gray-400" />
+                            <GripVertical className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
                             <div className="min-w-0 flex-1">
                               <h4 className="text-sm font-semibold text-gray-900">
                                 {group.instances[0]?.field_schema?.label ||
@@ -440,7 +440,7 @@ export function FieldsPanel({
                           </div>
 
                           {/* Block Preview - Improved Styling */}
-                          <div className="space-y-2 border-t pt-3">
+                          <div className="space-y-2">
                             {group.instances.map((block) => (
                               <div
                                 key={block._id}
@@ -465,7 +465,7 @@ export function FieldsPanel({
 
                       {/* Child Cards - Instances (expanded view) */}
                       {isExpanded && (
-                        <div className="ml-4 space-y-2 border-l-2 pt-2 pl-3">
+                        <div className="ml-4 space-y-2 border-l-2 pl-3">
                           <p className="text-xs font-medium text-gray-500">Instances</p>
                           {group.instances.map((block) => {
                             const x = Math.round(block.field_schema?.x || 0);
@@ -477,7 +477,7 @@ export function FieldsPanel({
                                 key={block._id}
                                 onClick={() => onBlockSelect(block._id || "")}
                                 className={cn(
-                                  "cursor-pointer border p-2 text-xs transition-all",
+                                  "cursor-pointer border px-2 py-1.5 text-xs transition-all",
                                   selectedBlockId === block._id
                                     ? "ring-primary bg-primary/5 ring-2"
                                     : "hover:border-gray-300"
@@ -485,16 +485,16 @@ export function FieldsPanel({
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   <p className="text-muted-foreground flex-1 font-mono">
-                                    p{page} • ({x}, {y})
+                                    page {page} • ({x}, {y})
                                   </p>
                                   <div
-                                    className="flex flex-shrink-0 gap-1"
+                                    className="flex flex-shrink-0 items-center gap-1"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="h-5 w-5 p-0"
+                                      className="h-4 w-4 p-0"
                                       onClick={() => {
                                         handleDuplicateBlock(block);
                                       }}
@@ -504,7 +504,7 @@ export function FieldsPanel({
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="hover:text-destructive h-5 w-5 p-0"
+                                      className="hover:text-destructive h-4 w-4 p-0"
                                       onClick={() => {
                                         handleDeleteBlock(block._id || "");
                                       }}
