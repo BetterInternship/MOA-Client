@@ -2,7 +2,16 @@
 
 import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Search as SearchIcon } from "lucide-react";
+import {
+  Plus,
+  ArrowLeft,
+  Search as SearchIcon,
+  ArrowUp,
+  ArrowDown,
+  Copy,
+  Trash2,
+  GripVertical,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -12,6 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { renderBlock } from "@/lib/block-renderer";
+import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 
 interface FieldsPanelProps {
   blocks: IFormBlock[];
@@ -22,6 +33,7 @@ interface FieldsPanelProps {
   signingParties: IFormSigningParty[];
   onAddField: (field: IFormBlock) => void;
   onParentGroupSelect?: (group: { fieldName: string; partyId: string } | null) => void;
+  onBlocksReorder?: (blocks: IFormBlock[]) => void;
 }
 
 export function FieldsPanel({
@@ -33,11 +45,20 @@ export function FieldsPanel({
   signingParties,
   onAddField: _onAddField,
   onParentGroupSelect,
+  onBlocksReorder,
 }: FieldsPanelProps) {
   const { registry } = useFieldTemplateContext();
+  const {
+    selectedParentGroup,
+    handleReorderBlocks,
+    handleDeleteGroupBlocks,
+    handleDuplicateBlock,
+    handleDeleteBlock,
+  } = useFormEditorTab();
   const [showLibrary, setShowLibrary] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [draggedGroupKey, setDraggedGroupKey] = useState<string | null>(null);
 
   const toggleGroupExpanded = (groupKey: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -47,6 +68,61 @@ export function FieldsPanel({
       newExpanded.add(groupKey);
     }
     setExpandedGroups(newExpanded);
+  };
+
+  // Reorder grouped fields (parents)
+  const reorderGroup = (currentIndex: number, direction: "up" | "down") => {
+    const newGroups = [...groupedFields];
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= newGroups.length) return;
+
+    [newGroups[currentIndex], newGroups[targetIndex]] = [
+      newGroups[targetIndex],
+      newGroups[currentIndex],
+    ];
+
+    // Flatten back to blocks preserving order
+    const reorderedBlocks = newGroups.flatMap((group) => group.instances);
+    handleReorderBlocks(reorderedBlocks);
+  };
+
+  // Delete a group (all its instances)
+  const deleteGroup = (groupIndex: number) => {
+    const groupToDelete = groupedFields[groupIndex];
+    handleDeleteGroupBlocks(groupToDelete.fieldName, groupToDelete.partyId);
+  };
+
+  // Handle drag and drop reordering
+  const handleGroupDragStart = (e: React.DragEvent, groupKey: string) => {
+    setDraggedGroupKey(groupKey);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleGroupDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleGroupDrop = (e: React.DragEvent, targetGroupKey: string) => {
+    e.preventDefault();
+    if (!draggedGroupKey || draggedGroupKey === targetGroupKey) return;
+
+    const draggedIdx = groupedFields.findIndex(
+      (g) => `${g.fieldName}-${g.partyId}` === draggedGroupKey
+    );
+    const targetIdx = groupedFields.findIndex(
+      (g) => `${g.fieldName}-${g.partyId}` === targetGroupKey
+    );
+
+    if (draggedIdx === -1 || targetIdx === -1) return;
+
+    const newGroups = [...groupedFields];
+    [newGroups[draggedIdx], newGroups[targetIdx]] = [newGroups[targetIdx], newGroups[draggedIdx]];
+
+    const reorderedBlocks = newGroups.flatMap((group) => group.instances);
+    onBlocksReorder?.(reorderedBlocks);
+    setDraggedGroupKey(null);
   };
 
   // Group blocks by field name and party
@@ -115,8 +191,8 @@ export function FieldsPanel({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header with Add Field Button */}
-      <div className="border-b p-3">
+      {/* Header with Add Field Button and Toolbar */}
+      <div className="space-y-2 border-b p-3">
         <Button
           onClick={() => setShowLibrary(!showLibrary)}
           variant="outline"
@@ -126,6 +202,69 @@ export function FieldsPanel({
           {showLibrary ? <ArrowLeft className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showLibrary ? "Back to Fields" : "Add Field"}
         </Button>
+
+        {/* Toolbar for selected group - Parent level operations */}
+        {selectedParentGroup && !showLibrary && (
+          <div className="flex items-center justify-between gap-2 px-1">
+            <p className="text-xs font-medium text-gray-500">Parent Group Controls</p>
+            <div className="flex gap-0.5">
+              <Button
+                size="xs"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={() => {
+                  const idx = groupedFields.findIndex(
+                    (g) =>
+                      `${g.fieldName}-${g.partyId}` ===
+                      `${selectedParentGroup.fieldName}-${selectedParentGroup.partyId}`
+                  );
+                  if (idx > 0) reorderGroup(idx, "up");
+                }}
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={() => {
+                  const idx = groupedFields.findIndex(
+                    (g) =>
+                      `${g.fieldName}-${g.partyId}` ===
+                      `${selectedParentGroup.fieldName}-${selectedParentGroup.partyId}`
+                  );
+                  if (idx < groupedFields.length - 1) reorderGroup(idx, "down");
+                }}
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                className="hover:text-destructive h-6 w-6 p-0"
+                onClick={() => {
+                  const idx = groupedFields.findIndex(
+                    (g) =>
+                      `${g.fieldName}-${g.partyId}` ===
+                      `${selectedParentGroup.fieldName}-${selectedParentGroup.partyId}`
+                  );
+                  if (idx !== -1) {
+                    if (
+                      confirm(
+                        `Delete all instances of "${selectedParentGroup.fieldName}"? This cannot be undone.`
+                      )
+                    ) {
+                      deleteGroup(idx);
+                      onParentGroupSelect?.(null);
+                    }
+                  }
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {showLibrary ? (
@@ -245,15 +384,19 @@ export function FieldsPanel({
               </p>
             ) : (
               <div className="space-y-3">
-                {groupedFields.map((group) => {
+                {groupedFields.map((group, groupIndex) => {
                   const groupKey = `${group.fieldName}-${group.partyId}`;
                   const isExpanded = expandedGroups.has(groupKey);
                   const partyColor = getPartyColorByIndex(Math.max(0, group.partyOrder - 1));
 
                   return (
                     <div key={groupKey} className="space-y-2">
-                      {/* Parent Card - Field Group */}
+                      {/* Parent Card - Field Group with Preview and Reorder */}
                       <Card
+                        draggable
+                        onDragStart={(e) => handleGroupDragStart(e, groupKey)}
+                        onDragOver={handleGroupDragOver}
+                        onDrop={(e) => handleGroupDrop(e, groupKey)}
                         onClick={() => {
                           onBlockSelect("");
                           onParentGroupSelect?.({
@@ -263,29 +406,66 @@ export function FieldsPanel({
                           toggleGroupExpanded(groupKey);
                         }}
                         className={cn(
-                          "cursor-pointer border border-l-4 p-2 transition-all hover:shadow-md",
+                          "cursor-move border border-l-4 p-3 transition-all hover:shadow-md",
+                          draggedGroupKey === groupKey ? "bg-gray-100 opacity-50" : "",
+                          selectedParentGroup?.fieldName === group.fieldName &&
+                            selectedParentGroup?.partyId === group.partyId
+                            ? "bg-blue-50 ring-2 ring-blue-500"
+                            : "",
                           `${partyColor.bg} ${partyColor.border}`
                         )}
                         style={{
                           borderLeftColor: partyColor.hex,
                         }}
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="truncate text-sm font-semibold">
-                              {registry.find(
-                                (f) =>
-                                  `${f.name}:${f.preset}` === group.fieldName ||
-                                  f.name === group.fieldName
-                              )?.label || group.fieldName}
-                            </h4>
+                        <div className="space-y-3">
+                          {/* Header with drag handle and title */}
+                          <div className="flex items-start justify-start gap-2">
+                            <GripVertical className="mt-1 h-4 w-4 flex-shrink-0 text-gray-400" />
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-sm font-semibold text-gray-900">
+                                {group.instances[0]?.field_schema?.label ||
+                                  registry.find(
+                                    (f) =>
+                                      `${f.name}:${f.preset}` === group.fieldName ||
+                                      f.name === group.fieldName
+                                  )?.label}
+                              </h4>
+                              <p className="text-xs text-gray-500">
+                                {group.instances.length} instance
+                                {group.instances.length !== 1 ? "s" : ""}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Block Preview - Improved Styling */}
+                          <div className="space-y-2 border-t pt-3">
+                            {group.instances.map((block) => (
+                              <div
+                                key={block._id}
+                                className="cursor-pointer rounded border border-gray-200 bg-white p-2 text-xs transition-colors hover:bg-gray-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onBlockSelect(block._id || "");
+                                }}
+                              >
+                                <div className="text-gray-700">
+                                  {renderBlock(
+                                    block,
+                                    { values: {}, onChange: () => {} },
+                                    { stripStyling: true }
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </Card>
 
-                      {/* Child Cards - Instances */}
+                      {/* Child Cards - Instances (expanded view) */}
                       {isExpanded && (
-                        <div className="ml-4 space-y-1 border-l-2 pl-3">
+                        <div className="ml-4 space-y-2 border-l-2 pt-2 pl-3">
+                          <p className="text-xs font-medium text-gray-500">Instances</p>
                           {group.instances.map((block) => {
                             const x = Math.round(block.field_schema?.x || 0);
                             const y = Math.round(block.field_schema?.y || 0);
@@ -299,12 +479,39 @@ export function FieldsPanel({
                                   "cursor-pointer border p-2 text-xs transition-all",
                                   selectedBlockId === block._id
                                     ? "ring-primary bg-primary/5 ring-2"
-                                    : "hover:bg-secondary/50"
+                                    : "hover:border-gray-300"
                                 )}
                               >
-                                <p className="text-muted-foreground font-mono">
-                                  p{page} • ({x}, {y})
-                                </p>
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-muted-foreground flex-1 font-mono">
+                                    p{page} • ({x}, {y})
+                                  </p>
+                                  <div
+                                    className="flex flex-shrink-0 gap-1"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-5 w-5 p-0"
+                                      onClick={() => {
+                                        handleDuplicateBlock(block);
+                                      }}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="hover:text-destructive h-5 w-5 p-0"
+                                      onClick={() => {
+                                        handleDeleteBlock(block._id || "");
+                                      }}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
                               </Card>
                             );
                           })}

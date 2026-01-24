@@ -42,6 +42,12 @@ interface FormEditorTabContextType {
   handleBlockCreate: (block: IFormBlock) => void;
   handleFieldSelectFromPdf: (fieldId: string) => void;
   handleParentUpdate: (group: { fieldName: string; partyId: string }, updates: any) => void;
+
+  // Block management
+  handleDuplicateBlock: (block: IFormBlock) => void;
+  handleDeleteBlock: (blockId: string) => void;
+  handleDeleteGroupBlocks: (fieldName: string, partyId: string) => void;
+  handleReorderBlocks: (blocks: IFormBlock[]) => void;
 }
 
 const FormEditorTabContext = createContext<FormEditorTabContextType | undefined>(undefined);
@@ -177,7 +183,45 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     },
     [formMetadata, updateBlocks]
   );
-  /* eslint-enable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+
+  const handleDuplicateBlock = useCallback(
+    (block: IFormBlock) => {
+      const newBlock: IFormBlock = {
+        ...block,
+        _id: `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      };
+      updateBlocks([...blocks, newBlock]);
+    },
+    [blocks, updateBlocks]
+  );
+
+  const handleDeleteBlock = useCallback(
+    (blockId: string) => {
+      updateBlocks(blocks.filter((b) => b._id !== blockId));
+    },
+    [blocks, updateBlocks]
+  );
+
+  const handleDeleteGroupBlocks = useCallback(
+    (fieldName: string, partyId: string) => {
+      const remainingBlocks = blocks.filter((b) => {
+        const schema = b.field_schema;
+        return !(
+          b.signing_party_id === partyId &&
+          (schema?.field === fieldName || `${schema?.field}:${schema?.preset}` === fieldName)
+        );
+      });
+      updateBlocks(remainingBlocks);
+    },
+    [blocks, updateBlocks]
+  );
+
+  const handleReorderBlocks = useCallback(
+    (reorderedBlocks: IFormBlock[]) => {
+      updateBlocks(reorderedBlocks);
+    },
+    [updateBlocks]
+  );
 
   const value: FormEditorTabContextType = {
     selectedPartyId,
@@ -195,6 +239,10 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     handleBlockCreate,
     handleFieldSelectFromPdf,
     handleParentUpdate,
+    handleDuplicateBlock,
+    handleDeleteBlock,
+    handleDeleteGroupBlocks,
+    handleReorderBlocks,
   };
 
   return <FormEditorTabContext.Provider value={value}>{children}</FormEditorTabContext.Provider>;
