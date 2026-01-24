@@ -136,66 +136,72 @@ const FormPreviewContent = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Party Selector */}
-      <div className="bg-background border-b p-3">
-        <div className="space-y-2">
-          <p className="text-foreground text-xs font-semibold">Signing Party</p>
-          <div className="flex gap-2 overflow-x-auto">
-            {signingParties.map((party) => {
-              const isSelected = selectedPartyId === party._id;
-              const color = getPartyColorByIndex(Math.max(0, party.order - 1));
-              return (
-                <Button
-                  key={party._id}
-                  onClick={() => setSelectedPartyId(party._id)}
-                  variant={isSelected ? "default" : "outline"}
-                  size="sm"
-                  className={cn("flex-shrink-0", isSelected && `text-white`)}
-                  style={isSelected ? { backgroundColor: color.hex } : {}}
-                >
-                  {party.signatory_title}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      {/* Main Content Area with Party Tabs Sidebar */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar - Party Tabs */}
+        <div className="bg-muted/20 flex w-1/7 flex-col overflow-y-auto border-r">
+          {signingParties.map((party) => {
+            const partyColor = getPartyColorByIndex(Math.max(0, party.order - 1));
+            const isSelected = selectedPartyId === party._id;
 
-      {/* Main Content */}
-      <div className="flex flex-1 gap-4 overflow-hidden p-4">
-        {/* Form */}
-        <div className="flex-1 overflow-auto rounded-lg border bg-white">
-          {filteredBlocks.length > 0 ? (
-            <FormPreviewRenderer
-              formName={formMetadata.name}
-              formLabel={formMetadata.label}
-              blocks={filteredBlocks}
-              values={values}
-              onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
-              metadata={formMetadata}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-muted-foreground text-sm">No fields for this party</p>
-            </div>
-          )}
+            return (
+              <button
+                key={party._id}
+                onClick={() => setSelectedPartyId(party._id)}
+                className={cn(
+                  "flex w-full items-start justify-start border-l-[3px] px-1 py-2 text-xs transition-all",
+                  isSelected ? "shadow-sm" : "hover:bg-gray-50"
+                )}
+                style={{
+                  backgroundColor: isSelected ? partyColor.hex + "25" : "transparent",
+                  borderLeftColor: isSelected ? partyColor.hex : "transparent",
+                  overflowWrap: "break-word",
+                  wordBreak: "break-word",
+                }}
+                title={party.signatory_title}
+              >
+                <span className="line-clamp-2">{party.signatory_title}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* PDF Preview */}
-        <div className="bg-secondary/30 flex-1 overflow-hidden rounded-lg border">
-          {documentUrl ? (
-            <FormPreviewPdfDisplay
-              documentUrl={documentUrl}
-              blocks={fieldBlocksForPdf}
-              values={values}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-center">
-                <p className="text-muted-foreground text-sm">Upload a PDF to preview</p>
+        {/* Right Content - Form and PDF Preview */}
+        <div className="flex flex-1 gap-4 overflow-hidden p-4">
+          {/* Form */}
+          <div className="flex-1 overflow-auto rounded-lg border bg-white">
+            {filteredBlocks.length > 0 ? (
+              <FormPreviewRenderer
+                formName={formMetadata.name}
+                formLabel={formMetadata.label}
+                blocks={filteredBlocks}
+                values={values}
+                onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+                metadata={formMetadata}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-sm">No fields for this party</p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* PDF Preview */}
+          <div className="bg-secondary/30 flex-1 overflow-hidden rounded-lg border">
+            {documentUrl ? (
+              <FormPreviewPdfDisplay
+                documentUrl={documentUrl}
+                blocks={fieldBlocksForPdf}
+                values={values}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <div className="text-center">
+                  <p className="text-muted-foreground text-sm">Upload a PDF to preview</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
