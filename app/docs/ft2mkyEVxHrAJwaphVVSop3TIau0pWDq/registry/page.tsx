@@ -49,7 +49,7 @@ const FormRegistryPage = () => {
   const error = formRegistry.error;
 
   const handleCreateForm = () => {
-    router.push("./editor/pdfjs");
+    router.push("./create-form");
   };
 
   const handleMigrateForm = () => {

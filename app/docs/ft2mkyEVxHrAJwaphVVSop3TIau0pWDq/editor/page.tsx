@@ -52,7 +52,14 @@ function FormEditorLoadingFallback() {
 function FormEditorContent() {
   const searchParams = useSearchParams();
   const formName = searchParams.get("form_name");
-  const { setFormMetadata, setFormDocument, setFormVersion, setDocumentUrl } = useFormEditor();
+  const {
+    setFormMetadata,
+    setFormDocument,
+    setFormVersion,
+    setDocumentUrl,
+    setDocumentFile,
+    setLastLoadedFileName,
+  } = useFormEditor();
   const [isLoading, setIsLoading] = useState(true);
   const [isEditorTabsVisible, setIsEditorTabsVisible] = useState(true);
 
@@ -69,7 +76,27 @@ function FormEditorContent() {
           setFormMetadata(fetchedData.formMetadata);
           setFormDocument(fetchedData.formDocument || null);
           setFormVersion(fetchedData.formVersion || null);
-          setDocumentUrl(fetchedData.documentUrl || null);
+          setDocumentUrl(fetchedData.formUrl || null);
+
+          // Fetch the PDF from the formUrl and set it as documentFile
+          if (fetchedData.formUrl) {
+            fetch(fetchedData.formUrl)
+              .then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to fetch PDF: ${res.status} ${res.statusText}`);
+                }
+                return res.blob();
+              })
+              .then((blob) => {
+                const fileName = `${formName}.pdf`;
+                const file = new File([blob], fileName, { type: "application/pdf" });
+                setDocumentFile(file);
+                setLastLoadedFileName(fileName);
+              })
+              .catch((err) => {
+                console.error("Failed to fetch PDF:", err);
+              });
+          }
         } else {
           setFormMetadata(BLANK_FORM_METADATA);
           setFormDocument(null);

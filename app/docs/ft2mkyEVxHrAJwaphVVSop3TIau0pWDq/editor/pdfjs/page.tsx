@@ -56,7 +56,7 @@ const BLANK_FORM_METADATA: IFormMetadata = {
 const PdfJsEditorPage = () => {
   const searchParams = useSearchParams();
   const formName = searchParams.get("name");
-  const isNewForm = !formName;
+  const isNewForm = searchParams.get("isNew") === "true" || !formName;
 
   const { data: formData, refetch: refetchFormData } =
     useFormsControllerGetLatestFormDocumentAndMetadata({
@@ -65,11 +65,58 @@ const PdfJsEditorPage = () => {
   const { data: fieldRegistryData } = useFormsControllerGetFieldRegistry();
   const registry = fieldRegistryData?.fields ?? [];
 
+  // Load form creation data from sessionStorage if available
+  const [creationData, setCreationData] = useState<any>(null);
+  const [creationPdfUrl, setCreationPdfUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const formCreationData = sessionStorage.getItem("formCreationData");
+    const pdfData = sessionStorage.getItem("formCreationPdfData");
+
+    if (formCreationData) {
+      try {
+        const parsed = JSON.parse(formCreationData);
+        setCreationData(parsed);
+
+        // Clear from storage after retrieval
+        sessionStorage.removeItem("formCreationData");
+
+        if (pdfData) {
+          const blob = new Blob([pdfData], { type: "application/pdf" });
+          const url = URL.createObjectURL(blob);
+          setCreationPdfUrl(url);
+          sessionStorage.removeItem("formCreationPdfData");
+        }
+      } catch (error) {
+        console.error("Failed to parse form creation data:", error);
+      }
+    }
+  }, []);
+
+  // Create initial metadata with creation data
+  const initialMetadata = useMemo(() => {
+    if (creationData) {
+      return {
+        name: creationData.formName,
+        label: creationData.formLabel,
+        schema_version: 1,
+        schema: {
+          blocks: [],
+        },
+        signing_parties: creationData.signatories || [],
+        subscribers: [],
+      };
+    }
+    return null;
+  }, [creationData]);
+
   // Initialize FormMetadata with loaded data or blank data for new forms
   const formMetadata = useMemo(() => {
-    const data = ((formData?.formMetadata as any) || BLANK_FORM_METADATA) as IFormMetadata;
+    const data =
+      initialMetadata ||
+      (((formData?.formMetadata as any) || BLANK_FORM_METADATA) as IFormMetadata);
     return new FormMetadata<[]>(data);
-  }, [formData, isNewForm]);
+  }, [formData, isNewForm, initialMetadata]);
 
   // Get all blocks from FormMetadata (includes headers, paragraphs, form fields, etc.)
   // Use raw block structure for form editing
@@ -129,8 +176,9 @@ const PdfJsEditorPage = () => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const lastMetadataUpdateSourceRef = useRef<"formData" | "localEdit">("formData");
 
-  // Get document URL from form metadata (only for existing forms) or from uploaded PDF
-  const documentUrl = uploadedPdfUrl || (isNewForm ? undefined : formData?.formUrl || undefined);
+  // Get document URL from form metadata (only for existing forms) or from uploaded PDF or from creation wizard
+  const documentUrl =
+    creationPdfUrl || uploadedPdfUrl || (isNewForm ? undefined : formData?.formUrl || undefined);
 
   // Cleanup object URLs on unmount to prevent memory leaks
   useEffect(() => {
@@ -138,8 +186,11 @@ const PdfJsEditorPage = () => {
       if (uploadedPdfUrl) {
         URL.revokeObjectURL(uploadedPdfUrl);
       }
+      if (creationPdfUrl) {
+        URL.revokeObjectURL(creationPdfUrl);
+      }
     };
-  }, []);
+  }, [uploadedPdfUrl, creationPdfUrl]);
 
   // Update metadata when registry data loads
   useEffect(() => {
