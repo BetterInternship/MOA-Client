@@ -82,8 +82,7 @@ const FormRegistryPage = () => {
   const unsyncedCount = comparison.length - syncedCount;
 
   const handleEditForm = (name: string) => {
-    const encodedName = encodeURIComponent(name);
-    router.push(`./editor/pdfjs?name=${encodedName}&edit=true`);
+    router.push(`./editor?form_name=${encodeURIComponent(name)}`);
   };
 
   const columns: ColumnDef<FormRow>[] = [
