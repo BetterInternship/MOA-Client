@@ -18,9 +18,10 @@ import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
 import { FieldBox, type FormField } from "./FieldBox";
 import { FieldRegistryEntryDetails } from "@/app/api";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
+import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { Button } from "@/components/ui/button";
-import { IFormBlock } from "@betterinternship/core/forms";
+import { IFormBlock, IFormMetadata } from "@betterinternship/core/forms";
 
 export type PointerLocation = {
   page: number;
@@ -48,6 +49,8 @@ export function PdfViewer() {
     handleBlockCreate,
     handleBlockUpdate,
   } = useFormEditorTab();
+
+  const { formMetadata } = useFormEditor();
 
   const {
     pdfDoc,
@@ -282,6 +285,7 @@ export function PdfViewer() {
                   onBlockUpdate={handleBlockUpdate}
                   selectedPartyId={selectedPartyId}
                   _registry={registry}
+                  formMetadata={formMetadata}
                 />
               ))}
             </div>
@@ -306,6 +310,7 @@ type PdfPageCanvasProps = {
   onBlockUpdate: (block: IFormBlock) => void;
   selectedPartyId: string | null;
   _registry: FieldRegistryEntry[];
+  formMetadata: IFormMetadata | null;
 };
 
 const PdfPageCanvas = memo(
@@ -323,6 +328,7 @@ const PdfPageCanvas = memo(
     onBlockUpdate,
     selectedPartyId,
     _registry,
+    formMetadata,
   }: PdfPageCanvasProps) => {
     const { handleBlockCreate } = useFormEditorTab();
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -708,6 +714,9 @@ const PdfPageCanvas = memo(
                 y: schema.y,
                 w: schema.w,
                 h: schema.h,
+                signing_party_order:
+                  formMetadata?.signing_parties?.find((p) => p._id === block.signing_party_id)
+                    ?.order ?? 0,
               };
 
               return (
