@@ -198,7 +198,7 @@ export function RevampedBlockEditor({
             }}
           />
 
-          <FormInput
+          <FormTextarea
             label="Tooltip Label"
             value={tooltipLabel}
             setter={(value) => {
@@ -216,7 +216,7 @@ export function RevampedBlockEditor({
           />
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Prefiller (JS Function)</label>
+            <h4 className="text-xs text-gray-600">Prefiller (JS Function)</h4>
             <FormTextarea
               value={prefiller}
               setter={(value) => {
