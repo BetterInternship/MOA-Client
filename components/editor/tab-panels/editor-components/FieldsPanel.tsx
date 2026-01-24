@@ -10,6 +10,8 @@ import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { getPartyColorByIndex } from "@/lib/party-colors";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 interface FieldsPanelProps {
   blocks: IFormBlock[];
@@ -147,29 +149,61 @@ export function FieldsPanel({
                 <p className="text-muted-foreground text-sm">No fields found</p>
               </div>
             ) : (
-              <>
-                {filteredFields.map((field) => (
-                  <Card
-                    key={field.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, field)}
-                    onClick={() => handleFieldAdd(field)}
-                    className="hover:border-primary/30 hover:bg-primary/5 cursor-move border-2 border-transparent p-3 transition-all hover:shadow-md"
-                  >
-                    <div className="space-y-1.5">
-                      <div>
-                        <h4 className="text-foreground text-sm font-semibold">
-                          {field.label || field.name}
-                        </h4>
-                        <p className="text-muted-foreground font-mono text-xs">{field.name}</p>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-                <div className="text-muted-foreground pt-2 text-center text-xs">
-                  {filteredFields.length} field{filteredFields.length !== 1 ? "s" : ""} available
-                </div>
-              </>
+              <div className="space-y-2">
+                {/* Group fields by tag */}
+                {Array.from(
+                  new Set(filteredFields.map((f) => f.tag || "Ungrouped").filter(Boolean))
+                )
+                  .sort((a, b) => {
+                    // Always put "preset" on top
+                    if (a.toLowerCase() === "preset") return -1;
+                    if (b.toLowerCase() === "preset") return 1;
+                    return a.localeCompare(b);
+                  })
+                  .map((tag) => {
+                    const fieldsInTag = filteredFields
+                      .filter((f) => f.tag === tag)
+                      .sort((a, b) => {
+                        // Sort fields by label or name
+                        const labelA = a.label || a.name || "";
+                        const labelB = b.label || b.name || "";
+                        return labelA.localeCompare(labelB);
+                      });
+
+                    // Get tag display information
+                    const tagDisplay = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
+                    const fieldCount = fieldsInTag.length;
+
+                    return (
+                      <Collapsible key={tag} defaultOpen={true} className="space-y-2">
+                        <CollapsibleTrigger className="hover:text-foreground hover:bg-primary/5 flex w-full items-center gap-2 rounded-md p-2 text-sm font-semibold transition-colors">
+                          <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+                          {tagDisplay}{" "}
+                          <span className="text-muted-foreground text-xs font-normal">
+                            ({fieldCount} field{fieldCount !== 1 ? "s" : ""})
+                          </span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="ml-2 space-y-2">
+                          {fieldsInTag.map((field) => (
+                            <Card
+                              key={field.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, field)}
+                              onClick={() => handleFieldAdd(field)}
+                              className="hover:border-primary/30 hover:bg-primary/5 cursor-move border border-transparent p-1 transition-all hover:shadow-md"
+                            >
+                              <div className="space-y-1">
+                                <h4 className="text-foreground text-sm">
+                                  {field.label || field.name}
+                                </h4>
+                              </div>
+                            </Card>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
+              </div>
             )}
           </div>
         </div>
