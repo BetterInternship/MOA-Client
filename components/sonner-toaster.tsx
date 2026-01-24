@@ -27,10 +27,9 @@ const createToastPreset = (
 };
 
 export const toastPresets = {
-  success: createToastPreset(<CheckCircle className="h-5 w-5" />, "#69a64e"),
-  destructive: createToastPreset(<AlertCircle className="h-5 w-5" />, "#f44033"),
-  alert: createToastPreset(<AlertTriangle className="h-5 w-5" />, "#e69236"),
-  loading: createToastPreset(null, "#0b5493"),
+  success: createToastPreset(<CheckCircle className="h-5 w-5" />, "#059669"),
+  destructive: createToastPreset(<AlertCircle className="h-5 w-5" />, "#dc2626"),
+  alert: createToastPreset(<AlertTriangle className="h-5 w-5" />, "#d97706"),
 };
 
 export function createCustomToastPreset(

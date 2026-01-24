@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/docs/forms/EditForm";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { validateEmail } from "@/lib/validators";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
 
 interface PartiesPanelProps {
   parties: IFormSigningParty[];
@@ -101,6 +103,17 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     if (editingIndex === null) return;
 
     if (!validateForm()) {
+      // Build error message from validation errors
+      const errorMessages = Object.entries(validationErrors)
+        .map(([_, error]) => error)
+        .filter(Boolean);
+
+      console.log("error", errorMessages);
+
+      const errorMessage =
+        errorMessages.length > 0 ? errorMessages.join("\n") : "Please fix the errors before saving";
+
+      toast.error(errorMessage, toastPresets.destructive);
       return;
     }
 

@@ -689,7 +689,8 @@ const PdfPageCanvas = memo(
           <div className="pointer-events-none absolute inset-0 z-10" key={forceRender}>
             {blocks.map((block) => {
               const schema = block.field_schema;
-              if (!schema || schema.page !== pageNumber || block.block_type !== "form_field") return null;
+              if (!schema || schema.page !== pageNumber || block.block_type !== "form_field")
+                return null;
 
               const fieldId = block._id;
               const pos = pdfToDisplay(schema.x, schema.y);
