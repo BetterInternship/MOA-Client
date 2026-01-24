@@ -350,7 +350,7 @@ export function FieldsPanel({
         // Minimalist Tabs Layout - Parties on left, fields on right
         <div className="flex flex-1 overflow-hidden">
           {/* Left Sidebar - Party Tabs  */}
-          <div className="flex w-1/3 flex-col overflow-y-auto border-r">
+          <div className="flex w-1/5 flex-col overflow-y-auto border-r">
             {signingParties.map((party) => {
               const partyColor = getPartyColorByIndex(Math.max(0, party.order - 1));
               const isSelected = selectedPartyId === party._id;

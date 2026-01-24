@@ -34,7 +34,7 @@ function FormEditorTabContent() {
 
   return (
     <div className="bg-background flex h-full w-full">
-      <div className="bg-card flex flex-shrink-0 basis-[450px] flex-col overflow-hidden border-r">
+      <div className="bg-card flex flex-shrink-0 basis-[380px] flex-col overflow-hidden border-r">
         <FieldsPanel
           blocks={formMetadata.schema.blocks}
           selectedPartyId={selectedPartyId}
