@@ -92,6 +92,13 @@ function PageContent() {
     signContext.setRequiredSignatures(
       signatureFields.map((signatureField) => signatureField.field)
     );
+
+    for (const signatureField of signatureFields) {
+      const signatureValue = valuesWithPrefilledSignatures[signatureField.field];
+      if (signatureValue?.trim()) {
+        signContext.setHasAgreedForSignature(signatureField.field, signatureValue, true);
+      }
+    }
   }, [formProcess, form]);
 
   // Filter blocks to only include manual source fields
