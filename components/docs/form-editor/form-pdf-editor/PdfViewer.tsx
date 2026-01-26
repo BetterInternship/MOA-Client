@@ -16,7 +16,7 @@ import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/type
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
 import { FieldBox, type FormField } from "./FieldBox";
-import { FieldRegistryEntryDetails } from "@/app/api";
+import { FieldRegistryEntryDetails, FieldRegistryEntry } from "@/app/api";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
@@ -91,6 +91,7 @@ export function PdfViewer() {
     [pageCount]
   );
   const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+  const pdfContainerRef = useRef<HTMLDivElement | null>(null);
   const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
     pageRefs.current.set(page, node);
   }, []);
@@ -209,7 +210,7 @@ export function PdfViewer() {
       </div>
 
       {/* PDF Canvas */}
-      <div className="relative flex-1 overflow-hidden bg-white">
+      <div ref={pdfContainerRef} className="relative flex-1 overflow-hidden bg-white">
         {isLoadingDoc && (
           <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center">
             <Loader>Loading PDF…</Loader>
@@ -336,16 +337,25 @@ const PdfPageCanvas = memo(
     const viewportRef = useRef<PageViewport | null>(null);
     const [rendering, setRendering] = useState<boolean>(false);
     const [localHover, setLocalHover] = useState<PointerLocation | null>(null);
-    const [forceRender, setForceRender] = useState<number>(0);
+    const [containerResizeVersion, setContainerResizeVersion] = useState<number>(0);
 
     useEffect(
       () => registerPageRef(pageNumber, containerRef.current),
       [pageNumber, registerPageRef]
     );
 
+    // Detect when the PDF container changes size (panel resize) and trigger position recalculation
     useEffect(() => {
-      setForceRender((prev) => prev + 1);
-    }, [scale]);
+      const element = containerRef.current;
+      if (!element) return;
+
+      const resizeObserver = new ResizeObserver(() => {
+        setContainerResizeVersion((prev) => prev + 1);
+      });
+
+      resizeObserver.observe(element);
+      return () => resizeObserver.disconnect();
+    }, []);
 
     useEffect(() => {
       const element = containerRef.current;
@@ -425,24 +435,25 @@ const PdfPageCanvas = memo(
       const containerRect = canvas.parentElement?.getBoundingClientRect();
       if (!containerRect) return null;
 
-      // Coordinates relative to canvas for PDF calculation
+      // Coordinates relative to canvas
       const cssX = event.clientX - rect.left;
+
       const cssY = event.clientY - rect.top;
 
-      // Coordinates relative to container for crosshair overlay
+      // Display coordinates relative to container
       const displayX = event.clientX - containerRect.left;
       const displayY = event.clientY - containerRect.top;
 
-      const outputScale = window.devicePixelRatio || 1;
-      const scaledX = (cssX * canvas.width) / rect.width;
-      const scaledY = (cssY * canvas.height) / rect.height;
-      const [pdfX, pdfYBottom] = viewport.convertToPdfPoint(
-        scaledX / outputScale,
-        scaledY / outputScale
-      ) as [number, number];
+      // Convert CSS pixels to viewport space (viewport is already scaled by scale factor)
+      const viewportX = (cssX / rect.width) * viewport.width;
+      const viewportY = (cssY / rect.height) * viewport.height;
 
-      // Convert from PDF bottom-left origin to top-left origin -- this is for the PDF generator
-      // Use original (unzoomed) PDF height for the flip calculation
+      const [pdfX, pdfYBottom] = viewport.convertToPdfPoint(viewportX, viewportY) as [
+        number,
+        number,
+      ];
+
+      // Convert from PDF bottom-left origin to top-left origin
       const actualPdfHeight = viewport.height / scale;
       const pdfY = actualPdfHeight - pdfYBottom;
 
@@ -467,7 +478,7 @@ const PdfPageCanvas = memo(
       const containerRect = canvas.parentElement?.getBoundingClientRect();
       if (!containerRect) return null;
 
-      const outputScale = window.devicePixelRatio || 1;
+      // Work with the actual CSS pixel dimensions from getBoundingClientRect
       const actualPdfHeight = viewport.height / scale;
       const pdfYBottom = actualPdfHeight - pdfY;
 
@@ -475,10 +486,10 @@ const PdfPageCanvas = memo(
       if (!viewportPoint) return null;
       const [viewportX, viewportY] = viewportPoint as [number, number];
 
-      // Convert viewport coordinates to CSS pixels
-      // Multiply by outputScale to account for device pixel ratio (same as extractLocation does in reverse)
-      const cssX = (viewportX * outputScale * rect.width) / canvas.width;
-      const cssY = (viewportY * outputScale * rect.height) / canvas.height;
+      // Convert viewport coordinates to CSS pixels on screen
+      // rect.width and rect.height are already in CSS pixels (including any zoom effects)
+      const cssX = (viewportX / viewport.width) * rect.width;
+      const cssY = (viewportY / viewport.height) * rect.height;
 
       return {
         displayX: rect.left - containerRect.left + cssX,
@@ -564,17 +575,12 @@ const PdfPageCanvas = memo(
       if (!canvas || !viewport) return { pdfDeltaX: 0, pdfDeltaY: 0 };
 
       const rect = canvas.getBoundingClientRect();
-      const outputScale = window.devicePixelRatio || 1;
 
-      // Convert display pixels to canvas internal pixels, then to viewport space
-      const canvasDeltaX = (displayDeltaX * canvas.width) / rect.width;
-      const canvasDeltaY = (displayDeltaY * canvas.height) / rect.height;
+      // Convert CSS pixel deltas to viewport space deltas
+      const viewportDeltaX = (displayDeltaX / rect.width) * viewport.width;
+      const viewportDeltaY = (displayDeltaY / rect.height) * viewport.height;
 
-      // Convert to viewport space
-      const viewportDeltaX = canvasDeltaX / outputScale;
-      const viewportDeltaY = canvasDeltaY / outputScale;
-
-      // Viewport space maps directly to PDF space (after zoom adjustment)
+      // Convert viewport deltas to PDF space
       const pdfDeltaX = viewportDeltaX / scale;
       const pdfDeltaY = viewportDeltaY / scale;
 
@@ -692,7 +698,7 @@ const PdfPageCanvas = memo(
           )}
 
           {/* Render form fields */}
-          <div className="pointer-events-none absolute inset-0 z-10" key={forceRender}>
+          <div className="pointer-events-none absolute inset-0 z-10" key={containerResizeVersion}>
             {blocks.map((block) => {
               const schema = block.field_schema;
               if (!schema || schema.page !== pageNumber || block.block_type !== "form_field")
