@@ -377,18 +377,25 @@ export function FieldsPanel({
                   key={party._id}
                   onClick={() => onPartyChange(party._id)}
                   className={cn(
-                    "flex w-full items-start justify-start border-l-[3px] px-1 py-2 text-xs transition-all",
-                    isSelected ? "shadow-sm" : "hover:bg-gray-50"
+                    "flex w-full items-start justify-start px-1 py-2 text-xs transition-all",
+                    isSelected
+                      ? "ring-primary font-semibold text-white ring-1 ring-inset"
+                      : "text-gray-700 hover:opacity-80"
                   )}
                   style={{
-                    backgroundColor: isSelected ? partyColor.hex + "25" : "transparent",
-                    borderLeftColor: isSelected ? partyColor.hex : "transparent",
-                    overflowWrap: "break-word",
-                    wordBreak: "break-word",
+                    backgroundColor: isSelected ? partyColor.hex : partyColor.hex + "25",
+                    borderLeftColor: partyColor.hex,
+                    ...(isSelected && {
+                      outlineColor: partyColor.hex,
+                      outlineWidth: "2px",
+                      outlineOffset: "-2px",
+                    }),
                   }}
                   title={party.signatory_title}
                 >
-                  <span className="line-clamp-2">{party.signatory_title}</span>
+                  <span className="w-full text-left break-words whitespace-normal">
+                    {party.signatory_title}
+                  </span>
                 </button>
               );
             })}
