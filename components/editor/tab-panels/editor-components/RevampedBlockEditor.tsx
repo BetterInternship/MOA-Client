@@ -18,7 +18,7 @@ import {
   BiVerticalCenter,
   BiVerticalTop,
 } from "react-icons/bi";
-import { BLOCK_TYPES } from "@betterinternship/core/forms";
+import { BLOCK_TYPES, SOURCES } from "@betterinternship/core/forms";
 import { ValidatorBuilder } from "@/components/docs/form-editor/ValidatorBuilder";
 import { zodCodeToValidatorConfig, validatorConfigToZodCode } from "@/lib/validator-engine";
 
@@ -188,11 +188,10 @@ export function RevampedBlockEditor({
           <FormDropdown
             label="Source"
             value={source}
-            options={[
-              { id: "manual", name: "Manual" },
-              { id: "database", name: "Database" },
-              { id: "api", name: "API" },
-            ]}
+            options={SOURCES.map((source) => ({
+              id: source,
+              name: source.charAt(0).toUpperCase() + source.slice(1),
+            }))}
             setter={(value) => {
               onParentUpdate?.(parentGroup, { source: value });
             }}
