@@ -34,7 +34,8 @@ function FormEditorTabContent() {
 
   return (
     <div className="bg-background flex h-full w-full">
-      <div className="bg-card flex flex-shrink-0 basis-[330px] flex-col overflow-hidden border-r">
+      {/* Left Panel - Responsive */}
+      <div className="bg-card flex flex-shrink-0 basis-80 flex-col overflow-hidden border-r lg:basis-[400px] xl:basis-[500px]">
         <FieldsPanel
           blocks={formMetadata.schema.blocks}
           selectedPartyId={selectedPartyId}
@@ -48,11 +49,13 @@ function FormEditorTabContent() {
         />
       </div>
 
-      <div className="flex-1 overflow-hidden border-r">
+      {/* Center - PDF Viewer */}
+      <div className="min-w-0 flex-1 overflow-hidden border-r">
         <PdfViewer />
       </div>
 
-      <div className="bg-card flex flex-shrink-0 basis-60 flex-col overflow-hidden border-l">
+      {/* Right Panel - Responsive */}
+      <div className="bg-card hidden flex-shrink-0 basis-48 flex-col overflow-hidden border-l md:flex lg:basis-56 xl:basis-60">
         <RevampedBlockEditor
           block={selectedBlock || null}
           onUpdate={handleBlockUpdate}
