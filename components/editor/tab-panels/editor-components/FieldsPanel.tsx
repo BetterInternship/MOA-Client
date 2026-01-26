@@ -17,12 +17,15 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
-import { renderBlock } from "@/lib/block-renderer";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
+import { useFormEditor } from "@/app/contexts/form-editor.context";
+import z from "zod";
+import { FormMetadata } from "@betterinternship/core/forms";
+import { getBlockField, isBlockField } from "@/components/docs/forms/utils";
+import { BlocksRenderer } from "@/components/docs/forms/FormFillerRenderer";
 
 interface FieldsPanelProps {
   blocks: IFormBlock[];
@@ -48,6 +51,31 @@ export function FieldsPanel({
   onBlocksReorder,
 }: FieldsPanelProps) {
   const { registry } = useFieldTemplateContext();
+  const { formMetadata } = useFormEditor();
+  const [previewValues, setPreviewValues] = useState<Record<string, any>>({});
+  const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
+
+  // Get properly parsed fields from metadata with coerce functions and validators
+  const metadataFields = useMemo(() => {
+    if (!formMetadata) return [];
+    try {
+      const metadata = new FormMetadata(formMetadata);
+      return metadata.getFieldsForClientService();
+    } catch (error) {
+      console.warn("Failed to parse metadata fields:", error);
+      return [];
+    }
+  }, [formMetadata]);
+
+  // Create a map for easy lookup by field name
+  const fieldMap = useMemo(() => {
+    const map = new Map();
+    metadataFields.forEach((field) => {
+      map.set(field.field, field);
+    });
+    return map;
+  }, [metadataFields]);
+
   const {
     selectedParentGroup,
     handleReorderBlocks,
@@ -463,25 +491,67 @@ export function FieldsPanel({
                             </div>
                           </div>
 
-                          {/* Block Preview - Improved Styling */}
+                          {/* Block Preview */}
                           <div className="space-y-2">
-                            {group.instances[0] && (
-                              <div
-                                className="cursor-pointer rounded border border-gray-200 bg-white p-2 text-xs transition-colors hover:bg-gray-50"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onBlockSelect(group.instances[0]._id || "");
-                                }}
-                              >
-                                <div className="text-gray-700">
-                                  {renderBlock(
-                                    group.instances[0],
-                                    { values: {}, onChange: () => {} },
-                                    { stripStyling: true }
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                            {group.instances[0] &&
+                              (() => {
+                                const block = group.instances[0];
+                                const blockField = getBlockField(block);
+
+                                if (blockField?.source !== "manual") return null;
+
+                                const parsedField = blockField
+                                  ? fieldMap.get(blockField.field)
+                                  : null;
+                                const fieldWithParser = parsedField || blockField;
+
+                                const blockWithParsedField = {
+                                  ...block,
+                                  field_schema: fieldWithParser,
+                                };
+
+                                return (
+                                  <div className="space-y-2 rounded border border-slate-200 bg-white px-1">
+                                    <BlocksRenderer
+                                      formKey={`preview-${group.fieldName}`}
+                                      blocks={[blockWithParsedField]}
+                                      values={previewValues}
+                                      onChange={(key, value) => {
+                                        setPreviewValues((prev) => ({
+                                          ...prev,
+                                          [key]: value,
+                                        }));
+                                      }}
+                                      errors={previewErrors}
+                                      setSelected={() => {}}
+                                      onBlurValidate={(fieldKey, field) => {
+                                        if (field?.validator) {
+                                          const value = previewValues[fieldKey] ?? "";
+                                          const coerced = field.coerce?.(value) ?? value;
+                                          const result = field.validator.safeParse(coerced);
+                                          if (result.success) {
+                                            setPreviewErrors((prev) => {
+                                              const updated = { ...prev };
+                                              delete updated[fieldKey];
+                                              return updated;
+                                            });
+                                          } else {
+                                            const treeified = z.treeifyError(result.error);
+                                            const errorMsg = treeified.errors
+                                              .map((e: string) => e.split(" ").slice(0).join(" "))
+                                              .join(", ");
+                                            setPreviewErrors((prev) => ({
+                                              ...prev,
+                                              [fieldKey]: errorMsg,
+                                            }));
+                                          }
+                                        }
+                                      }}
+                                      fieldRefs={{}}
+                                    />
+                                  </div>
+                                );
+                              })()}
                           </div>
                         </div>
                       </Card>
