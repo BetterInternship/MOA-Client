@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { FormEditorTabProvider, useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { PdfViewerProvider } from "@/app/contexts/pdf-viewer.context";
@@ -55,7 +56,7 @@ function FormEditorTabContent() {
       </div>
 
       {/* Right Panel - Responsive */}
-      <div className="bg-card hidden flex-shrink-0 basis-48 flex-col overflow-hidden border-l md:flex lg:basis-56 xl:basis-60">
+      <div className="bg-card hidden flex-shrink-0 basis-60 flex-col overflow-hidden border-l md:flex lg:basis-74 xl:basis-80">
         <RevampedBlockEditor
           block={selectedBlock || null}
           onUpdate={handleBlockUpdate}
