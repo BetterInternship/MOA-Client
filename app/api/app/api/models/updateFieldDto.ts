@@ -15,6 +15,7 @@ export interface UpdateFieldDto {
   shared: boolean;
   party: string;
   source: UpdateFieldDtoSource;
+  tag: string;
   /** @nullable */
   prefiller: string | null;
   preset: string;

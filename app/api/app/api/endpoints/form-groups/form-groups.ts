@@ -23,7 +23,12 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 
-import type { BaseResponse, CreateFormGroupDto, ErrorResponse } from "../../models";
+import type {
+  AddFormToGroupDto,
+  BaseResponse,
+  CreateFormGroupDto,
+  ErrorResponse,
+} from "../../models";
 
 import { preconfiguredAxiosFunction } from "../../../../preconfig.axios";
 
@@ -588,10 +593,15 @@ export function useFormGroupsControllerGetFormGroupByIdSuspense<
   return query;
 }
 
-export const formGroupsControllerAddFormToGroup = (signal?: AbortSignal) => {
+export const formGroupsControllerAddFormToGroup = (
+  addFormToGroupDto: AddFormToGroupDto,
+  signal?: AbortSignal
+) => {
   return preconfiguredAxiosFunction<BaseResponse>({
     url: `/api/form-groups/add-form`,
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: addFormToGroupDto,
     signal,
   });
 };
@@ -603,13 +613,13 @@ export const getFormGroupsControllerAddFormToGroupMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof formGroupsControllerAddFormToGroup>>,
     TError,
-    void,
+    { data: AddFormToGroupDto },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof formGroupsControllerAddFormToGroup>>,
   TError,
-  void,
+  { data: AddFormToGroupDto },
   TContext
 > => {
   const mutationKey = ["formGroupsControllerAddFormToGroup"];
@@ -621,9 +631,11 @@ export const getFormGroupsControllerAddFormToGroupMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof formGroupsControllerAddFormToGroup>>,
-    void
-  > = () => {
-    return formGroupsControllerAddFormToGroup();
+    { data: AddFormToGroupDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formGroupsControllerAddFormToGroup(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -632,7 +644,7 @@ export const getFormGroupsControllerAddFormToGroupMutationOptions = <
 export type FormGroupsControllerAddFormToGroupMutationResult = NonNullable<
   Awaited<ReturnType<typeof formGroupsControllerAddFormToGroup>>
 >;
-
+export type FormGroupsControllerAddFormToGroupMutationBody = AddFormToGroupDto;
 export type FormGroupsControllerAddFormToGroupMutationError = ErrorResponse;
 
 export const useFormGroupsControllerAddFormToGroup = <TError = ErrorResponse, TContext = unknown>(
@@ -640,7 +652,7 @@ export const useFormGroupsControllerAddFormToGroup = <TError = ErrorResponse, TC
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof formGroupsControllerAddFormToGroup>>,
       TError,
-      void,
+      { data: AddFormToGroupDto },
       TContext
     >;
   },
@@ -648,7 +660,7 @@ export const useFormGroupsControllerAddFormToGroup = <TError = ErrorResponse, TC
 ): UseMutationResult<
   Awaited<ReturnType<typeof formGroupsControllerAddFormToGroup>>,
   TError,
-  void,
+  { data: AddFormToGroupDto },
   TContext
 > => {
   const mutationOptions = getFormGroupsControllerAddFormToGroupMutationOptions(options);

@@ -9,8 +9,6 @@ export const getFormFields = async (name: string) => {
   return await formsControllerGetLatestFormDocumentAndMetadata({ name });
 };
 
-export type Party = "student" | "entity" | "student-guardian" | "university";
-
 export type ApproveSignatoryRequest = {
   pendingFormId: string;
   values?: Record<string, string>;
@@ -74,7 +72,8 @@ export const addFormToGroup = async (formName: string, groupId: string) => {
   console.log("API call to addFormToGroup with", { formName, groupId });
   try {
     const res = await formGroupsControllerAddFormToGroup({
-      body: { formName, groupId },
+      formName,
+      groupId,
     });
     const result = res?.response ?? null;
     return { result, isLoading: false, error: null };

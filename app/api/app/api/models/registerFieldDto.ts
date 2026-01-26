@@ -14,6 +14,7 @@ export interface RegisterFieldDto {
   party: string;
   shared: boolean;
   source: RegisterFieldDtoSource;
+  tag: string;
   /** @nullable */
   prefiller: string | null;
   preset: string;
