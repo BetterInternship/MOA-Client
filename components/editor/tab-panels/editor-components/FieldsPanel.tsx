@@ -465,24 +465,23 @@ export function FieldsPanel({
 
                           {/* Block Preview - Improved Styling */}
                           <div className="space-y-2">
-                            {group.instances.map((block) => (
+                            {group.instances[0] && (
                               <div
-                                key={block._id}
                                 className="cursor-pointer rounded border border-gray-200 bg-white p-2 text-xs transition-colors hover:bg-gray-50"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onBlockSelect(block._id || "");
+                                  onBlockSelect(group.instances[0]._id || "");
                                 }}
                               >
                                 <div className="text-gray-700">
                                   {renderBlock(
-                                    block,
+                                    group.instances[0],
                                     { values: {}, onChange: () => {} },
                                     { stripStyling: true }
                                   )}
                                 </div>
                               </div>
-                            ))}
+                            )}
                           </div>
                         </div>
                       </Card>
