@@ -340,8 +340,18 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   const handleDeleteGroupBlocks = useCallback(
     (fieldName: string, partyId: string) => {
       const remainingBlocks = blocks.filter((b) => {
-        const schema = b.field_schema;
-        return !(b.signing_party_id === partyId && schema?.field === fieldName);
+        // Check both field_schema and phantom_field_schema since different block types store field name in different places
+        const fieldSchema = b.field_schema;
+        const phantomSchema = b.phantom_field_schema;
+
+        const isMatch =
+          b.signing_party_id === partyId &&
+          (fieldSchema?.field === fieldName ||
+            phantomSchema?.field === fieldName ||
+            ((b.block_type === "header" || b.block_type === "paragraph") &&
+              fieldName === b.block_type));
+
+        return !isMatch;
       });
       updateBlocks(remainingBlocks);
     },

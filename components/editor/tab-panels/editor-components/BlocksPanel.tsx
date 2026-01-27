@@ -533,36 +533,32 @@ export function BlocksPanel({
                 variant="ghost"
                 className="hover:text-destructive h-6 w-6 p-0"
                 onClick={() => {
-                  // Check if it's a phantom block
-                  if (
-                    selectedBlock?.block_type === "header" ||
-                    selectedBlock?.block_type === "paragraph" ||
-                    selectedBlock?.block_type === "phantom_field"
-                  ) {
-                    // Delete the single phantom block
+                  // Check if it's a phantom block or if we have a single block selected
+                  if (selectedBlock) {
+                    // Delete the single selected block
+
+                    handleDeleteBlock(selectedBlock._id || "");
+                    setSelectedBlockGroup(null);
+                  } else if (selectedBlockGroup) {
+                    // Delete the entire group
+
+                    // For headers/paragraphs, delete by block IDs instead of fieldName
                     if (
-                      confirm(`Delete this ${selectedBlock?.block_type}? This cannot be undone.`)
+                      selectedBlockGroup.fieldName === "header" ||
+                      selectedBlockGroup.fieldName === "paragraph"
                     ) {
-                      handleDeleteBlock(selectedBlockGroup.fieldName);
-                      setSelectedBlockGroup(null);
+                      // Delete each block individually to avoid deleting all headers/paragraphs
+                      selectedBlockGroup.blockIds.forEach((blockId) => {
+                        handleDeleteBlock(blockId);
+                      });
+                    } else {
+                      // For regular fields, use fieldName matching
+                      handleDeleteGroupBlocks(
+                        selectedBlockGroup.fieldName,
+                        selectedBlockGroup.partyId
+                      );
                     }
-                  } else {
-                    // Delete field group
-                    const idx = groupedFields.findIndex(
-                      (g) =>
-                        `${g.fieldName}-${g.partyId}` ===
-                        `${selectedBlockGroup.fieldName}-${selectedBlockGroup.partyId}`
-                    );
-                    if (idx !== -1) {
-                      if (
-                        confirm(
-                          `Delete all instances of "${selectedBlockGroup.fieldName}"? This cannot be undone.`
-                        )
-                      ) {
-                        deleteGroup(idx);
-                        setSelectedBlockGroup(null);
-                      }
-                    }
+                    setSelectedBlockGroup(null);
                   }
                 }}
               >
