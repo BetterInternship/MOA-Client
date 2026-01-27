@@ -247,36 +247,67 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
   const handleParentUpdate = useCallback(
     (blockId: string, updates: any) => {
-      if (!formMetadata) return;
+      console.log("[handleParentUpdate] Called with:", { blockId, updates, blockGroups });
+      if (!formMetadata) {
+        console.log("[handleParentUpdate] formMetadata is null, returning");
+        return;
+      }
 
       const group = blockGroups[blockId];
-      if (!group) return;
+      console.log("[handleParentUpdate] Found group:", { blockId, group });
+      if (!group) {
+        console.log("[handleParentUpdate] No group found for blockId:", blockId);
+        return;
+      }
 
       const updatedBlocks = formMetadata.schema.blocks.map((block: any) => {
-        const schema = block.field_schema;
+        // Get schema from either field_schema or phantom_field_schema
+        const schema = block.field_schema || block.phantom_field_schema;
 
         const matches =
-          schema?.field === group.fieldName &&
+          (schema?.field === group.fieldName ||
+            block.block_type === group.fieldName) &&
           (block.signing_party_id === group.partyId ||
             (block.signing_party_id === "" && group.partyId === "unknown") ||
             (block.signing_party_id === "unknown" && group.partyId === ""));
 
         if (matches) {
+          console.log("[handleParentUpdate] Matched block:", { blockId: block._id, fieldName: schema?.field, partyId: block.signing_party_id, updates });
           const updated: IFormBlock = {
             ...block,
-            field_schema: {
-              ...schema,
-              field: updates.fieldName !== undefined ? updates.fieldName : schema.field,
-              label: updates.label !== undefined ? updates.label : schema.label,
-              type: updates.type !== undefined ? updates.type : schema.type,
-              source: updates.source !== undefined ? updates.source : schema.source,
-              tooltip_label:
-                updates.tooltip_label !== undefined ? updates.tooltip_label : schema.tooltip_label,
-              shared: updates.shared !== undefined ? updates.shared : schema.shared,
-              prefiller: updates.prefiller !== undefined ? updates.prefiller : schema.prefiller,
-              validator: updates.validator !== undefined ? updates.validator : schema.validator,
-            },
           };
+
+          // Update field_schema if it exists
+          if (block.field_schema) {
+            updated.field_schema = {
+              ...block.field_schema,
+              field: updates.fieldName !== undefined ? updates.fieldName : block.field_schema.field,
+              label: updates.label !== undefined ? updates.label : block.field_schema.label,
+              type: updates.type !== undefined ? updates.type : block.field_schema.type,
+              source: updates.source !== undefined ? updates.source : block.field_schema.source,
+              tooltip_label:
+                updates.tooltip_label !== undefined ? updates.tooltip_label : block.field_schema.tooltip_label,
+              shared: updates.shared !== undefined ? updates.shared : block.field_schema.shared,
+              prefiller: updates.prefiller !== undefined ? updates.prefiller : block.field_schema.prefiller,
+              validator: updates.validator !== undefined ? updates.validator : block.field_schema.validator,
+            };
+          }
+
+          // Update phantom_field_schema if it exists
+          if (block.phantom_field_schema) {
+            updated.phantom_field_schema = {
+              ...block.phantom_field_schema,
+              field: updates.fieldName !== undefined ? updates.fieldName : block.phantom_field_schema.field,
+              label: updates.label !== undefined ? updates.label : block.phantom_field_schema.label,
+              type: updates.type !== undefined ? updates.type : block.phantom_field_schema.type,
+              source: updates.source !== undefined ? updates.source : block.phantom_field_schema.source,
+              tooltip_label:
+                updates.tooltip_label !== undefined ? updates.tooltip_label : block.phantom_field_schema.tooltip_label,
+              shared: updates.shared !== undefined ? updates.shared : block.phantom_field_schema.shared,
+              prefiller: updates.prefiller !== undefined ? updates.prefiller : block.phantom_field_schema.prefiller,
+              validator: updates.validator !== undefined ? updates.validator : block.phantom_field_schema.validator,
+            };
+          }
 
           if (updates.block_type !== undefined) {
             updated.block_type = updates.block_type;
@@ -294,26 +325,48 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
         return block;
       });
 
+      console.log("[handleParentUpdate] Calling updateBlocks with:", updatedBlocks);
       updateBlocks(updatedBlocks);
+      console.log("[handleParentUpdate] updateBlocks called");
 
-      // Update the group mapping if partyId changed
-      if (updates.signing_party_id !== undefined) {
-        setBlockGroups((prev) => ({
-          ...prev,
-          [blockId]: {
-            ...group,
-            partyId: updates.signing_party_id,
-          },
-        }));
-        // Also update the selected group if it matches
-        setSelectedBlockGroup((prev) =>
-          prev && prev.fieldName === group.fieldName && prev.partyId === group.partyId
-            ? {
-                ...prev,
-                partyId: updates.signing_party_id,
-              }
-            : prev
-        );
+      // Update the group mapping if partyId or block_type changed
+      const newPartyId = updates.signing_party_id !== undefined ? updates.signing_party_id : group.partyId;
+      const newBlockType = updates.block_type !== undefined ? updates.block_type : group.fieldName;
+      
+      const newGroupId = `${group.fieldName}-${newPartyId}-${newBlockType}`;
+      
+      // Update block group if either partyId or block_type changed
+      if (updates.signing_party_id !== undefined || updates.block_type !== undefined) {
+        setBlockGroups((prev) => {
+          const updated = { ...prev };
+          
+          // If the group ID changed, create the new group and remove the old one
+          if (updates.signing_party_id !== undefined || updates.block_type !== undefined) {
+            updated[blockId] = {
+              ...group,
+              partyId: newPartyId,
+            };
+          }
+          
+          return updated;
+        });
+        
+        // Update the selected group to reflect changes
+        setSelectedBlockGroup((prev) => {
+          if (!prev) return prev;
+          
+          const matches =
+            prev.fieldName === group.fieldName &&
+            prev.partyId === group.partyId;
+          
+          if (matches) {
+            return {
+              ...prev,
+              partyId: newPartyId,
+            };
+          }
+          return prev;
+        });
       }
     },
     [formMetadata, updateBlocks, blockGroups]

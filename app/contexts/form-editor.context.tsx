@@ -98,13 +98,18 @@ export function FormEditorProvider({
   }, []);
 
   const updateBlocks = useCallback((blocks: IFormBlock[]) => {
-    setFormMetadata((prev) => ({
-      ...prev,
-      schema: {
-        ...prev.schema,
-        blocks,
-      },
-    }));
+    console.log("[updateBlocks] Called with blocks:", blocks);
+    setFormMetadata((prev) => {
+      const newMetadata = {
+        ...prev,
+        schema: {
+          ...prev.schema,
+          blocks,
+        },
+      };
+      console.log("[updateBlocks] Setting formMetadata to:", newMetadata);
+      return newMetadata;
+    });
   }, []);
 
   const updateSigningParties = useCallback((parties: IFormSigningParty[]) => {
