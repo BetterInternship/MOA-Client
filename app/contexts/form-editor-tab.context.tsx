@@ -161,7 +161,8 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
       const fieldName: string = (schema.field || "Unnamed") as string;
       const partyId = block.signing_party_id || "unknown";
-      const groupId = `${fieldName}-${partyId}`;
+      // Include blockType in groupId to prevent different block types with the same field name from being grouped together
+      const groupId = `${fieldName}-${partyId}-${blockType}`;
 
       if (!seenGroupIds.has(groupId)) {
         newBlockGroups[groupId] = {

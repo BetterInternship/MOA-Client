@@ -290,6 +290,7 @@ export function BlocksPanel({
 
       // For manual items, add to items array
       const { partyName, partyOrder } = getPartyInfo(selectedPartyId);
+      const blockType = groupBlocks[0]?.block_type;
       items.push({
         type: "group",
         id: groupId,
@@ -297,6 +298,7 @@ export function BlocksPanel({
         partyId: group.partyId,
         partyName,
         partyOrder,
+        blockType,
         instances: groupBlocks,
       });
     });
@@ -330,6 +332,7 @@ export function BlocksPanel({
         if (!isNonManual) return;
 
         const { partyName, partyOrder } = getPartyInfo(selectedPartyId);
+        const blockType = groupBlocks[0]?.block_type;
         items.push({
           type: "group",
           id: groupId,
@@ -337,6 +340,7 @@ export function BlocksPanel({
           partyId: group.partyId,
           partyName,
           partyOrder,
+          blockType,
           instances: groupBlocks,
           isNonManual: true,
         });
@@ -345,7 +349,7 @@ export function BlocksPanel({
 
     console.log("[BlocksPanel] displayItems computed result for", selectedPartyId, ":", {
       itemsCount: items.length,
-      itemsBreakdown: items.map(i => ({ type: i.type, id: i.id, fieldName: i.fieldName })),
+      itemsBreakdown: items.map((i) => ({ type: i.type, id: i.id, fieldName: i.fieldName })),
     });
 
     return items;
@@ -753,20 +757,17 @@ export function BlocksPanel({
                                   {group.fieldName === "header" || group.fieldName === "paragraph"
                                     ? group.instances![0]?.text_content ||
                                       `(empty ${group.fieldName})`
-                                    : group.instances![0]?.field_schema?.label ||
-                                      registry.find(
-                                        (f) =>
-                                          `${f.name}:${f.preset}` === group.fieldName ||
-                                          f.name === group.fieldName
-                                      )?.label}
+                                    : (group.instances![0]?.field_schema?.label ||
+                                        registry.find(
+                                          (f) =>
+                                            `${f.name}:${f.preset}` === group.fieldName ||
+                                            f.name === group.fieldName
+                                        )?.label) +
+                                      (group.fieldName !== "header" &&
+                                      group.fieldName !== "paragraph"
+                                        ? ` (${group.instances!.length})`
+                                        : "")}
                                 </h4>
-                                {group.fieldName !== "header" &&
-                                  group.fieldName !== "paragraph" && (
-                                    <p className="text-xs text-gray-500">
-                                      {group.instances!.length} instance
-                                      {group.instances!.length !== 1 ? "s" : ""}
-                                    </p>
-                                  )}
                               </div>
                             </div>
 
@@ -829,7 +830,7 @@ export function BlocksPanel({
                         {isExpanded &&
                           group.fieldName !== "header" &&
                           group.fieldName !== "paragraph" &&
-                          group.blockType !== "phantom_field" && (
+                          group.blockType !== "form_phantom_field" && (
                             <div className="ml-4 space-y-2 pl-3">
                               <p className="text-xs font-medium text-gray-500">Instances</p>
                               {group.instances!.map((block) => {
@@ -853,31 +854,6 @@ export function BlocksPanel({
                                         <p className="text-muted-foreground flex-1">
                                           {block.text_content || `(empty ${block.block_type})`}
                                         </p>
-                                        <div
-                                          className="flex flex-shrink-0 items-center gap-1"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-4 w-4 p-0"
-                                            onClick={() => {
-                                              handleDuplicateBlock(block);
-                                            }}
-                                          >
-                                            <Copy className="h-3 w-3" />
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-4 w-4 p-0 text-red-500"
-                                            onClick={() => {
-                                              handleDeleteBlock(block._id || "");
-                                            }}
-                                          >
-                                            <Trash2 className="h-3 w-3" />
-                                          </Button>
-                                        </div>
                                       </div>
                                     </Card>
                                   );
