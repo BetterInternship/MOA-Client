@@ -786,7 +786,7 @@ export function BlocksPanel({
                               });
                             }}
                             className={cn(
-                              "cursor-pointer border border-l-4 p-2 transition-all",
+                              "cursor-pointer rounded-[0.33em] border p-2 transition-all",
                               draggedGroupKey === block._id ? "bg-gray-100 opacity-50" : "",
                               selectedBlockGroup?.fieldName === block._id
                                 ? "ring-primary bg-primary/5 ring-2"
@@ -899,17 +899,14 @@ export function BlocksPanel({
                             toggleExpandedGroup(groupKey);
                           }}
                           className={cn(
-                            "cursor-move border border-l-4 p-2 transition-all hover:shadow-md",
+                            "cursor-move border p-2 transition-all hover:shadow-md",
                             draggedGroupKey === groupKey ? "bg-gray-100 opacity-50" : "",
                             selectedBlockGroup?.fieldName === group.fieldName &&
                               selectedBlockGroup?.partyId === group.partyId
                               ? "bg-blue-50 ring-2 ring-blue-500"
                               : "",
-                            !item.isNonManual ? `${partyColor.bg} ${partyColor.border}` : "border-gray-200"
+                            "border-gray-200"
                           )}
-                          style={{
-                            borderLeftColor: item.isNonManual ? "#e5e7eb" : partyColor.hex,
-                          }}
                         >
                           <div className="space-y-3">
                             {/* Header with drag handle and title */}
@@ -1000,7 +997,7 @@ export function BlocksPanel({
 
                         {/* Child Cards - Instances (expanded view) - Only for form_field blocks */}
                         {isExpanded && group.blockType === "form_field" && (
-                          <div className="ml-4 space-y-2 border-l-2 pl-3">
+                          <div className="ml-4 space-y-2 pl-3">
                             <p className="text-xs font-medium text-gray-500">Instances</p>
                             {group.instances!.map((block) => {
                               // For field groups, show location info
