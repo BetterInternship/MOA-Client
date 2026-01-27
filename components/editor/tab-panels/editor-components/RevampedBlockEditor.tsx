@@ -1,8 +1,11 @@
 "use client";
 
-import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+
+import { IFormBlock } from "@betterinternship/core/forms";
 import { useState, useEffect } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
+import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import {
   FormInput,
   FormTextarea,
@@ -22,25 +25,41 @@ import { BLOCK_TYPES, SOURCES } from "@betterinternship/core/forms";
 import { ValidatorBuilder } from "@/components/docs/form-editor/ValidatorBuilder";
 import { zodCodeToValidatorConfig, validatorConfigToZodCode } from "@/lib/validator-engine";
 
-interface RevampedBlockEditorProps {
-  block: IFormBlock | null;
-  onUpdate: (block: IFormBlock) => void;
-  parentGroup?: { fieldName: string; partyId: string } | null;
-  onParentUpdate?: (group: { fieldName: string; partyId: string }, updates: any) => void;
-}
+export function RevampedBlockEditor() {
+  const { formMetadata } = useFormEditor();
+  const { selectedBlockId, selectedBlockGroup, handleBlockUpdate, handleParentUpdate } =
+    useFormEditorTab();
 
-export function RevampedBlockEditor({
-  block,
-  onUpdate,
-  parentGroup,
-  onParentUpdate,
-}: RevampedBlockEditorProps) {
-  const { formMetadata, updateBlocks } = useFormEditor();
+  // Get the selected block and parent group from context
+  const block = selectedBlockId
+    ? formMetadata?.schema.blocks?.find((b) => b._id === selectedBlockId) || null
+    : null;
+  const parentGroup = selectedBlockGroup;
+
   const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(block);
+  const [editedTextContent, setEditedTextContent] = useState<string>("");
 
   useEffect(() => {
     setEditedBlock(block);
   }, [block]);
+
+  // Update editedTextContent when selectedBlockGroup changes
+  useEffect(() => {
+    if (parentGroup) {
+      const matchingBlocks =
+        formMetadata?.schema.blocks?.filter(
+          (b: any) =>
+            (b.field_schema?.field === parentGroup.fieldName || b._id === parentGroup.fieldName) &&
+            (b.signing_party_id === parentGroup.partyId ||
+              (b.signing_party_id === "" && parentGroup.partyId === "unknown") ||
+              (b.signing_party_id === "unknown" && parentGroup.partyId === ""))
+        ) || [];
+      const firstBlock = matchingBlocks[0];
+      if (firstBlock) {
+        setEditedTextContent(firstBlock.text_content || "");
+      }
+    }
+  }, [parentGroup, formMetadata?.schema.blocks]);
 
   const handleFieldChange = (key: string, value: any) => {
     if (!editedBlock || !formMetadata) return;
@@ -48,7 +67,7 @@ export function RevampedBlockEditor({
     const schema = editedBlock.field_schema || editedBlock.phantom_field_schema;
     if (!schema) return;
 
-    let updated = { ...editedBlock };
+    const updated = { ...editedBlock };
 
     if (
       key === "x" ||
@@ -77,13 +96,9 @@ export function RevampedBlockEditor({
 
     // Update local state for immediate UI feedback
     setEditedBlock(updated);
-    onUpdate(updated);
 
-    // Sync to context for real-time PDF updates
-    const updatedBlocks = formMetadata.schema.blocks.map((b) =>
-      b._id === updated._id ? updated : b
-    );
-    updateBlocks(updatedBlocks);
+    // Use context handler to update and sync
+    handleBlockUpdate(updated);
   };
 
   if (!editedBlock && !parentGroup) {
@@ -96,13 +111,31 @@ export function RevampedBlockEditor({
 
   // Handle parent group editing - Show form-level properties
   if (parentGroup && !editedBlock) {
-    const blockType = parentGroup.block_type || "form_field";
-    const signingPartyId = parentGroup.signing_party_id || "";
+    // Find a block that matches the fieldName and partyId to get its metadata
+    const matchingBlocks =
+      formMetadata?.schema.blocks?.filter(
+        (b: any) =>
+          (b.field_schema?.field === parentGroup.fieldName || b._id === parentGroup.fieldName) &&
+          (b.signing_party_id === parentGroup.partyId ||
+            (b.signing_party_id === "" && parentGroup.partyId === "unknown") ||
+            (b.signing_party_id === "unknown" && parentGroup.partyId === ""))
+      ) || [];
+
+    // Get the first matching block to extract metadata from
+    const firstBlock = matchingBlocks[0];
+    if (!firstBlock) {
+      return (
+        <div className="flex h-full items-center justify-center p-4">
+          <p className="text-muted-foreground text-sm">Block metadata not found</p>
+        </div>
+      );
+    }
+
+    const blockType = firstBlock.block_type || "form_field";
+    const fieldMetadata = firstBlock.field_schema;
 
     // Simplified view for header, paragraph, and phantom blocks
     if (blockType === "header" || blockType === "paragraph" || blockType === "phantom_field") {
-      const textContent = parentGroup.text_content || "";
-
       return (
         <div className="flex h-full flex-col overflow-hidden">
           {/* Header */}
@@ -114,6 +147,25 @@ export function RevampedBlockEditor({
 
           {/* Content */}
           <div className="flex-1 space-y-4 overflow-auto p-4">
+            <FormTextarea
+              label="Text Content"
+              value={editedTextContent}
+              setter={(value) => {
+                setEditedTextContent(value);
+                if (parentGroup && selectedBlockId) {
+                  handleParentUpdate(selectedBlockId, { text_content: value });
+                }
+              }}
+              placeholder={
+                blockType === "header"
+                  ? "Enter header text"
+                  : blockType === "paragraph"
+                    ? "Enter paragraph text"
+                    : "Enter placeholder text"
+              }
+              required={false}
+            />
+
             <FormDropdown
               label="Block Type"
               value={blockType}
@@ -127,14 +179,16 @@ export function RevampedBlockEditor({
                   .join(" "),
               }))}
               setter={(value) => {
-                onParentUpdate?.(parentGroup, { block_type: value });
+                if (parentGroup && selectedBlockId) {
+                  handleParentUpdate(selectedBlockId, { block_type: value });
+                }
               }}
               required={false}
             />
 
             <FormDropdown
               label="Signing Party"
-              value={signingPartyId}
+              value={parentGroup.partyId}
               options={[
                 { id: "", name: "Unassigned" },
                 ...(formMetadata?.signing_parties || []).map((party, idx) => ({
@@ -144,24 +198,10 @@ export function RevampedBlockEditor({
                 })),
               ]}
               setter={(value) => {
-                onParentUpdate?.(parentGroup, { signing_party_id: value });
+                if (parentGroup && selectedBlockId) {
+                  handleParentUpdate(selectedBlockId, { signing_party_id: value });
+                }
               }}
-              required={false}
-            />
-
-            <FormTextarea
-              label="Text Content"
-              value={textContent}
-              setter={(value) => {
-                onParentUpdate?.(parentGroup, { text_content: value });
-              }}
-              placeholder={
-                blockType === "header"
-                  ? "Enter header text"
-                  : blockType === "paragraph"
-                    ? "Enter paragraph text"
-                    : "Enter placeholder text"
-              }
               required={false}
             />
           </div>
@@ -169,14 +209,14 @@ export function RevampedBlockEditor({
       );
     }
 
-    // Full view for form field blocks
-    const label = parentGroup.label || "";
-    const fieldType = parentGroup.type || "text";
-    const source = parentGroup.source || "manual";
-    const tooltipLabel = parentGroup.tooltip_label || "";
-    const shared = parentGroup.shared || false;
-    const prefiller = parentGroup.prefiller || "";
-    const validator = parentGroup.validator || "  ";
+    // Full view for form field blocks - read directly from block's field_schema
+    if (!fieldMetadata) {
+      return (
+        <div className="flex h-full items-center justify-center p-4">
+          <p className="text-muted-foreground text-sm">Field metadata not found</p>
+        </div>
+      );
+    }
 
     return (
       <div className="flex h-full flex-col overflow-hidden">
@@ -191,9 +231,11 @@ export function RevampedBlockEditor({
         <div className="flex-1 space-y-4 overflow-auto p-4">
           <FormInput
             label="Field Name"
-            value={parentGroup.fieldName || ""}
+            value={fieldMetadata.field || ""}
             setter={(value) => {
-              onParentUpdate?.(parentGroup, { fieldName: value });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { fieldName: value });
+              }
             }}
             placeholder="e.g., full_name"
             required={false}
@@ -210,14 +252,16 @@ export function RevampedBlockEditor({
                 .join(" "),
             }))}
             setter={(value) => {
-              onParentUpdate?.(parentGroup, { block_type: value });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { block_type: value });
+              }
             }}
             required={false}
           />
 
           <FormDropdown
             label="Signing Party"
-            value={signingPartyId}
+            value={parentGroup.partyId}
             options={[
               { id: "", name: "Unassigned" },
               ...(formMetadata?.signing_parties || []).map((party, idx) => ({
@@ -227,16 +271,20 @@ export function RevampedBlockEditor({
               })),
             ]}
             setter={(value) => {
-              onParentUpdate?.(parentGroup, { signing_party_id: value });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { signing_party_id: value });
+              }
             }}
             required={false}
           />
 
           <FormInput
             label="Label"
-            value={label}
+            value={fieldMetadata.label || ""}
             setter={(value) => {
-              onParentUpdate?.(parentGroup, { label: value });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { label: value });
+              }
             }}
             placeholder="Display label for users"
             required={false}
@@ -244,7 +292,7 @@ export function RevampedBlockEditor({
 
           <FormDropdown
             label="Type"
-            value={fieldType}
+            value={fieldMetadata.type || "text"}
             options={[
               { id: "text", name: "Text" },
               { id: "signature", name: "Signature" },
@@ -255,29 +303,35 @@ export function RevampedBlockEditor({
               { id: "textarea", name: "Textarea" },
             ]}
             setter={(value) => {
-              onParentUpdate?.(parentGroup, { type: value });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { type: value });
+              }
             }}
             required={false}
           />
 
           <FormDropdown
             label="Source"
-            value={source}
+            value={fieldMetadata.source || "manual"}
             options={SOURCES.map((source) => ({
               id: source,
               name: source.charAt(0).toUpperCase() + source.slice(1),
             }))}
             setter={(value) => {
-              onParentUpdate?.(parentGroup, { source: value });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { source: value });
+              }
             }}
             required={false}
           />
 
           <FormTextarea
             label="Tooltip Label"
-            value={tooltipLabel}
+            value={fieldMetadata.tooltip_label || ""}
             setter={(value) => {
-              onParentUpdate?.(parentGroup, { tooltip_label: value });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { tooltip_label: value });
+              }
             }}
             placeholder="Help text for field"
             required={false}
@@ -285,9 +339,11 @@ export function RevampedBlockEditor({
 
           <FormCheckbox
             label="Shared Field"
-            checked={shared}
-            setter={(checked) => {
-              onParentUpdate?.(parentGroup, { shared: checked });
+            checked={fieldMetadata.shared || false}
+            setter={(checked: boolean) => {
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { shared: checked });
+              }
             }}
             required={false}
           />
@@ -295,9 +351,11 @@ export function RevampedBlockEditor({
           <div className="space-y-2">
             <h4 className="text-xs text-gray-600">Prefiller (JS Function)</h4>
             <FormTextarea
-              value={prefiller}
+              value={fieldMetadata.prefiller || ""}
               setter={(value) => {
-                onParentUpdate?.(parentGroup, { prefiller: value });
+                if (parentGroup && selectedBlockId) {
+                  handleParentUpdate(selectedBlockId, { prefiller: value });
+                }
               }}
               placeholder="Optional JavaScript function to prefill this field"
               required={false}
@@ -305,14 +363,22 @@ export function RevampedBlockEditor({
           </div>
 
           <ValidatorBuilder
-            config={validator ? zodCodeToValidatorConfig(validator) : { rules: [] }}
-            rawZodCode={validator}
+            config={
+              fieldMetadata.validator
+                ? zodCodeToValidatorConfig(fieldMetadata.validator)
+                : { rules: [] }
+            }
+            rawZodCode={fieldMetadata.validator || ""}
             onConfigChange={(newConfig) => {
               const zodCode = validatorConfigToZodCode(newConfig);
-              onParentUpdate?.(parentGroup, { validator: zodCode });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { validator: zodCode });
+              }
             }}
             onRawZodChange={(zodCode) => {
-              onParentUpdate?.(parentGroup, { validator: zodCode });
+              if (parentGroup && selectedBlockId) {
+                handleParentUpdate(selectedBlockId, { validator: zodCode });
+              }
             }}
           />
         </div>
@@ -328,7 +394,7 @@ export function RevampedBlockEditor({
     );
   }
 
-  const schema = editedBlock.field_schema || editedBlock.phantom_field_schema;
+  const schema = (editedBlock.field_schema || editedBlock.phantom_field_schema) as any;
 
   // Child/Instance editing - Show PDF-level properties (coordinates, alignment, font size, wrap)
   return (

@@ -4,18 +4,9 @@ import { createContext, useContext, useState, useCallback, ReactNode } from "rea
 import { IFormBlock } from "@betterinternship/core/forms";
 import { useFormEditor } from "./form-editor.context";
 
-interface SelectedBlockGroup {
+interface BlockGroup {
   fieldName: string;
   partyId: string;
-  block_type: string;
-  signing_party_id?: string;
-  label?: string;
-  type?: string;
-  source?: string;
-  tooltip_label?: string;
-  shared?: boolean;
-  prefiller?: string;
-  validator?: string;
 }
 
 interface FormEditorTabContextType {
@@ -29,8 +20,13 @@ interface FormEditorTabContextType {
   selectedFieldId: string | null;
   setSelectedFieldId: (fieldId: string | null) => void;
 
-  selectedBlockGroup: SelectedBlockGroup | null;
-  setSelectedBlockGroup: (group: SelectedBlockGroup | null) => void;
+  // Record of block groups, keyed by blockId
+  blockGroups: Record<string, BlockGroup>;
+  setBlockGroups: (groups: Record<string, BlockGroup>) => void;
+
+  // Currently selected group (for UI focus/editing)
+  selectedBlockGroup: BlockGroup | null;
+  setSelectedBlockGroup: (group: BlockGroup | null) => void;
 
   // Blocks directly
   blocks: IFormBlock[];
@@ -53,11 +49,11 @@ interface FormEditorTabContextType {
 
   // Handlers
   handleBlockSelect: (blockId: string) => void;
-  handleParentGroupSelect: (group: { fieldName: string; partyId: string } | null) => void;
+  handleParentGroupSelect: (blockId: string, group: BlockGroup | null) => void;
   handleBlockUpdate: (updatedBlock: IFormBlock) => void;
   handleBlockCreate: (block: IFormBlock) => void;
   handleFieldSelectFromPdf: (fieldId: string) => void;
-  handleParentUpdate: (group: { fieldName: string; partyId: string }, updates: any) => void;
+  handleParentUpdate: (blockId: string, updates: any) => void;
 
   // Block management
   handleDuplicateBlock: (block: IFormBlock) => void;
@@ -82,7 +78,8 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   );
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [selectedBlockGroup, setSelectedBlockGroup] = useState<SelectedBlockGroup | null>(null);
+  const [blockGroups, setBlockGroups] = useState<Record<string, BlockGroup>>({});
+  const [selectedBlockGroup, setSelectedBlockGroup] = useState<BlockGroup | null>(null);
 
   // UI state
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -108,38 +105,32 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   // Expose blocks directly from formMetadata
   const blocks = formMetadata?.schema.blocks || [];
 
-  const handleBlockSelect = useCallback((blockId: string) => {
-    setSelectedBlockId(blockId || null);
-    setSelectedBlockGroup(null);
-  }, []);
-
-  const handleParentGroupSelect = useCallback(
-    (group: { fieldName: string; partyId: string } | null) => {
-      if (group && formMetadata) {
-        const firstBlock = formMetadata.schema.blocks.find((b) => {
-          const schema = b.field_schema || b.phantom_field_schema;
-          return schema?.field === group.fieldName && b.signing_party_id === group.partyId;
-        });
-
-        const schema = firstBlock?.field_schema || firstBlock?.phantom_field_schema;
-        setSelectedBlockGroup({
-          ...group,
-          block_type: firstBlock?.block_type || "form_field",
-          signing_party_id: firstBlock?.signing_party_id,
-          label: schema?.label,
-          type: schema?.type,
-          source: schema?.source,
-          tooltip_label: schema?.tooltip_label,
-          shared: schema?.shared,
-          prefiller: schema?.prefiller,
-          validator: schema?.validator,
-        });
-      } else {
-        setSelectedBlockGroup(null);
-      }
+  const handleBlockSelect = useCallback(
+    (blockId: string) => {
+      setSelectedBlockId(blockId || null);
+      // Get the group for this block if it exists
+      const group = blockGroups[blockId] || null;
+      setSelectedBlockGroup(group);
     },
-    [formMetadata]
+    [blockGroups]
   );
+
+  const handleParentGroupSelect = useCallback((blockId: string, group: BlockGroup | null) => {
+    if (group) {
+      setBlockGroups((prev) => ({
+        ...prev,
+        [blockId]: group,
+      }));
+      setSelectedBlockGroup(group);
+    } else {
+      setBlockGroups((prev) => {
+        const updated = { ...prev };
+        delete updated[blockId];
+        return updated;
+      });
+      setSelectedBlockGroup(null);
+    }
+  }, []);
 
   const handleBlockUpdate = useCallback(
     (updatedBlock: IFormBlock) => {
@@ -156,7 +147,6 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     (newBlock: IFormBlock) => {
       if (!formMetadata) return;
       updateBlocks([...formMetadata.schema.blocks, newBlock]);
-      setSelectedFieldId(newBlock._id);
       setSelectedBlockId(newBlock._id);
       setSelectedBlockGroup(null);
     },
@@ -171,8 +161,11 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
   /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
   const handleParentUpdate = useCallback(
-    (group: { fieldName: string; partyId: string }, updates: any) => {
+    (blockId: string, updates: any) => {
       if (!formMetadata) return;
+
+      const group = blockGroups[blockId];
+      if (!group) return;
 
       const updatedBlocks = formMetadata.schema.blocks.map((block: any) => {
         const schema = block.field_schema;
@@ -206,6 +199,10 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
           if (updates.signing_party_id !== undefined) {
             updated.signing_party_id = updates.signing_party_id;
           }
+          // Handle text_content for phantom/header/paragraph blocks
+          if (updates.text_content !== undefined) {
+            updated.text_content = updates.text_content;
+          }
 
           return updated;
         }
@@ -213,18 +210,28 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
       });
 
       updateBlocks(updatedBlocks);
-      setSelectedBlockGroup((prev: any) =>
-        prev
-          ? {
-              ...prev,
-              ...updates,
-              partyId:
-                updates.signing_party_id !== undefined ? updates.signing_party_id : prev.partyId,
-            }
-          : null
-      );
+
+      // Update the group mapping if partyId changed
+      if (updates.signing_party_id !== undefined) {
+        setBlockGroups((prev) => ({
+          ...prev,
+          [blockId]: {
+            ...group,
+            partyId: updates.signing_party_id,
+          },
+        }));
+        // Also update the selected group if it matches
+        setSelectedBlockGroup((prev) =>
+          prev && prev.fieldName === group.fieldName && prev.partyId === group.partyId
+            ? {
+                ...prev,
+                partyId: updates.signing_party_id,
+              }
+            : prev
+        );
+      }
     },
-    [formMetadata, updateBlocks]
+    [formMetadata, updateBlocks, blockGroups]
   );
 
   const handleDuplicateBlock = useCallback(
@@ -249,10 +256,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     (fieldName: string, partyId: string) => {
       const remainingBlocks = blocks.filter((b) => {
         const schema = b.field_schema;
-        return !(
-          b.signing_party_id === partyId &&
-          (schema?.field === fieldName || `${schema?.field}:${schema?.preset}` === fieldName)
-        );
+        return !(b.signing_party_id === partyId && schema?.field === fieldName);
       });
       updateBlocks(remainingBlocks);
     },
@@ -323,6 +327,8 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     setSelectedBlockId,
     selectedFieldId,
     setSelectedFieldId,
+    blockGroups,
+    setBlockGroups,
     selectedBlockGroup,
     setSelectedBlockGroup,
     blocks,

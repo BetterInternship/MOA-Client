@@ -98,6 +98,12 @@ export function BlocksPanel({
     return map;
   }, [metadataFields]);
 
+  // Get the current selected block if one is selected
+  const _selectedBlockId = selectedBlockId; // Keep reference for block lookup
+  const selectedBlock = _selectedBlockId
+    ? formMetadata?.schema.blocks?.find((b) => b._id === _selectedBlockId)
+    : null;
+
   // Reorder group helper
   const reorderGroup = (fromIndex: number, direction: "up" | "down") => {
     const group = groupedFields[fromIndex];
@@ -117,11 +123,39 @@ export function BlocksPanel({
     const newItems = [...displayItems];
     [newItems[displayIdx], newItems[targetIdx]] = [newItems[targetIdx], newItems[displayIdx]];
 
-    const newBlocks: IFormBlock[] = [];
+    const newBlockOrderForCurrentParty: string[] = [];
     newItems.forEach((item) => {
-      if (item.block) newBlocks.push(item.block);
-      if (item.instances) newBlocks.push(...item.instances);
+      if (item.block) {
+        newBlockOrderForCurrentParty.push(item.block._id);
+      } else if (item.instances) {
+        item.instances.forEach((block) => {
+          newBlockOrderForCurrentParty.push(block._id);
+        });
+      }
     });
+
+    const blockIdToBlock = new Map(blocks.map((b) => [b._id, b]));
+
+    const newBlocks: IFormBlock[] = [];
+
+    const currentPartyBlockIdSet = new Set(newBlockOrderForCurrentParty);
+    let nextCurrentPartyBlockIdx = 0;
+
+    blocks.forEach((block) => {
+      if (currentPartyBlockIdSet.has(block._id)) {
+        // This is a current party block - use the next one from new order
+        const nextBlockId = newBlockOrderForCurrentParty[nextCurrentPartyBlockIdx];
+        const nextBlock = blockIdToBlock.get(nextBlockId);
+        if (nextBlock) {
+          newBlocks.push(nextBlock);
+          nextCurrentPartyBlockIdx++;
+        }
+      } else {
+        // This is NOT a current party block - keep it as-is
+        newBlocks.push(block);
+      }
+    });
+
     handleReorderBlocks(newBlocks);
   };
 
@@ -147,7 +181,6 @@ export function BlocksPanel({
     if (!draggedGroupKey || draggedGroupKey === targetItemKey) return;
 
     const draggedIdx = displayItems.findIndex((item) => item.id === draggedGroupKey);
-
     const targetIdx = displayItems.findIndex((item) => item.id === targetItemKey);
 
     if (draggedIdx === -1 || targetIdx === -1) return;
@@ -155,11 +188,41 @@ export function BlocksPanel({
     const newItems = [...displayItems];
     [newItems[draggedIdx], newItems[targetIdx]] = [newItems[targetIdx], newItems[draggedIdx]];
 
-    const newBlocks: IFormBlock[] = [];
+    // Extract the new order of block IDs from the reordered displayItems
+    const newBlockOrderForCurrentParty: string[] = [];
     newItems.forEach((item) => {
-      if (item.block) newBlocks.push(item.block);
-      if (item.instances) newBlocks.push(...item.instances);
+      if (item.block) {
+        newBlockOrderForCurrentParty.push(item.block._id);
+      } else if (item.instances) {
+        item.instances.forEach((block) => {
+          newBlockOrderForCurrentParty.push(block._id);
+        });
+      }
     });
+
+    // Map to look up blocks by ID
+    const blockIdToBlock = new Map(blocks.map((b) => [b._id, b]));
+
+    // Build new blocks array - preserve blocks from other parties, reorder current party
+    const newBlocks: IFormBlock[] = [];
+    const currentPartyBlockIdSet = new Set(newBlockOrderForCurrentParty);
+    let nextCurrentPartyBlockIdx = 0;
+
+    blocks.forEach((block) => {
+      if (currentPartyBlockIdSet.has(block._id)) {
+        // This is a current party block - use the next one from new order
+        const nextBlockId = newBlockOrderForCurrentParty[nextCurrentPartyBlockIdx];
+        const nextBlock = blockIdToBlock.get(nextBlockId);
+        if (nextBlock) {
+          newBlocks.push(nextBlock);
+          nextCurrentPartyBlockIdx++;
+        }
+      } else {
+        // This is NOT a current party block - keep it as-is
+        newBlocks.push(block);
+      }
+    });
+
     handleReorderBlocks(newBlocks);
     setDraggedGroupKey(null);
   };
@@ -370,9 +433,9 @@ export function BlocksPanel({
         {selectedBlockGroup && !showLibrary && (
           <div className="flex items-center justify-between gap-2 px-1">
             <p className="text-xs font-medium text-gray-500">
-              {selectedBlockGroup.block_type === "header" ||
-              selectedBlockGroup.block_type === "paragraph" ||
-              selectedBlockGroup.block_type === "phantom_field"
+              {selectedBlock?.block_type === "header" ||
+              selectedBlock?.block_type === "paragraph" ||
+              selectedBlock?.block_type === "phantom_field"
                 ? "Phantom Block Controls"
                 : "Parent Group Controls"}
             </p>
@@ -384,9 +447,9 @@ export function BlocksPanel({
                 onClick={() => {
                   // Check if it's a phantom block (use fieldName as block ID)
                   if (
-                    selectedBlockGroup.block_type === "header" ||
-                    selectedBlockGroup.block_type === "paragraph" ||
-                    selectedBlockGroup.block_type === "phantom_field"
+                    selectedBlock?.block_type === "header" ||
+                    selectedBlock?.block_type === "paragraph" ||
+                    selectedBlock?.block_type === "phantom_field"
                   ) {
                     // Find the phantom block in displayItems by its ID
                     const idx = displayItems.findIndex(
@@ -411,7 +474,9 @@ export function BlocksPanel({
                         `${g.fieldName}-${g.partyId}` ===
                         `${selectedBlockGroup.fieldName}-${selectedBlockGroup.partyId}`
                     );
-                    if (idx > 0) reorderGroup(idx, "up");
+                    if (idx > 0) {
+                      reorderGroup(idx, "up");
+                    }
                   }
                 }}
               >
@@ -424,26 +489,15 @@ export function BlocksPanel({
                 onClick={() => {
                   // Check if it's a phantom block
                   if (
-                    selectedBlockGroup.block_type === "header" ||
-                    selectedBlockGroup.block_type === "paragraph" ||
-                    selectedBlockGroup.block_type === "phantom_field"
+                    selectedBlock?.block_type === "header" ||
+                    selectedBlock?.block_type === "paragraph" ||
+                    selectedBlock?.block_type === "phantom_field"
                   ) {
-                    // Find the phantom block in displayItems by its ID
-                    const idx = displayItems.findIndex(
-                      (item) => item.id === selectedBlockGroup.fieldName
+                    // For phantom blocks, find their group and reorder
+                    const idx = groupedFields.findIndex(
+                      (g) => g.fieldName === selectedBlockGroup.fieldName
                     );
-                    if (idx < displayItems.length - 1) {
-                      // Swap in displayItems only (blocks array stays as-is)
-                      const newItems = [...displayItems];
-                      [newItems[idx], newItems[idx + 1]] = [newItems[idx + 1], newItems[idx]];
-                      // Rebuild blocks array from all items in new order
-                      const newBlocks: IFormBlock[] = [];
-                      newItems.forEach((item) => {
-                        if (item.block) newBlocks.push(item.block);
-                        if (item.instances) newBlocks.push(...item.instances);
-                      });
-                      handleReorderBlocks(newBlocks);
-                    }
+                    if (idx < groupedFields.length - 1) reorderGroup(idx, "down");
                   } else {
                     // It's a field group
                     const idx = groupedFields.findIndex(
@@ -464,15 +518,13 @@ export function BlocksPanel({
                 onClick={() => {
                   // Check if it's a phantom block
                   if (
-                    selectedBlockGroup.block_type === "header" ||
-                    selectedBlockGroup.block_type === "paragraph" ||
-                    selectedBlockGroup.block_type === "phantom_field"
+                    selectedBlock?.block_type === "header" ||
+                    selectedBlock?.block_type === "paragraph" ||
+                    selectedBlock?.block_type === "phantom_field"
                   ) {
                     // Delete the single phantom block
                     if (
-                      confirm(
-                        `Delete this ${selectedBlockGroup.block_type}? This cannot be undone.`
-                      )
+                      confirm(`Delete this ${selectedBlock?.block_type}? This cannot be undone.`)
                     ) {
                       handleDeleteBlock(selectedBlockGroup.fieldName);
                       setSelectedBlockGroup(null);
@@ -635,7 +687,6 @@ export function BlocksPanel({
                     if (item.type !== "group") {
                       // Handle individual phantom blocks (header, paragraph, phantom_field)
                       const block = item.block!;
-                      const blockType = block.block_type;
 
                       return (
                         <div key={item.id} className="space-y-2">
@@ -651,8 +702,6 @@ export function BlocksPanel({
                               setSelectedBlockGroup({
                                 fieldName: block._id || "",
                                 partyId: selectedPartyId || "",
-                                block_type: blockType || "block",
-                                signing_party_id: selectedPartyId || undefined,
                               });
                             }}
                             className={cn(

@@ -9,14 +9,7 @@ import { RevampedBlockEditor } from "./editor-components/RevampedBlockEditor";
 
 function FormEditorTabContent() {
   const { formMetadata } = useFormEditor();
-  const {
-    selectedPartyId,
-    setSelectedPartyId,
-    selectedBlockId,
-    selectedBlockGroup,
-    handleBlockUpdate,
-    handleParentUpdate,
-  } = useFormEditorTab();
+  const { selectedPartyId, setSelectedPartyId } = useFormEditorTab();
 
   if (!formMetadata) {
     return (
@@ -25,10 +18,6 @@ function FormEditorTabContent() {
       </div>
     );
   }
-
-  const selectedBlock = selectedBlockId
-    ? formMetadata.schema.blocks.find((b) => b._id === selectedBlockId)
-    : null;
 
   return (
     <div className="bg-background flex h-full w-full">
@@ -49,12 +38,7 @@ function FormEditorTabContent() {
 
       {/* Right Panel - Responsive */}
       <div className="bg-card hidden flex-shrink-0 basis-60 flex-col overflow-hidden border-l md:flex lg:basis-74 xl:basis-80">
-        <RevampedBlockEditor
-          block={selectedBlock || null}
-          onUpdate={handleBlockUpdate}
-          parentGroup={selectedBlockGroup}
-          onParentUpdate={handleParentUpdate}
-        />
+        <RevampedBlockEditor />
       </div>
     </div>
   );
