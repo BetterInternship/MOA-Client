@@ -239,6 +239,7 @@ export function BlocksPanel({
       blockType?: string;
       instances?: IFormBlock[];
       firstIndex: number;
+      isNonManual?: boolean;
     }> = [];
 
     if (selectedPartyId === null) return [];
@@ -373,6 +374,7 @@ export function BlocksPanel({
             blockType: group.blockType,
             instances: group.instances,
             firstIndex: group.firstIndex,
+            isNonManual: true,
           });
         });
     }
@@ -903,10 +905,10 @@ export function BlocksPanel({
                               selectedBlockGroup?.partyId === group.partyId
                               ? "bg-blue-50 ring-2 ring-blue-500"
                               : "",
-                            `${partyColor.bg} ${partyColor.border}`
+                            !item.isNonManual ? `${partyColor.bg} ${partyColor.border}` : "border-gray-200"
                           )}
                           style={{
-                            borderLeftColor: partyColor.hex,
+                            borderLeftColor: item.isNonManual ? "#e5e7eb" : partyColor.hex,
                           }}
                         >
                           <div className="space-y-3">
