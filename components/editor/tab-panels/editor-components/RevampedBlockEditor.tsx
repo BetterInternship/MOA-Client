@@ -96,6 +96,80 @@ export function RevampedBlockEditor({
 
   // Handle parent group editing - Show form-level properties
   if (parentGroup && !editedBlock) {
+    const blockType = parentGroup.block_type || "form_field";
+    const signingPartyId = parentGroup.signing_party_id || "";
+
+    // Simplified view for header, paragraph, and phantom blocks
+    if (blockType === "header" || blockType === "paragraph" || blockType === "phantom_field") {
+      const textContent = parentGroup.text_content || "";
+
+      return (
+        <div className="flex h-full flex-col overflow-hidden">
+          {/* Header */}
+          <div className="bg-card flex items-center justify-between border-b p-3.5">
+            <div>
+              <h3 className="text-sm font-semibold">Block Properties</h3>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 space-y-4 overflow-auto p-4">
+            <FormDropdown
+              label="Block Type"
+              value={blockType}
+              options={BLOCK_TYPES.filter((type) =>
+                ["header", "paragraph", "phantom_field"].includes(type)
+              ).map((type) => ({
+                id: type,
+                name: type
+                  .split("_")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" "),
+              }))}
+              setter={(value) => {
+                onParentUpdate?.(parentGroup, { block_type: value });
+              }}
+              required={false}
+            />
+
+            <FormDropdown
+              label="Signing Party"
+              value={signingPartyId}
+              options={[
+                { id: "", name: "Unassigned" },
+                ...(formMetadata?.signing_parties || []).map((party, idx) => ({
+                  id: party._id,
+                  name: party.signatory_title || party._id,
+                  order: idx,
+                })),
+              ]}
+              setter={(value) => {
+                onParentUpdate?.(parentGroup, { signing_party_id: value });
+              }}
+              required={false}
+            />
+
+            <FormTextarea
+              label="Text Content"
+              value={textContent}
+              setter={(value) => {
+                onParentUpdate?.(parentGroup, { text_content: value });
+              }}
+              placeholder={
+                blockType === "header"
+                  ? "Enter header text"
+                  : blockType === "paragraph"
+                    ? "Enter paragraph text"
+                    : "Enter placeholder text"
+              }
+              required={false}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Full view for form field blocks
     const label = parentGroup.label || "";
     const fieldType = parentGroup.type || "text";
     const source = parentGroup.source || "manual";
@@ -103,8 +177,6 @@ export function RevampedBlockEditor({
     const shared = parentGroup.shared || false;
     const prefiller = parentGroup.prefiller || "";
     const validator = parentGroup.validator || "  ";
-    const blockType = parentGroup.block_type || "form_field";
-    const signingPartyId = parentGroup.signing_party_id || "";
 
     return (
       <div className="flex h-full flex-col overflow-hidden">
@@ -124,6 +196,7 @@ export function RevampedBlockEditor({
               onParentUpdate?.(parentGroup, { fieldName: value });
             }}
             placeholder="e.g., full_name"
+            required={false}
           />
 
           <FormDropdown
@@ -166,6 +239,7 @@ export function RevampedBlockEditor({
               onParentUpdate?.(parentGroup, { label: value });
             }}
             placeholder="Display label for users"
+            required={false}
           />
 
           <FormDropdown
@@ -183,6 +257,7 @@ export function RevampedBlockEditor({
             setter={(value) => {
               onParentUpdate?.(parentGroup, { type: value });
             }}
+            required={false}
           />
 
           <FormDropdown
@@ -195,6 +270,7 @@ export function RevampedBlockEditor({
             setter={(value) => {
               onParentUpdate?.(parentGroup, { source: value });
             }}
+            required={false}
           />
 
           <FormTextarea
@@ -204,6 +280,7 @@ export function RevampedBlockEditor({
               onParentUpdate?.(parentGroup, { tooltip_label: value });
             }}
             placeholder="Help text for field"
+            required={false}
           />
 
           <FormCheckbox
@@ -212,6 +289,7 @@ export function RevampedBlockEditor({
             setter={(checked) => {
               onParentUpdate?.(parentGroup, { shared: checked });
             }}
+            required={false}
           />
 
           <div className="space-y-2">
@@ -222,6 +300,7 @@ export function RevampedBlockEditor({
                 onParentUpdate?.(parentGroup, { prefiller: value });
               }}
               placeholder="Optional JavaScript function to prefill this field"
+              required={false}
             />
           </div>
 

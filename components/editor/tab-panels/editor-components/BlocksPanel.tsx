@@ -35,25 +35,25 @@ import { FormMetadata } from "@betterinternship/core/forms";
 import { getBlockField } from "@/components/docs/forms/utils";
 import { BlocksRenderer } from "@/components/docs/forms/FormFillerRenderer";
 
-interface FieldsPanelProps {
+interface BlocksPanelProps {
   blocks: IFormBlock[];
   selectedPartyId: string | null;
   onPartyChange: (partyId: string | null) => void;
   signingParties: IFormSigningParty[];
 }
 
-export function FieldsPanel({
+export function BlocksPanel({
   blocks,
   selectedPartyId,
   onPartyChange,
   signingParties,
-}: FieldsPanelProps) {
+}: BlocksPanelProps) {
   const { registry } = useFieldTemplateContext();
   const { formMetadata } = useFormEditor();
   const {
     selectedBlockId,
-    selectedParentGroup,
-    setSelectedParentGroup,
+    selectedBlockGroup,
+    setSelectedBlockGroup,
     setSelectedBlockId,
     handleReorderBlocks,
     handleDuplicateBlock,
@@ -367,12 +367,12 @@ export function FieldsPanel({
         </div>
 
         {/* Toolbar for selected group/block - Parent level operations */}
-        {selectedParentGroup && !showLibrary && (
+        {selectedBlockGroup && !showLibrary && (
           <div className="flex items-center justify-between gap-2 px-1">
             <p className="text-xs font-medium text-gray-500">
-              {selectedParentGroup.block_type === "header" ||
-              selectedParentGroup.block_type === "paragraph" ||
-              selectedParentGroup.block_type === "phantom_field"
+              {selectedBlockGroup.block_type === "header" ||
+              selectedBlockGroup.block_type === "paragraph" ||
+              selectedBlockGroup.block_type === "phantom_field"
                 ? "Phantom Block Controls"
                 : "Parent Group Controls"}
             </p>
@@ -384,13 +384,13 @@ export function FieldsPanel({
                 onClick={() => {
                   // Check if it's a phantom block (use fieldName as block ID)
                   if (
-                    selectedParentGroup.block_type === "header" ||
-                    selectedParentGroup.block_type === "paragraph" ||
-                    selectedParentGroup.block_type === "phantom_field"
+                    selectedBlockGroup.block_type === "header" ||
+                    selectedBlockGroup.block_type === "paragraph" ||
+                    selectedBlockGroup.block_type === "phantom_field"
                   ) {
                     // Find the phantom block in displayItems by its ID
                     const idx = displayItems.findIndex(
-                      (item) => item.id === selectedParentGroup.fieldName
+                      (item) => item.id === selectedBlockGroup.fieldName
                     );
                     if (idx > 0) {
                       // Swap in displayItems only (blocks array stays as-is)
@@ -409,7 +409,7 @@ export function FieldsPanel({
                     const idx = groupedFields.findIndex(
                       (g) =>
                         `${g.fieldName}-${g.partyId}` ===
-                        `${selectedParentGroup.fieldName}-${selectedParentGroup.partyId}`
+                        `${selectedBlockGroup.fieldName}-${selectedBlockGroup.partyId}`
                     );
                     if (idx > 0) reorderGroup(idx, "up");
                   }
@@ -424,13 +424,13 @@ export function FieldsPanel({
                 onClick={() => {
                   // Check if it's a phantom block
                   if (
-                    selectedParentGroup.block_type === "header" ||
-                    selectedParentGroup.block_type === "paragraph" ||
-                    selectedParentGroup.block_type === "phantom_field"
+                    selectedBlockGroup.block_type === "header" ||
+                    selectedBlockGroup.block_type === "paragraph" ||
+                    selectedBlockGroup.block_type === "phantom_field"
                   ) {
                     // Find the phantom block in displayItems by its ID
                     const idx = displayItems.findIndex(
-                      (item) => item.id === selectedParentGroup.fieldName
+                      (item) => item.id === selectedBlockGroup.fieldName
                     );
                     if (idx < displayItems.length - 1) {
                       // Swap in displayItems only (blocks array stays as-is)
@@ -449,7 +449,7 @@ export function FieldsPanel({
                     const idx = groupedFields.findIndex(
                       (g) =>
                         `${g.fieldName}-${g.partyId}` ===
-                        `${selectedParentGroup.fieldName}-${selectedParentGroup.partyId}`
+                        `${selectedBlockGroup.fieldName}-${selectedBlockGroup.partyId}`
                     );
                     if (idx < groupedFields.length - 1) reorderGroup(idx, "down");
                   }
@@ -464,34 +464,34 @@ export function FieldsPanel({
                 onClick={() => {
                   // Check if it's a phantom block
                   if (
-                    selectedParentGroup.block_type === "header" ||
-                    selectedParentGroup.block_type === "paragraph" ||
-                    selectedParentGroup.block_type === "phantom_field"
+                    selectedBlockGroup.block_type === "header" ||
+                    selectedBlockGroup.block_type === "paragraph" ||
+                    selectedBlockGroup.block_type === "phantom_field"
                   ) {
                     // Delete the single phantom block
                     if (
                       confirm(
-                        `Delete this ${selectedParentGroup.block_type}? This cannot be undone.`
+                        `Delete this ${selectedBlockGroup.block_type}? This cannot be undone.`
                       )
                     ) {
-                      handleDeleteBlock(selectedParentGroup.fieldName);
-                      setSelectedParentGroup(null);
+                      handleDeleteBlock(selectedBlockGroup.fieldName);
+                      setSelectedBlockGroup(null);
                     }
                   } else {
                     // Delete field group
                     const idx = groupedFields.findIndex(
                       (g) =>
                         `${g.fieldName}-${g.partyId}` ===
-                        `${selectedParentGroup.fieldName}-${selectedParentGroup.partyId}`
+                        `${selectedBlockGroup.fieldName}-${selectedBlockGroup.partyId}`
                     );
                     if (idx !== -1) {
                       if (
                         confirm(
-                          `Delete all instances of "${selectedParentGroup.fieldName}"? This cannot be undone.`
+                          `Delete all instances of "${selectedBlockGroup.fieldName}"? This cannot be undone.`
                         )
                       ) {
                         deleteGroup(idx);
-                        setSelectedParentGroup(null);
+                        setSelectedBlockGroup(null);
                       }
                     }
                   }
@@ -645,9 +645,10 @@ export function FieldsPanel({
                             onDragOver={handleGroupDragOver}
                             onDrop={(e) => handleGroupDrop(e, block._id || "")}
                             onClick={() => {
-                              // Single click: select the block for editing
-                              setSelectedBlockId(block._id || "");
-                              setSelectedParentGroup({
+                              // Single click: show metadata editor (not coordinates)
+                              // For phantom blocks, we only set blockGroup, not selectedBlockId
+                              setSelectedBlockId(null);
+                              setSelectedBlockGroup({
                                 fieldName: block._id || "",
                                 partyId: selectedPartyId || "",
                                 block_type: blockType || "block",
@@ -657,7 +658,7 @@ export function FieldsPanel({
                             className={cn(
                               "cursor-pointer border border-l-4 p-2 transition-all",
                               draggedGroupKey === block._id ? "bg-gray-100 opacity-50" : "",
-                              selectedBlockId === block._id
+                              selectedBlockGroup?.fieldName === block._id
                                 ? "ring-primary bg-primary/5 ring-2"
                                 : "hover:border-gray-300"
                             )}
@@ -718,7 +719,8 @@ export function FieldsPanel({
                           onDragOver={handleGroupDragOver}
                           onDrop={(e) => handleGroupDrop(e, groupKey)}
                           onClick={() => {
-                            setSelectedParentGroup({
+                            setSelectedBlockId(null);
+                            setSelectedBlockGroup({
                               fieldName: group.fieldName || "",
                               partyId: group.partyId || "",
                               block_type: "form_field",
@@ -729,8 +731,8 @@ export function FieldsPanel({
                           className={cn(
                             "cursor-move border border-l-4 p-2 transition-all hover:shadow-md",
                             draggedGroupKey === groupKey ? "bg-gray-100 opacity-50" : "",
-                            selectedParentGroup?.fieldName === group.fieldName &&
-                              selectedParentGroup?.partyId === group.partyId
+                            selectedBlockGroup?.fieldName === group.fieldName &&
+                              selectedBlockGroup?.partyId === group.partyId
                               ? "bg-blue-50 ring-2 ring-blue-500"
                               : "",
                             `${partyColor.bg} ${partyColor.border}`

@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { FormEditorTabProvider, useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { PdfViewerProvider } from "@/app/contexts/pdf-viewer.context";
 import { PdfViewer } from "@/components/docs/form-editor/form-pdf-editor/PdfViewer";
-import { FieldsPanel } from "./editor-components/FieldsPanel";
+import { BlocksPanel } from "./editor-components/BlocksPanel";
 import { RevampedBlockEditor } from "./editor-components/RevampedBlockEditor";
 
 function FormEditorTabContent() {
@@ -14,7 +13,7 @@ function FormEditorTabContent() {
     selectedPartyId,
     setSelectedPartyId,
     selectedBlockId,
-    selectedParentGroup,
+    selectedBlockGroup,
     handleBlockUpdate,
     handleParentUpdate,
   } = useFormEditorTab();
@@ -35,7 +34,7 @@ function FormEditorTabContent() {
     <div className="bg-background flex h-full w-full">
       {/* Left Panel - Responsive */}
       <div className="bg-card flex flex-shrink-0 basis-80 flex-col overflow-hidden border-r lg:basis-[400px] xl:basis-[500px]">
-        <FieldsPanel
+        <BlocksPanel
           blocks={formMetadata.schema.blocks}
           selectedPartyId={selectedPartyId}
           onPartyChange={setSelectedPartyId}
@@ -53,7 +52,7 @@ function FormEditorTabContent() {
         <RevampedBlockEditor
           block={selectedBlock || null}
           onUpdate={handleBlockUpdate}
-          parentGroup={selectedParentGroup}
+          parentGroup={selectedBlockGroup}
           onParentUpdate={handleParentUpdate}
         />
       </div>

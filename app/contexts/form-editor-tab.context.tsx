@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, ReactNode } from "rea
 import { IFormBlock } from "@betterinternship/core/forms";
 import { useFormEditor } from "./form-editor.context";
 
-interface SelectedParentGroup {
+interface SelectedBlockGroup {
   fieldName: string;
   partyId: string;
   block_type: string;
@@ -29,8 +29,8 @@ interface FormEditorTabContextType {
   selectedFieldId: string | null;
   setSelectedFieldId: (fieldId: string | null) => void;
 
-  selectedParentGroup: SelectedParentGroup | null;
-  setSelectedParentGroup: (group: SelectedParentGroup | null) => void;
+  selectedBlockGroup: SelectedBlockGroup | null;
+  setSelectedBlockGroup: (group: SelectedBlockGroup | null) => void;
 
   // Blocks directly
   blocks: IFormBlock[];
@@ -82,7 +82,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   );
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [selectedParentGroup, setSelectedParentGroup] = useState<SelectedParentGroup | null>(null);
+  const [selectedBlockGroup, setSelectedBlockGroup] = useState<SelectedBlockGroup | null>(null);
 
   // UI state
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -110,7 +110,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
   const handleBlockSelect = useCallback((blockId: string) => {
     setSelectedBlockId(blockId || null);
-    setSelectedParentGroup(null);
+    setSelectedBlockGroup(null);
   }, []);
 
   const handleParentGroupSelect = useCallback(
@@ -122,7 +122,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
         });
 
         const schema = firstBlock?.field_schema || firstBlock?.phantom_field_schema;
-        setSelectedParentGroup({
+        setSelectedBlockGroup({
           ...group,
           block_type: firstBlock?.block_type || "form_field",
           signing_party_id: firstBlock?.signing_party_id,
@@ -135,7 +135,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
           validator: schema?.validator,
         });
       } else {
-        setSelectedParentGroup(null);
+        setSelectedBlockGroup(null);
       }
     },
     [formMetadata]
@@ -158,7 +158,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
       updateBlocks([...formMetadata.schema.blocks, newBlock]);
       setSelectedFieldId(newBlock._id);
       setSelectedBlockId(newBlock._id);
-      setSelectedParentGroup(null);
+      setSelectedBlockGroup(null);
     },
     [formMetadata, updateBlocks]
   );
@@ -166,7 +166,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   const handleFieldSelectFromPdf = useCallback((fieldId: string) => {
     setSelectedFieldId(fieldId);
     setSelectedBlockId(fieldId);
-    setSelectedParentGroup(null);
+    setSelectedBlockGroup(null);
   }, []);
 
   /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
@@ -213,7 +213,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
       });
 
       updateBlocks(updatedBlocks);
-      setSelectedParentGroup((prev: any) =>
+      setSelectedBlockGroup((prev: any) =>
         prev
           ? {
               ...prev,
@@ -323,8 +323,8 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     setSelectedBlockId,
     selectedFieldId,
     setSelectedFieldId,
-    selectedParentGroup,
-    setSelectedParentGroup,
+    selectedBlockGroup,
+    setSelectedBlockGroup,
     blocks,
     expandedGroups,
     toggleExpandedGroup,
