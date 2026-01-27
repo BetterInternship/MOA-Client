@@ -32,7 +32,6 @@ import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import z from "zod";
 import { FormMetadata } from "@betterinternship/core/forms";
-import { getBlockField } from "@/components/docs/forms/utils";
 import { BlocksRenderer } from "@/components/docs/forms/FormFillerRenderer";
 
 interface BlocksPanelProps {
@@ -55,6 +54,8 @@ export function BlocksPanel({
     selectedBlockGroup,
     setSelectedBlockGroup,
     setSelectedBlockId,
+    blockGroupsOrder,
+    blockGroups,
     handleReorderBlocks,
     handleDuplicateBlock,
     handleDeleteBlock,
@@ -89,14 +90,17 @@ export function BlocksPanel({
     }
   }, [formMetadata]);
 
-  // Create a map for easy lookup by field name
-  const fieldMap = useMemo(() => {
-    const map = new Map();
-    metadataFields.forEach((field) => {
-      map.set(field.field, field);
-    });
-    return map;
-  }, [metadataFields]);
+  // Get blocks enriched with full metadata (type, coerce, validator, etc)
+  const enrichedBlocks = useMemo(() => {
+    if (!formMetadata) return [];
+    try {
+      const metadata = new FormMetadata(formMetadata);
+      return metadata.getBlocksForClientService();
+    } catch (error) {
+      console.warn("Failed to get enriched blocks:", error);
+      return [];
+    }
+  }, [formMetadata]);
 
   // Get the current selected block if one is selected
   const _selectedBlockId = selectedBlockId; // Keep reference for block lookup
@@ -105,53 +109,60 @@ export function BlocksPanel({
     : null;
 
   // Reorder group helper
-  const reorderGroup = (fromIndex: number, direction: "up" | "down") => {
-    const group = groupedFields[fromIndex];
-    if (!group) return;
+  const reorderGroup = (itemId: string, direction: "up" | "down") => {
+    // Find the item in displayItems by its id
+    const itemIdx = displayItems.findIndex((item) => item.id === itemId);
+    if (itemIdx === -1) return;
 
-    const groupKey = `${group.fieldName}-${group.partyId}`;
+    // Skip divider - can't reorder across it
+    const isDivider = (item: any) => item.type === "divider";
 
-    const displayIdx = displayItems.findIndex(
-      (item) => item.type === "group" && item.id === groupKey
-    );
+    let targetIdx = -1;
+    if (direction === "up") {
+      // Find the previous non-divider item
+      for (let i = itemIdx - 1; i >= 0; i--) {
+        if (!isDivider(displayItems[i])) {
+          targetIdx = i;
+          break;
+        }
+      }
+    } else {
+      // Find the next non-divider item
+      for (let i = itemIdx + 1; i < displayItems.length; i++) {
+        if (!isDivider(displayItems[i])) {
+          targetIdx = i;
+          break;
+        }
+      }
+    }
 
-    if (displayIdx === -1) return;
+    if (targetIdx === -1) return; // Can't move
 
-    const targetIdx = direction === "up" ? displayIdx - 1 : displayIdx + 1;
-    if (targetIdx < 0 || targetIdx >= displayItems.length) return;
-
+    // Swap the items in displayItems
     const newItems = [...displayItems];
-    [newItems[displayIdx], newItems[targetIdx]] = [newItems[targetIdx], newItems[displayIdx]];
+    [newItems[itemIdx], newItems[targetIdx]] = [newItems[targetIdx], newItems[itemIdx]];
 
-    const newBlockOrderForCurrentParty: string[] = [];
+    // Build the new block order - collect all blocks from displayItems in order
+    const newBlockOrder: string[] = [];
     newItems.forEach((item) => {
-      if (item.block) {
-        newBlockOrderForCurrentParty.push(item.block._id);
-      } else if (item.instances) {
+      if (item.type === "divider") return; // Skip divider
+      if (item.instances) {
         item.instances.forEach((block) => {
-          newBlockOrderForCurrentParty.push(block._id);
+          newBlockOrder.push(block._id);
         });
       }
     });
 
+    // Build the new blocks array respecting the new order
     const blockIdToBlock = new Map(blocks.map((b) => [b._id, b]));
+    const newBlocks = newBlockOrder
+      .map((id) => blockIdToBlock.get(id))
+      .filter(Boolean) as IFormBlock[];
 
-    const newBlocks: IFormBlock[] = [];
-
-    const currentPartyBlockIdSet = new Set(newBlockOrderForCurrentParty);
-    let nextCurrentPartyBlockIdx = 0;
-
+    // Add any blocks that weren't in displayItems (e.g., blocks from other parties)
+    const usedIds = new Set(newBlockOrder);
     blocks.forEach((block) => {
-      if (currentPartyBlockIdSet.has(block._id)) {
-        // This is a current party block - use the next one from new order
-        const nextBlockId = newBlockOrderForCurrentParty[nextCurrentPartyBlockIdx];
-        const nextBlock = blockIdToBlock.get(nextBlockId);
-        if (nextBlock) {
-          newBlocks.push(nextBlock);
-          nextCurrentPartyBlockIdx++;
-        }
-      } else {
-        // This is NOT a current party block - keep it as-is
+      if (!usedIds.has(block._id)) {
         newBlocks.push(block);
       }
     });
@@ -191,9 +202,7 @@ export function BlocksPanel({
     // Extract the new order of block IDs from the reordered displayItems
     const newBlockOrderForCurrentParty: string[] = [];
     newItems.forEach((item) => {
-      if (item.block) {
-        newBlockOrderForCurrentParty.push(item.block._id);
-      } else if (item.instances) {
+      if (item.instances) {
         item.instances.forEach((block) => {
           newBlockOrderForCurrentParty.push(block._id);
         });
@@ -228,158 +237,119 @@ export function BlocksPanel({
   };
 
   const displayItems = useMemo(() => {
+    if (selectedPartyId === null) return [];
+
     const items: Array<{
-      type: "group" | "header" | "paragraph" | "phantom_field";
+      type: "group" | "divider";
       id: string;
-      block?: IFormBlock;
       fieldName?: string;
       partyId?: string;
       partyName?: string;
       partyOrder?: number;
       blockType?: string;
       instances?: IFormBlock[];
-      firstIndex: number;
       isNonManual?: boolean;
     }> = [];
 
-    if (selectedPartyId === null) return [];
-
-    const groups: Record<
-      string,
-      {
-        fieldName: string;
-        partyId: string;
-        partyName: string;
-        partyOrder: number;
-        blockType: string;
-        instances: IFormBlock[];
-        firstIndex: number;
-      }
-    > = {};
-
-    const nonManualGroups: Record<
-      string,
-      {
-        fieldName: string;
-        partyId: string;
-        partyName: string;
-        partyOrder: number;
-        blockType: string;
-        instances: IFormBlock[];
-        firstIndex: number;
-      }
-    > = {};
-
-    blocks.forEach((block, index) => {
-      const blockType = block.block_type;
-      if (blockType === "header" || blockType === "paragraph") {
-        if (block.signing_party_id === selectedPartyId) {
-          items.push({
-            type: blockType,
-            id: block._id || `${blockType}-${index}`,
-            block,
-            firstIndex: index,
-          });
-        }
-        return;
-      }
-
-      // Phantom fields and form fields
-      let schema = block.field_schema;
-      if (!schema && (blockType === "phantom_field" || blockType === "form_phantom_field")) {
-        schema = block.phantom_field_schema;
-      }
-      if (!schema) return;
-
-      const fieldName = schema.field || "Unnamed";
-      const partyId = block.signing_party_id || "unknown";
-
-      if (partyId !== selectedPartyId) return;
-
+    // Helper to get party name and order
+    const getPartyInfo = (partyId: string) => {
       const party = signingParties.find((p) => p._id === partyId);
-      const partyName = party?.signatory_title || "Unknown Party";
-      const partyOrder = party?.order || 0;
+      return {
+        partyName: party?.signatory_title || "Unknown Party",
+        partyOrder: party?.order || 0,
+      };
+    };
 
-      // If not manual, collect into non-manual groups
-      if (schema.source && schema.source !== "manual") {
-        const key = `${fieldName}-${partyId}`;
-        if (!nonManualGroups[key]) {
-          nonManualGroups[key] = {
-            fieldName,
-            partyId,
-            partyName,
-            partyOrder,
-            blockType,
-            instances: [],
-            firstIndex: index,
-          };
-        }
-        nonManualGroups[key].instances.push(block);
-        return;
+    let hasNonManualGroups = false;
+
+    // Build items from blockGroupsOrder
+    blockGroupsOrder.forEach((groupId) => {
+      const group = blockGroups[groupId];
+      if (!group) return;
+
+      // Check if this group is for the selected party
+      if (group.partyId !== selectedPartyId) return;
+
+      // Filter blocks in this group by selected party
+      const groupBlocks = group.blockIds
+        .map((id) => blocks.find((b) => b._id === id))
+        .filter(Boolean) as IFormBlock[];
+
+      if (groupBlocks.length === 0) return;
+
+      // Determine if non-manual
+      const isNonManual = groupBlocks.some((b) => {
+        const schema = b.field_schema || b.phantom_field_schema;
+        return schema?.source && schema.source !== "manual";
+      });
+
+      if (isNonManual) {
+        hasNonManualGroups = true;
+        return; // Will add after divider
       }
 
-      // Group manual fields as before
-      const key = `${fieldName}-${partyId}`;
-      if (!groups[key]) {
-        groups[key] = {
-          fieldName,
-          partyId,
-          partyName,
-          partyOrder,
-          blockType,
-          instances: [],
-          firstIndex: index,
-        };
-      }
-      groups[key].instances.push(block);
-    });
-
-    Object.values(groups).forEach((group) => {
+      // For manual items, add to items array
+      const { partyName, partyOrder } = getPartyInfo(selectedPartyId);
       items.push({
         type: "group",
-        id: `${group.fieldName}-${group.partyId}`,
+        id: groupId,
         fieldName: group.fieldName,
         partyId: group.partyId,
-        partyName: group.partyName,
-        partyOrder: group.partyOrder,
-        blockType: group.blockType,
-        instances: group.instances,
-        firstIndex: group.firstIndex,
+        partyName,
+        partyOrder,
+        instances: groupBlocks,
       });
     });
 
-    // Sort and append non-manual groups at the end
-    const sortedItems = items.sort((a, b) => a.firstIndex - b.firstIndex);
-
-    const result = [...sortedItems];
-    if (Object.keys(nonManualGroups).length > 0) {
-      // Add a divider marker
-      result.push({
-        type: "divider" as any,
+    // Add divider if there are non-manual groups
+    if (hasNonManualGroups) {
+      items.push({
+        type: "divider",
         id: "divider-non-manual",
-        firstIndex: Infinity,
-      } as any);
+      });
 
-      // Add non-manual groups sorted by first index
-      Object.values(nonManualGroups)
-        .sort((a, b) => a.firstIndex - b.firstIndex)
-        .forEach((group) => {
-          result.push({
-            type: "group",
-            id: `${group.fieldName}-${group.partyId}-non-manual`,
-            fieldName: group.fieldName,
-            partyId: group.partyId,
-            partyName: group.partyName,
-            partyOrder: group.partyOrder,
-            blockType: group.blockType,
-            instances: group.instances,
-            firstIndex: group.firstIndex,
-            isNonManual: true,
-          });
+      // Add non-manual groups
+      blockGroupsOrder.forEach((groupId) => {
+        const group = blockGroups[groupId];
+        if (!group) return;
+
+        // Check if this group is for the selected party
+        if (group.partyId !== selectedPartyId) return;
+
+        const groupBlocks = group.blockIds
+          .map((id) => blocks.find((b) => b._id === id))
+          .filter(Boolean) as IFormBlock[];
+
+        if (groupBlocks.length === 0) return;
+
+        const isNonManual = groupBlocks.some((b) => {
+          const schema = b.field_schema || b.phantom_field_schema;
+          return schema?.source && schema.source !== "manual";
         });
+
+        if (!isNonManual) return;
+
+        const { partyName, partyOrder } = getPartyInfo(selectedPartyId);
+        items.push({
+          type: "group",
+          id: groupId,
+          fieldName: group.fieldName,
+          partyId: group.partyId,
+          partyName,
+          partyOrder,
+          instances: groupBlocks,
+          isNonManual: true,
+        });
+      });
     }
-    return result;
-  }, [blocks, signingParties, selectedPartyId]);
+
+    console.log("[BlocksPanel] displayItems computed result for", selectedPartyId, ":", {
+      itemsCount: items.length,
+      itemsBreakdown: items.map(i => ({ type: i.type, id: i.id, fieldName: i.fieldName })),
+    });
+
+    return items;
+  }, [blockGroupsOrder, blockGroups, blocks, signingParties, selectedPartyId]);
 
   const groupedFields = useMemo(() => {
     return displayItems.filter((item) => item.type === "group");
@@ -410,10 +380,11 @@ export function BlocksPanel({
       _id: `block-${field.id}-${Date.now()}`,
       block_type: type,
       signing_party_id: selectedPartyId,
+      order: blocks.length,
       field_schema: {
         field: field.name || field.id,
         ...field,
-      },
+      } as any,
     };
 
     if (type === "phantom_field") {
@@ -502,51 +473,27 @@ export function BlocksPanel({
 
         {/* Toolbar for selected group/block - Parent level operations */}
         {selectedBlockGroup && !showLibrary && (
-          <div className="flex items-center justify-between gap-2 px-1">
-            <p className="text-xs font-medium text-gray-500">
-              {selectedBlock?.block_type === "header" ||
-              selectedBlock?.block_type === "paragraph" ||
-              selectedBlock?.block_type === "phantom_field"
-                ? "Phantom Block Controls"
-                : "Parent Group Controls"}
-            </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium text-gray-500">Block Controls</p>
             <div className="flex gap-0.5">
               <Button
                 size="xs"
                 variant="ghost"
                 className="h-6 w-6 p-0"
                 onClick={() => {
-                  // Check if it's a phantom block (use fieldName as block ID)
+                  // Check if it's a phantom block
                   if (
                     selectedBlock?.block_type === "header" ||
                     selectedBlock?.block_type === "paragraph" ||
                     selectedBlock?.block_type === "phantom_field"
                   ) {
                     // Find the phantom block in displayItems by its ID
-                    const idx = displayItems.findIndex(
-                      (item) => item.id === selectedBlockGroup.fieldName
-                    );
-                    if (idx > 0) {
-                      // Swap in displayItems only (blocks array stays as-is)
-                      const newItems = [...displayItems];
-                      [newItems[idx - 1], newItems[idx]] = [newItems[idx], newItems[idx - 1]];
-                      // Rebuild blocks array from all items in new order
-                      const newBlocks: IFormBlock[] = [];
-                      newItems.forEach((item) => {
-                        if (item.block) newBlocks.push(item.block);
-                        if (item.instances) newBlocks.push(...item.instances);
-                      });
-                      handleReorderBlocks(newBlocks);
-                    }
+                    reorderGroup(selectedBlock._id || "", "up");
                   } else {
-                    // It's a field group
-                    const idx = groupedFields.findIndex(
-                      (g) =>
-                        `${g.fieldName}-${g.partyId}` ===
-                        `${selectedBlockGroup.fieldName}-${selectedBlockGroup.partyId}`
-                    );
-                    if (idx > 0) {
-                      reorderGroup(idx, "up");
+                    // It's a field group - use the group id directly
+                    const itemId = selectedBlockGroup?.id;
+                    if (itemId) {
+                      reorderGroup(itemId, "up");
                     }
                   }
                 }}
@@ -564,19 +511,14 @@ export function BlocksPanel({
                     selectedBlock?.block_type === "paragraph" ||
                     selectedBlock?.block_type === "phantom_field"
                   ) {
-                    // For phantom blocks, find their group and reorder
-                    const idx = groupedFields.findIndex(
-                      (g) => g.fieldName === selectedBlockGroup.fieldName
-                    );
-                    if (idx < groupedFields.length - 1) reorderGroup(idx, "down");
+                    // Find the phantom block in displayItems by its ID
+                    reorderGroup(selectedBlock._id || "", "down");
                   } else {
-                    // It's a field group
-                    const idx = groupedFields.findIndex(
-                      (g) =>
-                        `${g.fieldName}-${g.partyId}` ===
-                        `${selectedBlockGroup.fieldName}-${selectedBlockGroup.partyId}`
-                    );
-                    if (idx < groupedFields.length - 1) reorderGroup(idx, "down");
+                    // It's a field group - use the group id directly
+                    const itemId = selectedBlockGroup?.id;
+                    if (itemId) {
+                      reorderGroup(itemId, "down");
+                    }
                   }
                 }}
               >
@@ -765,120 +707,11 @@ export function BlocksPanel({
                       );
                     }
 
-                    // Handle non-group blocks (headers, paragraphs, phantom fields)
-                    if (item.type !== "group") {
-                      const block = item.block!;
-                      const isPhantom =
-                        block.block_type === "phantom_field" ||
-                        block.block_type === "form_phantom_field";
-                      return (
-                        <div key={item.id} className="space-y-2">
-                          <div
-                            draggable
-                            onDragStart={(e) => handleGroupDragStart(e, block._id || "")}
-                            onDragOver={handleGroupDragOver}
-                            onDrop={(e) => handleGroupDrop(e, block._id || "")}
-                            onClick={() => {
-                              setSelectedBlockId(null);
-                              setSelectedBlockGroup({
-                                fieldName: block._id || "",
-                                partyId: selectedPartyId || "",
-                              });
-                            }}
-                            className={cn(
-                              "cursor-pointer rounded-[0.33em] border p-2 transition-all",
-                              draggedGroupKey === block._id ? "bg-gray-100 opacity-50" : "",
-                              selectedBlockGroup?.fieldName === block._id
-                                ? "ring-primary bg-primary/5 ring-2"
-                                : "hover:border-gray-300",
-                              // Remove party color for phantom fields
-                              isPhantom ? "border-l-gray-300 bg-white" : ""
-                            )}
-                            style={isPhantom ? { borderLeftColor: "#d1d5db" } : {}}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <GripVertical className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
-                              <div className="min-w-0 flex-1 overflow-hidden">
-                                {isPhantom ? (
-                                  <div className="flex flex-col">
-                                    <h4 className="text-sm font-semibold text-gray-900">
-                                      {block.phantom_field_schema?.label ||
-                                        block.phantom_field_schema?.field ||
-                                        block.field_schema?.label ||
-                                        block.field_schema?.field ||
-                                        block._id}
-                                    </h4>
-                                  </div>
-                                ) : (
-                                  <>
-                                    {block.block_type !== "header" &&
-                                      block.block_type !== "paragraph" && (
-                                        <h4 className="text-sm font-semibold text-gray-900">
-                                          {block.field_schema?.label ||
-                                            block.field_schema?.field ||
-                                            block._id}
-                                        </h4>
-                                      )}
-                                    {(() => {
-                                      const blockField = getBlockField(block);
-                                      const parsedField = blockField
-                                        ? fieldMap.get(blockField.field)
-                                        : null;
-                                      const fieldWithParser = parsedField || blockField;
-
-                                      const blockWithParsedField = {
-                                        ...block,
-                                        field_schema: fieldWithParser,
-                                      };
-
-                                      return (
-                                        <BlocksRenderer
-                                          formKey={`block-preview-${block._id}`}
-                                          blocks={[blockWithParsedField]}
-                                          values={{}}
-                                          onChange={() => {}}
-                                          errors={{}}
-                                          setSelected={() => {}}
-                                          onBlurValidate={() => {}}
-                                          fieldRefs={{}}
-                                        />
-                                      );
-                                    })()}
-                                  </>
-                                )}
-                              </div>
-                              <div
-                                className="flex flex-shrink-0 items-center gap-1"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-4 w-4 p-0"
-                                  onClick={() => handleDuplicateBlock(block)}
-                                >
-                                  <Copy className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="hover:text-destructive h-4 w-4 p-0"
-                                  onClick={() => handleDeleteBlock(block._id || "")}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
                     // Handle field groups
                     const group = item;
-                    const groupKey = `${group.fieldName}-${group.partyId}`;
+                    // Use group.id as the key since it's unique for each group
+                    const groupKey = group.id;
                     const isExpanded = expandedGroups.has(groupKey);
-                    const partyColor = getPartyColorByIndex(Math.max(0, group.partyOrder! - 1));
 
                     return (
                       <div key={groupKey} className="space-y-2">
@@ -890,20 +723,23 @@ export function BlocksPanel({
                           onDrop={(e) => handleGroupDrop(e, groupKey)}
                           onClick={() => {
                             setSelectedBlockId(null);
+                            // For headers/paragraphs, use group.id which is the block._id
+                            // For other fields, use fieldName-partyId
+                            const groupId = group.id || `${group.fieldName}-${group.partyId}`;
+                            console.log("[BlocksPanel] Selected group:", { groupId, group });
                             setSelectedBlockGroup({
+                              id: groupId,
                               fieldName: group.fieldName || "",
                               partyId: group.partyId || "",
-                              block_type: "form_field",
-                              signing_party_id: group.partyId,
+                              blockIds: group.instances?.map((b) => b._id) || [],
                             });
                             toggleExpandedGroup(groupKey);
                           }}
                           className={cn(
                             "cursor-move border p-2 transition-all hover:shadow-md",
                             draggedGroupKey === groupKey ? "bg-gray-100 opacity-50" : "",
-                            selectedBlockGroup?.fieldName === group.fieldName &&
-                              selectedBlockGroup?.partyId === group.partyId
-                              ? "bg-blue-50 ring-2 ring-blue-500"
+                            selectedBlockGroup?.id === group.id
+                              ? "ring-primary bg-blue-50 ring-2"
                               : "",
                             "border-gray-200"
                           )}
@@ -914,49 +750,44 @@ export function BlocksPanel({
                               <GripVertical className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
                               <div className="min-w-0 flex-1">
                                 <h4 className="text-sm font-semibold text-gray-900">
-                                  {group.instances![0]?.field_schema?.label ||
-                                    registry.find(
-                                      (f) =>
-                                        `${f.name}:${f.preset}` === group.fieldName ||
-                                        f.name === group.fieldName
-                                    )?.label}
+                                  {group.fieldName === "header" || group.fieldName === "paragraph"
+                                    ? group.instances![0]?.text_content ||
+                                      `(empty ${group.fieldName})`
+                                    : group.instances![0]?.field_schema?.label ||
+                                      registry.find(
+                                        (f) =>
+                                          `${f.name}:${f.preset}` === group.fieldName ||
+                                          f.name === group.fieldName
+                                      )?.label}
                                 </h4>
-                                {group.blockType === "form_field" && (
-                                  <p className="text-xs text-gray-500">
-                                    {group.instances!.length} instance
-                                    {group.instances!.length !== 1 ? "s" : ""}
-                                  </p>
-                                )}
+                                {group.fieldName !== "header" &&
+                                  group.fieldName !== "paragraph" && (
+                                    <p className="text-xs text-gray-500">
+                                      {group.instances!.length} instance
+                                      {group.instances!.length !== 1 ? "s" : ""}
+                                    </p>
+                                  )}
                               </div>
                             </div>
 
                             {/* Block Preview */}
+                            {/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */}
                             <div className="space-y-2">
                               {group.instances![0] &&
                                 (() => {
                                   const block = group.instances![0];
-                                  const blockField = getBlockField(block);
-
-                                  if (blockField?.source !== "manual") return null;
-
-                                  const parsedField = blockField
-                                    ? fieldMap.get(blockField.field)
-                                    : null;
-                                  const fieldWithParser = parsedField || blockField;
-
-                                  const blockWithParsedField = {
-                                    ...block,
-                                    field_schema: fieldWithParser,
-                                  };
+                                  // Find the enriched version of this block with type/coerce/validator
+                                  const enrichedBlock =
+                                    enrichedBlocks.find((b) => b._id === block._id) || block;
 
                                   return (
-                                    <div className="space-y-2 rounded border border-slate-200 bg-white px-1">
+                                    <div className="space-y-2 rounded bg-white px-1">
                                       <BlocksRenderer
                                         formKey={`preview-${group.fieldName}`}
-                                        blocks={[blockWithParsedField]}
+                                        blocks={[enrichedBlock as any]}
                                         values={previewValues}
                                         onChange={(key, value) => {
-                                          setPreviewValues((prev) => ({
+                                          setPreviewValues((prev: any) => ({
                                             ...prev,
                                             [key]: value,
                                           }));
@@ -969,20 +800,18 @@ export function BlocksPanel({
                                             const coerced = field.coerce?.(value) ?? value;
                                             const result = field.validator.safeParse(coerced);
                                             if (result.success) {
-                                              setPreviewErrors((prev) => {
-                                                const updated = { ...prev };
-                                                delete updated[fieldKey];
-                                                return updated;
-                                              });
+                                              const updated = { ...previewErrors };
+                                              delete updated[fieldKey];
+                                              setPreviewErrors(updated);
                                             } else {
                                               const treeified = z.treeifyError(result.error);
                                               const errorMsg = treeified.errors
                                                 .map((e: string) => e.split(" ").slice(0).join(" "))
                                                 .join(", ");
-                                              setPreviewErrors((prev) => ({
-                                                ...prev,
+                                              setPreviewErrors({
+                                                ...previewErrors,
                                                 [fieldKey]: errorMsg,
-                                              }));
+                                              });
                                             }
                                           }
                                         }}
@@ -992,66 +821,120 @@ export function BlocksPanel({
                                   );
                                 })()}
                             </div>
+                            {/* eslint-enable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */}
                           </div>
                         </Card>
 
-                        {/* Child Cards - Instances (expanded view) - Only for form_field blocks */}
-                        {isExpanded && group.blockType === "form_field" && (
-                          <div className="ml-4 space-y-2 pl-3">
-                            <p className="text-xs font-medium text-gray-500">Instances</p>
-                            {group.instances!.map((block) => {
-                              // For field groups, show location info
-                              const x = Math.round(block.field_schema?.x || 0);
-                              const y = Math.round(block.field_schema?.y || 0);
-                              const page = (block.field_schema?.page || 0) + 1;
-
-                              return (
-                                <Card
-                                  key={block._id}
-                                  className={cn(
-                                    "cursor-pointer border px-2 py-1.5 text-xs transition-all",
-                                    "hover:border-gray-300"
-                                  )}
-                                  onClick={() => {
-                                    // Select the block instance for editing
-                                    setSelectedBlockId(block._id || "");
-                                  }}
-                                >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <p className="text-muted-foreground flex-1 font-mono">
-                                      page {page} • ({x}, {y})
-                                    </p>
-                                    <div
-                                      className="flex flex-shrink-0 items-center gap-1"
-                                      onClick={(e) => e.stopPropagation()}
+                        {/* Child Cards - Instances (expanded view) - Only for form fields */}
+                        {isExpanded &&
+                          group.fieldName !== "header" &&
+                          group.fieldName !== "paragraph" &&
+                          group.blockType !== "phantom_field" && (
+                            <div className="ml-4 space-y-2 pl-3">
+                              <p className="text-xs font-medium text-gray-500">Instances</p>
+                              {group.instances!.map((block) => {
+                                // For headers/paragraphs, don't show location info
+                                if (
+                                  block.block_type === "header" ||
+                                  block.block_type === "paragraph"
+                                ) {
+                                  return (
+                                    <Card
+                                      key={block._id}
+                                      className={cn(
+                                        "cursor-pointer border px-2 py-1.5 text-xs transition-all",
+                                        "hover:border-gray-300"
+                                      )}
+                                      onClick={() => {
+                                        setSelectedBlockId(block._id || "");
+                                      }}
                                     >
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-4 w-4 p-0"
-                                        onClick={() => {
-                                          handleDuplicateBlock(block);
-                                        }}
+                                      <div className="flex items-start justify-between gap-2">
+                                        <p className="text-muted-foreground flex-1">
+                                          {block.text_content || `(empty ${block.block_type})`}
+                                        </p>
+                                        <div
+                                          className="flex flex-shrink-0 items-center gap-1"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-4 w-4 p-0"
+                                            onClick={() => {
+                                              handleDuplicateBlock(block);
+                                            }}
+                                          >
+                                            <Copy className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-4 w-4 p-0 text-red-500"
+                                            onClick={() => {
+                                              handleDeleteBlock(block._id || "");
+                                            }}
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  );
+                                }
+
+                                // For field groups, show location info
+                                const x = Math.round(block.field_schema?.x || 0);
+                                const y = Math.round(block.field_schema?.y || 0);
+                                const page = (block.field_schema?.page || 0) + 1;
+
+                                return (
+                                  <Card
+                                    key={block._id}
+                                    className={cn(
+                                      "cursor-pointer border px-2 py-1.5 text-xs transition-all",
+                                      "hover:border-gray-300"
+                                    )}
+                                    onClick={() => {
+                                      // Select the block instance for editing
+                                      setSelectedBlockId(block._id || "");
+                                    }}
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <p className="text-muted-foreground flex-1 font-mono">
+                                        page {page} • ({x}, {y})
+                                      </p>
+                                      <div
+                                        className="flex flex-shrink-0 items-center gap-1"
+                                        onClick={(e) => e.stopPropagation()}
                                       >
-                                        <Copy className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="hover:text-destructive h-4 w-4 p-0"
-                                        onClick={() => {
-                                          handleDeleteBlock(block._id || "");
-                                        }}
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-4 w-4 p-0"
+                                          onClick={() => {
+                                            handleDuplicateBlock(block);
+                                          }}
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="hover:text-destructive h-4 w-4 p-0"
+                                          onClick={() => {
+                                            handleDeleteBlock(block._id || "");
+                                          }}
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
                                     </div>
-                                  </div>
-                                </Card>
-                              );
-                            })}
-                          </div>
-                        )}
+                                  </Card>
+                                );
+                              })}
+                            </div>
+                          )}
                       </div>
                     );
                   })}

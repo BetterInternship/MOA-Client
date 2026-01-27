@@ -1,12 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode, useMemo } from "react";
 import { IFormBlock } from "@betterinternship/core/forms";
 import { useFormEditor } from "./form-editor.context";
 
 interface BlockGroup {
+  id: string;
   fieldName: string;
   partyId: string;
+  blockIds: string[]; // ordered list of block IDs in this group
 }
 
 interface FormEditorTabContextType {
@@ -20,15 +22,16 @@ interface FormEditorTabContextType {
   selectedFieldId: string | null;
   setSelectedFieldId: (fieldId: string | null) => void;
 
-  // Record of block groups, keyed by blockId
+  // Normalized state for blocks and groups
+  blockGroupsOrder: string[]; // ordered list of block group IDs
   blockGroups: Record<string, BlockGroup>;
-  setBlockGroups: (groups: Record<string, BlockGroup>) => void;
+  blocksMap: Record<string, IFormBlock>;
 
   // Currently selected group (for UI focus/editing)
   selectedBlockGroup: BlockGroup | null;
   setSelectedBlockGroup: (group: BlockGroup | null) => void;
 
-  // Blocks directly
+  // Blocks array for backward compatibility
   blocks: IFormBlock[];
 
   // UI state - expanded groups, drag state, search
@@ -78,6 +81,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   );
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [blockGroupsOrder, setBlockGroupsOrder] = useState<string[]>([]);
   const [blockGroups, setBlockGroups] = useState<Record<string, BlockGroup>>({});
   const [selectedBlockGroup, setSelectedBlockGroup] = useState<BlockGroup | null>(null);
 
@@ -102,8 +106,82 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // Expose blocks directly from formMetadata
-  const blocks = formMetadata?.schema.blocks || [];
+  // Expose blocks as array derived from blocksMap, or directly from formMetadata
+  const blocks = useMemo(() => {
+    return formMetadata?.schema.blocks || [];
+  }, [formMetadata]);
+
+  // Initialize normalized state - create blocksMap
+  const _blocksMap = useMemo(() => {
+    const map: Record<string, IFormBlock> = {};
+    blocks.forEach((block) => {
+      map[block._id] = block;
+    });
+    return map;
+  }, [blocks]);
+
+  // Initialize normalized state from blocks
+  useMemo(() => {
+    const newBlockGroups: Record<string, BlockGroup> = {};
+    const newOrder: string[] = [];
+    const seenGroupIds = new Set<string>();
+
+    blocks.forEach((block) => {
+      const blockType = block.block_type;
+
+      // For headers and paragraphs, use block._id as the group ID
+      if (blockType === "header" || blockType === "paragraph") {
+        const groupId = block._id;
+        if (!seenGroupIds.has(groupId)) {
+          newBlockGroups[groupId] = {
+            id: groupId,
+            fieldName: blockType,
+            partyId: block.signing_party_id || "unknown",
+            blockIds: [block._id],
+          };
+          newOrder.push(groupId);
+          seenGroupIds.add(groupId);
+          console.log("[FormEditorTabContext] Created header/paragraph group:", {
+            groupId,
+            blockType,
+            signingPartyId: block.signing_party_id,
+          });
+        }
+        return;
+      }
+
+      // For phantom_field and form_phantom_field, get field from phantom_field_schema
+      /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any */
+      let schema: any = block.field_schema;
+      if (!schema && (blockType === "phantom_field" || blockType === "form_phantom_field")) {
+        schema = block.phantom_field_schema;
+      }
+      /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any */
+      if (!schema) return;
+
+      const fieldName: string = (schema.field || "Unnamed") as string;
+      const partyId = block.signing_party_id || "unknown";
+      const groupId = `${fieldName}-${partyId}`;
+
+      if (!seenGroupIds.has(groupId)) {
+        newBlockGroups[groupId] = {
+          id: groupId,
+          fieldName,
+          partyId,
+          blockIds: [block._id],
+        };
+        newOrder.push(groupId);
+        seenGroupIds.add(groupId);
+      } else {
+        // Add block to existing group
+        newBlockGroups[groupId].blockIds.push(block._id);
+      }
+    });
+
+    console.log("[FormEditorTabContext] Final normalized state:", { newOrder, newBlockGroups });
+    setBlockGroupsOrder(newOrder);
+    setBlockGroups(newBlockGroups);
+  }, [blocks]);
 
   const handleBlockSelect = useCallback(
     (blockId: string) => {
@@ -117,18 +195,24 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
   const handleParentGroupSelect = useCallback((blockId: string, group: BlockGroup | null) => {
     if (group) {
-      setBlockGroups((prev) => ({
-        ...prev,
-        [blockId]: group,
-      }));
-      setSelectedBlockGroup(group);
-    } else {
+      const groupId = group.id;
+
+      // Add to blockGroups if not exists
       setBlockGroups((prev) => {
-        const updated = { ...prev };
-        delete updated[blockId];
-        return updated;
+        if (prev[groupId]) return prev;
+        return {
+          ...prev,
+          [groupId]: group,
+        };
       });
-      setSelectedBlockGroup(null);
+
+      // Add to blockGroupsOrder if not exists
+      setBlockGroupsOrder((prev) => {
+        if (prev.includes(groupId)) return prev;
+        return [...prev, groupId];
+      });
+
+      setSelectedBlockGroup(group);
     }
   }, []);
 
@@ -271,6 +355,9 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
         order: index,
       }));
       updateBlocks(blocksWithOrder);
+
+      // The useMemo hook will automatically rebuild blockGroupsOrder and blockGroups
+      // from the new block order, so no need to manually update them here
     },
     [updateBlocks]
   );
@@ -327,8 +414,9 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     setSelectedBlockId,
     selectedFieldId,
     setSelectedFieldId,
+    blockGroupsOrder,
     blockGroups,
-    setBlockGroups,
+    blocksMap: _blocksMap,
     selectedBlockGroup,
     setSelectedBlockGroup,
     blocks,

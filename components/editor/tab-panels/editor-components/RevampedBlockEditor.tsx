@@ -46,14 +46,29 @@ export function RevampedBlockEditor() {
   // Update editedTextContent when selectedBlockGroup changes
   useEffect(() => {
     if (parentGroup) {
+      const isHeaderOrParagraph =
+        parentGroup.fieldName === "header" || parentGroup.fieldName === "paragraph";
+
       const matchingBlocks =
-        formMetadata?.schema.blocks?.filter(
-          (b: any) =>
+        formMetadata?.schema.blocks?.filter((b: any) => {
+          // For headers/paragraphs, match by the group ID which is the block's _id
+          if (isHeaderOrParagraph) {
+            return (
+              b._id === parentGroup.id &&
+              (b.signing_party_id === parentGroup.partyId ||
+                (b.signing_party_id === "" && parentGroup.partyId === "unknown") ||
+                (b.signing_party_id === "unknown" && parentGroup.partyId === ""))
+            );
+          }
+
+          // For form fields, match by field name and partyId
+          return (
             (b.field_schema?.field === parentGroup.fieldName || b._id === parentGroup.fieldName) &&
             (b.signing_party_id === parentGroup.partyId ||
               (b.signing_party_id === "" && parentGroup.partyId === "unknown") ||
               (b.signing_party_id === "unknown" && parentGroup.partyId === ""))
-        ) || [];
+          );
+        }) || [];
       const firstBlock = matchingBlocks[0];
       if (firstBlock) {
         setEditedTextContent(firstBlock.text_content || "");
@@ -112,20 +127,52 @@ export function RevampedBlockEditor() {
   // Handle parent group editing - Show form-level properties
   if (parentGroup && !editedBlock) {
     // Find a block that matches the fieldName and partyId to get its metadata
+    const isHeaderOrParagraph =
+      parentGroup.fieldName === "header" || parentGroup.fieldName === "paragraph";
+
+    console.log("[RevampedBlockEditor] parentGroup:", parentGroup);
+    console.log("[RevampedBlockEditor] isHeaderOrParagraph:", isHeaderOrParagraph);
+    console.log("[RevampedBlockEditor] formMetadata.schema.blocks:", formMetadata?.schema.blocks);
+
     const matchingBlocks =
-      formMetadata?.schema.blocks?.filter(
-        (b: any) =>
+      formMetadata?.schema.blocks?.filter((b: any) => {
+        // For headers/paragraphs, match by the group ID which is the block's _id
+        if (isHeaderOrParagraph) {
+          const matches =
+            b._id === parentGroup.id &&
+            (b.signing_party_id === parentGroup.partyId ||
+              (b.signing_party_id === "" && parentGroup.partyId === "unknown") ||
+              (b.signing_party_id === "unknown" && parentGroup.partyId === ""));
+          if (matches) {
+            console.log("[RevampedBlockEditor] Matched header/paragraph block:", b);
+          }
+          return matches;
+        }
+
+        // For form fields, match by field name and partyId
+        return (
           (b.field_schema?.field === parentGroup.fieldName ||
             b.phantom_field_schema?.field === parentGroup.fieldName ||
             b._id === parentGroup.fieldName) &&
           (b.signing_party_id === parentGroup.partyId ||
             (b.signing_party_id === "" && parentGroup.partyId === "unknown") ||
             (b.signing_party_id === "unknown" && parentGroup.partyId === ""))
-      ) || [];
+        );
+      }) || [];
+
+    console.log("[RevampedBlockEditor] matchingBlocks:", matchingBlocks);
 
     // Get the first matching block to extract metadata from
     const firstBlock = matchingBlocks[0];
     if (!firstBlock) {
+      console.log("[RevampedBlockEditor] NO MATCHING BLOCKS FOUND!");
+      console.log("[RevampedBlockEditor] parentGroup.id:", parentGroup.id);
+      console.log("[RevampedBlockEditor] parentGroup.fieldName:", parentGroup.fieldName);
+      console.log("[RevampedBlockEditor] parentGroup.partyId:", parentGroup.partyId);
+      console.log(
+        "[RevampedBlockEditor] All block IDs:",
+        formMetadata?.schema.blocks?.map((b: any) => b._id)
+      );
       return (
         <div className="flex h-full items-center justify-center p-4">
           <p className="text-muted-foreground text-sm">Block metadata not found</p>
