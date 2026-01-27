@@ -48,6 +48,12 @@ interface FormEditorTabContextType {
   handleDeleteBlock: (blockId: string) => void;
   handleDeleteGroupBlocks: (fieldName: string, partyId: string) => void;
   handleReorderBlocks: (blocks: IFormBlock[]) => void;
+  handleReorderBlock: (blockId: string, direction: "up" | "down") => void;
+  handleAddPhantomBlock: (
+    type: "header" | "paragraph" | "phantom_field",
+    selectedPartyId: string,
+    customBlock?: IFormBlock
+  ) => void;
 }
 
 const FormEditorTabContext = createContext<FormEditorTabContextType | undefined>(undefined);
@@ -218,9 +224,59 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
   const handleReorderBlocks = useCallback(
     (reorderedBlocks: IFormBlock[]) => {
-      updateBlocks(reorderedBlocks);
+      // Ensure all blocks have proper order values
+      const blocksWithOrder = reorderedBlocks.map((block, index) => ({
+        ...block,
+        order: index,
+      }));
+      updateBlocks(blocksWithOrder);
     },
     [updateBlocks]
+  );
+
+  const handleReorderBlock = useCallback(
+    (blockId: string, direction: "up" | "down") => {
+      const idx = blocks.findIndex((b) => b._id === blockId);
+      if (idx === -1) return;
+
+      const newBlocks = [...blocks];
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+
+      if (targetIdx < 0 || targetIdx >= newBlocks.length) return;
+
+      [newBlocks[idx], newBlocks[targetIdx]] = [newBlocks[targetIdx], newBlocks[idx]];
+      updateBlocks(newBlocks);
+    },
+    [blocks, updateBlocks]
+  );
+
+  const handleAddPhantomBlock = useCallback(
+    (
+      type: "header" | "paragraph" | "phantom_field",
+      selectedPartyId: string,
+      customBlock?: IFormBlock
+    ) => {
+      let newBlock: IFormBlock;
+
+      if (type === "phantom_field" && customBlock) {
+        newBlock = customBlock;
+      } else {
+        newBlock = {
+          _id: `${type}-${Date.now()}`,
+        } as IFormBlock;
+        newBlock.block_type = type;
+        newBlock.signing_party_id = selectedPartyId;
+        if (type === "header") {
+          newBlock.text_content = "New Header";
+        } else if (type === "paragraph") {
+          newBlock.text_content = "New Paragraph";
+        }
+      }
+
+      newBlock.order = blocks.length;
+      updateBlocks([...blocks, newBlock]);
+    },
+    [blocks, updateBlocks]
   );
 
   const value: FormEditorTabContextType = {
@@ -243,6 +299,8 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     handleDeleteBlock,
     handleDeleteGroupBlocks,
     handleReorderBlocks,
+    handleReorderBlock,
+    handleAddPhantomBlock,
   };
 
   return <FormEditorTabContext.Provider value={value}>{children}</FormEditorTabContext.Provider>;

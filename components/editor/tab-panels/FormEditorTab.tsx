@@ -9,14 +9,12 @@ import { FieldsPanel } from "./editor-components/FieldsPanel";
 import { RevampedBlockEditor } from "./editor-components/RevampedBlockEditor";
 
 function FormEditorTabContent() {
-  const { formMetadata, updateBlocks } = useFormEditor();
+  const { formMetadata } = useFormEditor();
   const {
     selectedPartyId,
     setSelectedPartyId,
     selectedBlockId,
     selectedParentGroup,
-    handleBlockSelect,
-    handleParentGroupSelect,
     handleBlockUpdate,
     handleParentUpdate,
   } = useFormEditorTab();
@@ -41,12 +39,7 @@ function FormEditorTabContent() {
           blocks={formMetadata.schema.blocks}
           selectedPartyId={selectedPartyId}
           onPartyChange={setSelectedPartyId}
-          onBlockSelect={handleBlockSelect}
-          selectedBlockId={selectedBlockId}
           signingParties={formMetadata.signing_parties || []}
-          onAddField={() => {}}
-          onParentGroupSelect={handleParentGroupSelect}
-          onBlocksReorder={updateBlocks}
         />
       </div>
 
