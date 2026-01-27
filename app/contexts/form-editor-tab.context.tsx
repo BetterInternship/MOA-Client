@@ -35,6 +35,22 @@ interface FormEditorTabContextType {
   // Blocks directly
   blocks: IFormBlock[];
 
+  // UI state - expanded groups, drag state, search
+  expandedGroups: Set<string>;
+  toggleExpandedGroup: (groupKey: string) => void;
+  draggedGroupKey: string | null;
+  setDraggedGroupKey: (key: string | null) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  showPhantomMenu: boolean;
+  setShowPhantomMenu: (show: boolean) => void;
+  showLibrary: boolean;
+  setShowLibrary: (show: boolean) => void;
+  previewValues: Record<string, any>;
+  setPreviewValues: (values: Record<string, any>) => void;
+  previewErrors: Record<string, string>;
+  setPreviewErrors: (errors: Record<string, string>) => void;
+
   // Handlers
   handleBlockSelect: (blockId: string) => void;
   handleParentGroupSelect: (group: { fieldName: string; partyId: string } | null) => void;
@@ -67,6 +83,27 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [selectedParentGroup, setSelectedParentGroup] = useState<SelectedParentGroup | null>(null);
+
+  // UI state
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [draggedGroupKey, setDraggedGroupKey] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showPhantomMenu, setShowPhantomMenu] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [previewValues, setPreviewValues] = useState<Record<string, any>>({});
+  const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
+
+  const toggleExpandedGroup = useCallback((groupKey: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupKey)) {
+        newSet.delete(groupKey);
+      } else {
+        newSet.add(groupKey);
+      }
+      return newSet;
+    });
+  }, []);
 
   // Expose blocks directly from formMetadata
   const blocks = formMetadata?.schema.blocks || [];
@@ -289,6 +326,20 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     selectedParentGroup,
     setSelectedParentGroup,
     blocks,
+    expandedGroups,
+    toggleExpandedGroup,
+    draggedGroupKey,
+    setDraggedGroupKey,
+    searchQuery,
+    setSearchQuery,
+    showPhantomMenu,
+    setShowPhantomMenu,
+    showLibrary,
+    setShowLibrary,
+    previewValues,
+    setPreviewValues,
+    previewErrors,
+    setPreviewErrors,
     handleBlockSelect,
     handleParentGroupSelect,
     handleBlockUpdate,

@@ -13,11 +13,12 @@ import {
   GripVertical,
   ChevronDown,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import { Input } from "@/components/ui/input";
+import { FieldRegistryEntryDetails } from "@/app/api";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -50,6 +51,7 @@ export function FieldsPanel({
   const { registry } = useFieldTemplateContext();
   const { formMetadata } = useFormEditor();
   const {
+    selectedBlockId,
     selectedParentGroup,
     setSelectedParentGroup,
     setSelectedBlockId,
@@ -59,14 +61,21 @@ export function FieldsPanel({
     handleAddPhantomBlock,
     handleDeleteGroupBlocks,
     handleBlockCreate,
+    expandedGroups,
+    toggleExpandedGroup,
+    draggedGroupKey,
+    setDraggedGroupKey,
+    searchQuery,
+    setSearchQuery,
+    showPhantomMenu,
+    setShowPhantomMenu,
+    showLibrary,
+    setShowLibrary,
+    previewValues,
+    setPreviewValues,
+    previewErrors,
+    setPreviewErrors,
   } = useFormEditorTab();
-  const [previewValues, setPreviewValues] = useState<Record<string, any>>({});
-  const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
-  const [showPhantomMenu, setShowPhantomMenu] = useState(false);
-  const [showLibrary, setShowLibrary] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [draggedGroupKey, setDraggedGroupKey] = useState<string | null>(null);
 
   // Get properly parsed fields from metadata with coerce functions and validators
   const metadataFields = useMemo(() => {
@@ -121,16 +130,6 @@ export function FieldsPanel({
     if (group?.fieldName && group?.partyId) {
       handleDeleteGroupBlocks(group.fieldName, group.partyId);
     }
-  };
-
-  const toggleGroupExpanded = (groupKey: string) => {
-    const newExpanded = new Set(expandedGroups);
-    if (newExpanded.has(groupKey)) {
-      newExpanded.delete(groupKey);
-    } else {
-      newExpanded.add(groupKey);
-    }
-    setExpandedGroups(newExpanded);
   };
 
   const handleGroupDragStart = (e: React.DragEvent, groupKey: string) => {
@@ -267,29 +266,28 @@ export function FieldsPanel({
     e.dataTransfer.setData("field", JSON.stringify(fieldData));
   };
 
-  const handleFieldAdd = (field: any) => {
+  const handleFieldAdd = (
+    field: FieldRegistryEntryDetails,
+    type: "form_field" | "phantom_field" = "form_field"
+  ) => {
     if (!selectedPartyId) return;
+
     const newBlock: IFormBlock = {
       _id: `block-${field.id}-${Date.now()}`,
+      block_type: type,
       signing_party_id: selectedPartyId,
       field_schema: {
         field: field.name || field.id,
         ...field,
       },
-    } as IFormBlock;
-    handleBlockCreate(newBlock);
-  };
+    };
 
-  const handleAddPhantomField = (field: any) => {
-    if (!selectedPartyId) return;
-    const phantomBlock: IFormBlock = {
-      _id: `phantom-${field.id}-${Date.now()}`,
-    } as IFormBlock;
-    (phantomBlock as any).block_type = "phantom_field";
-    (phantomBlock as any).signing_party_id = selectedPartyId;
-    (phantomBlock as any).field_schema = field;
-    handleAddPhantomBlock("phantom_field", selectedPartyId, phantomBlock);
-    setShowPhantomMenu(false);
+    if (type === "phantom_field") {
+      handleAddPhantomBlock("phantom_field", selectedPartyId, newBlock);
+      setShowPhantomMenu(false);
+    } else {
+      handleBlockCreate(newBlock);
+    }
   };
 
   // Filter preset fields for the phantom field dropdown
@@ -346,7 +344,10 @@ export function FieldsPanel({
                     Phantom Fields
                   </div>
                   {presetFields.map((field) => (
-                    <DropdownMenuItem key={field.id} onClick={() => handleAddPhantomField(field)}>
+                    <DropdownMenuItem
+                      key={field.id}
+                      onClick={() => handleFieldAdd(field, "phantom_field")}
+                    >
                       {field.label || field.name}
                     </DropdownMenuItem>
                   ))}
@@ -644,7 +645,8 @@ export function FieldsPanel({
                             onDragOver={handleGroupDragOver}
                             onDrop={(e) => handleGroupDrop(e, block._id || "")}
                             onClick={() => {
-                              // Set as selected parent group for unified controls
+                              // Single click: select the block for editing
+                              setSelectedBlockId(block._id || "");
                               setSelectedParentGroup({
                                 fieldName: block._id || "",
                                 partyId: selectedPartyId || "",
@@ -653,9 +655,9 @@ export function FieldsPanel({
                               });
                             }}
                             className={cn(
-                              "cursor-move border border-l-4 p-2 transition-all",
+                              "cursor-pointer border border-l-4 p-2 transition-all",
                               draggedGroupKey === block._id ? "bg-gray-100 opacity-50" : "",
-                              selectedParentGroup?.fieldName === block._id
+                              selectedBlockId === block._id
                                 ? "ring-primary bg-primary/5 ring-2"
                                 : "hover:border-gray-300"
                             )}
@@ -722,7 +724,7 @@ export function FieldsPanel({
                               block_type: "form_field",
                               signing_party_id: group.partyId,
                             });
-                            toggleGroupExpanded(groupKey);
+                            toggleExpandedGroup(groupKey);
                           }}
                           className={cn(
                             "cursor-move border border-l-4 p-2 transition-all hover:shadow-md",
