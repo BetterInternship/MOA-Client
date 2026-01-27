@@ -133,84 +133,9 @@ export function RevampedBlockEditor() {
 
     const blockType = firstBlock.block_type || "form_field";
     const fieldMetadata = firstBlock.field_schema;
+    const isSimpleBlock = ["header", "paragraph", "phantom_field"].includes(blockType);
 
-    // Simplified view for header, paragraph, and phantom blocks
-    if (blockType === "header" || blockType === "paragraph" || blockType === "phantom_field") {
-      return (
-        <div className="flex h-full flex-col overflow-hidden">
-          {/* Header */}
-          <div className="bg-card flex items-center justify-between border-b p-3.5">
-            <div>
-              <h3 className="text-sm font-semibold">Block Properties</h3>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 space-y-4 overflow-auto p-4">
-            <FormTextarea
-              label="Text Content"
-              value={editedTextContent}
-              setter={(value) => {
-                setEditedTextContent(value);
-                if (parentGroup && selectedBlockId) {
-                  handleParentUpdate(selectedBlockId, { text_content: value });
-                }
-              }}
-              placeholder={
-                blockType === "header"
-                  ? "Enter header text"
-                  : blockType === "paragraph"
-                    ? "Enter paragraph text"
-                    : "Enter placeholder text"
-              }
-              required={false}
-            />
-
-            <FormDropdown
-              label="Block Type"
-              value={blockType}
-              options={BLOCK_TYPES.filter((type) =>
-                ["header", "paragraph", "phantom_field"].includes(type)
-              ).map((type) => ({
-                id: type,
-                name: type
-                  .split("_")
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(" "),
-              }))}
-              setter={(value) => {
-                if (parentGroup && selectedBlockId) {
-                  handleParentUpdate(selectedBlockId, { block_type: value });
-                }
-              }}
-              required={false}
-            />
-
-            <FormDropdown
-              label="Signing Party"
-              value={parentGroup.partyId}
-              options={[
-                { id: "", name: "Unassigned" },
-                ...(formMetadata?.signing_parties || []).map((party, idx) => ({
-                  id: party._id,
-                  name: party.signatory_title || party._id,
-                  order: idx,
-                })),
-              ]}
-              setter={(value) => {
-                if (parentGroup && selectedBlockId) {
-                  handleParentUpdate(selectedBlockId, { signing_party_id: value });
-                }
-              }}
-              required={false}
-            />
-          </div>
-        </div>
-      );
-    }
-
-    // Full view for form field blocks - read directly from block's field_schema
-    if (!fieldMetadata) {
+    if (!fieldMetadata && !isSimpleBlock) {
       return (
         <div className="flex h-full items-center justify-center p-4">
           <p className="text-muted-foreground text-sm">Field metadata not found</p>
@@ -223,24 +148,51 @@ export function RevampedBlockEditor() {
         {/* Header */}
         <div className="bg-card flex items-center justify-between border-b p-3.5">
           <div>
-            <h3 className="text-sm font-semibold">Field Metadata</h3>
+            <h3 className="text-sm font-semibold">Block Properties</h3>
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 space-y-4 overflow-auto p-4">
-          <FormInput
-            label="Field Name"
-            value={fieldMetadata.field || ""}
-            setter={(value) => {
-              if (parentGroup && selectedBlockId) {
-                handleParentUpdate(selectedBlockId, { fieldName: value });
+          {/* Text Content - for header, paragraph, phantom_field */}
+          {isSimpleBlock && (
+            <FormTextarea
+              label="Text Content"
+              value={editedTextContent}
+              setter={(value) => {
+                setEditedTextContent(value);
+                // For simple blocks, update all matching instances
+                matchingBlocks.forEach((block) => {
+                  handleBlockUpdate({ ...block, text_content: value });
+                });
+              }}
+              placeholder={
+                blockType === "header"
+                  ? "Enter header text"
+                  : blockType === "paragraph"
+                    ? "Enter paragraph text"
+                    : "Enter placeholder text"
               }
-            }}
-            placeholder="e.g., full_name"
-            required={false}
-          />
+              required={false}
+            />
+          )}
 
+          {/* Field Name - for form_field blocks */}
+          {!isSimpleBlock && (
+            <FormInput
+              label="Field Name"
+              value={fieldMetadata?.field || ""}
+              setter={(value) => {
+                if (parentGroup && selectedBlockId) {
+                  handleParentUpdate(selectedBlockId, { fieldName: value });
+                }
+              }}
+              placeholder="e.g., full_name"
+              required={false}
+            />
+          )}
+
+          {/* Block Type - always shown */}
           <FormDropdown
             label="Block Type"
             value={blockType}
@@ -259,6 +211,7 @@ export function RevampedBlockEditor() {
             required={false}
           />
 
+          {/* Signing Party - always shown */}
           <FormDropdown
             label="Signing Party"
             value={parentGroup.partyId}
@@ -278,109 +231,114 @@ export function RevampedBlockEditor() {
             required={false}
           />
 
-          <FormInput
-            label="Label"
-            value={fieldMetadata.label || ""}
-            setter={(value) => {
-              if (parentGroup && selectedBlockId) {
-                handleParentUpdate(selectedBlockId, { label: value });
-              }
-            }}
-            placeholder="Display label for users"
-            required={false}
-          />
+          {/* Form field specific properties */}
+          {!isSimpleBlock && fieldMetadata && (
+            <>
+              <FormInput
+                label="Label"
+                value={fieldMetadata.label || ""}
+                setter={(value) => {
+                  if (parentGroup && selectedBlockId) {
+                    handleParentUpdate(selectedBlockId, { label: value });
+                  }
+                }}
+                placeholder="Display label for users"
+                required={false}
+              />
 
-          <FormDropdown
-            label="Type"
-            value={fieldMetadata.type || "text"}
-            options={[
-              { id: "text", name: "Text" },
-              { id: "signature", name: "Signature" },
-              { id: "date", name: "Date" },
-              { id: "number", name: "Number" },
-              { id: "checkbox", name: "Checkbox" },
-              { id: "select", name: "Select" },
-              { id: "textarea", name: "Textarea" },
-            ]}
-            setter={(value) => {
-              if (parentGroup && selectedBlockId) {
-                handleParentUpdate(selectedBlockId, { type: value });
-              }
-            }}
-            required={false}
-          />
+              <FormDropdown
+                label="Type"
+                value={fieldMetadata.type || "text"}
+                options={[
+                  { id: "text", name: "Text" },
+                  { id: "signature", name: "Signature" },
+                  { id: "date", name: "Date" },
+                  { id: "number", name: "Number" },
+                  { id: "checkbox", name: "Checkbox" },
+                  { id: "select", name: "Select" },
+                  { id: "textarea", name: "Textarea" },
+                ]}
+                setter={(value) => {
+                  if (parentGroup && selectedBlockId) {
+                    handleParentUpdate(selectedBlockId, { type: value });
+                  }
+                }}
+                required={false}
+              />
 
-          <FormDropdown
-            label="Source"
-            value={fieldMetadata.source || "manual"}
-            options={SOURCES.map((source) => ({
-              id: source,
-              name: source.charAt(0).toUpperCase() + source.slice(1),
-            }))}
-            setter={(value) => {
-              if (parentGroup && selectedBlockId) {
-                handleParentUpdate(selectedBlockId, { source: value });
-              }
-            }}
-            required={false}
-          />
+              <FormDropdown
+                label="Source"
+                value={fieldMetadata.source || "manual"}
+                options={SOURCES.map((source) => ({
+                  id: source,
+                  name: source.charAt(0).toUpperCase() + source.slice(1),
+                }))}
+                setter={(value) => {
+                  if (parentGroup && selectedBlockId) {
+                    handleParentUpdate(selectedBlockId, { source: value });
+                  }
+                }}
+                required={false}
+              />
 
-          <FormTextarea
-            label="Tooltip Label"
-            value={fieldMetadata.tooltip_label || ""}
-            setter={(value) => {
-              if (parentGroup && selectedBlockId) {
-                handleParentUpdate(selectedBlockId, { tooltip_label: value });
-              }
-            }}
-            placeholder="Help text for field"
-            required={false}
-          />
+              <FormTextarea
+                label="Tooltip Label"
+                value={fieldMetadata.tooltip_label || ""}
+                setter={(value) => {
+                  if (parentGroup && selectedBlockId) {
+                    handleParentUpdate(selectedBlockId, { tooltip_label: value });
+                  }
+                }}
+                placeholder="Help text for field"
+                required={false}
+              />
 
-          <FormCheckbox
-            label="Shared Field"
-            checked={fieldMetadata.shared || false}
-            setter={(checked: boolean) => {
-              if (parentGroup && selectedBlockId) {
-                handleParentUpdate(selectedBlockId, { shared: checked });
-              }
-            }}
-            required={false}
-          />
+              <FormCheckbox
+                label="Shared Field"
+                checked={fieldMetadata.shared || false}
+                setter={(checked: boolean) => {
+                  if (parentGroup && selectedBlockId) {
+                    handleParentUpdate(selectedBlockId, { shared: checked });
+                  }
+                }}
+                required={false}
+              />
 
-          <div className="space-y-2">
-            <h4 className="text-xs text-gray-600">Prefiller (JS Function)</h4>
-            <FormTextarea
-              value={fieldMetadata.prefiller || ""}
-              setter={(value) => {
-                if (parentGroup && selectedBlockId) {
-                  handleParentUpdate(selectedBlockId, { prefiller: value });
+              <div className="space-y-2">
+                <h4 className="text-xs text-gray-600">Prefiller (JS Function)</h4>
+                <FormTextarea
+                  value={fieldMetadata.prefiller || ""}
+                  setter={(value) => {
+                    if (parentGroup && selectedBlockId) {
+                      handleParentUpdate(selectedBlockId, { prefiller: value });
+                    }
+                  }}
+                  placeholder="Optional JavaScript function to prefill this field"
+                  required={false}
+                />
+              </div>
+
+              <ValidatorBuilder
+                config={
+                  fieldMetadata.validator
+                    ? zodCodeToValidatorConfig(fieldMetadata.validator)
+                    : { rules: [] }
                 }
-              }}
-              placeholder="Optional JavaScript function to prefill this field"
-              required={false}
-            />
-          </div>
-
-          <ValidatorBuilder
-            config={
-              fieldMetadata.validator
-                ? zodCodeToValidatorConfig(fieldMetadata.validator)
-                : { rules: [] }
-            }
-            rawZodCode={fieldMetadata.validator || ""}
-            onConfigChange={(newConfig) => {
-              const zodCode = validatorConfigToZodCode(newConfig);
-              if (parentGroup && selectedBlockId) {
-                handleParentUpdate(selectedBlockId, { validator: zodCode });
-              }
-            }}
-            onRawZodChange={(zodCode) => {
-              if (parentGroup && selectedBlockId) {
-                handleParentUpdate(selectedBlockId, { validator: zodCode });
-              }
-            }}
-          />
+                rawZodCode={fieldMetadata.validator || ""}
+                onConfigChange={(newConfig) => {
+                  const zodCode = validatorConfigToZodCode(newConfig);
+                  if (parentGroup && selectedBlockId) {
+                    handleParentUpdate(selectedBlockId, { validator: zodCode });
+                  }
+                }}
+                onRawZodChange={(zodCode) => {
+                  if (parentGroup && selectedBlockId) {
+                    handleParentUpdate(selectedBlockId, { validator: zodCode });
+                  }
+                }}
+              />
+            </>
+          )}
         </div>
       </div>
     );
