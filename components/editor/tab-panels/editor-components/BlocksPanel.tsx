@@ -236,6 +236,7 @@ export function BlocksPanel({
       partyId?: string;
       partyName?: string;
       partyOrder?: number;
+      blockType?: string;
       instances?: IFormBlock[];
       firstIndex: number;
     }> = [];
@@ -249,6 +250,20 @@ export function BlocksPanel({
         partyId: string;
         partyName: string;
         partyOrder: number;
+        blockType: string;
+        instances: IFormBlock[];
+        firstIndex: number;
+      }
+    > = {};
+
+    const nonManualGroups: Record<
+      string,
+      {
+        fieldName: string;
+        partyId: string;
+        partyName: string;
+        partyOrder: number;
+        blockType: string;
         instances: IFormBlock[];
         firstIndex: number;
       }
@@ -256,7 +271,7 @@ export function BlocksPanel({
 
     blocks.forEach((block, index) => {
       const blockType = block.block_type;
-      if (blockType === "header" || blockType === "paragraph" || blockType === "phantom_field") {
+      if (blockType === "header" || blockType === "paragraph") {
         if (block.signing_party_id === selectedPartyId) {
           items.push({
             type: blockType,
@@ -268,7 +283,11 @@ export function BlocksPanel({
         return;
       }
 
-      const schema = block.field_schema;
+      // Phantom fields and form fields
+      let schema = block.field_schema;
+      if (!schema && (blockType === "phantom_field" || blockType === "form_phantom_field")) {
+        schema = block.phantom_field_schema;
+      }
       if (!schema) return;
 
       const fieldName = schema.field || "Unnamed";
@@ -280,6 +299,25 @@ export function BlocksPanel({
       const partyName = party?.signatory_title || "Unknown Party";
       const partyOrder = party?.order || 0;
 
+      // If not manual, collect into non-manual groups
+      if (schema.source && schema.source !== "manual") {
+        const key = `${fieldName}-${partyId}`;
+        if (!nonManualGroups[key]) {
+          nonManualGroups[key] = {
+            fieldName,
+            partyId,
+            partyName,
+            partyOrder,
+            blockType,
+            instances: [],
+            firstIndex: index,
+          };
+        }
+        nonManualGroups[key].instances.push(block);
+        return;
+      }
+
+      // Group manual fields as before
       const key = `${fieldName}-${partyId}`;
       if (!groups[key]) {
         groups[key] = {
@@ -287,6 +325,7 @@ export function BlocksPanel({
           partyId,
           partyName,
           partyOrder,
+          blockType,
           instances: [],
           firstIndex: index,
         };
@@ -302,12 +341,42 @@ export function BlocksPanel({
         partyId: group.partyId,
         partyName: group.partyName,
         partyOrder: group.partyOrder,
+        blockType: group.blockType,
         instances: group.instances,
         firstIndex: group.firstIndex,
       });
     });
 
-    return items.sort((a, b) => a.firstIndex - b.firstIndex);
+    // Sort and append non-manual groups at the end
+    const sortedItems = items.sort((a, b) => a.firstIndex - b.firstIndex);
+
+    const result = [...sortedItems];
+    if (Object.keys(nonManualGroups).length > 0) {
+      // Add a divider marker
+      result.push({
+        type: "divider" as any,
+        id: "divider-non-manual",
+        firstIndex: Infinity,
+      } as any);
+
+      // Add non-manual groups sorted by first index
+      Object.values(nonManualGroups)
+        .sort((a, b) => a.firstIndex - b.firstIndex)
+        .forEach((group) => {
+          result.push({
+            type: "group",
+            id: `${group.fieldName}-${group.partyId}-non-manual`,
+            fieldName: group.fieldName,
+            partyId: group.partyId,
+            partyName: group.partyName,
+            partyOrder: group.partyOrder,
+            blockType: group.blockType,
+            instances: group.instances,
+            firstIndex: group.firstIndex,
+          });
+        });
+    }
+    return result;
   }, [blocks, signingParties, selectedPartyId]);
 
   const groupedFields = useMemo(() => {
@@ -683,11 +752,23 @@ export function BlocksPanel({
               ) : (
                 <div className="space-y-3">
                   {displayItems.map((item) => {
+                    // Handle divider
+                    if ((item as any).type === "divider") {
+                      return (
+                        <div key="divider-non-manual" className="my-4 border-t border-gray-300">
+                          <p className="mt-2 text-xs font-semibold text-gray-600">
+                            Non-manual fields
+                          </p>
+                        </div>
+                      );
+                    }
+
                     // Handle non-group blocks (headers, paragraphs, phantom fields)
                     if (item.type !== "group") {
-                      // Handle individual phantom blocks (header, paragraph, phantom_field)
                       const block = item.block!;
-
+                      const isPhantom =
+                        block.block_type === "phantom_field" ||
+                        block.block_type === "form_phantom_field";
                       return (
                         <div key={item.id} className="space-y-2">
                           <div
@@ -696,8 +777,6 @@ export function BlocksPanel({
                             onDragOver={handleGroupDragOver}
                             onDrop={(e) => handleGroupDrop(e, block._id || "")}
                             onClick={() => {
-                              // Single click: show metadata editor (not coordinates)
-                              // For phantom blocks, we only set blockGroup, not selectedBlockId
                               setSelectedBlockId(null);
                               setSelectedBlockGroup({
                                 fieldName: block._id || "",
@@ -709,22 +788,62 @@ export function BlocksPanel({
                               draggedGroupKey === block._id ? "bg-gray-100 opacity-50" : "",
                               selectedBlockGroup?.fieldName === block._id
                                 ? "ring-primary bg-primary/5 ring-2"
-                                : "hover:border-gray-300"
+                                : "hover:border-gray-300",
+                              // Remove party color for phantom fields
+                              isPhantom ? "border-l-gray-300 bg-white" : ""
                             )}
+                            style={isPhantom ? { borderLeftColor: "#d1d5db" } : {}}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <GripVertical className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
                               <div className="min-w-0 flex-1 overflow-hidden">
-                                <BlocksRenderer
-                                  formKey={`block-preview-${block._id}`}
-                                  blocks={[block]}
-                                  values={{}}
-                                  onChange={() => {}}
-                                  errors={{}}
-                                  setSelected={() => {}}
-                                  onBlurValidate={() => {}}
-                                  fieldRefs={{}}
-                                />
+                                {isPhantom ? (
+                                  <div className="flex flex-col">
+                                    <h4 className="text-sm font-semibold text-gray-900">
+                                      {block.phantom_field_schema?.label ||
+                                        block.phantom_field_schema?.field ||
+                                        block.field_schema?.label ||
+                                        block.field_schema?.field ||
+                                        block._id}
+                                    </h4>
+                                  </div>
+                                ) : (
+                                  <>
+                                    {block.block_type !== "header" &&
+                                      block.block_type !== "paragraph" && (
+                                        <h4 className="text-sm font-semibold text-gray-900">
+                                          {block.field_schema?.label ||
+                                            block.field_schema?.field ||
+                                            block._id}
+                                        </h4>
+                                      )}
+                                    {(() => {
+                                      const blockField = getBlockField(block);
+                                      const parsedField = blockField
+                                        ? fieldMap.get(blockField.field)
+                                        : null;
+                                      const fieldWithParser = parsedField || blockField;
+
+                                      const blockWithParsedField = {
+                                        ...block,
+                                        field_schema: fieldWithParser,
+                                      };
+
+                                      return (
+                                        <BlocksRenderer
+                                          formKey={`block-preview-${block._id}`}
+                                          blocks={[blockWithParsedField]}
+                                          values={{}}
+                                          onChange={() => {}}
+                                          errors={{}}
+                                          setSelected={() => {}}
+                                          onBlurValidate={() => {}}
+                                          fieldRefs={{}}
+                                        />
+                                      );
+                                    })()}
+                                  </>
+                                )}
                               </div>
                               <div
                                 className="flex flex-shrink-0 items-center gap-1"
@@ -803,10 +922,12 @@ export function BlocksPanel({
                                         f.name === group.fieldName
                                     )?.label}
                                 </h4>
-                                <p className="text-xs text-gray-500">
-                                  {group.instances!.length} instance
-                                  {group.instances!.length !== 1 ? "s" : ""}
-                                </p>
+                                {group.blockType === "form_field" && (
+                                  <p className="text-xs text-gray-500">
+                                    {group.instances!.length} instance
+                                    {group.instances!.length !== 1 ? "s" : ""}
+                                  </p>
+                                )}
                               </div>
                             </div>
 
@@ -875,8 +996,8 @@ export function BlocksPanel({
                           </div>
                         </Card>
 
-                        {/* Child Cards - Instances (expanded view) */}
-                        {isExpanded && (
+                        {/* Child Cards - Instances (expanded view) - Only for form_field blocks */}
+                        {isExpanded && group.blockType === "form_field" && (
                           <div className="ml-4 space-y-2 border-l-2 pl-3">
                             <p className="text-xs font-medium text-gray-500">Instances</p>
                             {group.instances!.map((block) => {

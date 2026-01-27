@@ -115,7 +115,9 @@ export function RevampedBlockEditor() {
     const matchingBlocks =
       formMetadata?.schema.blocks?.filter(
         (b: any) =>
-          (b.field_schema?.field === parentGroup.fieldName || b._id === parentGroup.fieldName) &&
+          (b.field_schema?.field === parentGroup.fieldName ||
+            b.phantom_field_schema?.field === parentGroup.fieldName ||
+            b._id === parentGroup.fieldName) &&
           (b.signing_party_id === parentGroup.partyId ||
             (b.signing_party_id === "" && parentGroup.partyId === "unknown") ||
             (b.signing_party_id === "unknown" && parentGroup.partyId === ""))
@@ -132,8 +134,9 @@ export function RevampedBlockEditor() {
     }
 
     const blockType = firstBlock.block_type || "form_field";
-    const fieldMetadata = firstBlock.field_schema;
-    const isSimpleBlock = ["header", "paragraph", "phantom_field"].includes(blockType);
+    const fieldMetadata = firstBlock.field_schema || firstBlock.phantom_field_schema;
+    // Treat only header and paragraph as simple text-only blocks
+    const isSimpleBlock = ["header", "paragraph"].includes(blockType);
 
     if (!fieldMetadata && !isSimpleBlock) {
       return (
@@ -196,12 +199,20 @@ export function RevampedBlockEditor() {
           <FormDropdown
             label="Block Type"
             value={blockType}
-            options={BLOCK_TYPES.map((type) => ({
+            options={Array.from(
+              new Set([
+                ...BLOCK_TYPES,
+                blockType, // always include the current blockType
+              ])
+            ).map((type) => ({
               id: type,
-              name: type
-                .split("_")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" "),
+              name:
+                type === "form_phantom_field"
+                  ? "Form Phantom Field"
+                  : type
+                      .split("_")
+                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(" "),
             }))}
             setter={(value) => {
               if (parentGroup && selectedBlockId) {
