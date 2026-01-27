@@ -751,9 +751,9 @@ export function BlocksPanel({
                           <div className="space-y-3">
                             {/* Header with drag handle and title */}
                             <div className="flex items-start justify-start gap-2">
-                              <GripVertical className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
-                              <div className="min-w-0 flex-1">
-                                <h4 className="text-sm font-semibold text-gray-900">
+                              <GripVertical className="mt-1 h-4 w-4 flex-shrink-0 text-gray-400" />
+                              <div className="min-w-0">
+                                <span className="text-sm font-semibold text-gray-900">
                                   {group.fieldName === "header" || group.fieldName === "paragraph"
                                     ? group.instances![0]?.text_content ||
                                       `(empty ${group.fieldName})`
@@ -767,17 +767,15 @@ export function BlocksPanel({
                                       group.fieldName !== "paragraph"
                                         ? ` (${group.instances!.length})`
                                         : "")}
-                                </h4>
+                                </span>
                               </div>
                             </div>
 
                             {/* Block Preview */}
-                            {/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */}
                             <div className="space-y-2">
                               {group.instances![0] &&
                                 (() => {
                                   const block = group.instances![0];
-                                  // Find the enriched version of this block with type/coerce/validator
                                   const enrichedBlock =
                                     enrichedBlocks.find((b) => b._id === block._id) || block;
 
@@ -822,7 +820,6 @@ export function BlocksPanel({
                                   );
                                 })()}
                             </div>
-                            {/* eslint-enable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */}
                           </div>
                         </Card>
 
@@ -872,7 +869,6 @@ export function BlocksPanel({
                                       "hover:border-gray-300"
                                     )}
                                     onClick={() => {
-                                      // Select the block instance for editing
                                       setSelectedBlockId(block._id || "");
                                     }}
                                   >
