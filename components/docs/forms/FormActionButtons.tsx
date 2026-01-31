@@ -77,8 +77,9 @@ export function FormActionButtons() {
               supposedSigningPartyId: formProcess.my_signing_party_id!,
               values: { ...finalValues, ...signingPartyValues },
               audit: getClientAudit(),
-            }).then(() => {
+            }).then(async () => {
               modalRegistry.specifySigningParties.close();
+              await queryClient.refetchQueries({ queryKey: ["my-forms"] });
               modalRegistry.formContinuationSuccess.open();
             }),
           updateAutofill,
@@ -94,7 +95,7 @@ export function FormActionButtons() {
           values: finalValues,
           audit: getClientAudit(),
         });
-        await queryClient.invalidateQueries({ queryKey: ["my-forms"] });
+        await queryClient.refetchQueries({ queryKey: ["my-forms"] });
         modalRegistry.formContinuationSuccess.open();
       }
 
@@ -111,12 +112,12 @@ export function FormActionButtons() {
   };
 
   return (
-    <div className="flex items-start justify-end gap-2 pt-2">
+    <div className="flex items-center justify-end gap-2">
       <Button
         onClick={() => void handleReject()}
         variant="outline"
         scheme="destructive"
-        className="w-full text-xs sm:w-auto"
+        className="w-full sm:w-auto"
         disabled={busy}
       >
         <TextLoader loading={busy}>
@@ -127,7 +128,7 @@ export function FormActionButtons() {
       <Button
         onClick={() => void handleSubmit()}
         variant="default"
-        className="w-full text-xs sm:w-auto"
+        className="w-full sm:w-auto"
         disabled={busy || !signContext.hasAgreed}
       >
         <TextLoader loading={busy}>
