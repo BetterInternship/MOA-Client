@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { FormActionButtons } from "@/components/docs/forms/FormActionButtons";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
+import { formsControllerMarkFormAsFirstViewed } from "@/app/api";
 
 const Page = () => {
   return (
@@ -74,6 +75,21 @@ function PageContent() {
       form.updateSigningPartyId(signingPartyId);
     }
   }, [formProcess]);
+
+  // Mark form as first viewed when page loads
+  useEffect(() => {
+    if (formProcess.id && profile.id) {
+      const markAsViewed = async () => {
+        try {
+          await formsControllerMarkFormAsFirstViewed({ formProcessId: formProcess.id });
+        } catch (error) {
+          console.warn("Failed to mark form as first viewed:", error);
+        }
+      };
+
+      markAsViewed();
+    }
+  }, [formProcess.id, profile.id]);
 
   // Update sign context
   useEffect(() => {

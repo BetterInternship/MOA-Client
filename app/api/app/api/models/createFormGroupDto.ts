@@ -7,6 +7,5 @@
  */
 
 export interface CreateFormGroupDto {
-  /** The name of the form group */
   name?: string;
 }

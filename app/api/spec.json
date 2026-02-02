@@ -1840,6 +1840,34 @@
         "tags": ["Forms"]
       }
     },
+    "/api/forms/mark-first-viewed": {
+      "post": {
+        "operationId": "FormsController_markFormAsFirstViewed",
+        "parameters": [
+          {
+            "name": "formProcessId",
+            "required": true,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Forms"]
+      }
+    },
     "/api/form-groups": {
       "get": {
         "operationId": "FormGroupsController_getAllFormGroups",
@@ -2981,30 +3009,10 @@
         },
         "required": ["success", "message", "processes"]
       },
-      "CreateFormGroupDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "The name of the form group",
-            "example": "Student Forms"
-          }
-        }
-      },
+      "CreateFormGroupDto": { "type": "object", "properties": { "name": { "type": "string" } } },
       "AddFormToGroupDto": {
         "type": "object",
-        "properties": {
-          "formName": {
-            "type": "string",
-            "description": "The name of the form to add",
-            "example": "ApplicationForm"
-          },
-          "groupId": {
-            "type": "string",
-            "description": "The ID of the form group",
-            "example": "cb7fbf3c-5ab9-439e-baf9-fb3644f370fd"
-          }
-        },
+        "properties": { "formName": { "type": "string" }, "groupId": { "type": "string" } },
         "required": ["formName", "groupId"]
       },
       "CreateSignatoryResponse": {
@@ -3077,7 +3085,8 @@
           "signatory_id": { "type": "string" },
           "rejection_response": { "type": "string" },
           "timestamp": { "type": "string" },
-          "form_processes": { "$ref": "#/components/schemas/FormProcess" }
+          "form_processes": { "$ref": "#/components/schemas/FormProcess" },
+          "first_viewed": { "type": "string", "format": "date-time", "nullable": true }
         },
         "required": [
           "id",
@@ -3088,7 +3097,8 @@
           "signatory_id",
           "rejection_response",
           "timestamp",
-          "form_processes"
+          "form_processes",
+          "first_viewed"
         ]
       },
       "SignatorySignedFormsResponse": {

@@ -14,7 +14,7 @@
     "@betterinternship/core": "^2.5.0",
     "@betterinternship/package.components": "^1.2.0",
     "@betterinternship/schema.base": "^1.0.21",
-    "@betterinternship/schema.moa": "2.6.0",
+    "@betterinternship/schema.moa": "2.6.1",
     "@hookform/resolvers": "^5.2.1",
     "@marsidev/react-turnstile": "^1.4.0",
     "@radix-ui/react-accordion": "^1.2.11",

@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface AddFormToGroupDto {
-  formName: string;
-  groupId: string;
-}
+export type FormsControllerMarkFormAsFirstViewedParams = {
+  formProcessId: string;
+};
