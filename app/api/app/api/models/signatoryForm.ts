@@ -17,4 +17,6 @@ export interface SignatoryForm {
   rejection_response: string;
   timestamp: string;
   form_processes: FormProcess;
+  /** @nullable */
+  first_viewed: string | null;
 }
