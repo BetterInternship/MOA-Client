@@ -265,14 +265,18 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
         const schema = block.field_schema || block.phantom_field_schema;
 
         const matches =
-          (schema?.field === group.fieldName ||
-            block.block_type === group.fieldName) &&
+          (schema?.field === group.fieldName || block.block_type === group.fieldName) &&
           (block.signing_party_id === group.partyId ||
             (block.signing_party_id === "" && group.partyId === "unknown") ||
             (block.signing_party_id === "unknown" && group.partyId === ""));
 
         if (matches) {
-          console.log("[handleParentUpdate] Matched block:", { blockId: block._id, fieldName: schema?.field, partyId: block.signing_party_id, updates });
+          console.log("[handleParentUpdate] Matched block:", {
+            blockId: block._id,
+            fieldName: schema?.field,
+            partyId: block.signing_party_id,
+            updates,
+          });
           const updated: IFormBlock = {
             ...block,
           };
@@ -286,10 +290,14 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
               type: updates.type !== undefined ? updates.type : block.field_schema.type,
               source: updates.source !== undefined ? updates.source : block.field_schema.source,
               tooltip_label:
-                updates.tooltip_label !== undefined ? updates.tooltip_label : block.field_schema.tooltip_label,
+                updates.tooltip_label !== undefined
+                  ? updates.tooltip_label
+                  : block.field_schema.tooltip_label,
               shared: updates.shared !== undefined ? updates.shared : block.field_schema.shared,
-              prefiller: updates.prefiller !== undefined ? updates.prefiller : block.field_schema.prefiller,
-              validator: updates.validator !== undefined ? updates.validator : block.field_schema.validator,
+              prefiller:
+                updates.prefiller !== undefined ? updates.prefiller : block.field_schema.prefiller,
+              validator:
+                updates.validator !== undefined ? updates.validator : block.field_schema.validator,
             };
           }
 
@@ -297,15 +305,28 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
           if (block.phantom_field_schema) {
             updated.phantom_field_schema = {
               ...block.phantom_field_schema,
-              field: updates.fieldName !== undefined ? updates.fieldName : block.phantom_field_schema.field,
+              field:
+                updates.fieldName !== undefined
+                  ? updates.fieldName
+                  : block.phantom_field_schema.field,
               label: updates.label !== undefined ? updates.label : block.phantom_field_schema.label,
               type: updates.type !== undefined ? updates.type : block.phantom_field_schema.type,
-              source: updates.source !== undefined ? updates.source : block.phantom_field_schema.source,
+              source:
+                updates.source !== undefined ? updates.source : block.phantom_field_schema.source,
               tooltip_label:
-                updates.tooltip_label !== undefined ? updates.tooltip_label : block.phantom_field_schema.tooltip_label,
-              shared: updates.shared !== undefined ? updates.shared : block.phantom_field_schema.shared,
-              prefiller: updates.prefiller !== undefined ? updates.prefiller : block.phantom_field_schema.prefiller,
-              validator: updates.validator !== undefined ? updates.validator : block.phantom_field_schema.validator,
+                updates.tooltip_label !== undefined
+                  ? updates.tooltip_label
+                  : block.phantom_field_schema.tooltip_label,
+              shared:
+                updates.shared !== undefined ? updates.shared : block.phantom_field_schema.shared,
+              prefiller:
+                updates.prefiller !== undefined
+                  ? updates.prefiller
+                  : block.phantom_field_schema.prefiller,
+              validator:
+                updates.validator !== undefined
+                  ? updates.validator
+                  : block.phantom_field_schema.validator,
             };
           }
 
@@ -330,16 +351,17 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
       console.log("[handleParentUpdate] updateBlocks called");
 
       // Update the group mapping if partyId or block_type changed
-      const newPartyId = updates.signing_party_id !== undefined ? updates.signing_party_id : group.partyId;
+      const newPartyId =
+        updates.signing_party_id !== undefined ? updates.signing_party_id : group.partyId;
       const newBlockType = updates.block_type !== undefined ? updates.block_type : group.fieldName;
-      
+
       const newGroupId = `${group.fieldName}-${newPartyId}-${newBlockType}`;
-      
+
       // Update block group if either partyId or block_type changed
       if (updates.signing_party_id !== undefined || updates.block_type !== undefined) {
         setBlockGroups((prev) => {
           const updated = { ...prev };
-          
+
           // If the group ID changed, create the new group and remove the old one
           if (updates.signing_party_id !== undefined || updates.block_type !== undefined) {
             updated[blockId] = {
@@ -347,18 +369,16 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
               partyId: newPartyId,
             };
           }
-          
+
           return updated;
         });
-        
+
         // Update the selected group to reflect changes
         setSelectedBlockGroup((prev) => {
           if (!prev) return prev;
-          
-          const matches =
-            prev.fieldName === group.fieldName &&
-            prev.partyId === group.partyId;
-          
+
+          const matches = prev.fieldName === group.fieldName && prev.partyId === group.partyId;
+
           if (matches) {
             return {
               ...prev,
