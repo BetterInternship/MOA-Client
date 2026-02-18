@@ -7,8 +7,8 @@
  */
 
 export interface FormSignatory {
-  name: string;
+  name?: string;
   email: string;
-  title: string;
-  honorific: string;
+  title?: string;
+  honorific?: string;
 }

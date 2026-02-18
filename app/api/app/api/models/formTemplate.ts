@@ -6,7 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface AddFormToGroupDto {
-  formName: string;
-  groupId: string;
+export interface FormTemplate {
+  name: string;
+  label: string;
+  version: number;
+  base_document_id: string;
+  time_generated: string;
 }

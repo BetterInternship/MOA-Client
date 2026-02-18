@@ -156,3 +156,6 @@ export * from "./signingParty";
 export * from "./updateFieldDto";
 export * from "./updateFieldDtoSource";
 export * from "./updateSignatoryDto";
+export * from "./_signatoryForm";
+export * from "./formTemplate";
+export * from "./formsControllerMarkFormAsFirstViewedParams";

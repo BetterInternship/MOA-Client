@@ -2,7 +2,7 @@
  * @ Author: BetterInternship [Jana]
  * @ Create Time: 2025-12-16 15:37:57
  * @ Modified time: 2025-12-29 18:33:21
- * @ Modified time: 2025-12-30 11:48:47
+ * @ Modified time: 2026-02-19 02:10:29
  *                Orchestrates form editor state with block-centric metadata management
  */
 
@@ -731,11 +731,9 @@ const PdfJsEditorPage = () => {
                 <Edit2 className="h-4 w-4" />
               </button>
             </div>
-            {/* @ts-expect-error - TODO:formDocument not be typed */}
-            {formData?.formDocument?.time_generated && (
+            {formData?.formTemplate?.time_generated && (
               <p className="text-xs text-slate-500">
-                {/* @ts-expect-error - TODO: formDocument  not be typed */}
-                Last Registered: {new Date(formData.formDocument.time_generated).toLocaleString()}
+                Last Registered: {new Date(formData.formTemplate.time_generated).toLocaleString()}
               </p>
             )}
           </div>

@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-11-09 03:19:04
- * @ Modified time: 2026-01-03 14:38:37
+ * @ Modified time: 2026-02-19 02:09:14
  * @ Description:
  *
  * We can move this out later on so it becomes reusable in other places.
@@ -138,14 +138,14 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
       .then((form) => {
         const fm = new FormMetadata(form.formMetadata as unknown as IFormMetadata);
         const newFormName = form.formMetadata.name;
-        const newFormVersion = form.formDocument.version;
+        const newFormVersion = form.formTemplate.version;
 
         // Only update form if it's new
         setFormMetadata(fm);
         setFormName(newFormName);
         setFormLabel(form.formMetadata.label);
         setFormVersion(newFormVersion);
-        setDocumentName(form.formDocument.name);
+        setDocumentName(form.formTemplate.name);
         setDocumentUrl(form.documentUrl);
         setFields(fm.getFieldsForClientService(signingPartyId));
         setBlocks(fm.getBlocksForClientService(signingPartyId));
