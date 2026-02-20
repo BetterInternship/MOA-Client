@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
 import { IFormBlock } from "@betterinternship/core/forms";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { FormInput, FormTextarea, FormDropdown } from "@/components/docs/forms/EditForm";
@@ -25,10 +25,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Lock } from "lucide-react";
 import { validateExpression } from "@/lib/expression-validator";
+import {
+  buildFieldRefPrefiller,
+  buildManualPrefiller,
+  parsePrefillerToCompactState,
+} from "@/lib/default-value-builder";
 
 function RecipientBadgeDropdown({
   value,
@@ -82,6 +88,219 @@ function RecipientBadgeDropdown({
         })}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+interface FieldOption {
+  id: string;
+  name: string;
+  partyName?: string;
+}
+
+const normalizeValidatorCode = (value: string) =>
+  (value || "").replace(/\s+/g, "").replace(/;$/, "").trim();
+
+function ValidationRulesEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const validatorValue = value || "";
+  const parsedConfig = useMemo(() => zodCodeToValidatorConfig(validatorValue), [validatorValue]);
+  const isBuilderCompatible = useMemo(() => {
+    if (!validatorValue.trim()) return true;
+    const rebuilt = validatorConfigToZodCode(parsedConfig);
+    return normalizeValidatorCode(rebuilt) === normalizeValidatorCode(validatorValue);
+  }, [parsedConfig, validatorValue]);
+  const [mode, setMode] = useState<"simple" | "raw">(() =>
+    isBuilderCompatible ? "simple" : "raw"
+  );
+  const [builderConfig, setBuilderConfig] = useState(parsedConfig);
+
+  useEffect(() => {
+    setBuilderConfig(parsedConfig);
+  }, [parsedConfig]);
+
+  return (
+    <div className="">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-xs text-slate-600">Validation</h4>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setMode((prev) => (prev === "raw" ? "simple" : "raw"))}
+            className="rounded-[0.33em] px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            title={mode === "raw" ? "Back to simple mode" : "Open raw mode"}
+          >
+            {mode === "raw" ? "Back" : "<>"}
+          </button>
+        </div>
+      </div>
+
+      {mode === "simple" ? (
+        <div className="">
+          <ValidatorBuilder
+            config={builderConfig}
+            rawZodCode={validatorValue}
+            onConfigChange={(newConfig) => {
+              setBuilderConfig(newConfig);
+              onChange(validatorConfigToZodCode(newConfig));
+            }}
+            onRawZodChange={onChange}
+            allowRawMode={false}
+            compact={true}
+            hideGeneratedPreview={true}
+          />
+        </div>
+      ) : (
+        <div className=" ">
+          <FormTextarea
+            value={validatorValue}
+            setter={onChange}
+            placeholder='z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), z.string())'
+            required={false}
+            className="min-h-28 bg-white font-mono text-xs"
+          />
+          <p className="text-xs text-slate-500">Raw Zod expression</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DefaultValueEditor({
+  source,
+  value,
+  onChange,
+  fieldOptions,
+}: {
+  source: string;
+  value: string;
+  onChange: (value: string) => void;
+  fieldOptions: FieldOption[];
+}) {
+  const prefillerValue = value || "";
+  const parsed = useMemo(() => parsePrefillerToCompactState(prefillerValue), [prefillerValue]);
+  const [open, setOpen] = useState(false);
+  const [manualValue, setManualValue] = useState("");
+  const [mode, setMode] = useState<"simple" | "raw">("simple");
+  const isLocked = source === "auto";
+  const advancedValidation = validateExpression(prefillerValue);
+
+  useEffect(() => {
+    if (parsed.kind === "manual") setManualValue(parsed.manualValue);
+    if (parsed.kind === "empty") setManualValue("");
+  }, [parsed.kind, parsed.manualValue]);
+
+  const triggerText =
+    parsed.kind === "field"
+      ? fieldOptions.find((f) => f.id === parsed.fieldRef)?.name || parsed.fieldRef
+      : parsed.kind === "manual"
+        ? parsed.manualValue || "Manual"
+        : parsed.kind === "custom"
+          ? "Custom"
+          : "Select";
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-xs text-slate-600">Default value</h4>
+        <div className="flex items-center gap-2">
+          {parsed.kind === "custom" && (
+            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+              Custom
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setMode((prev) => (prev === "raw" ? "simple" : "raw"))}
+            className="rounded-[0.33em] px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            title={mode === "raw" ? "Back to simple mode" : "Open raw mode"}
+          >
+            {mode === "raw" ? "Back" : "<>"}
+          </button>
+          {isLocked && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
+              <Lock className="h-3 w-3" />
+              Locked
+            </span>
+          )}
+        </div>
+      </div>
+
+      {mode === "simple" ? (
+        <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              disabled={isLocked}
+              className="flex h-8 w-full items-center justify-between rounded-[0.33em] border border-slate-300 bg-white px-2.5 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="truncate">{triggerText}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            sideOffset={6}
+            className="w-[var(--radix-dropdown-menu-trigger-width)] rounded-[0.33em] p-2"
+          >
+            <div className="max-h-44 space-y-1 overflow-auto pr-0.5">
+              {fieldOptions.map((field) => (
+                <button
+                  key={field.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(buildFieldRefPrefiller(field.id));
+                    setOpen(false);
+                  }}
+                  className="w-full rounded-[0.33em] px-2 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  <span className="block truncate">{field.name}</span>
+                  {field.partyName && (
+                    <span className="text-[10px] text-slate-500">{field.partyName}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <DropdownMenuSeparator className="my-2" />
+            <div className="space-y-1">
+              <p className="text-xs text-slate-600">Manual value</p>
+              <input
+                type="text"
+                value={manualValue}
+                onChange={(e) => setManualValue(e.target.value)}
+                onBlur={() => onChange(buildManualPrefiller(manualValue))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    onChange(buildManualPrefiller(manualValue));
+                    setOpen(false);
+                  }
+                }}
+                placeholder="Type value"
+                className="h-8 w-full rounded-[0.33em] border border-slate-300 px-2 text-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
+              />
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <div className="space-y-1">
+          <FormTextarea
+            value={prefillerValue}
+            setter={onChange}
+            placeholder='() => "Sample Value"'
+            required={false}
+            disabled={isLocked}
+            className="min-h-24 font-mono text-xs"
+          />
+          {!advancedValidation.valid && (
+            <p className="text-xs text-red-600">{advancedValidation.message}</p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -151,7 +370,30 @@ export function RevampedBlockEditor() {
   }, [parentGroup?.id]);
 
   const getSource = (schema: any) => (schema?.source as string) || "manual";
-  const isDefaultValueLocked = (source: string) => source === "auto" || source === "prefill";
+
+  const getFieldOptions = () => {
+    const options: FieldOption[] = [];
+    const seen = new Set<string>();
+    const partyTitleById = new Map(
+      (formMetadata?.signing_parties || []).map((party) => [
+        party._id,
+        party.signatory_title || party._id,
+      ])
+    );
+    (formMetadata?.schema.blocks || []).forEach((candidate) => {
+      const schema = candidate.field_schema || candidate.phantom_field_schema;
+      const field = schema?.field;
+      if (!field || seen.has(field)) return;
+
+      seen.add(field);
+      options.push({
+        id: field,
+        name: schema?.label || field,
+        partyName: partyTitleById.get(candidate.signing_party_id || "") || undefined,
+      });
+    });
+    return options.sort((a, b) => a.name.localeCompare(b.name));
+  };
 
   const handleFieldChange = (key: string, value: any) => {
     if (!editedBlock || !formMetadata) return;
@@ -271,7 +513,12 @@ export function RevampedBlockEditor() {
         ? editingValues.prefiller
         : fieldMetadata?.prefiller || ""
     ) as string;
-    const parentPrefillerValidation = validateExpression(parentPrefillerValue);
+    const parentValidatorValue = (
+      editingValues.validator !== undefined
+        ? editingValues.validator
+        : fieldMetadata?.validator || ""
+    ) as string;
+    const parentFieldOptions = getFieldOptions();
 
     return (
       <div className="flex h-full flex-col overflow-hidden">
@@ -365,56 +612,21 @@ export function RevampedBlockEditor() {
                 required={false}
               />
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-xs text-gray-600">Default value</h4>
-                  {isDefaultValueLocked(getSource(fieldMetadata)) && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
-                      <Lock className="h-3 w-3" />
-                      Locked by source
-                    </span>
-                  )}
-                </div>
-                <FormTextarea
-                  value={parentPrefillerValue}
-                  setter={(value) => {
-                    setEditingValues((prev) => ({ ...prev, prefiller: value }));
-                    if (parentGroup) {
-                      handleParentUpdate(parentGroup.id, { prefiller: value });
-                    }
-                  }}
-                  placeholder='() => "Sample Value"'
-                  required={false}
-                  disabled={isDefaultValueLocked(parentSource)}
-                />
-                {!parentPrefillerValidation.valid && (
-                  <p className="text-xs text-red-600">{parentPrefillerValidation.message}</p>
-                )}
-                <p className="text-xs text-slate-500">
-                  Use <span className="font-mono">() =&gt; "value"</span> or{" "}
-                  <span className="font-mono">
-                    () =&gt; &#123; return #&#123;field_name&#125;; &#125;
-                  </span>
-                </p>
-              </div>
-
-              <ValidatorBuilder
-                config={
-                  fieldMetadata.validator
-                    ? zodCodeToValidatorConfig(fieldMetadata.validator)
-                    : { rules: [] }
-                }
-                rawZodCode={fieldMetadata.validator || ""}
-                onConfigChange={(newConfig) => {
-                  const zodCode = validatorConfigToZodCode(newConfig);
-                  if (parentGroup) {
-                    handleParentUpdate(parentGroup.id, { validator: zodCode });
-                  }
+              <DefaultValueEditor
+                source={parentSource}
+                value={parentPrefillerValue}
+                fieldOptions={parentFieldOptions}
+                onChange={(value) => {
+                  setEditingValues((prev) => ({ ...prev, prefiller: value }));
+                  if (parentGroup) handleParentUpdate(parentGroup.id, { prefiller: value });
                 }}
-                onRawZodChange={(zodCode) => {
-                  if (parentGroup) {
-                    handleParentUpdate(parentGroup.id, { validator: zodCode });
-                  }
+              />
+
+              <ValidationRulesEditor
+                value={parentValidatorValue}
+                onChange={(value) => {
+                  setEditingValues((prev) => ({ ...prev, validator: value }));
+                  if (parentGroup) handleParentUpdate(parentGroup.id, { validator: value });
                 }}
               />
             </Card>
@@ -433,7 +645,7 @@ export function RevampedBlockEditor() {
   }
 
   const schema = (editedBlock.field_schema || editedBlock.phantom_field_schema) as any;
-  const childPrefillerValidation = validateExpression((schema?.prefiller || "") as string);
+  const childFieldOptions = getFieldOptions();
 
   // Child/Instance editing - Show PDF-level properties (coordinates, alignment, font size, wrap)
   return (
@@ -627,43 +839,15 @@ export function RevampedBlockEditor() {
             setter={(value) => handleFieldChange("source", value)}
             required={false}
           />
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <h4 className="text-xs text-gray-600">Default value</h4>
-              {isDefaultValueLocked(getSource(schema)) && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
-                  <Lock className="h-3 w-3" />
-                  Locked by source
-                </span>
-              )}
-            </div>
-            <FormTextarea
-              value={schema?.prefiller || ""}
-              setter={(value) => handleFieldChange("prefiller", value)}
-              placeholder='() => "Sample Value"'
-              required={false}
-              disabled={isDefaultValueLocked(getSource(schema))}
-            />
-            {!childPrefillerValidation.valid && (
-              <p className="text-xs text-red-600">{childPrefillerValidation.message}</p>
-            )}
-            <p className="text-xs text-slate-500">
-              Use <span className="font-mono">() =&gt; "value"</span> or{" "}
-              <span className="font-mono">
-                () =&gt; &#123; return #&#123;field_name&#125;; &#125;
-              </span>
-            </p>
-          </div>
-          <ValidatorBuilder
-            config={schema?.validator ? zodCodeToValidatorConfig(schema.validator) : { rules: [] }}
-            rawZodCode={schema?.validator || ""}
-            onConfigChange={(newConfig) => {
-              const zodCode = validatorConfigToZodCode(newConfig);
-              handleFieldChange("validator", zodCode);
-            }}
-            onRawZodChange={(zodCode) => {
-              handleFieldChange("validator", zodCode);
-            }}
+          <DefaultValueEditor
+            source={getSource(schema)}
+            value={(schema?.prefiller || "") as string}
+            fieldOptions={childFieldOptions}
+            onChange={(value) => handleFieldChange("prefiller", value)}
+          />
+          <ValidationRulesEditor
+            value={(schema?.validator || "") as string}
+            onChange={(value) => handleFieldChange("validator", value)}
           />
         </Card>
       </div>
