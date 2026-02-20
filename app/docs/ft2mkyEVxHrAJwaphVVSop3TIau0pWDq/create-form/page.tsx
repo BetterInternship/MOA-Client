@@ -23,8 +23,7 @@ const CreateFormPage = () => {
     {
       _id: "initiator",
       order: 1,
-      signatory_title: "initiator",
-      signatory_source: "initiator",
+      signatory_title: "Student",
     },
   ]);
 
@@ -36,6 +35,10 @@ const CreateFormPage = () => {
       .replace(/\s+/g, "_")
       .replace(/[^a-z0-9_]/g, "");
   }, [formLabel]);
+
+  const hasMissingPartyTitle = useMemo(() => {
+    return signingParties.some((party) => !party.signatory_title?.trim());
+  }, [signingParties]);
 
   const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,6 +78,10 @@ const CreateFormPage = () => {
     }
     if (signingParties.length === 0) {
       toast.error("Please add at least one recipient");
+      return;
+    }
+    if (hasMissingPartyTitle) {
+      toast.error("Please complete all recipient titles");
       return;
     }
 
@@ -177,7 +184,7 @@ const CreateFormPage = () => {
         <div className="flex justify-end border-t border-slate-200 pt-4">
           <Button
             onClick={handleCreateForm}
-            disabled={isLoading}
+            disabled={isLoading || hasMissingPartyTitle}
             size="md"
             className="items-center"
           >

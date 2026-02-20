@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FormInput } from "@/components/docs/forms/EditForm";
+import { getPartyColorByIndex } from "@/lib/party-colors";
 import { Plus, Trash2, GripVertical, ChevronDown } from "lucide-react";
 
 interface PartiesPanelProps {
@@ -32,6 +32,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [partyCounter, setPartyCounter] = useState(0);
 
+  const getPartyDisplayTitle = (party: IFormSigningParty | undefined) => {
+    if (!party) return "";
+    return party._id === "initiator" ? "Student" : party.signatory_title || "Party";
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -51,7 +56,6 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
         _id: "initiator",
         order: 1,
         signatory_title: "Student",
-        signatory_source: "initiator",
       };
       onPartiesChange([newParty, ...safeParties]);
     }
@@ -138,6 +142,23 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
 
       const { signed: _signed, ...partyWithoutSigned } = party;
       return partyWithoutSigned as IFormSigningParty;
+    });
+
+    onPartiesChange(updatedParties);
+  };
+
+  const persistPartyTitle = (partyId: string, title: string) => {
+    const updatedParties = orderedParties.map((p) => {
+      if (p._id !== partyId) return p;
+
+      const updated = { ...p, signatory_title: title };
+      if (updated.signatory_source) {
+        updated.signatory_source = {
+          ...updated.signatory_source,
+          label: `${title || "Party"} Email Address`,
+        };
+      }
+      return updated;
     });
 
     onPartiesChange(updatedParties);
@@ -255,6 +276,7 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
               const sourceParty = orderedParties.find(
                 (p) => p._id === values.signatory_source?._id
               );
+              const partyColor = getPartyColorByIndex(Math.max(0, (party.order || 1) - 1));
 
               return (
                 <Card
@@ -278,11 +300,16 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                   } relative`}
                 >
                   {index === 0 ? (
-                    <div className="flex h-8 items-center text-sm font-semibold text-slate-800">
-                      Student
+                    <div className="flex h-8 items-center">
+                      <span
+                        className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+                        style={{ backgroundColor: partyColor.hex }}
+                      >
+                        Student
+                      </span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-[auto_1fr_1fr_auto] items-start gap-2.5">
+                    <div className="grid grid-cols-[auto_auto_1fr_1fr_auto] items-start gap-2.5">
                       <button
                         draggable
                         onDragStart={(e) => handleDragStart(e, index)}
@@ -294,25 +321,35 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                         <GripVertical className="h-4 w-4" />
                       </button>
 
+                      <span
+                        className="mt-6 inline-block h-5 w-5 flex-shrink-0 rounded-full"
+                        style={{ backgroundColor: partyColor.hex }}
+                        aria-hidden
+                      />
+
                       <div className="min-w-0">
-                        <FormInput
-                          label="Title"
-                          type="text"
-                          value={values.signatory_title || ""}
-                          setter={(value) => {
-                            setEditValues({
-                              ...editValues,
-                              [party._id]: { ...values, signatory_title: value },
-                            });
-                            setValidationErrors((prev) => ({
-                              ...prev,
-                              [party._id]: { ...partyErrors, title: undefined },
-                            }));
-                            setTimeout(() => autoSaveParty(party._id), 250);
-                          }}
-                          placeholder="e.g., Partner"
-                          required={false}
-                        />
+                        <label className="mb-1 block text-xs text-slate-600">Title</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={values.signatory_title || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setEditValues({
+                                ...editValues,
+                                [party._id]: { ...values, signatory_title: value },
+                              });
+                              setValidationErrors((prev) => ({
+                                ...prev,
+                                [party._id]: { ...partyErrors, title: undefined },
+                              }));
+                              // Keep title in sync immediately, even if source is still invalid.
+                              persistPartyTitle(party._id, value);
+                            }}
+                            placeholder="e.g., Partner"
+                            className="h-8 w-full rounded-[0.33em] border border-slate-300 bg-white px-2 text-sm transition-colors focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                          />
+                        </div>
                         {partyErrors.title && (
                           <p className="mt-1 text-xs text-red-600">{partyErrors.title}</p>
                         )}
@@ -332,9 +369,22 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                           type="button"
                         >
                           <span className="truncate text-slate-700">
-                            {isEmail
-                              ? values.signatory_account?.email || "Direct email"
-                              : sourceParty?.signatory_title || "Select source"}
+                            {isEmail ? (
+                              values.signatory_account?.email || "Direct email"
+                            ) : sourceParty ? (
+                              <span
+                                className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+                                style={{
+                                  backgroundColor: getPartyColorByIndex(
+                                    Math.max(0, (sourceParty.order || 1) - 1)
+                                  ).hex,
+                                }}
+                              >
+                                {getPartyDisplayTitle(sourceParty)}
+                              </span>
+                            ) : (
+                              "Select source"
+                            )}
                           </span>
                           <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
                         </button>
@@ -379,7 +429,16 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                                     }}
                                     className="w-full rounded-[0.33em] px-2 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
                                   >
-                                    {p.signatory_title}
+                                    <span
+                                      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+                                      style={{
+                                        backgroundColor: getPartyColorByIndex(
+                                          Math.max(0, (p.order || 1) - 1)
+                                        ).hex,
+                                      }}
+                                    >
+                                      {getPartyDisplayTitle(p)}
+                                    </span>
                                   </button>
                                 ))}
                             </div>
