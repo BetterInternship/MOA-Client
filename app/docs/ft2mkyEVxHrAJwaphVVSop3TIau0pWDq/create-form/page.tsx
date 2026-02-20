@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload, Check } from "lucide-react";
@@ -17,13 +17,13 @@ const CreateFormPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [formLabel, setFormLabel] = useState("");
   const [signingParties, setSigningParties] = useState<IFormSigningParty[]>([
     {
       _id: "initiator",
       order: 1,
-      signatory_title: "initiator",
-      signatory_source: "initiator",
+      signatory_title: "Student",
     },
   ]);
 
@@ -35,6 +35,10 @@ const CreateFormPage = () => {
       .replace(/\s+/g, "_")
       .replace(/[^a-z0-9_]/g, "");
   }, [formLabel]);
+
+  const hasMissingPartyTitle = useMemo(() => {
+    return signingParties.some((party) => !party.signatory_title?.trim());
+  }, [signingParties]);
 
   const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,6 +53,20 @@ const CreateFormPage = () => {
     toast.success("PDF uploaded successfully");
   };
 
+  useEffect(() => {
+    if (!pdfFile) {
+      setPdfPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(pdfFile);
+    setPdfPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [pdfFile]);
+
   const handleCreateForm = async () => {
     if (!pdfFile) {
       toast.error("Please upload a PDF file");
@@ -60,6 +78,10 @@ const CreateFormPage = () => {
     }
     if (signingParties.length === 0) {
       toast.error("Please add at least one recipient");
+      return;
+    }
+    if (hasMissingPartyTitle) {
+      toast.error("Please complete all recipient titles");
       return;
     }
 
@@ -140,6 +162,16 @@ const CreateFormPage = () => {
               <input type="file" accept=".pdf" onChange={handlePdfUpload} className="hidden" />
             </label>
           </div>
+          {pdfPreviewUrl && (
+            <div className="mt-1 overflow-hidden rounded-[0.33em] border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 px-3 py-2">
+                <p className="text-xs font-medium text-slate-600">PDF Preview</p>
+              </div>
+              <object data={pdfPreviewUrl} type="application/pdf" className="h-[520px] w-full">
+                <iframe src={pdfPreviewUrl} className="h-[520px] w-full" title="PDF Preview" />
+              </object>
+            </div>
+          )}
         </Card>
 
         <Card className="gap-2 border-slate-200 px-5 py-3.5">
@@ -152,7 +184,7 @@ const CreateFormPage = () => {
         <div className="flex justify-end border-t border-slate-200 pt-4">
           <Button
             onClick={handleCreateForm}
-            disabled={isLoading}
+            disabled={isLoading || hasMissingPartyTitle}
             size="md"
             className="items-center"
           >
