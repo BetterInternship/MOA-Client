@@ -6,13 +6,13 @@
  * OpenAPI spec version: 1.0
  */
 import type { FormMetadata } from "./formMetadata";
-import type { FormTemplate } from "./formTemplate";
+import type { FormDocument } from "./formDocument";
 
 export interface FormLatestResponse {
   success: boolean;
   message: string;
   formMetadata: FormMetadata;
-  formTemplate: FormTemplate;
+  formDocument: FormDocument;
   formVersion: number;
   documentUrl: string;
 }
