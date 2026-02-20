@@ -209,7 +209,7 @@ export function BlocksPanel({
             <DropdownMenuContent
               align="start"
               sideOffset={6}
-              className="w-[var(--radix-dropdown-menu-trigger-width)]"
+              className="w-[var(--radix-dropdown-menu-trigger-width)] rounded-[0.33em]"
             >
               {signingParties.map((party) => {
                 const color = getPartyColorByIndex(Math.max(0, party.order - 1));
@@ -233,7 +233,7 @@ export function BlocksPanel({
         </div>
 
         <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-2 left-2 z-99 h-5 w-5 text-slate-500" />
+          <SearchIcon className="pointer-events-none absolute top-2 left-2 z-50 h-5 w-5 text-slate-500" />
           <Input
             placeholder="Search fields..."
             value={searchQuery}
