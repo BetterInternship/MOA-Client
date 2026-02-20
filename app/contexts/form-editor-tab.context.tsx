@@ -324,7 +324,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     (updatedBlock: IFormBlock) => {
       if (!formMetadata) return;
 
-      const layoutKeys = new Set(["x", "y", "w", "h", "page", "align_h", "align_v"]);
+      const layoutKeys = new Set(["x", "y", "w", "h", "page", "align_h", "align_v", "size"]);
       const updatedSchema =
         updatedBlock.field_schema || updatedBlock.phantom_field_schema || undefined;
       const updatedFieldName = updatedSchema?.field;
