@@ -61,12 +61,16 @@ function RecipientBadgeDropdown({
       <DropdownMenuContent
         align="start"
         sideOffset={6}
-        className="w-[var(--radix-dropdown-menu-trigger-width)]"
+        className="w-[var(--radix-dropdown-menu-trigger-width)] rounded-[0.33em]"
       >
         {options.map((option) => {
           const color = getPartyColorByIndex(Math.max(0, (option.order || 1) - 1));
           return (
-            <DropdownMenuItem key={option.id} onClick={() => onChange(option.id)} className="py-1.5">
+            <DropdownMenuItem
+              key={option.id}
+              onClick={() => onChange(option.id)}
+              className="py-1.5"
+            >
               <span
                 className="max-w-full truncate rounded-full px-2 py-0.5 text-xs font-semibold text-white"
                 style={{ backgroundColor: color.hex }}
@@ -83,8 +87,13 @@ function RecipientBadgeDropdown({
 
 export function RevampedBlockEditor() {
   const { formMetadata } = useFormEditor();
-  const { selectedBlockId, selectedBlockGroup, handleBlockUpdate, handleParentUpdate, editorViewMode } =
-    useFormEditorTab();
+  const {
+    selectedBlockId,
+    selectedBlockGroup,
+    handleBlockUpdate,
+    handleParentUpdate,
+    editorViewMode,
+  } = useFormEditorTab();
 
   // Get the selected block and parent group from context
   const block = selectedBlockId
@@ -195,7 +204,9 @@ export function RevampedBlockEditor() {
   if (editorViewMode === "form" && editedBlock && !parentGroup) {
     return (
       <div className="flex h-full items-center justify-center p-4">
-        <p className="text-muted-foreground text-sm">Select a row from Form View to edit settings</p>
+        <p className="text-muted-foreground text-sm">
+          Select a row from Form View to edit settings
+        </p>
       </div>
     );
   }
@@ -253,39 +264,18 @@ export function RevampedBlockEditor() {
     }
 
     const parentSource =
-      (editingValues.source !== undefined ? editingValues.source : fieldMetadata?.source) || "manual";
-    const parentPrefillerValue =
-      (editingValues.prefiller !== undefined
+      (editingValues.source !== undefined ? editingValues.source : fieldMetadata?.source) ||
+      "manual";
+    const parentPrefillerValue = (
+      editingValues.prefiller !== undefined
         ? editingValues.prefiller
-        : fieldMetadata?.prefiller || "") as string;
+        : fieldMetadata?.prefiller || ""
+    ) as string;
     const parentPrefillerValidation = validateExpression(parentPrefillerValue);
 
     return (
       <div className="flex h-full flex-col overflow-hidden">
         <div className="flex-1 space-y-3 overflow-auto p-3">
-          {/* Text Content - for header, paragraph, phantom_field */}
-          {isSimpleBlock && (
-            <FormTextarea
-              label="Text Content"
-              value={editedTextContent}
-              setter={(value) => {
-                setEditedTextContent(value);
-                // For simple blocks, update all matching instances
-                matchingBlocks.forEach((block) => {
-                  handleBlockUpdate({ ...block, text_content: value });
-                });
-              }}
-              placeholder={
-                blockType === "header"
-                  ? "Enter header text"
-                  : blockType === "paragraph"
-                    ? "Enter paragraph text"
-                    : "Enter placeholder text"
-              }
-              required={false}
-            />
-          )}
-
           <Card className="gap-2 p-2.5">
             <h4 className="text-muted-foreground text-xs font-semibold">Recipient</h4>
             <RecipientBadgeDropdown
@@ -307,6 +297,32 @@ export function RevampedBlockEditor() {
               }}
             />
           </Card>
+
+          {/* Text Content - for header, paragraph, phantom_field */}
+          {isSimpleBlock && (
+            <Card className="gap-2.5 p-2.5">
+              <h4 className="text-muted-foreground text-xs font-semibold">Text content</h4>
+              <FormTextarea
+                value={editedTextContent}
+                setter={(value) => {
+                  setEditedTextContent(value);
+                  // For simple blocks, update all matching instances
+                  matchingBlocks.forEach((block) => {
+                    handleBlockUpdate({ ...block, text_content: value });
+                  });
+                }}
+                placeholder={
+                  blockType === "header"
+                    ? "Enter header text"
+                    : blockType === "paragraph"
+                      ? "Enter paragraph text"
+                      : "Enter placeholder text"
+                }
+                required={false}
+                className="min-h-28"
+              />
+            </Card>
+          )}
 
           {/* Field settings */}
           {!isSimpleBlock && fieldMetadata && (
@@ -360,9 +376,7 @@ export function RevampedBlockEditor() {
                   )}
                 </div>
                 <FormTextarea
-                  value={
-                    parentPrefillerValue
-                  }
+                  value={parentPrefillerValue}
                   setter={(value) => {
                     setEditingValues((prev) => ({ ...prev, prefiller: value }));
                     if (parentGroup) {
@@ -374,13 +388,13 @@ export function RevampedBlockEditor() {
                   disabled={isDefaultValueLocked(parentSource)}
                 />
                 {!parentPrefillerValidation.valid && (
-                  <p className="text-xs text-red-600">
-                    {parentPrefillerValidation.message}
-                  </p>
+                  <p className="text-xs text-red-600">{parentPrefillerValidation.message}</p>
                 )}
                 <p className="text-xs text-slate-500">
                   Use <span className="font-mono">() =&gt; "value"</span> or{" "}
-                  <span className="font-mono">() =&gt; &#123; return #&#123;field_name&#125;; &#125;</span>
+                  <span className="font-mono">
+                    () =&gt; &#123; return #&#123;field_name&#125;; &#125;
+                  </span>
                 </p>
               </div>
 
@@ -504,7 +518,11 @@ export function RevampedBlockEditor() {
             <div className="flex gap-1">
               <Button
                 size="sm"
-                variant={(schema?.align_h || schema?.horizontal_alignment) === "left" ? "default" : "outline"}
+                variant={
+                  (schema?.align_h || schema?.horizontal_alignment) === "left"
+                    ? "default"
+                    : "outline"
+                }
                 onClick={() => handleFieldChange("align_h", "left")}
                 title="Align Left"
                 className="h-8 flex-1"
@@ -513,7 +531,11 @@ export function RevampedBlockEditor() {
               </Button>
               <Button
                 size="sm"
-                variant={(schema?.align_h || schema?.horizontal_alignment) === "center" ? "default" : "outline"}
+                variant={
+                  (schema?.align_h || schema?.horizontal_alignment) === "center"
+                    ? "default"
+                    : "outline"
+                }
                 onClick={() => handleFieldChange("align_h", "center")}
                 title="Align Center"
                 className="h-8 flex-1"
@@ -522,7 +544,11 @@ export function RevampedBlockEditor() {
               </Button>
               <Button
                 size="sm"
-                variant={(schema?.align_h || schema?.horizontal_alignment) === "right" ? "default" : "outline"}
+                variant={
+                  (schema?.align_h || schema?.horizontal_alignment) === "right"
+                    ? "default"
+                    : "outline"
+                }
                 onClick={() => handleFieldChange("align_h", "right")}
                 title="Align Right"
                 className="h-8 flex-1"
@@ -536,7 +562,9 @@ export function RevampedBlockEditor() {
             <div className="flex gap-1">
               <Button
                 size="sm"
-                variant={(schema?.align_v || schema?.vertical_alignment) === "top" ? "default" : "outline"}
+                variant={
+                  (schema?.align_v || schema?.vertical_alignment) === "top" ? "default" : "outline"
+                }
                 onClick={() => handleFieldChange("align_v", "top")}
                 title="Align Top"
                 className="h-8 flex-1"
@@ -545,7 +573,11 @@ export function RevampedBlockEditor() {
               </Button>
               <Button
                 size="sm"
-                variant={(schema?.align_v || schema?.vertical_alignment) === "middle" ? "default" : "outline"}
+                variant={
+                  (schema?.align_v || schema?.vertical_alignment) === "middle"
+                    ? "default"
+                    : "outline"
+                }
                 onClick={() => handleFieldChange("align_v", "middle")}
                 title="Align Middle"
                 className="h-8 flex-1"
@@ -554,7 +586,11 @@ export function RevampedBlockEditor() {
               </Button>
               <Button
                 size="sm"
-                variant={(schema?.align_v || schema?.vertical_alignment) === "bottom" ? "default" : "outline"}
+                variant={
+                  (schema?.align_v || schema?.vertical_alignment) === "bottom"
+                    ? "default"
+                    : "outline"
+                }
                 onClick={() => handleFieldChange("align_v", "bottom")}
                 title="Align Bottom"
                 className="h-8 flex-1"
@@ -601,13 +637,13 @@ export function RevampedBlockEditor() {
               disabled={isDefaultValueLocked(getSource(schema))}
             />
             {!childPrefillerValidation.valid && (
-              <p className="text-xs text-red-600">
-                {childPrefillerValidation.message}
-              </p>
+              <p className="text-xs text-red-600">{childPrefillerValidation.message}</p>
             )}
             <p className="text-xs text-slate-500">
               Use <span className="font-mono">() =&gt; "value"</span> or{" "}
-              <span className="font-mono">() =&gt; &#123; return #&#123;field_name&#125;; &#125;</span>
+              <span className="font-mono">
+                () =&gt; &#123; return #&#123;field_name&#125;; &#125;
+              </span>
             </p>
           </div>
           <ValidatorBuilder
