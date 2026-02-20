@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload, Check } from "lucide-react";
@@ -17,6 +17,7 @@ const CreateFormPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [formLabel, setFormLabel] = useState("");
   const [signingParties, setSigningParties] = useState<IFormSigningParty[]>([
     {
@@ -48,6 +49,20 @@ const CreateFormPage = () => {
     setPdfFile(file);
     toast.success("PDF uploaded successfully");
   };
+
+  useEffect(() => {
+    if (!pdfFile) {
+      setPdfPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(pdfFile);
+    setPdfPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [pdfFile]);
 
   const handleCreateForm = async () => {
     if (!pdfFile) {
@@ -140,6 +155,16 @@ const CreateFormPage = () => {
               <input type="file" accept=".pdf" onChange={handlePdfUpload} className="hidden" />
             </label>
           </div>
+          {pdfPreviewUrl && (
+            <div className="mt-1 overflow-hidden rounded-[0.33em] border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 px-3 py-2">
+                <p className="text-xs font-medium text-slate-600">PDF Preview</p>
+              </div>
+              <object data={pdfPreviewUrl} type="application/pdf" className="h-[520px] w-full">
+                <iframe src={pdfPreviewUrl} className="h-[520px] w-full" title="PDF Preview" />
+              </object>
+            </div>
+          )}
         </Card>
 
         <Card className="gap-2 border-slate-200 px-5 py-3.5">
