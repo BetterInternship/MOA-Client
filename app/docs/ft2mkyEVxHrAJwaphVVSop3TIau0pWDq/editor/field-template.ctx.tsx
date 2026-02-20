@@ -8,12 +8,12 @@
  * Seems like we'll be using this a lot in the editor.
  */
 
-import { FieldRegistryEntry, useFormsControllerGetFieldRegistry } from "@/app/api";
+import { FieldRegistryEntryDetails, useFormsControllerGetFieldRegistry } from "@/app/api";
 import { createContext, useContext } from "react";
 
 // Context interface
 export interface IFieldTemplateContext {
-  registry: FieldRegistryEntry[];
+  registry: FieldRegistryEntryDetails[];
   getFieldLabel: (fieldId: string) => string;
 }
 
@@ -24,7 +24,7 @@ export const useFieldTemplateContext = () => useContext(FieldTemplateContext);
 /**
  * Utility function to get field label by ID
  */
-export const getFieldLabel = (fieldId: string, registry: FieldRegistryEntry[]): string => {
+export const getFieldLabel = (fieldId: string, registry: FieldRegistryEntryDetails[]): string => {
   const entry = registry.find((r) => r.id === fieldId);
   return entry?.label ?? fieldId;
 };
@@ -32,7 +32,7 @@ export const getFieldLabel = (fieldId: string, registry: FieldRegistryEntry[]): 
 /**
  * Utility function to get field name by ID
  */
-export const getFieldName = (fieldId: string, registry: FieldRegistryEntry[]): string => {
+export const getFieldName = (fieldId: string, registry: FieldRegistryEntryDetails[]): string => {
   const entry = registry.find((r) => r.id === fieldId);
   return entry?.name ?? fieldId;
 };
@@ -40,7 +40,10 @@ export const getFieldName = (fieldId: string, registry: FieldRegistryEntry[]): s
 /**
  * Utility function to get field label by name
  */
-export const getFieldLabelByName = (fieldName: string, registry: FieldRegistryEntry[]): string => {
+export const getFieldLabelByName = (
+  fieldName: string,
+  registry: FieldRegistryEntryDetails[]
+): string => {
   const entry = registry.find((r) => r.name === fieldName);
   return entry?.label ?? fieldName;
 };

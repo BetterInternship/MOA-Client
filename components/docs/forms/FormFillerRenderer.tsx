@@ -86,7 +86,7 @@ export function FormFillerRenderer() {
   );
 }
 
-const BlocksRenderer = <T extends any[]>({
+export const BlocksRenderer = <T extends any[]>({
   formKey,
   blocks,
   values,

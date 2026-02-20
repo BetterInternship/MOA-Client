@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/docs/forms/EditForm";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { validateEmail } from "@/lib/validators";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
 
 interface SubscribersPanelProps {
   subscribers: IFormSubscriber[];
@@ -17,7 +19,7 @@ const generateId = () => `sub-${Math.random().toString(36).substr(2, 9)}`;
 
 export const SubscribersPanel = ({ subscribers, onSubscribersChange }: SubscribersPanelProps) => {
   const safeSubscribers = Array.isArray(subscribers) ? subscribers : [];
-  
+
   // Use a ref to track IDs consistently across renders
   const idMapRef = useRef<Map<string, string>>(new Map());
 
@@ -46,7 +48,9 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
 
     const validation = validateEmail(editingEmail || "");
     if (!validation.valid) {
-      setEmailError(validation.error || "Invalid email");
+      const errorMessage = validation.error || "Invalid email";
+      setEmailError(errorMessage);
+      toast.error(errorMessage, toastPresets.error);
       return;
     }
 
@@ -79,7 +83,7 @@ export const SubscribersPanel = ({ subscribers, onSubscribersChange }: Subscribe
     const newSubscriber: IFormSubscriber = { email: "" } as IFormSubscriber;
     const newArray = [...safeSubscribers, newSubscriber];
     onSubscribersChange(newArray);
-    
+
     // Immediately enter edit mode for the new subscriber
     setTimeout(() => {
       setEditingId(getSubscriberId(newSubscriber, newArray.length - 1));

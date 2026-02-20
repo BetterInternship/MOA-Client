@@ -65,8 +65,6 @@ export function FormActionButtons() {
       // Update autofill afterwards (so even if it fails, autofill is there)
       await updateAutofill(form.formName, form.fields, finalValues);
 
-      console.log(form.formMetadata);
-
       // Open request for contacts or submit directly
       if (signingPartyBlocks.length) {
         modalRegistry.specifySigningParties.open(

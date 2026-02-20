@@ -1984,6 +1984,12 @@
       "post": {
         "operationId": "FormSyncController_syncSingleForm",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SyncSingleFormDto" } }
+          }
+        },
         "responses": { "201": { "description": "" } },
         "tags": ["FormSync"]
       }
@@ -3015,6 +3021,17 @@
         "properties": { "formName": { "type": "string" }, "groupId": { "type": "string" } },
         "required": ["formName", "groupId"]
       },
+      "SyncSingleFormDto": {
+        "type": "object",
+        "properties": {
+          "formName": {
+            "type": "string",
+            "description": "The name of the form to sync",
+            "example": "internship-agreement"
+          }
+        },
+        "required": ["formName"]
+      },
       "CreateSignatoryResponse": {
         "type": "object",
         "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } },
@@ -3074,7 +3091,7 @@
           "signing_parties"
         ]
       },
-      "SignatoryForm": {
+      "_SignatoryForm": {
         "type": "object",
         "properties": {
           "id": { "type": "string" },
@@ -3106,7 +3123,7 @@
         "properties": {
           "success": { "type": "boolean" },
           "message": { "type": "string" },
-          "forms": { "type": "array", "items": { "$ref": "#/components/schemas/SignatoryForm" } }
+          "forms": { "type": "array", "items": { "$ref": "#/components/schemas/_SignatoryForm" } }
         },
         "required": ["success", "message", "forms"]
       },
