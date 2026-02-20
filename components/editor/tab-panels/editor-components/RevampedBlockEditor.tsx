@@ -457,7 +457,7 @@ export function RevampedBlockEditor() {
         </Card>
 
         <Card className="gap-2.5 p-2.5">
-          <h4 className="text-muted-foreground text-xs font-semibold">Position & Layout</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold">Layout & Text</h4>
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="X"
@@ -486,28 +486,36 @@ export function RevampedBlockEditor() {
               setter={(value) => handleFieldChange("h", parseFloat(value))}
             />
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-slate-600">Text wrap</p>
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant={(schema?.wrap ?? true) ? "default" : "outline"}
-                onClick={() => handleFieldChange("wrap", true)}
-                title="Wrap"
-                className="h-8 flex-1"
-              >
-                Wrap
-              </Button>
-              <Button
-                size="sm"
-                variant={(schema?.wrap ?? true) ? "outline" : "default"}
-                onClick={() => handleFieldChange("wrap", false)}
-                title="No wrap"
-                className="h-8 flex-1"
-              >
-                No wrap
-              </Button>
+          <div className="grid grid-cols-[1fr_110px] items-end gap-2">
+            <div className="space-y-1">
+              <p className="text-xs text-slate-600">Text wrap</p>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant={(schema?.wrap ?? true) ? "default" : "outline"}
+                  onClick={() => handleFieldChange("wrap", true)}
+                  title="Wrap"
+                  className="h-8 flex-1"
+                >
+                  Wrap
+                </Button>
+                <Button
+                  size="sm"
+                  variant={(schema?.wrap ?? true) ? "outline" : "default"}
+                  onClick={() => handleFieldChange("wrap", false)}
+                  title="No wrap"
+                  className="h-8 flex-1"
+                >
+                  No wrap
+                </Button>
+              </div>
             </div>
+            <FormInput
+              label="Font size"
+              type="number"
+              value={String((schema?.size || 12).toFixed(1))}
+              setter={(value) => handleFieldChange("size", parseFloat(value))}
+            />
           </div>
         </Card>
 
