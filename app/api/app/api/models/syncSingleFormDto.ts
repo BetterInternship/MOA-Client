@@ -6,10 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface FormTemplate {
-  name: string;
-  label: string;
-  version: number;
-  base_document_id: string;
-  time_generated: string;
+export interface SyncSingleFormDto {
+  /** The name of the form to sync */
+  formName: string;
 }

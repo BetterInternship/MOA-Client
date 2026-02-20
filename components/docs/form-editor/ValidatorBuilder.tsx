@@ -172,7 +172,7 @@ export function ValidatorBuilder({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-xs font-semibold text-gray-700">Validation Rules</label>
+        <label className="text-xs text-gray-600">Validation Rules</label>
         <Button
           size="sm"
           variant="ghost"

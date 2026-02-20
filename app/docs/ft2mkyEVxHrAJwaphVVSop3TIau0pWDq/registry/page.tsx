@@ -49,7 +49,7 @@ const FormRegistryPage = () => {
   const error = formRegistry.error;
 
   const handleCreateForm = () => {
-    router.push("./editor/pdfjs");
+    router.push("./create-form");
   };
 
   const handleMigrateForm = () => {
@@ -82,8 +82,7 @@ const FormRegistryPage = () => {
   const unsyncedCount = comparison.length - syncedCount;
 
   const handleEditForm = (name: string) => {
-    const encodedName = encodeURIComponent(name);
-    router.push(`./editor/pdfjs?name=${encodedName}&edit=true`);
+    router.push(`./editor?form_name=${encodeURIComponent(name)}`);
   };
 
   const columns: ColumnDef<FormRow>[] = [
