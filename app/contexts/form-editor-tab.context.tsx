@@ -159,6 +159,20 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     return formMetadata?.schema.blocks || [];
   }, [formMetadata]);
 
+  useEffect(() => {
+    if (!formMetadata || blocks.length === 0) return;
+
+    const needsOrderNormalization = blocks.some((block, index) => (block.order ?? -1) !== index);
+    if (!needsOrderNormalization) return;
+
+    const normalizedBlocks = blocks.map((block, index) => ({
+      ...block,
+      order: index,
+    }));
+
+    updateBlocks(normalizedBlocks);
+  }, [blocks, formMetadata, updateBlocks]);
+
   // Initialize normalized state - create blocksMap
   const _blocksMap = useMemo(() => {
     const map: Record<string, IFormBlock> = {};
@@ -369,8 +383,14 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   const handleBlockCreate = useCallback(
     (newBlock: IFormBlock) => {
       if (!formMetadata) return;
-      updateBlocks([...formMetadata.schema.blocks, newBlock]);
-      setSelectedBlockId(newBlock._id);
+      const nextOrder = formMetadata.schema.blocks.length;
+      const blockToAppend: IFormBlock = {
+        ...newBlock,
+        order: nextOrder,
+      };
+
+      updateBlocks([...formMetadata.schema.blocks, blockToAppend]);
+      setSelectedBlockId(blockToAppend._id);
       setSelectedBlockGroup(null);
     },
     [formMetadata, updateBlocks]
