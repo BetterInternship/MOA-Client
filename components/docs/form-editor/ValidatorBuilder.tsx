@@ -28,6 +28,7 @@ interface ValidatorBuilderProps {
   onConfigChange: (config: ValidatorConfig) => void;
   rawZodCode?: string;
   onRawZodChange?: (code: string) => void;
+  emitRawOnChange?: boolean;
   allowRawMode?: boolean;
   compact?: boolean;
   hideGeneratedPreview?: boolean;
@@ -51,6 +52,7 @@ export function ValidatorBuilder({
   onConfigChange,
   rawZodCode,
   onRawZodChange,
+  emitRawOnChange = false,
   allowRawMode = true,
   compact = false,
   hideGeneratedPreview = false,
@@ -161,7 +163,13 @@ export function ValidatorBuilder({
         <textarea
           ref={rawCodeRef}
           value={localRawCode}
-          onChange={(e) => setLocalRawCode(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setLocalRawCode(next);
+            if (emitRawOnChange) {
+              onRawZodChange?.(next);
+            }
+          }}
           onBlur={handleRawZodBlur}
           placeholder={`z.string().min(8)\nz.array(z.enum(["A", "B"])).min(1)`}
           className="w-full rounded border border-gray-300 bg-white p-2 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
