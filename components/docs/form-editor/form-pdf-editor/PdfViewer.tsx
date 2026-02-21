@@ -253,14 +253,21 @@ export function PdfViewer() {
       {/* Header */}
       <div className="flex-shrink-0 border-b bg-white px-4 py-2">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-600">Form View</span>
+          <Button
+            type="button"
+            size="sm"
+            variant={editorViewMode === "form" ? "default" : "outline"}
+            onClick={() => setEditorViewMode(editorViewMode === "form" ? "pdf" : "form")}
+            className="min-w-34 gap-2"
+          >
+            <span>Form View</span>
             <Switch
               checked={editorViewMode === "form"}
-              onCheckedChange={(checked) => setEditorViewMode(checked ? "form" : "pdf")}
-              aria-label="Toggle Form View"
+              aria-label="Form View visual indicator"
+              disabled
+              className="pointer-events-none border border-slate-400 data-[state=checked]:border-white"
             />
-          </div>
+          </Button>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -304,88 +311,88 @@ export function PdfViewer() {
           <FormViewBlocksPanel signingParties={formMetadata?.signing_parties || []} />
         ) : (
           <>
-        {isLoadingDoc && (
-          <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center">
-            <Loader>Loading PDF…</Loader>
-          </div>
-        )}
+            {isLoadingDoc && (
+              <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center">
+                <Loader>Loading PDF…</Loader>
+              </div>
+            )}
 
-        {error && (
-          <div className="text-destructive flex h-full items-center justify-center text-sm">
-            {error}
-          </div>
-        )}
+            {error && (
+              <div className="text-destructive flex h-full items-center justify-center text-sm">
+                {error}
+              </div>
+            )}
 
-        {!error && !pdfDoc && !isLoadingDoc && (
-          <div className="flex h-full flex-col items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-base font-medium text-slate-900">Drop your PDF here</p>
-              <p className="mt-1 text-sm text-slate-500">or click the button below to browse</p>
-            </div>
+            {!error && !pdfDoc && !isLoadingDoc && (
+              <div className="flex h-full flex-col items-center justify-center gap-8">
+                <div className="text-center">
+                  <p className="text-base font-medium text-slate-900">Drop your PDF here</p>
+                  <p className="mt-1 text-sm text-slate-500">or click the button below to browse</p>
+                </div>
 
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={cn(
-                "flex h-80 w-120 cursor-pointer flex-col items-center justify-center rounded-[0.33em] border-2 border-dashed transition-colors",
-                isDragging
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-slate-300 bg-slate-50 hover:border-slate-400"
-              )}
-            >
-              <FileUp className="h-16 w-16 text-slate-400" />
-            </div>
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={cn(
+                    "flex h-80 w-120 cursor-pointer flex-col items-center justify-center rounded-[0.33em] border-2 border-dashed transition-colors",
+                    isDragging
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-slate-300 bg-slate-50 hover:border-slate-400"
+                  )}
+                >
+                  <FileUp className="h-16 w-16 text-slate-400" />
+                </div>
 
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="application/pdf"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <Button asChild>
-                <span>
-                  <FileUp className="h-5 w-5" />
-                  Upload PDF
-                </span>
-              </Button>
-            </label>
-          </div>
-        )}
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <Button asChild>
+                    <span>
+                      <FileUp className="h-5 w-5" />
+                      Upload PDF
+                    </span>
+                  </Button>
+                </label>
+              </div>
+            )}
 
-        {pdfDoc && (
-          <div
-            className="h-full overflow-auto p-4"
-            aria-live="polite"
-            onScroll={handlePdfScroll}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <div className="flex w-full flex-col items-center gap-4">
-              {pagesArray.map((page) => (
-                <PdfPageCanvas
-                  key={page}
-                  pdf={pdfDoc}
-                  pageNumber={page}
-                  scale={scale}
-                  isSelected={page === visiblePage}
-                  _isVisible={page === visiblePage}
-                  onVisible={setVisiblePage}
-                  registerPageRef={registerPageRef}
-                  blocks={blocks}
-                  selectedFieldId={selectedFieldId}
-                  onFieldSelect={handleFieldSelectFromPdf}
-                  onBlockUpdate={handleBlockUpdate}
-                  selectedPartyId={selectedPartyId}
-                  _registry={registry}
-                  formMetadata={formMetadata}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+            {pdfDoc && (
+              <div
+                className="h-full overflow-auto p-4"
+                aria-live="polite"
+                onScroll={handlePdfScroll}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <div className="flex w-full flex-col items-center gap-4">
+                  {pagesArray.map((page) => (
+                    <PdfPageCanvas
+                      key={page}
+                      pdf={pdfDoc}
+                      pageNumber={page}
+                      scale={scale}
+                      isSelected={page === visiblePage}
+                      _isVisible={page === visiblePage}
+                      onVisible={setVisiblePage}
+                      registerPageRef={registerPageRef}
+                      blocks={blocks}
+                      selectedFieldId={selectedFieldId}
+                      onFieldSelect={handleFieldSelectFromPdf}
+                      onBlockUpdate={handleBlockUpdate}
+                      selectedPartyId={selectedPartyId}
+                      _registry={registry}
+                      formMetadata={formMetadata}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
