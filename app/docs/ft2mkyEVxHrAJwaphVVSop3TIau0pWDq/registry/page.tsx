@@ -274,7 +274,10 @@ const FormRegistryPage = () => {
   const renderSection = (section: RegistrySection) => {
     const isExpanded = expandedSections.has(section.id);
     return (
-      <div key={section.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div
+        key={section.id}
+        className="overflow-hidden rounded-[0.33em] border border-slate-200 bg-white"
+      >
         <button
           type="button"
           onClick={() => toggleSection(section.id)}
@@ -353,7 +356,7 @@ const FormRegistryPage = () => {
         </div>
 
         {comparisonError && (
-          <div className="mb-8 rounded-lg border-l-4 border-red-400 bg-red-50 p-6">
+          <div className="mb-8 rounded-[0.33em] border-l-4 border-red-400 bg-red-50 p-6">
             <div className="flex items-start gap-3">
               <XCircle className="mt-0.5 h-6 w-6 flex-shrink-0 text-red-600" />
               <div>
@@ -365,7 +368,7 @@ const FormRegistryPage = () => {
         )}
 
         {groupsError && (
-          <div className="mb-6 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-4">
+          <div className="mb-6 rounded-[0.33em] border-l-4 border-amber-400 bg-amber-50 p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
               <div>
