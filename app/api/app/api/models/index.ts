@@ -159,3 +159,4 @@ export * from "./syncSingleFormDto";
 export * from "./updateFieldDto";
 export * from "./updateFieldDtoSource";
 export * from "./updateSignatoryDto";
+export * from "./formTemplate";
