@@ -2740,7 +2740,7 @@
         },
         "required": ["success", "message", "formDocument"]
       },
-      "FormDocument": {
+      "FormTemplate": {
         "type": "object",
         "properties": {
           "name": { "type": "string" },
@@ -2757,7 +2757,7 @@
           "success": { "type": "boolean" },
           "message": { "type": "string" },
           "formMetadata": { "$ref": "#/components/schemas/FormMetadata" },
-          "formDocument": { "$ref": "#/components/schemas/FormDocument" },
+          "formTemplate": { "$ref": "#/components/schemas/FormTemplate" },
           "formVersion": { "type": "number" },
           "documentUrl": { "type": "string" }
         },
@@ -2765,7 +2765,7 @@
           "success",
           "message",
           "formMetadata",
-          "formDocument",
+          "formTemplate",
           "formVersion",
           "documentUrl"
         ]
