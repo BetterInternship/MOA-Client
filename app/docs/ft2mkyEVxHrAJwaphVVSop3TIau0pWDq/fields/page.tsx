@@ -457,8 +457,8 @@ const FieldEditor = ({
   }, [data]);
 
   return (
-    <div className="max-h-[720px] min-h-[600px] overflow-y-auto">
-      <div className="flex min-w-xl flex-col gap-3">
+    <div className="h-fit w-xl flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {isLoading || isFetching ? (
           <Loader>Loading field...</Loader>
         ) : field ? (
@@ -493,15 +493,12 @@ const FieldEditor = ({
             />
           </>
         ) : null}
-        <div className="flex flex-row justify-between gap-1">
-          <div className="flex-1" />
-          <Button disabled={editing} onClick={() => void handleEdit()}>
-            {editing ? "Saving..." : "Save"}
-          </Button>
-          <Button disabled={editing} scheme="destructive" variant="outline" onClick={close}>
-            Cancel
-          </Button>
-        </div>
+      </div>
+      <div className="mt-3 flex flex-row justify-between gap-1 pt-3">
+        <div className="flex-1" />
+        <Button disabled={editing} onClick={() => void handleEdit()}>
+          {editing ? "Saving..." : "Save"}
+        </Button>
       </div>
     </div>
   );
@@ -599,52 +596,50 @@ const FieldRegistration = ({
   };
 
   return (
-    <div className="max-h-[600px] overflow-y-auto">
-      <div className="flex min-w-xl flex-col gap-3">
-        <CustomFieldModalForm
-          value={{
-            name: field.name || "",
-            label: field.label || "",
-            tag: field.tag || "",
-            tooltip_label: field.tooltip_label || "",
-            type: field.type || "text",
-            source: (field.source as FieldSource) || "manual",
-            shared: field.shared ?? true,
-            prefiller: field.prefiller || "",
-            validator: field.validator || "",
-          }}
-          fieldOptions={fieldOptions}
-          presetTemplates={presetTemplates}
-          selectedPresetId={selectedPresetId}
-          onPresetChange={(presetId) => void handlePresetSelect(presetId)}
-          tagOptions={tagOptions}
-          onLabelChange={(label) =>
-            setField((prev) => ({
-              ...prev,
-              label,
-              name: deriveFieldNameFromLabel(label),
-            }))
-          }
-          showDerivedNameHint={true}
-          onChange={(updates) => setField((prev) => ({ ...prev, ...updates }))}
-        />
-        <div className="flex flex-row justify-between gap-1">
-          <div className="flex-1" />
-          <Button
-            disabled={registering || loadingPreset || !selectedPresetId}
-            onClick={() => void handleAdd()}
-          >
-            {registering ? "Registering..." : "Register"}
-          </Button>
-          <Button
-            disabled={registering || loadingPreset}
-            scheme="destructive"
-            variant="outline"
-            onClick={close}
-          >
-            Cancel
-          </Button>
-        </div>
+    <div className="w-xl space-y-4">
+      <CustomFieldModalForm
+        value={{
+          name: field.name || "",
+          label: field.label || "",
+          tag: field.tag || "",
+          tooltip_label: field.tooltip_label || "",
+          type: field.type || "text",
+          source: (field.source as FieldSource) || "manual",
+          shared: field.shared ?? true,
+          prefiller: field.prefiller || "",
+          validator: field.validator || "",
+        }}
+        fieldOptions={fieldOptions}
+        presetTemplates={presetTemplates}
+        selectedPresetId={selectedPresetId}
+        onPresetChange={(presetId) => void handlePresetSelect(presetId)}
+        tagOptions={tagOptions}
+        onLabelChange={(label) =>
+          setField((prev) => ({
+            ...prev,
+            label,
+            name: deriveFieldNameFromLabel(label),
+          }))
+        }
+        showDerivedNameHint={true}
+        onChange={(updates) => setField((prev) => ({ ...prev, ...updates }))}
+      />
+      <div className="flex flex-row justify-between gap-1">
+        <div className="flex-1" />
+        <Button
+          disabled={registering || loadingPreset}
+          scheme="destructive"
+          variant="outline"
+          onClick={close}
+        >
+          Cancel
+        </Button>
+        <Button
+          disabled={registering || loadingPreset || !selectedPresetId}
+          onClick={() => void handleAdd()}
+        >
+          {registering ? "Registering..." : "Register"}
+        </Button>
       </div>
     </div>
   );
