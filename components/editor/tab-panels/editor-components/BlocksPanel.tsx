@@ -1,11 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  IFormBlock,
-  IFormField,
-  IFormSigningParty,
-} from "@betterinternship/core/forms";
+import { IFormBlock, IFormField, IFormSigningParty } from "@betterinternship/core/forms";
 import {
   FieldRegistryEntryDetails,
   formsControllerRegisterField,
@@ -168,7 +164,7 @@ function CustomFieldAddModalContent({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="w-xl space-y-4">
       <CustomFieldModalForm
         value={{
           name: customFieldDraft.name,
@@ -196,9 +192,7 @@ function CustomFieldAddModalContent({
       />
       <div className="flex flex-row justify-between gap-1">
         <div className="flex-1" />
-        <Button variant="outline" onClick={onClose}>
-          Close
-        </Button>
+
         <Button
           onClick={() => void handleCreateCustomField()}
           disabled={isSavingCustomField || !isPresetSelected}
@@ -225,10 +219,7 @@ export function BlocksPanel({
     signingParties.find((party) => party._id === selectedPartyId) || signingParties[0];
   const selectedPartyColor = getPartyColorByIndex(Math.max(0, (selectedParty?.order || 1) - 1));
 
-  const presetTemplates = useMemo(
-    () => buildPresetTemplatesFromRegistry(registry),
-    [registry]
-  );
+  const presetTemplates = useMemo(() => buildPresetTemplatesFromRegistry(registry), [registry]);
 
   const customLibraryFields = useMemo(() => {
     return registry.filter((field) => !isPresetRegistryField(field));
@@ -505,7 +496,6 @@ export function BlocksPanel({
           Add custom field
         </Button>
       </div>
-
     </div>
   );
 }
