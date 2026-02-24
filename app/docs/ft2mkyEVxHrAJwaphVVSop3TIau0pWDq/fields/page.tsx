@@ -627,14 +627,6 @@ const FieldRegistration = ({
       <div className="flex flex-row justify-between gap-1">
         <div className="flex-1" />
         <Button
-          disabled={registering || loadingPreset}
-          scheme="destructive"
-          variant="outline"
-          onClick={close}
-        >
-          Cancel
-        </Button>
-        <Button
           disabled={registering || loadingPreset || !selectedPresetId}
           onClick={() => void handleAdd()}
         >
