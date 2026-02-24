@@ -54,7 +54,10 @@ export const Autocomplete = <ID extends number | string>({
     <div className={cn("relative w-full", className)} ref={ref}>
       <Input
         value={selected?.name || query || ""}
-        className={cn("border-gray-300", inputClassName)}
+        className={cn(
+          "h-9 rounded-[0.33em] border-slate-300 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-slate-200/80",
+          inputClassName
+        )}
         placeholder={placeholder}
         onChange={(e) => {
           setter(e.target.value as ID);
@@ -71,7 +74,7 @@ export const Autocomplete = <ID extends number | string>({
         onFocus={() => setIsOpen(true)}
       />
       {isOpen ? (
-        <ul className="ring-opacity-5 absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-[0.33em] bg-white py-1 text-sm shadow-lg ring-1 ring-black">
+        <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto overscroll-contain rounded-[0.33em] border border-slate-200 bg-white p-1 text-sm shadow-xl space-y-1">
           {filteredOptions.length ? (
             filteredOptions
               .toSorted((a, b) => a.name.localeCompare(b.name))
@@ -84,7 +87,12 @@ export const Autocomplete = <ID extends number | string>({
                     setQuery("");
                     setIsOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100"
+                  className={cn(
+                    "flex w-full items-center rounded-[0.33em] px-2.5 py-1.5 text-left text-sm transition-colors",
+                    selected?.id === option.id
+                      ? "bg-primary/10 text-primary"
+                      : "text-slate-700 hover:bg-slate-100"
+                  )}
                 >
                   {option.name}
                 </li>
@@ -92,7 +100,7 @@ export const Autocomplete = <ID extends number | string>({
           ) : (
             <li
               key="no-match"
-              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100"
+              className="flex w-full items-center rounded-[0.33em] px-2.5 py-1.5 text-left text-sm text-slate-500"
             >
               No matching results.
             </li>
