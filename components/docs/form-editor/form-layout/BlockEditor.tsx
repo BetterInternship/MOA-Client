@@ -16,9 +16,9 @@ import {
   FormCheckbox,
 } from "@/components/docs/forms/EditForm";
 import { Button } from "@/components/ui/button";
-import { ValidatorBuilder } from "@/components/docs/form-editor/ValidatorBuilder";
-import { zodCodeToValidatorConfig, validatorConfigToZodCode } from "@/lib/validator-engine";
 import { capitalize, capitalizeWords } from "@/lib/string-utils";
+import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
+import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
 
 interface BlockEditorProps {
   block: IFormBlock | null;
@@ -55,18 +55,21 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
       const currentSchema = editedBlock.field_schema || editedBlock.phantom_field_schema;
 
       // Common properties to retain when switching between form_field and form_phantom_field
-      const commonProps = currentSchema
-        ? {
-            field: currentSchema.field || "",
-            type: currentSchema.type || "text",
-            label: currentSchema.label || "",
-            tooltip_label: currentSchema.tooltip_label || "",
-            shared: "shared" in currentSchema ? currentSchema.shared : false,
-            source: currentSchema.source || "manual",
-            signing_party_id:
-              "signing_party_id" in currentSchema ? currentSchema.signing_party_id : "",
-          }
-        : null;
+          const commonProps = currentSchema
+            ? {
+                field: currentSchema.field || "",
+                type: currentSchema.type || "text",
+                label: currentSchema.label || "",
+                tooltip_label: currentSchema.tooltip_label || "",
+                shared: "shared" in currentSchema ? currentSchema.shared : false,
+                source: currentSchema.source || "manual",
+                signing_party_id:
+                  "signing_party_id" in currentSchema ? currentSchema.signing_party_id : "",
+                prefiller: currentSchema.prefiller || "",
+                validator: currentSchema.validator || "",
+                validator_ir: (currentSchema as any).validator_ir || null,
+              }
+            : null;
 
       if (blockType === "form_field") {
         newBlock = {
@@ -84,6 +87,9 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
             w: editedBlock.field_schema?.w || 100,
             h: editedBlock.field_schema?.h || 20,
             page: editedBlock.field_schema?.page || 0,
+            prefiller: commonProps?.prefiller || "",
+            validator: commonProps?.validator || "",
+            validator_ir: commonProps?.validator_ir || null,
           },
           phantom_field_schema: undefined,
         };
@@ -98,6 +104,9 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
             shared: commonProps?.shared || false,
             source: commonProps?.source || "manual",
             signing_party_id: commonProps?.signing_party_id || "",
+            prefiller: commonProps?.prefiller || "",
+            validator: commonProps?.validator || "",
+            validator_ir: commonProps?.validator_ir || null,
           },
           field_schema: undefined,
         };
@@ -124,10 +133,27 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
     onUpdate(newBlock);
   };
 
+  const handleFieldSchemaPatch = (updates: Partial<IFormField>) => {
+    if (editedBlock.block_type !== "form_field" || !editedBlock.field_schema) return;
+    const updatedField = { ...editedBlock.field_schema, ...updates };
+    const newBlock = { ...editedBlock, field_schema: updatedField };
+    setEditedBlock(newBlock);
+    onUpdate(newBlock);
+  };
+
   const handlePhantomFieldSchemaChange = (key: keyof IFormPhantomField, value: any) => {
     if (editedBlock.block_type !== "form_phantom_field" || !editedBlock.phantom_field_schema)
       return;
     const updatedField = { ...editedBlock.phantom_field_schema, [key]: value };
+    const newBlock = { ...editedBlock, phantom_field_schema: updatedField };
+    setEditedBlock(newBlock);
+    onUpdate(newBlock);
+  };
+
+  const handlePhantomFieldSchemaPatch = (updates: Partial<IFormPhantomField>) => {
+    if (editedBlock.block_type !== "form_phantom_field" || !editedBlock.phantom_field_schema)
+      return;
+    const updatedField = { ...editedBlock.phantom_field_schema, ...updates };
     const newBlock = { ...editedBlock, phantom_field_schema: updatedField };
     setEditedBlock(newBlock);
     onUpdate(newBlock);
@@ -210,29 +236,22 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               setter={(val) => handleFieldSchemaChange("shared", val)}
             />
 
-            {/* Validator Builder - New UI-based validator */}
-            <ValidatorBuilder
-              config={
-                editedBlock.field_schema?.validator
-                  ? zodCodeToValidatorConfig(editedBlock.field_schema.validator)
-                  : { rules: [] }
-              }
-              rawZodCode={editedBlock.field_schema?.validator || ""}
-              onConfigChange={(newConfig) => {
-                // Convert config to Zod code and save immediately
-                const zodCode = validatorConfigToZodCode(newConfig);
-                handleFieldSchemaChange("validator", zodCode);
-              }}
-              onRawZodChange={(zodCode) => {
-                handleFieldSchemaChange("validator", zodCode);
-              }}
-            />
-
-            <FormTextarea
-              label="Prefiller (JS Function)"
+            <DefaultValueSection
+              source={editedBlock.field_schema.source}
               value={editedBlock.field_schema.prefiller || ""}
-              setter={(val) => handleFieldSchemaChange("prefiller", val)}
-              required={false}
+              fieldOptions={[]}
+              onChange={(val) => handleFieldSchemaChange("prefiller", val)}
+            />
+            <ValidationSection
+              schemaType={editedBlock.field_schema.type}
+              validator={editedBlock.field_schema.validator || ""}
+              validatorIr={(editedBlock.field_schema as any).validator_ir || null}
+              onChange={(next) => {
+                handleFieldSchemaPatch({
+                  validator: next.validator,
+                  validator_ir: next.validator_ir,
+                } as any);
+              }}
             />
           </div>
         )}
@@ -280,41 +299,22 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               setter={(val) => handlePhantomFieldSchemaChange("shared", val)}
             />
 
-            {/* Validator Builder - New UI-based validator */}
-            <ValidatorBuilder
-              config={
-                editedBlock.phantom_field_schema?.validator
-                  ? zodCodeToValidatorConfig(editedBlock.phantom_field_schema.validator)
-                  : { rules: [] }
-              }
-              rawZodCode={editedBlock.phantom_field_schema?.validator || ""}
-              onConfigChange={(newConfig) => {
-                // Only regenerate if in UI mode (no raw code)
-                // If raw code exists, just update config for display without regenerating
-                const hasRawCode = editedBlock.phantom_field_schema?.validator;
-
-                if (hasRawCode) {
-                  // In raw mode: just update config for UI, don't regenerate code
-                  // The raw code is already saved via onRawZodChange
-                  // This allows min/max/describe to show in the UI even if not fully parsed
-                } else {
-                  // In UI mode: always regenerate from config
-                  // Array/enum rules start with placeholder options, so they're safe to generate
-                  const zodCode = validatorConfigToZodCode(newConfig);
-                  handlePhantomFieldSchemaChange("validator", zodCode);
-                }
-              }}
-              onRawZodChange={(zodCode) => {
-                // Save raw code directly - this takes priority over config regeneration
-                handlePhantomFieldSchemaChange("validator", zodCode);
-              }}
-            />
-
-            <FormTextarea
-              label="Prefiller (JS Function)"
+            <DefaultValueSection
+              source={editedBlock.phantom_field_schema.source}
               value={editedBlock.phantom_field_schema.prefiller || ""}
-              setter={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
-              required={false}
+              fieldOptions={[]}
+              onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+            />
+            <ValidationSection
+              schemaType={editedBlock.phantom_field_schema.type}
+              validator={editedBlock.phantom_field_schema.validator || ""}
+              validatorIr={(editedBlock.phantom_field_schema as any).validator_ir || null}
+              onChange={(next) => {
+                handlePhantomFieldSchemaPatch({
+                  validator: next.validator,
+                  validator_ir: next.validator_ir,
+                } as any);
+              }}
             />
           </div>
         )}
@@ -329,3 +329,4 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
     </div>
   );
 };
+

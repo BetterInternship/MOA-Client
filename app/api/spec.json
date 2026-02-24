@@ -25,6 +25,58 @@
         "tags": ["App"]
       }
     },
+    "/api/callback": {
+      "post": {
+        "operationId": "ProcessCallbackController_processCallback",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProcessCallbackDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FormFilloutProcessResult" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["ProcessCallback"]
+      }
+    },
+    "/api/callback/__internal": {
+      "post": {
+        "operationId": "ProcessCallbackController_internalProcessCallback",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FormFilloutProcessResult" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["ProcessCallback"]
+      }
+    },
     "/api/auth/self": {
       "post": {
         "operationId": "AuthController_entitySelf",
@@ -1748,7 +1800,7 @@
           "200": {
             "description": "",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProcessResponse" } }
             }
           },
           "400": {
@@ -2180,15 +2232,8 @@
   "servers": [],
   "components": {
     "schemas": {
-      "SelfEntityResponse": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean" },
-          "message": { "type": "string" },
-          "entity": { "type": "object" }
-        },
-        "required": ["success", "message", "entity"]
-      },
+      "ProcessCallbackDto": { "type": "object", "properties": {} },
+      "FormFilloutProcessResult": { "type": "object", "properties": {} },
       "ErrorResponse": {
         "type": "object",
         "properties": {
@@ -2197,6 +2242,15 @@
           "message": { "type": "string" }
         },
         "required": ["success", "status", "message"]
+      },
+      "SelfEntityResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "entity": { "type": "object" }
+        },
+        "required": ["success", "message", "entity"]
       },
       "ContactDto": {
         "type": "object",
@@ -2537,10 +2591,11 @@
         "type": "object",
         "properties": {
           "name": { "type": "string" },
+          "label": { "type": "string" },
           "version": { "type": "number" },
           "time_generated": { "format": "date-time", "type": "string" }
         },
-        "required": ["name", "version", "time_generated"]
+        "required": ["name", "label", "version", "time_generated"]
       },
       "FormRegistryResponse": {
         "type": "object",
@@ -2593,7 +2648,8 @@
           "signing_party_id": { "type": "string" },
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
           "prefiller": { "type": "string" },
-          "validator": { "type": "string" }
+          "validator": { "type": "string" },
+          "validator_ir": { "type": "object", "nullable": true }
         },
         "required": [
           "field",
@@ -2623,7 +2679,8 @@
           "signing_party_id": { "type": "string" },
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
           "prefiller": { "type": "string" },
-          "validator": { "type": "string" }
+          "validator": { "type": "string" },
+          "validator_ir": { "type": "object", "nullable": true }
         },
         "required": [
           "field",
@@ -2804,6 +2861,7 @@
           "prefiller": { "type": "string", "nullable": true },
           "tooltip_label": { "type": "string", "nullable": true },
           "validator": { "type": "string", "nullable": true },
+          "validator_ir": { "type": "object", "nullable": true },
           "is_phantom": { "type": "boolean" }
         },
         "required": [
@@ -2848,6 +2906,7 @@
           "preset": { "type": "string" },
           "tooltip_label": { "type": "string", "nullable": true },
           "validator": { "type": "string", "nullable": true },
+          "validator_ir": { "type": "object", "nullable": true },
           "is_phantom": { "type": "boolean" }
         },
         "required": [
@@ -2880,6 +2939,7 @@
           "preset": { "type": "string" },
           "tooltip_label": { "type": "string", "nullable": true },
           "validator": { "type": "string", "nullable": true },
+          "validator_ir": { "type": "object", "nullable": true },
           "is_phantom": { "type": "boolean" }
         },
         "required": [
@@ -2972,6 +3032,17 @@
           "audit": { "type": "object" }
         },
         "required": ["formName", "formVersion", "values", "audit"]
+      },
+      "ProcessResponse": {
+        "type": "object",
+        "properties": {
+          "processId": { "type": "string" },
+          "processName": { "type": "string" },
+          "processCallbackUrl": { "type": "string" },
+          "success": { "type": "boolean" },
+          "message": { "type": "string" }
+        },
+        "required": ["processId", "processName", "processCallbackUrl", "success", "message"]
       },
       "GetExportForSignatoryDto": {
         "type": "object",

@@ -1,11 +1,18 @@
-import { SOURCES } from "@betterinternship/core/forms";
+import type { ValidatorIRv0 } from "@/lib/validator-ir";
 
-export type FieldSource = (typeof SOURCES)[number];
+export const FIELD_SOURCES = ["auto", "prefill", "derived", "manual"] as const;
+export type FieldSource = (typeof FIELD_SOURCES)[number];
+
+export const isFieldSource = (value: unknown): value is FieldSource =>
+  typeof value === "string" && FIELD_SOURCES.includes(value as FieldSource);
+
+export const normalizeFieldSource = (value: unknown, fallback: FieldSource = "manual"): FieldSource =>
+  isFieldSource(value) ? value : fallback;
 
 export type CustomFieldDraftModel = {
   name: string;
   label: string;
-  type: "text" | "signature";
+  type: "text" | "signature" | "image";
   party?: string;
   shared?: boolean;
   source: FieldSource;
@@ -14,11 +21,15 @@ export type CustomFieldDraftModel = {
   preset?: string;
   tooltip_label?: string;
   validator?: string;
+  validator_ir?: ValidatorIRv0 | null;
   is_phantom?: boolean;
 };
 
 type PresetLikeField = Partial<CustomFieldDraftModel> & {
   label?: string;
+  prefiller?: string | null;
+  tooltip_label?: string | null;
+  validator?: string | null;
 };
 
 export const createCustomFieldDraftFromPreset = (
@@ -30,7 +41,7 @@ export const createCustomFieldDraftFromPreset = (
   return {
     name: deriveName(label),
     label,
-    type: (preset.type as "text" | "signature") || "text",
+    type: (preset.type as "text" | "signature" | "image") || "text",
     party: preset.party || "",
     shared: preset.shared ?? true,
     source: preset.source || "manual",
@@ -39,6 +50,7 @@ export const createCustomFieldDraftFromPreset = (
     preset: preset.preset || "default",
     tooltip_label: preset.tooltip_label || "",
     validator: preset.validator || "",
+    validator_ir: preset.validator_ir || null,
     is_phantom: preset.is_phantom ?? false,
   };
 };
@@ -61,5 +73,6 @@ export const toRegisterFieldPayload = (
   preset: options?.preset || draft.preset || "default",
   tooltip_label: draft.tooltip_label?.trim() || null,
   validator: draft.validator?.trim() || null,
+  validator_ir: draft.validator_ir ?? null,
   is_phantom: draft.is_phantom ?? false,
 });

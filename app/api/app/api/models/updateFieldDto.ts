@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { UpdateFieldDtoSource } from "./updateFieldDtoSource";
+import type { UpdateFieldDtoValidatorIr } from "./updateFieldDtoValidatorIr";
 
 export interface UpdateFieldDto {
   id: string;
@@ -23,5 +24,7 @@ export interface UpdateFieldDto {
   tooltip_label: string | null;
   /** @nullable */
   validator: string | null;
+  /** @nullable */
+  validator_ir?: UpdateFieldDtoValidatorIr;
   is_phantom: boolean;
 }

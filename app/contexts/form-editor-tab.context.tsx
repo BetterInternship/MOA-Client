@@ -61,6 +61,7 @@ const applyPatchToFieldSchema = (schema: any, patch: ParentPatch) => ({
   shared: patch.shared !== undefined ? patch.shared : schema.shared,
   prefiller: patch.prefiller !== undefined ? patch.prefiller : schema.prefiller,
   validator: patch.validator !== undefined ? patch.validator : schema.validator,
+  validator_ir: patch.validator_ir !== undefined ? patch.validator_ir : schema.validator_ir,
   align_h: patch.align_h !== undefined ? patch.align_h : schema.align_h,
   align_v: patch.align_v !== undefined ? patch.align_v : schema.align_v,
   size: patch.size !== undefined ? patch.size : schema.size,
@@ -77,6 +78,7 @@ const applyPatchToPhantomFieldSchema = (schema: any, patch: ParentPatch) => ({
   shared: patch.shared !== undefined ? patch.shared : schema.shared,
   prefiller: patch.prefiller !== undefined ? patch.prefiller : schema.prefiller,
   validator: patch.validator !== undefined ? patch.validator : schema.validator,
+  validator_ir: patch.validator_ir !== undefined ? patch.validator_ir : schema.validator_ir,
 });
 
 interface FormEditorTabContextType {

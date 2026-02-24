@@ -6,9 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface FormRegistryEntry {
-  name: string;
-  label: string;
-  version: number;
-  time_generated: string;
+export interface ProcessCallbackDto {
+  [key: string]: unknown;
 }

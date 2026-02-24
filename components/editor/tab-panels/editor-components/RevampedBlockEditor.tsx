@@ -18,23 +18,17 @@ import {
   BiVerticalTop,
 } from "react-icons/bi";
 import { SOURCES } from "@betterinternship/core/forms";
-import { ValidatorBuilder } from "@/components/docs/form-editor/ValidatorBuilder";
-import { zodCodeToValidatorConfig, validatorConfigToZodCode } from "@/lib/validator-engine";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Lock } from "lucide-react";
-import { validateExpression } from "@/lib/expression-validator";
-import {
-  buildFieldRefPrefiller,
-  buildManualPrefiller,
-  parsePrefillerToCompactState,
-} from "@/lib/default-value-builder";
+import { ChevronDown } from "lucide-react";
+import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
+import type { DefaultValueFieldOption } from "@/components/docs/form-editor/default-value.bundle";
+import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
 
 function RecipientBadgeDropdown({
   value,
@@ -91,218 +85,7 @@ function RecipientBadgeDropdown({
   );
 }
 
-interface FieldOption {
-  id: string;
-  name: string;
-  partyName?: string;
-}
-
-const normalizeValidatorCode = (value: string) =>
-  (value || "").replace(/\s+/g, "").replace(/;$/, "").trim();
-
-function ValidationRulesEditor({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const validatorValue = value || "";
-  const parsedConfig = useMemo(() => zodCodeToValidatorConfig(validatorValue), [validatorValue]);
-  const isBuilderCompatible = useMemo(() => {
-    if (!validatorValue.trim()) return true;
-    const rebuilt = validatorConfigToZodCode(parsedConfig);
-    return normalizeValidatorCode(rebuilt) === normalizeValidatorCode(validatorValue);
-  }, [parsedConfig, validatorValue]);
-  const [mode, setMode] = useState<"simple" | "raw">(() =>
-    isBuilderCompatible ? "simple" : "raw"
-  );
-  const [builderConfig, setBuilderConfig] = useState(parsedConfig);
-
-  useEffect(() => {
-    setBuilderConfig(parsedConfig);
-  }, [parsedConfig]);
-
-  return (
-    <div className="">
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs text-slate-600">Validation</h4>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setMode((prev) => (prev === "raw" ? "simple" : "raw"))}
-            className="rounded-[0.33em] px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-            title={mode === "raw" ? "Back to simple mode" : "Open raw mode"}
-          >
-            {mode === "raw" ? "Back" : "<>"}
-          </button>
-        </div>
-      </div>
-
-      {mode === "simple" ? (
-        <div className="">
-          <ValidatorBuilder
-            config={builderConfig}
-            rawZodCode={validatorValue}
-            onConfigChange={(newConfig) => {
-              setBuilderConfig(newConfig);
-              onChange(validatorConfigToZodCode(newConfig));
-            }}
-            onRawZodChange={onChange}
-            allowRawMode={false}
-            compact={true}
-            hideGeneratedPreview={true}
-          />
-        </div>
-      ) : (
-        <div className=" ">
-          <FormTextarea
-            value={validatorValue}
-            setter={onChange}
-            placeholder='z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), z.string())'
-            required={false}
-            className="min-h-28 bg-white font-mono text-xs"
-          />
-          <p className="text-xs text-slate-500">Raw Zod expression</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DefaultValueEditor({
-  source,
-  value,
-  onChange,
-  fieldOptions,
-}: {
-  source: string;
-  value: string;
-  onChange: (value: string) => void;
-  fieldOptions: FieldOption[];
-}) {
-  const prefillerValue = value || "";
-  const parsed = useMemo(() => parsePrefillerToCompactState(prefillerValue), [prefillerValue]);
-  const [open, setOpen] = useState(false);
-  const [manualValue, setManualValue] = useState("");
-  const [mode, setMode] = useState<"simple" | "raw">("simple");
-  const isLocked = source === "auto";
-  const advancedValidation = validateExpression(prefillerValue);
-
-  useEffect(() => {
-    if (parsed.kind === "manual") setManualValue(parsed.manualValue);
-    if (parsed.kind === "empty") setManualValue("");
-  }, [parsed.kind, parsed.manualValue]);
-
-  const triggerText =
-    parsed.kind === "field"
-      ? fieldOptions.find((f) => f.id === parsed.fieldRef)?.name || parsed.fieldRef
-      : parsed.kind === "manual"
-        ? parsed.manualValue || "Manual"
-        : parsed.kind === "custom"
-          ? "Custom"
-          : "Select";
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs text-slate-600">Default value</h4>
-        <div className="flex items-center gap-2">
-          {parsed.kind === "custom" && (
-            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-              Custom
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => setMode((prev) => (prev === "raw" ? "simple" : "raw"))}
-            className="rounded-[0.33em] px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-            title={mode === "raw" ? "Back to simple mode" : "Open raw mode"}
-          >
-            {mode === "raw" ? "Back" : "<>"}
-          </button>
-          {isLocked && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
-              <Lock className="h-3 w-3" />
-              Locked
-            </span>
-          )}
-        </div>
-      </div>
-
-      {mode === "simple" ? (
-        <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              disabled={isLocked}
-              className="flex h-8 w-full items-center justify-between rounded-[0.33em] border border-slate-300 bg-white px-2.5 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <span className="truncate">{triggerText}</span>
-              <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            sideOffset={6}
-            className="w-[var(--radix-dropdown-menu-trigger-width)] rounded-[0.33em] p-2"
-          >
-            <div className="max-h-44 space-y-1 overflow-auto pr-0.5">
-              {fieldOptions.map((field) => (
-                <button
-                  key={field.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(buildFieldRefPrefiller(field.id));
-                    setOpen(false);
-                  }}
-                  className="w-full rounded-[0.33em] px-2 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
-                >
-                  <span className="block truncate">{field.name}</span>
-                  {field.partyName && (
-                    <span className="text-[10px] text-slate-500">{field.partyName}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-            <DropdownMenuSeparator className="my-2" />
-            <div className="space-y-1">
-              <p className="text-xs text-slate-600">Manual value</p>
-              <input
-                type="text"
-                value={manualValue}
-                onChange={(e) => setManualValue(e.target.value)}
-                onBlur={() => onChange(buildManualPrefiller(manualValue))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    onChange(buildManualPrefiller(manualValue));
-                    setOpen(false);
-                  }
-                }}
-                placeholder="Type value"
-                className="h-8 w-full rounded-[0.33em] border border-slate-300 px-2 text-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
-              />
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <div className="space-y-1">
-          <FormTextarea
-            value={prefillerValue}
-            setter={onChange}
-            placeholder='() => "Sample Value"'
-            required={false}
-            disabled={isLocked}
-            className="min-h-24 font-mono text-xs"
-          />
-          {!advancedValidation.valid && (
-            <p className="text-xs text-red-600">{advancedValidation.message}</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+type FieldOption = DefaultValueFieldOption;
 
 export function RevampedBlockEditor() {
   const { formMetadata } = useFormEditor();
@@ -432,6 +215,23 @@ export function RevampedBlockEditor() {
     setEditedBlock(updated);
 
     // Use context handler to update and sync
+    handleBlockUpdate(updated);
+  };
+
+  const handleFieldPatch = (updates: Record<string, any>) => {
+    if (!editedBlock || !formMetadata) return;
+
+    const schema = editedBlock.field_schema || editedBlock.phantom_field_schema;
+    if (!schema) return;
+
+    const updated = { ...editedBlock };
+    if (editedBlock.field_schema) {
+      updated.field_schema = { ...editedBlock.field_schema, ...updates };
+    } else if (editedBlock.phantom_field_schema) {
+      updated.phantom_field_schema = { ...editedBlock.phantom_field_schema, ...updates };
+    }
+
+    setEditedBlock(updated);
     handleBlockUpdate(updated);
   };
 
@@ -612,7 +412,7 @@ export function RevampedBlockEditor() {
                 required={false}
               />
 
-              <DefaultValueEditor
+              <DefaultValueSection
                 source={parentSource}
                 value={parentPrefillerValue}
                 fieldOptions={parentFieldOptions}
@@ -622,11 +422,21 @@ export function RevampedBlockEditor() {
                 }}
               />
 
-              <ValidationRulesEditor
-                value={parentValidatorValue}
-                onChange={(value) => {
-                  setEditingValues((prev) => ({ ...prev, validator: value }));
-                  if (parentGroup) handleParentUpdate(parentGroup.id, { validator: value });
+              <ValidationSection
+                validator={parentValidatorValue}
+                schemaType={fieldMetadata?.type}
+                validatorIr={(fieldMetadata as any)?.validator_ir || null}
+                onChange={(next) => {
+                  setEditingValues((prev) => ({
+                    ...prev,
+                    validator: next.validator,
+                    validator_ir: next.validator_ir,
+                  }));
+                  if (parentGroup)
+                    handleParentUpdate(parentGroup.id, {
+                      validator: next.validator,
+                      validator_ir: next.validator_ir,
+                    } as any);
                 }}
               />
             </Card>
@@ -839,18 +649,26 @@ export function RevampedBlockEditor() {
             setter={(value) => handleFieldChange("source", value)}
             required={false}
           />
-          <DefaultValueEditor
+          <DefaultValueSection
             source={getSource(schema)}
             value={(schema?.prefiller || "") as string}
             fieldOptions={childFieldOptions}
             onChange={(value) => handleFieldChange("prefiller", value)}
           />
-          <ValidationRulesEditor
-            value={(schema?.validator || "") as string}
-            onChange={(value) => handleFieldChange("validator", value)}
+          <ValidationSection
+            validator={(schema?.validator || "") as string}
+            schemaType={schema?.type}
+            validatorIr={(schema?.validator_ir || null) as any}
+            onChange={(next) => {
+              handleFieldPatch({
+                validator: next.validator,
+                validator_ir: next.validator_ir,
+              });
+            }}
           />
         </Card>
       </div>
     </div>
   );
 }
+

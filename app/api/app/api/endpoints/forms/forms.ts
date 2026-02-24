@@ -46,6 +46,7 @@ import type {
   FormsControllerMarkFormAsFirstViewedParams,
   GetExportForSignatoryDto,
   InitiateFormDto,
+  ProcessResponse,
   RegisterFieldDto,
   RegisterFormSchemaDto,
   RejectFormDto,
@@ -2998,7 +2999,7 @@ export const formsControllerFilloutFormProcess = (
   initiateFormDto: InitiateFormDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<ProcessResponse>({
     url: `/api/forms/fillout`,
     method: "POST",
     headers: { "Content-Type": "application/json" },

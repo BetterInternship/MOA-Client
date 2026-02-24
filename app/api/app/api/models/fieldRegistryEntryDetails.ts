@@ -7,6 +7,7 @@
  */
 import type { FieldRegistryEntryDetailsType } from "./fieldRegistryEntryDetailsType";
 import type { FieldRegistryEntryDetailsSource } from "./fieldRegistryEntryDetailsSource";
+import type { FieldRegistryEntryDetailsValidatorIr } from "./fieldRegistryEntryDetailsValidatorIr";
 
 export interface FieldRegistryEntryDetails {
   id: string;
@@ -24,5 +25,7 @@ export interface FieldRegistryEntryDetails {
   tooltip_label: string | null;
   /** @nullable */
   validator: string | null;
+  /** @nullable */
+  validator_ir?: FieldRegistryEntryDetailsValidatorIr;
   is_phantom: boolean;
 }

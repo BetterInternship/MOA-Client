@@ -14,8 +14,10 @@ import { useModal } from "@/app/providers/modal-provider";
 import {
   createCustomFieldDraftFromPreset,
   FieldSource,
+  normalizeFieldSource,
   toRegisterFieldPayload,
 } from "@/lib/custom-field-mappers";
+import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
 import {
   buildFieldOptionsFromBlocks,
@@ -48,7 +50,7 @@ interface BlocksPanelProps {
 interface CustomFieldDraft {
   name: string;
   label: string;
-  type: "text" | "signature";
+  type: "text" | "signature" | "image";
   party: string;
   shared: boolean;
   source: FieldSource;
@@ -57,6 +59,7 @@ interface CustomFieldDraft {
   preset: string;
   tooltip_label: string;
   validator: string;
+  validator_ir: ValidatorIRv0 | null;
   is_phantom: boolean;
 }
 
@@ -80,6 +83,7 @@ const DEFAULT_CUSTOM_FIELD_DRAFT: CustomFieldDraft = {
   preset: CUSTOM_PRESET,
   tooltip_label: "",
   validator: "",
+  validator_ir: null,
   is_phantom: false,
 };
 
@@ -114,11 +118,29 @@ function CustomFieldAddModalContent({
       {
         ...preset,
         label,
+        source: normalizeFieldSource(preset.source),
+        prefiller: preset.prefiller ?? "",
+        tooltip_label: preset.tooltip_label ?? "",
+        validator: preset.validator ?? "",
+        validator_ir: (preset as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
       },
       deriveFieldNameFromLabel,
       CUSTOM_TAG
     );
-    setCustomFieldDraft(draftFromPreset);
+    setCustomFieldDraft({
+      ...draftFromPreset,
+      shared: draftFromPreset.shared ?? true,
+      source: draftFromPreset.source || "manual",
+      tag: draftFromPreset.tag || CUSTOM_TAG,
+      prefiller: draftFromPreset.prefiller ?? "",
+      preset: draftFromPreset.preset ?? CUSTOM_PRESET,
+      tooltip_label: draftFromPreset.tooltip_label ?? "",
+      validator: draftFromPreset.validator ?? "",
+      validator_ir: draftFromPreset.validator_ir ?? null,
+      is_phantom: draftFromPreset.is_phantom ?? false,
+      party: draftFromPreset.party || "",
+      type: (draftFromPreset.type as CustomFieldDraft["type"]) || "text",
+    });
   };
 
   const handleCustomLabelChange = (label: string) => {
@@ -176,6 +198,7 @@ function CustomFieldAddModalContent({
           shared: customFieldDraft.shared,
           prefiller: customFieldDraft.prefiller,
           validator: customFieldDraft.validator,
+          validator_ir: customFieldDraft.validator_ir,
         }}
         fieldOptions={fieldOptions}
         tagOptions={tagOptions}
@@ -188,7 +211,14 @@ function CustomFieldAddModalContent({
         onPresetChange={handlePresetSelect}
         onLabelChange={handleCustomLabelChange}
         showDerivedNameHint={true}
-        onChange={(updates) => setCustomFieldDraft((prev) => ({ ...prev, ...updates }))}
+        onChange={(updates) =>
+          setCustomFieldDraft((prev) => ({
+            ...prev,
+            ...updates,
+            type: (updates.type as CustomFieldDraft["type"]) ?? prev.type,
+            source: (updates.source as FieldSource) ?? prev.source,
+          }))
+        }
       />
       <div className="flex flex-row justify-between gap-1">
         <div className="flex-1" />
@@ -378,6 +408,10 @@ export function BlocksPanel({
         source: baseSchema?.source || field.source || "manual",
         prefiller: baseSchema?.prefiller ?? field.prefiller,
         validator: baseSchema?.validator ?? field.validator,
+        validator_ir:
+          (baseSchema as { validator_ir?: ValidatorIRv0 | null } | undefined)?.validator_ir ??
+          (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ??
+          null,
         size: baseSchema?.size,
         wrap: baseSchema?.wrap ?? true,
         font: baseSchema?.font,

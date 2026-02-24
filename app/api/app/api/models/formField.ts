@@ -7,6 +7,7 @@
  */
 import type { FormFieldType } from "./formFieldType";
 import type { FormFieldSource } from "./formFieldSource";
+import type { FormFieldValidatorIr } from "./formFieldValidatorIr";
 
 export interface FormField {
   field: string;
@@ -23,4 +24,6 @@ export interface FormField {
   source: FormFieldSource;
   prefiller: string;
   validator: string;
+  /** @nullable */
+  validator_ir?: FormFieldValidatorIr;
 }
