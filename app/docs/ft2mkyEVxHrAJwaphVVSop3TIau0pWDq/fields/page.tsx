@@ -30,8 +30,10 @@ import {
 import {
   createCustomFieldDraftFromPreset,
   FieldSource,
+  normalizeFieldSource,
   toRegisterFieldPayload,
 } from "@/lib/custom-field-mappers";
+import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
 import {
   buildFieldOptionsFromRegistry,
@@ -49,6 +51,7 @@ interface FieldRegistryEntry {
   shared: boolean;
   tooltip_label: string;
   validator: string;
+  validator_ir?: ValidatorIRv0 | null;
   prefiller: string;
   is_phantom?: boolean;
   party?: string;
@@ -238,14 +241,15 @@ const FieldRegistryPage = () => {
             type: field.type,
             shared: field.shared,
             party: field.party ?? "__deprecated",
-            source: field.source,
+            source: normalizeFieldSource(field.source),
             tag: targetTag,
             prefiller: field.prefiller ?? null,
             preset: field.preset,
             tooltip_label: field.tooltip_label ?? null,
             validator: field.validator ?? null,
+            validator_ir: (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
             is_phantom: field.is_phantom ?? false,
-          });
+          } as any);
         })
       );
 
@@ -429,11 +433,12 @@ const FieldEditor = ({
         id: fieldId,
         tag: field.tag || "uncategorized",
         party: field.party || "__deprecated",
+        source: normalizeFieldSource(field.source),
         tooltip_label: field.tooltip_label ?? null,
         validator: field.validator ?? null,
         prefiller: field.prefiller ?? null,
         is_phantom: field?.is_phantom ?? false,
-      });
+      } as any);
       await onSaved?.();
       close();
     } finally {
@@ -449,6 +454,7 @@ const FieldEditor = ({
         shared: data.field.shared.toString() === "true",
         tooltip_label: data.field.tooltip_label ?? "",
         validator: data.field.validator ?? "",
+        validator_ir: (data.field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
         prefiller: data.field.prefiller ?? "",
       });
     } else {
@@ -474,6 +480,7 @@ const FieldEditor = ({
                 shared: field.shared,
                 prefiller: field.prefiller || "",
                 validator: field.validator || "",
+                validator_ir: field.validator_ir || null,
               }}
               fieldOptions={fieldOptions}
               tagOptions={tagOptions}
@@ -522,6 +529,7 @@ const FieldRegistration = ({
     tooltip_label: "",
     prefiller: "",
     validator: "",
+    validator_ir: null,
   });
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [loadingPreset, setLoadingPreset] = useState(false);
@@ -540,14 +548,17 @@ const FieldRegistration = ({
       const label = preset.label || "";
       setField((prev) => ({
         ...prev,
-        label,
         ...createCustomFieldDraftFromPreset(
           {
             ...preset,
             label,
-            type: (preset.type as "text" | "signature") || "text",
-            source: (preset.source as FieldSource) || "manual",
+            type: (preset.type as "text" | "signature" | "image") || "text",
+            source: normalizeFieldSource(preset.source),
             shared: preset.shared?.toString() === "true",
+            prefiller: preset.prefiller ?? "",
+            tooltip_label: preset.tooltip_label ?? "",
+            validator: preset.validator ?? "",
+            validator_ir: (preset as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
           },
           deriveFieldNameFromLabel,
           prev?.tag || "uncategorized"
@@ -574,14 +585,15 @@ const FieldRegistration = ({
           {
             name: field.name || "",
             label: field.label || "",
-            type: (field.type as "text" | "signature") || "text",
-            source: (field.source as FieldSource) || "manual",
+            type: (field.type as "text" | "signature" | "image") || "text",
+            source: normalizeFieldSource(field.source),
             party: "__deprecated",
             shared: field.shared ?? true,
             tag: field.tag || "uncategorized",
             tooltip_label: field.tooltip_label || "",
             prefiller: field.prefiller || "",
             validator: field.validator || "",
+            validator_ir: field.validator_ir || null,
             is_phantom: false,
             preset: "default",
           },
@@ -604,10 +616,11 @@ const FieldRegistration = ({
           tag: field.tag || "",
           tooltip_label: field.tooltip_label || "",
           type: field.type || "text",
-          source: (field.source as FieldSource) || "manual",
+          source: normalizeFieldSource(field.source),
           shared: field.shared ?? true,
           prefiller: field.prefiller || "",
           validator: field.validator || "",
+          validator_ir: field.validator_ir || null,
         }}
         fieldOptions={fieldOptions}
         presetTemplates={presetTemplates}

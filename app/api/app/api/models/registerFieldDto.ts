@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { RegisterFieldDtoSource } from "./registerFieldDtoSource";
+import type { RegisterFieldDtoValidatorIr } from "./registerFieldDtoValidatorIr";
 
 export interface RegisterFieldDto {
   name: string;
@@ -22,5 +23,7 @@ export interface RegisterFieldDto {
   tooltip_label: string | null;
   /** @nullable */
   validator: string | null;
+  /** @nullable */
+  validator_ir?: RegisterFieldDtoValidatorIr;
   is_phantom: boolean;
 }

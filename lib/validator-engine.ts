@@ -29,7 +29,9 @@ export type ValidatorRuleType =
   | "minDate"
   | "maxDate"
   | "plainText"
-  | "customRefine";
+  | "customRefine"
+  | "minTime"
+  | "maxTime";
 
 export interface ValidatorRule {
   id: string;
@@ -87,6 +89,11 @@ const REGEX_PATTERNS = {
     /\.regex\(\s*new\s+RegExp\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)[^)]*message\s*:\s*"([^"]+)"/,
   customRefine:
     /\.refine\(\s*(function|\([^)]*\)\s*=>|date\s*=>\s*{[\s\S]*?})\s*,\s*\{\s*message\s*:\s*"([^"]+)"/,
+  timeDescribe: /\.describe\(\s*"time"\s*\)/,
+  timeMinConstraint:
+    /\.refine\(\s*\(?\s*\w+\s*\)?\s*=>\s*\w+\s*>?=\s*"([0-2]\d:[0-5]\d)"\s*,\s*\{\s*message\s*:\s*"([^"]+)"/,
+  timeMaxConstraint:
+    /\.refine\(\s*\(?\s*\w+\s*\)?\s*=>\s*\w+\s*<=\s*"([0-2]\d:[0-5]\d)"\s*,\s*\{\s*message\s*:\s*"([^"]+)"/,
 } as const;
 
 // ============================================================================
@@ -201,6 +208,18 @@ const RULE_DEFINITIONS: Record<
   customRefine: {
     label: "Custom Validation",
     description: "Advanced validation logic",
+    needsValue: true,
+    valueType: "string",
+  },
+  minTime: {
+    label: "Minimum Time",
+    description: "Time must be on or after HH:mm",
+    needsValue: true,
+    valueType: "string",
+  },
+  maxTime: {
+    label: "Maximum Time",
+    description: "Time must be on or before HH:mm",
     needsValue: true,
     valueType: "string",
   },
@@ -351,6 +370,25 @@ function buildStringValidatorChain(rules: ValidatorRule[]): string {
     }
   }
 
+  const minTimeRule = rules.find((r) => r.type === "minTime");
+  const maxTimeRule = rules.find((r) => r.type === "maxTime");
+  const isTime = Boolean(minTimeRule || maxTimeRule);
+
+  if (isTime) {
+    code += '.regex(/^([01]\\\\d|2[0-3]):([0-5]\\\\d)$/, { message: "Invalid time format." })';
+    if (minTimeRule) {
+      const value = String(minTimeRule.params?.value ?? "00:00");
+      const msg = String(minTimeRule.params?.message ?? `Time must be on or after ${value}.`);
+      code += `.refine((v) => v >= "${value}", { message: "${msg}" })`;
+    }
+    if (maxTimeRule) {
+      const value = String(maxTimeRule.params?.value ?? "23:59");
+      const msg = String(maxTimeRule.params?.message ?? `Time must be on or before ${value}.`);
+      code += `.refine((v) => v <= "${value}", { message: "${msg}" })`;
+    }
+    code += '.describe("time")';
+  }
+
   // Plain text preset (title case and characters only)
   if (rules.some((r) => r.type === "plainText")) {
     return `z.string({ required_error: "This field is required." }).trim().min(1, { message: "This field is required." }).max(100).regex(/^(?!.*[\\p{Extended_Pictographic}\\uFE0F])(?!.*[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F])(?!.*[\\u202A-\\u202E\\u2066-\\u2069])[\\p{L}\\p{M}\\p{Pc}\\p{Pd}\\p{Ps}\\p{Pe}\\p{Pi}\\p{Pf}\\p{Po}\\p{Zs}\\n\\r\\t]+$/u, "This field accepts letters, spaces, and common punctuation only. No numbers or emojis.").refine(s => s.replace(/\\p{L}+/gu, w => w[0].toLocaleUpperCase() + w.slice(1).toLocaleLowerCase()) === s, "Please write in title case (capitalize the first letter of each word).")`;
@@ -485,6 +523,9 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     }
   }
 
+  // Detect time patterns early and parse min/max time constraints
+  const isTime = REGEX_PATTERNS.timeDescribe.test(sanitized);
+
   // Parse string/number validators
   const coreValidator = getCoreValidator(sanitized);
   const isNumber = REGEX_PATTERNS.numberType.test(coreValidator);
@@ -509,7 +550,7 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     rules.push(createValidatorRule("required"));
   }
 
-  // Constraints (min/max or minDate/maxDate)
+  // Constraints (min/max or minDate/maxDate/time)
   if (!rules.some((r) => r.type === "array")) {
     if (isDate) {
       // Parse date constraints
@@ -526,7 +567,7 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
         rule.params = { value: maxDateMatch[1], message: maxDateMatch[2] };
         rules.push(rule);
       }
-    } else {
+    } else if (!isTime) {
       // Parse numeric/length constraints
       const minConstraint = parseMinConstraint(coreValidator);
       if (minConstraint) {
@@ -541,6 +582,21 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
         rule.params = { value: maxConstraint.value, message: maxConstraint.message };
         rules.push(rule);
       }
+    }
+  }
+
+  if (isTime) {
+    const minTimeMatch = coreValidator.match(REGEX_PATTERNS.timeMinConstraint);
+    if (minTimeMatch) {
+      const rule = createValidatorRule("minTime");
+      rule.params = { value: minTimeMatch[1], message: minTimeMatch[2] };
+      rules.push(rule);
+    }
+    const maxTimeMatch = coreValidator.match(REGEX_PATTERNS.timeMaxConstraint);
+    if (maxTimeMatch) {
+      const rule = createValidatorRule("maxTime");
+      rule.params = { value: maxTimeMatch[1], message: maxTimeMatch[2] };
+      rules.push(rule);
     }
   }
 
@@ -731,6 +787,10 @@ export function getRuleDescription(rule: ValidatorRule): string {
       return "Whitespace will be trimmed";
     case "customRefine":
       return `Custom: ${String(rule.params?.message || "Custom validation")}`;
+    case "minTime":
+      return `On or after ${String(rule.params?.value)}`;
+    case "maxTime":
+      return `On or before ${String(rule.params?.value)}`;
     default:
       return def.label;
   }
@@ -776,6 +836,21 @@ export function createValidatorRule(type: ValidatorRuleType): ValidatorRule {
           type === "minDate"
             ? `Date must be on or after ${today}.`
             : `Date must be on or before ${today}.`,
+      },
+    };
+  }
+
+  if (type === "minTime" || type === "maxTime") {
+    const fallback = type === "minTime" ? "00:00" : "23:59";
+    return {
+      id: `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      params: {
+        value: fallback,
+        message:
+          type === "minTime"
+            ? `Time must be on or after ${fallback}.`
+            : `Time must be on or before ${fallback}.`,
       },
     };
   }

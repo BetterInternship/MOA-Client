@@ -142,6 +142,20 @@ export function FormEditorProvider({
         },
       };
 
+      if (process.env.NODE_ENV !== "production") {
+        const fieldSchemas = normalizedMetadata.schema.blocks
+          .map((block) => block.field_schema || block.phantom_field_schema)
+          .filter(Boolean);
+        const withIr = fieldSchemas.filter((schema) => (schema as any)?.validator_ir != null).length;
+        const withoutIr = fieldSchemas.length - withIr;
+
+        console.groupCollapsed("[ValidationSavePayload] validator_ir presence");
+        console.log("total_fields:", fieldSchemas.length);
+        console.log("with_validator_ir:", withIr);
+        console.log("without_validator_ir:", withoutIr);
+        console.groupEnd();
+      }
+
       await formsControllerRegisterForm(normalizedMetadata);
       queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
       queryClient.invalidateQueries({
@@ -209,3 +223,7 @@ export function useFormEditor() {
   }
   return context;
 }
+
+
+
+

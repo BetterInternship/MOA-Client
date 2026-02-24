@@ -33,6 +33,7 @@ function normalizeSchema<T extends SchemaLike>(schema: T | undefined): T | undef
     source: normalizeSource(schema.source),
     prefiller: schema.prefiller,
     validator: schema.validator,
+    validator_ir: schema.validator_ir ?? null,
     size,
     wrap,
     font: schema.font,
@@ -58,6 +59,7 @@ function normalizePhantomSchema<T extends SchemaLike>(schema: T | undefined): T 
     source: normalizeSource(schema.source),
     prefiller: schema.prefiller,
     validator: schema.validator,
+    validator_ir: schema.validator_ir ?? null,
   };
 
   return normalized as T;

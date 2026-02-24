@@ -7,6 +7,7 @@
  */
 import type { FormPhantomFieldType } from "./formPhantomFieldType";
 import type { FormPhantomFieldSource } from "./formPhantomFieldSource";
+import type { FormPhantomFieldValidatorIr } from "./formPhantomFieldValidatorIr";
 
 export interface FormPhantomField {
   field: string;
@@ -18,4 +19,6 @@ export interface FormPhantomField {
   source: FormPhantomFieldSource;
   prefiller: string;
   validator: string;
+  /** @nullable */
+  validator_ir?: FormPhantomFieldValidatorIr;
 }
