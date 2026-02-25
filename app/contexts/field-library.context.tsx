@@ -13,6 +13,7 @@ export type FieldLibraryPresetTemplateOption = {
   name: string;
   label?: string;
   group?: "core" | "format";
+  iconKey?: string;
   disabled?: boolean;
   type?: "text" | "signature" | "image";
   source?: "auto" | "prefill" | "derived" | "manual";

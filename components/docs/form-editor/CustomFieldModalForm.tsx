@@ -4,12 +4,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Autocomplete } from "@/components/ui/autocomplete";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SOURCES } from "@betterinternship/core/forms";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
 import { BlocksRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { useCustomFieldPreview } from "@/components/docs/form-editor/UseCustomFieldPreview";
 import { FieldSource } from "@/lib/custom-field-mappers";
 import { type ValidatorIRv0 } from "@/lib/validator-ir";
+import { getPresetFieldIcon } from "@/lib/preset-field-icons";
 import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
 import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
 
@@ -36,6 +46,7 @@ export interface CustomFieldPresetOption {
   name: string;
   label?: string;
   group?: "core" | "format";
+  iconKey?: string;
   disabled?: boolean;
 }
 
@@ -69,6 +80,10 @@ export function CustomFieldModalForm({
   );
   const formatPresetTemplates = (presetTemplates || []).filter((preset) => preset.group === "format");
   const hasPresetGroups = formatPresetTemplates.length > 0;
+  const selectedPreset = (presetTemplates || []).find((preset) => preset.id === selectedPresetId);
+  const SelectedPresetIcon = selectedPreset
+    ? getPresetFieldIcon(selectedPreset.iconKey, selectedPreset.name)
+    : null;
 
   const {
     previewBlocks,
@@ -96,39 +111,77 @@ export function CustomFieldModalForm({
       {presetTemplates && onPresetChange && (
         <div className="space-y-1">
           <Label className="text-xs font-semibold text-slate-700">Preset template</Label>
-          <select
-            value={selectedPresetId}
-            onChange={(e) => onPresetChange(e.target.value)}
-            className="h-9 w-full rounded-[0.33em] border border-slate-300 bg-white px-2.5 text-sm"
+          <Select
+            value={selectedPresetId || "__none"}
+            onValueChange={(nextValue) => onPresetChange(nextValue === "__none" ? "" : nextValue)}
           >
-            <option value="" className="text-black/50">
-              Select a preset
-            </option>
-            {hasPresetGroups ? (
-              <>
-                <optgroup label="Core Fields">
-                  {corePresetTemplates.map((preset) => (
-                    <option key={preset.id} value={preset.id} disabled={Boolean(preset.disabled)}>
-                      {preset.label || preset.name}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Format Presets">
-                  {formatPresetTemplates.map((preset) => (
-                    <option key={preset.id} value={preset.id} disabled={Boolean(preset.disabled)}>
-                      {preset.label || preset.name}
-                    </option>
-                  ))}
-                </optgroup>
-              </>
-            ) : (
-              presetTemplates.map((preset) => (
-                <option key={preset.id} value={preset.id} disabled={Boolean(preset.disabled)}>
-                  {preset.label || preset.name}
-                </option>
-              ))
-            )}
-          </select>
+            <SelectTrigger className="h-9 text-sm">
+              {selectedPreset ? (
+                <div className="flex items-center gap-2">
+                  {SelectedPresetIcon && <SelectedPresetIcon className="h-4 w-4 text-slate-500" />}
+                  <span>{selectedPreset.label || selectedPreset.name}</span>
+                </div>
+              ) : (
+                <SelectValue placeholder="Select a preset" />
+              )}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">Select a preset</SelectItem>
+
+              {hasPresetGroups ? (
+                <>
+                  <SelectGroup>
+                    <SelectLabel>Core Fields</SelectLabel>
+                    {corePresetTemplates.map((preset) => {
+                      const Icon = getPresetFieldIcon(preset.iconKey, preset.name);
+                      return (
+                        <SelectItem
+                          key={preset.id}
+                          value={preset.id}
+                          disabled={Boolean(preset.disabled)}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-slate-500" />
+                            <span>{preset.label || preset.name}</span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Format Presets</SelectLabel>
+                    {formatPresetTemplates.map((preset) => {
+                      const Icon = getPresetFieldIcon(preset.iconKey, preset.name);
+                      return (
+                        <SelectItem
+                          key={preset.id}
+                          value={preset.id}
+                          disabled={Boolean(preset.disabled)}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-slate-500" />
+                            <span>{preset.label || preset.name}</span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                </>
+              ) : (
+                presetTemplates.map((preset) => {
+                  const Icon = getPresetFieldIcon(preset.iconKey, preset.name);
+                  return (
+                    <SelectItem key={preset.id} value={preset.id} disabled={Boolean(preset.disabled)}>
+                      <span className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-slate-500" />
+                        <span>{preset.label || preset.name}</span>
+                      </span>
+                    </SelectItem>
+                  );
+                })
+              )}
+            </SelectContent>
+          </Select>
         </div>
       )}
       {!presetTemplates || selectedPresetId ? (
