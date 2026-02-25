@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SOURCES } from "@betterinternship/core/forms";
+import { Switch } from "@/components/ui/switch";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
 import { BlocksRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { useCustomFieldPreview } from "@/components/docs/form-editor/UseCustomFieldPreview";
@@ -79,6 +79,7 @@ export function CustomFieldModalForm({
   onPresetChange,
   tagOptions = [],
 }: CustomFieldModalFormProps) {
+  const isDerived = value.source === "derived";
   const corePresetTemplates = (presetTemplates || []).filter(
     (preset) => (preset.group || "core") === "core"
   );
@@ -233,18 +234,6 @@ export function CustomFieldModalForm({
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">Source</Label>
-                <Autocomplete
-                  value={value.source}
-                  inputClassName="h-9 text-sm"
-                  placeholder={SOURCES.join(", ")}
-                  options={SOURCES.map((s) => ({ id: s, name: s }))}
-                  setter={(id) =>
-                    id && onChange({ source: id as CustomFieldModalFormValue["source"] })
-                  }
-                />
-              </div>
-              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">Tag/Category</Label>
                 {tagReadOnly ? (
                   <Input
@@ -266,20 +255,62 @@ export function CustomFieldModalForm({
             </div>
           </div>
 
-          <DefaultValueSection
-            source={value.source}
-            value={value.prefiller || ""}
-            fieldOptions={fieldOptions}
-            onChange={(next) => onChange({ prefiller: next })}
-          />
-
-          <ValidationSection
-            schemaType={value.type}
-            validator={value.validator || ""}
-            validatorIr={value.validator_ir || null}
-            fieldOptions={fieldOptions}
-            onChange={(next) => onChange(next)}
-          />
+          {isDerived ? (
+            <>
+              <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-slate-700">Default value</p>
+                  <p className="text-[11px] text-slate-500">
+                    Use default value mode for this field.
+                  </p>
+                </div>
+                <Switch
+                  checked={isDerived}
+                  onCheckedChange={(checked) =>
+                    onChange({ source: checked ? "derived" : "manual" })
+                  }
+                />
+              </div>
+              <DefaultValueSection
+                title="Default Values"
+                source={value.source}
+                value={value.prefiller || ""}
+                fieldOptions={fieldOptions}
+                onChange={(next) => onChange({ prefiller: next })}
+              />
+            </>
+          ) : (
+            <>
+              <ValidationSection
+                schemaType={value.type}
+                validator={value.validator || ""}
+                validatorIr={value.validator_ir || null}
+                fieldOptions={fieldOptions}
+                onChange={(next) => onChange(next)}
+              />
+              <DefaultValueSection
+                title="Placeholder"
+                source={value.source}
+                value={value.prefiller || ""}
+                fieldOptions={fieldOptions}
+                onChange={(next) => onChange({ prefiller: next })}
+              />
+              <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                  <p className="text-[11px] text-slate-500">
+                    Enable to compute this field from defaults.
+                  </p>
+                </div>
+                <Switch
+                  checked={isDerived}
+                  onCheckedChange={(checked) =>
+                    onChange({ source: checked ? "derived" : "manual" })
+                  }
+                />
+              </div>
+            </>
+          )}
           <div className="rounded-[0.33em] border border-slate-200 bg-slate-50 p-3">
             <p className="mb-2 text-xs font-semibold text-slate-700">Field Preview</p>
             <div className="rounded-[0.33em] border border-slate-300 bg-white p-2">

@@ -2,7 +2,10 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
-import { IFormBlock } from "@betterinternship/core/forms";
+import {
+  IFormBlock,
+  getFieldPresetTemplates,
+} from "@betterinternship/core/forms";
 import { useState, useEffect, useMemo } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
@@ -17,7 +20,6 @@ import {
   BiVerticalCenter,
   BiVerticalTop,
 } from "react-icons/bi";
-import { SOURCES } from "@betterinternship/core/forms";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import {
   DropdownMenu,
@@ -29,6 +31,12 @@ import { ChevronDown } from "lucide-react";
 import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
 import type { DefaultValueFieldOption } from "@/components/docs/form-editor/default-value.bundle";
 import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
+import { Switch } from "@/components/ui/switch";
+import {
+  applyPresetToSchema,
+  findPresetByFieldKey,
+  isDefaultPresetFieldKey,
+} from "@/lib/default-field-preset-utils";
 
 function RecipientBadgeDropdown({
   value,
@@ -153,6 +161,18 @@ export function RevampedBlockEditor() {
   }, [parentGroup?.id]);
 
   const getSource = (schema: any) => (schema?.source as string) || "manual";
+  const presetTemplates = useMemo(() => getFieldPresetTemplates(), []);
+  const presetOptions = useMemo(
+    () =>
+      presetTemplates.map((preset) => ({
+        id: preset.id,
+        name:
+          (preset.group || "core") === "format"
+            ? `Format: ${preset.label || preset.name}`
+            : preset.label || preset.name,
+      })),
+    [presetTemplates]
+  );
 
   const getFieldOptions = () => {
     const options: FieldOption[] = [];
@@ -308,6 +328,9 @@ export function RevampedBlockEditor() {
     const parentSource =
       (editingValues.source !== undefined ? editingValues.source : fieldMetadata?.source) ||
       "manual";
+    const isParentDerived = parentSource === "derived";
+    const parentSchemaType =
+      (editingValues.type !== undefined ? editingValues.type : fieldMetadata?.type) || "text";
     const parentPrefillerValue = (
       editingValues.prefiller !== undefined
         ? editingValues.prefiller
@@ -318,7 +341,14 @@ export function RevampedBlockEditor() {
         ? editingValues.validator
         : fieldMetadata?.validator || ""
     ) as string;
+    const parentValidatorIrValue =
+      editingValues.validator_ir !== undefined
+        ? editingValues.validator_ir
+        : (fieldMetadata as any)?.validator_ir || null;
     const parentFieldOptions = getFieldOptions();
+    const parentFieldKey = String(fieldMetadata?.field || "");
+    const isDefaultParentField = isDefaultPresetFieldKey(parentFieldKey, presetTemplates);
+    const matchedParentPreset = findPresetByFieldKey(parentFieldKey, presetTemplates);
 
     return (
       <div className="flex h-full flex-col overflow-hidden">
@@ -392,54 +422,102 @@ export function RevampedBlockEditor() {
                 required={false}
               />
 
-              <FormDropdown
-                label="Source"
-                value={
-                  editingValues.source !== undefined
-                    ? editingValues.source
-                    : fieldMetadata.source || "manual"
-                }
-                options={SOURCES.map((source) => ({
-                  id: source,
-                  name: source.charAt(0).toUpperCase() + source.slice(1),
-                }))}
-                setter={(value) => {
-                  setEditingValues((prev) => ({ ...prev, source: value }));
-                  if (parentGroup) {
-                    handleParentUpdate(parentGroup.id, { source: value });
-                  }
-                }}
-                required={false}
-              />
+              {isDefaultParentField && (
+                <FormDropdown
+                  label="Field Type"
+                  value={matchedParentPreset?.id || ""}
+                  options={presetOptions}
+                  setter={(value) => {
+                    const nextPreset = presetTemplates.find((preset) => preset.id === value);
+                    if (!nextPreset || !parentGroup) return;
+                    const presetPatch = applyPresetToSchema(fieldMetadata, nextPreset);
+                    setEditingValues((prev) => ({
+                      ...prev,
+                      ...presetPatch,
+                    }));
+                    handleParentUpdate(parentGroup.id, presetPatch);
+                  }}
+                  required={false}
+                />
+              )}
 
-              <DefaultValueSection
-                source={parentSource}
-                value={parentPrefillerValue}
-                fieldOptions={parentFieldOptions}
-                onChange={(value) => {
-                  setEditingValues((prev) => ({ ...prev, prefiller: value }));
-                  if (parentGroup) handleParentUpdate(parentGroup.id, { prefiller: value });
-                }}
-              />
-
-              <ValidationSection
-                validator={parentValidatorValue}
-                schemaType={fieldMetadata?.type}
-                validatorIr={(fieldMetadata as any)?.validator_ir || null}
-                fieldOptions={parentFieldOptions}
-                onChange={(next) => {
-                  setEditingValues((prev) => ({
-                    ...prev,
-                    validator: next.validator,
-                    validator_ir: next.validator_ir,
-                  }));
-                  if (parentGroup)
-                    handleParentUpdate(parentGroup.id, {
-                      validator: next.validator,
-                      validator_ir: next.validator_ir,
-                    } as any);
-                }}
-              />
+              {isParentDerived ? (
+                <>
+                  <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-slate-700">Default value</p>
+                      <p className="text-[11px] text-slate-500">
+                        Use default value mode for this field.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={isParentDerived}
+                      onCheckedChange={(checked) => {
+                        const nextSource = checked ? "derived" : "manual";
+                        setEditingValues((prev) => ({ ...prev, source: nextSource }));
+                        if (parentGroup) handleParentUpdate(parentGroup.id, { source: nextSource });
+                      }}
+                    />
+                  </div>
+                  <DefaultValueSection
+                    title="Default Values"
+                    source={parentSource}
+                    value={parentPrefillerValue}
+                    fieldOptions={parentFieldOptions}
+                    onChange={(value) => {
+                      setEditingValues((prev) => ({ ...prev, prefiller: value }));
+                      if (parentGroup) handleParentUpdate(parentGroup.id, { prefiller: value });
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <ValidationSection
+                    validator={parentValidatorValue}
+                    schemaType={parentSchemaType}
+                    validatorIr={parentValidatorIrValue as any}
+                    fieldOptions={parentFieldOptions}
+                    onChange={(next) => {
+                      setEditingValues((prev) => ({
+                        ...prev,
+                        validator: next.validator,
+                        validator_ir: next.validator_ir,
+                      }));
+                      if (parentGroup)
+                        handleParentUpdate(parentGroup.id, {
+                          validator: next.validator,
+                          validator_ir: next.validator_ir,
+                        } as any);
+                    }}
+                  />
+                  <DefaultValueSection
+                    title="Placeholder"
+                    source={parentSource}
+                    value={parentPrefillerValue}
+                    fieldOptions={parentFieldOptions}
+                    onChange={(value) => {
+                      setEditingValues((prev) => ({ ...prev, prefiller: value }));
+                      if (parentGroup) handleParentUpdate(parentGroup.id, { prefiller: value });
+                    }}
+                  />
+                  <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                      <p className="text-[11px] text-slate-500">
+                        Enable to compute this field from defaults.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={isParentDerived}
+                      onCheckedChange={(checked) => {
+                        const nextSource = checked ? "derived" : "manual";
+                        setEditingValues((prev) => ({ ...prev, source: nextSource }));
+                        if (parentGroup) handleParentUpdate(parentGroup.id, { source: nextSource });
+                      }}
+                    />
+                  </div>
+                </>
+              )}
             </Card>
           )}
         </div>
@@ -457,6 +535,11 @@ export function RevampedBlockEditor() {
 
   const schema = (editedBlock.field_schema || editedBlock.phantom_field_schema) as any;
   const childFieldOptions = getFieldOptions();
+  const childSource = getSource(schema);
+  const isChildDerived = childSource === "derived";
+  const childFieldKey = String(schema?.field || "");
+  const isDefaultChildField = isDefaultPresetFieldKey(childFieldKey, presetTemplates);
+  const matchedChildPreset = findPresetByFieldKey(childFieldKey, presetTemplates);
 
   // Child/Instance editing - Show PDF-level properties (coordinates, alignment, font size, wrap)
   return (
@@ -640,34 +723,81 @@ export function RevampedBlockEditor() {
             setter={(value) => handleFieldChange("label", value)}
             required={false}
           />
-          <FormDropdown
-            label="Source"
-            value={schema?.source || "manual"}
-            options={SOURCES.map((source) => ({
-              id: source,
-              name: source.charAt(0).toUpperCase() + source.slice(1),
-            }))}
-            setter={(value) => handleFieldChange("source", value)}
-            required={false}
-          />
-          <DefaultValueSection
-            source={getSource(schema)}
-            value={(schema?.prefiller || "") as string}
-            fieldOptions={childFieldOptions}
-            onChange={(value) => handleFieldChange("prefiller", value)}
-          />
-          <ValidationSection
-            validator={(schema?.validator || "") as string}
-            schemaType={schema?.type}
-            validatorIr={(schema?.validator_ir || null) as any}
-            fieldOptions={childFieldOptions}
-            onChange={(next) => {
-              handleFieldPatch({
-                validator: next.validator,
-                validator_ir: next.validator_ir,
-              });
-            }}
-          />
+          {isDefaultChildField && (
+            <FormDropdown
+              label="Field Type"
+              value={matchedChildPreset?.id || ""}
+              options={presetOptions}
+              setter={(value) => {
+                const nextPreset = presetTemplates.find((preset) => preset.id === value);
+                if (!nextPreset) return;
+                const presetPatch = applyPresetToSchema(schema, nextPreset);
+                handleFieldPatch(presetPatch);
+              }}
+              required={false}
+            />
+          )}
+          {isChildDerived ? (
+            <>
+              <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-slate-700">Default value</p>
+                  <p className="text-[11px] text-slate-500">
+                    Use default value mode for this field.
+                  </p>
+                </div>
+                <Switch
+                  checked={isChildDerived}
+                  onCheckedChange={(checked) =>
+                    handleFieldChange("source", checked ? "derived" : "manual")
+                  }
+                />
+              </div>
+              <DefaultValueSection
+                title="Default Values"
+                source={childSource}
+                value={(schema?.prefiller || "") as string}
+                fieldOptions={childFieldOptions}
+                onChange={(value) => handleFieldChange("prefiller", value)}
+              />
+            </>
+          ) : (
+            <>
+              <ValidationSection
+                validator={(schema?.validator || "") as string}
+                schemaType={schema?.type}
+                validatorIr={(schema?.validator_ir || null) as any}
+                fieldOptions={childFieldOptions}
+                onChange={(next) => {
+                  handleFieldPatch({
+                    validator: next.validator,
+                    validator_ir: next.validator_ir,
+                  });
+                }}
+              />
+              <DefaultValueSection
+                title="Placeholder"
+                source={childSource}
+                value={(schema?.prefiller || "") as string}
+                fieldOptions={childFieldOptions}
+                onChange={(value) => handleFieldChange("prefiller", value)}
+              />
+              <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                  <p className="text-[11px] text-slate-500">
+                    Enable to compute this field from defaults.
+                  </p>
+                </div>
+                <Switch
+                  checked={isChildDerived}
+                  onCheckedChange={(checked) =>
+                    handleFieldChange("source", checked ? "derived" : "manual")
+                  }
+                />
+              </div>
+            </>
+          )}
         </Card>
       </div>
     </div>

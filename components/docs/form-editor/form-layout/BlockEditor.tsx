@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   type IFormBlock,
   type IFormField,
   type IFormPhantomField,
   BLOCK_TYPES,
-  SOURCES,
+  getFieldPresetTemplates,
 } from "@betterinternship/core/forms";
-import { X } from "lucide-react";
 import {
   FormInput,
   FormTextarea,
@@ -16,9 +15,15 @@ import {
   FormCheckbox,
 } from "@/components/docs/forms/EditForm";
 import { Button } from "@/components/ui/button";
-import { capitalize, capitalizeWords } from "@/lib/string-utils";
+import { capitalizeWords } from "@/lib/string-utils";
 import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
 import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
+import { Switch } from "@/components/ui/switch";
+import {
+  applyPresetToSchema,
+  findPresetByFieldKey,
+  isDefaultPresetFieldKey,
+} from "@/lib/default-field-preset-utils";
 
 interface BlockEditorProps {
   block: IFormBlock | null;
@@ -34,6 +39,18 @@ interface BlockEditorProps {
  */
 export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockEditorProps) => {
   const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(block);
+  const presetTemplates = useMemo(() => getFieldPresetTemplates(), []);
+  const presetOptions = useMemo(
+    () =>
+      presetTemplates.map((preset) => ({
+        id: preset.id,
+        name:
+          (preset.group || "core") === "format"
+            ? `Format: ${preset.label || preset.name}`
+            : preset.label || preset.name,
+      })),
+    [presetTemplates]
+  );
 
   useEffect(() => {
     setEditedBlock(block);
@@ -159,6 +176,23 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
     onUpdate(newBlock);
   };
 
+  const formFieldSchema = editedBlock.field_schema;
+  const phantomFieldSchema = editedBlock.phantom_field_schema;
+  const isFormFieldDerived = formFieldSchema?.source === "derived";
+  const isPhantomFieldDerived = phantomFieldSchema?.source === "derived";
+  const matchedFormFieldPreset = formFieldSchema
+    ? findPresetByFieldKey(formFieldSchema.field, presetTemplates)
+    : null;
+  const matchedPhantomFieldPreset = phantomFieldSchema
+    ? findPresetByFieldKey(phantomFieldSchema.field, presetTemplates)
+    : null;
+  const isDefaultFormField = formFieldSchema
+    ? isDefaultPresetFieldKey(formFieldSchema.field, presetTemplates)
+    : false;
+  const isDefaultPhantomField = phantomFieldSchema
+    ? isDefaultPresetFieldKey(phantomFieldSchema.field, presetTemplates)
+    : false;
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-white">
       {/* Content */}
@@ -212,16 +246,20 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               required={false}
             />
 
-            <FormDropdown
-              label="Source"
-              value={editedBlock.field_schema.source}
-              setter={(val) => handleFieldSchemaChange("source", val as any)}
-              options={SOURCES.map((source) => ({
-                id: source,
-                name: capitalizeWords(source),
-              }))}
-              required={false}
-            />
+            {isDefaultFormField && (
+              <FormDropdown
+                label="Field Type"
+                value={matchedFormFieldPreset?.id || ""}
+                options={presetOptions}
+                setter={(value) => {
+                  const nextPreset = presetTemplates.find((preset) => preset.id === value);
+                  if (!nextPreset) return;
+                  const presetPatch = applyPresetToSchema(editedBlock.field_schema, nextPreset);
+                  handleFieldSchemaPatch(presetPatch as Partial<IFormField>);
+                }}
+                required={false}
+              />
+            )}
 
             <FormInput
               label="Tooltip Label"
@@ -236,23 +274,66 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               setter={(val) => handleFieldSchemaChange("shared", val)}
             />
 
-            <DefaultValueSection
-              source={editedBlock.field_schema.source}
-              value={editedBlock.field_schema.prefiller || ""}
-              fieldOptions={[]}
-              onChange={(val) => handleFieldSchemaChange("prefiller", val)}
-            />
-            <ValidationSection
-              schemaType={editedBlock.field_schema.type}
-              validator={editedBlock.field_schema.validator || ""}
-              validatorIr={(editedBlock.field_schema as any).validator_ir || null}
-              onChange={(next) => {
-                handleFieldSchemaPatch({
-                  validator: next.validator,
-                  validator_ir: next.validator_ir,
-                } as any);
-              }}
-            />
+            {isFormFieldDerived ? (
+              <>
+                <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-slate-700">Default value</p>
+                    <p className="text-[11px] text-slate-500">
+                      Use default value mode for this field.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(isFormFieldDerived)}
+                    onCheckedChange={(checked) =>
+                      handleFieldSchemaChange("source", checked ? "derived" : "manual")
+                    }
+                  />
+                </div>
+                <DefaultValueSection
+                  title="Default Values"
+                  source={editedBlock.field_schema.source}
+                  value={editedBlock.field_schema.prefiller || ""}
+                  fieldOptions={[]}
+                  onChange={(val) => handleFieldSchemaChange("prefiller", val)}
+                />
+              </>
+            ) : (
+              <>
+                <ValidationSection
+                  schemaType={editedBlock.field_schema.type}
+                  validator={editedBlock.field_schema.validator || ""}
+                  validatorIr={(editedBlock.field_schema as any).validator_ir || null}
+                  onChange={(next) => {
+                    handleFieldSchemaPatch({
+                      validator: next.validator,
+                      validator_ir: next.validator_ir,
+                    } as any);
+                  }}
+                />
+                <DefaultValueSection
+                  title="Placeholder"
+                  source={editedBlock.field_schema.source}
+                  value={editedBlock.field_schema.prefiller || ""}
+                  fieldOptions={[]}
+                  onChange={(val) => handleFieldSchemaChange("prefiller", val)}
+                />
+                <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                    <p className="text-[11px] text-slate-500">
+                      Enable to compute this field from defaults.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(isFormFieldDerived)}
+                    onCheckedChange={(checked) =>
+                      handleFieldSchemaChange("source", checked ? "derived" : "manual")
+                    }
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -275,16 +356,20 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               required={false}
             />
 
-            <FormDropdown
-              label="Source"
-              value={editedBlock.phantom_field_schema.source}
-              setter={(val) => handlePhantomFieldSchemaChange("source", val as any)}
-              options={SOURCES.map((source) => ({
-                id: source,
-                name: capitalizeWords(source),
-              }))}
-              required={false}
-            />
+            {isDefaultPhantomField && (
+              <FormDropdown
+                label="Field Type"
+                value={matchedPhantomFieldPreset?.id || ""}
+                options={presetOptions}
+                setter={(value) => {
+                  const nextPreset = presetTemplates.find((preset) => preset.id === value);
+                  if (!nextPreset) return;
+                  const presetPatch = applyPresetToSchema(editedBlock.phantom_field_schema, nextPreset);
+                  handlePhantomFieldSchemaPatch(presetPatch as Partial<IFormPhantomField>);
+                }}
+                required={false}
+              />
+            )}
 
             <FormInput
               label="Tooltip Label"
@@ -299,23 +384,66 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               setter={(val) => handlePhantomFieldSchemaChange("shared", val)}
             />
 
-            <DefaultValueSection
-              source={editedBlock.phantom_field_schema.source}
-              value={editedBlock.phantom_field_schema.prefiller || ""}
-              fieldOptions={[]}
-              onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
-            />
-            <ValidationSection
-              schemaType={editedBlock.phantom_field_schema.type}
-              validator={editedBlock.phantom_field_schema.validator || ""}
-              validatorIr={(editedBlock.phantom_field_schema as any).validator_ir || null}
-              onChange={(next) => {
-                handlePhantomFieldSchemaPatch({
-                  validator: next.validator,
-                  validator_ir: next.validator_ir,
-                } as any);
-              }}
-            />
+            {isPhantomFieldDerived ? (
+              <>
+                <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-slate-700">Default value</p>
+                    <p className="text-[11px] text-slate-500">
+                      Use default value mode for this field.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(isPhantomFieldDerived)}
+                    onCheckedChange={(checked) =>
+                      handlePhantomFieldSchemaChange("source", checked ? "derived" : "manual")
+                    }
+                  />
+                </div>
+                <DefaultValueSection
+                  title="Default Values"
+                  source={editedBlock.phantom_field_schema.source}
+                  value={editedBlock.phantom_field_schema.prefiller || ""}
+                  fieldOptions={[]}
+                  onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+                />
+              </>
+            ) : (
+              <>
+                <ValidationSection
+                  schemaType={editedBlock.phantom_field_schema.type}
+                  validator={editedBlock.phantom_field_schema.validator || ""}
+                  validatorIr={(editedBlock.phantom_field_schema as any).validator_ir || null}
+                  onChange={(next) => {
+                    handlePhantomFieldSchemaPatch({
+                      validator: next.validator,
+                      validator_ir: next.validator_ir,
+                    } as any);
+                  }}
+                />
+                <DefaultValueSection
+                  title="Placeholder"
+                  source={editedBlock.phantom_field_schema.source}
+                  value={editedBlock.phantom_field_schema.prefiller || ""}
+                  fieldOptions={[]}
+                  onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+                />
+                <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                    <p className="text-[11px] text-slate-500">
+                      Enable to compute this field from defaults.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(isPhantomFieldDerived)}
+                    onCheckedChange={(checked) =>
+                      handlePhantomFieldSchemaChange("source", checked ? "derived" : "manual")
+                    }
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -329,4 +457,3 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
     </div>
   );
 };
-
