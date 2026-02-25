@@ -35,6 +35,8 @@ export interface CustomFieldPresetOption {
   id: string;
   name: string;
   label?: string;
+  group?: "core" | "format";
+  disabled?: boolean;
 }
 
 interface CustomFieldModalFormProps {
@@ -62,6 +64,12 @@ export function CustomFieldModalForm({
   onPresetChange,
   tagOptions = [],
 }: CustomFieldModalFormProps) {
+  const corePresetTemplates = (presetTemplates || []).filter(
+    (preset) => (preset.group || "core") === "core"
+  );
+  const formatPresetTemplates = (presetTemplates || []).filter((preset) => preset.group === "format");
+  const hasPresetGroups = formatPresetTemplates.length > 0;
+
   const {
     previewBlocks,
     previewValues,
@@ -93,12 +101,33 @@ export function CustomFieldModalForm({
             onChange={(e) => onPresetChange(e.target.value)}
             className="h-9 w-full rounded-[0.33em] border border-slate-300 bg-white px-2.5 text-sm"
           >
-            <option value="">Select a preset</option>
-            {presetTemplates.map((preset) => (
-              <option key={preset.id} value={preset.id}>
-                {preset.label || preset.name}
-              </option>
-            ))}
+            <option value="" className="text-black/50">
+              Select a preset
+            </option>
+            {hasPresetGroups ? (
+              <>
+                <optgroup label="Core Fields">
+                  {corePresetTemplates.map((preset) => (
+                    <option key={preset.id} value={preset.id} disabled={Boolean(preset.disabled)}>
+                      {preset.label || preset.name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Format Presets">
+                  {formatPresetTemplates.map((preset) => (
+                    <option key={preset.id} value={preset.id} disabled={Boolean(preset.disabled)}>
+                      {preset.label || preset.name}
+                    </option>
+                  ))}
+                </optgroup>
+              </>
+            ) : (
+              presetTemplates.map((preset) => (
+                <option key={preset.id} value={preset.id} disabled={Boolean(preset.disabled)}>
+                  {preset.label || preset.name}
+                </option>
+              ))
+            )}
           </select>
         </div>
       )}
@@ -207,4 +236,3 @@ export function CustomFieldModalForm({
     </div>
   );
 }
-

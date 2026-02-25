@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { IFormBlock, IFormField, IFormSigningParty } from "@betterinternship/core/forms";
+import {
+  getFieldPresetTemplates,
+  IFormBlock,
+  IFormField,
+  IFormSigningParty,
+} from "@betterinternship/core/forms";
 import {
   FieldRegistryEntryDetails,
   formsControllerRegisterField,
@@ -21,7 +26,6 @@ import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
 import {
   buildFieldOptionsFromBlocks,
-  buildPresetTemplatesFromRegistry,
   buildTagOptionsFromRegistry,
   isPresetRegistryField,
 } from "@/lib/field-library";
@@ -39,6 +43,7 @@ import {
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { CustomFieldModalForm } from "@/components/docs/form-editor/CustomFieldModalForm";
+import { FieldLibraryPresetTemplateOption } from "@/app/contexts/field-library.context";
 
 interface BlocksPanelProps {
   blocks: IFormBlock[];
@@ -95,7 +100,7 @@ function CustomFieldAddModalContent({
   tagOptions,
   onClose,
 }: {
-  presetTemplates: FieldRegistryEntryDetails[];
+  presetTemplates: FieldLibraryPresetTemplateOption[];
   fieldOptions: FieldOption[];
   tagOptions: string[];
   onClose: () => void;
@@ -112,6 +117,7 @@ function CustomFieldAddModalContent({
     setSelectedPresetId(presetId);
     const preset = presetTemplates.find((entry) => entry.id === presetId);
     if (!preset) return;
+    if (preset.disabled) return;
 
     const label = preset.label || "Custom Field";
     const draftFromPreset = createCustomFieldDraftFromPreset(
@@ -122,7 +128,7 @@ function CustomFieldAddModalContent({
         prefiller: preset.prefiller ?? "",
         tooltip_label: preset.tooltip_label ?? "",
         validator: preset.validator ?? "",
-        validator_ir: (preset as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
+        validator_ir: preset.validator_ir ?? null,
       },
       deriveFieldNameFromLabel,
       CUSTOM_TAG
@@ -206,6 +212,8 @@ function CustomFieldAddModalContent({
           id: preset.id,
           name: preset.name || "",
           label: preset.label,
+          group: preset.group,
+          disabled: preset.disabled,
         }))}
         selectedPresetId={selectedPresetId}
         onPresetChange={handlePresetSelect}
@@ -249,7 +257,10 @@ export function BlocksPanel({
     signingParties.find((party) => party._id === selectedPartyId) || signingParties[0];
   const selectedPartyColor = getPartyColorByIndex(Math.max(0, (selectedParty?.order || 1) - 1));
 
-  const presetTemplates = useMemo(() => buildPresetTemplatesFromRegistry(registry), [registry]);
+  const presetTemplates = useMemo(
+    () => getFieldPresetTemplates() as FieldLibraryPresetTemplateOption[],
+    []
+  );
 
   const customLibraryFields = useMemo(() => {
     return registry.filter((field) => !isPresetRegistryField(field));
