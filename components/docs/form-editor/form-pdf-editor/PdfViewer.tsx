@@ -36,6 +36,22 @@ export type PointerLocation = {
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const createUniqueFieldKey = (base: string) =>
+  `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+type DraggedFieldPayload = FieldRegistryEntryDetails & {
+  __palette_source?: "default" | "custom";
+};
+
+const resolveDroppedFieldKey = (field: DraggedFieldPayload) => {
+  const base = field.name || "field";
+  if (field.__palette_source === "default") {
+    return createUniqueFieldKey(base);
+  }
+  if (field.__palette_source === "custom") {
+    return base;
+  }
+  return field.preset ? `${base}:${field.preset}` : base;
+};
 
 /**
  * PdfViewer - Context-driven PDF editor component
@@ -173,7 +189,7 @@ export function PdfViewer() {
       const fieldData = e.dataTransfer.getData("field");
       if (fieldData) {
         try {
-          const draggedField = JSON.parse(fieldData) as FieldRegistryEntryDetails;
+          const draggedField = JSON.parse(fieldData) as DraggedFieldPayload;
 
           console.log("Dragged field data:", draggedField);
           console.log("Prefiller value:", draggedField.prefiller);
@@ -183,9 +199,7 @@ export function PdfViewer() {
           const displayY = e.clientY - rect.top;
 
           const uniqueId = Math.random().toString(36).substr(2, 9);
-          const fieldKey = draggedField.preset
-            ? `${draggedField.name}:${draggedField.preset}`
-            : draggedField.name || "field";
+          const fieldKey = resolveDroppedFieldKey(draggedField);
           const existingForField = blocks.find(
             (block) =>
               block.block_type === "form_field" &&
@@ -628,7 +642,7 @@ const PdfPageCanvas = memo(
       if (!fieldData) return;
 
       try {
-        const draggedField = JSON.parse(fieldData) as FieldRegistryEntryDetails;
+        const draggedField = JSON.parse(fieldData) as DraggedFieldPayload;
 
         console.log("Canvas: Dragged field data:", draggedField);
         console.log("Canvas: Prefiller value:", draggedField.prefiller);
@@ -639,9 +653,7 @@ const PdfPageCanvas = memo(
         const fieldWidth = 100;
         const fieldHeight = 12;
         const uniqueId = Math.random().toString(36).substr(2, 9);
-        const fieldKey = draggedField.preset
-          ? `${draggedField.name}:${draggedField.preset}`
-          : draggedField.name || "field";
+        const fieldKey = resolveDroppedFieldKey(draggedField);
         const existingForField = blocks.find(
           (block) =>
             block.block_type === "form_field" &&

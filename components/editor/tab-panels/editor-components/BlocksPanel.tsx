@@ -1,38 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, type DragEvent } from "react";
 import {
   getFieldPresetTemplates,
   IFormBlock,
   IFormField,
   IFormSigningParty,
 } from "@betterinternship/core/forms";
-import {
-  FieldRegistryEntryDetails,
-  formsControllerRegisterField,
-  getFormsControllerGetFieldRegistryQueryKey,
-} from "@/app/api";
 import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
-import { useModal } from "@/app/providers/modal-provider";
-import {
-  createCustomFieldDraftFromPreset,
-  FieldSource,
-  normalizeFieldSource,
-  toRegisterFieldPayload,
-} from "@/lib/custom-field-mappers";
-import type { ValidatorIRv0 } from "@/lib/validator-ir";
-import { deriveFieldNameFromLabel } from "@/lib/field-name";
-import {
-  buildFieldOptionsFromBlocks,
-  buildTagOptionsFromRegistry,
-  isPresetRegistryField,
-} from "@/lib/field-library";
+import { isPresetRegistryField } from "@/lib/field-library";
 import { getPartyColorByIndex } from "@/lib/party-colors";
+import { getPresetFieldIcon } from "@/lib/preset-field-icons";
+import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search as SearchIcon, Plus, ChevronDown } from "lucide-react";
+import { Search as SearchIcon, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
@@ -40,10 +23,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { CustomFieldModalForm } from "@/components/docs/form-editor/CustomFieldModalForm";
-import { FieldLibraryPresetTemplateOption } from "@/app/contexts/field-library.context";
 
 interface BlocksPanelProps {
   blocks: IFormBlock[];
@@ -52,195 +31,45 @@ interface BlocksPanelProps {
   signingParties: IFormSigningParty[];
 }
 
-interface CustomFieldDraft {
+type PaletteSource = "default" | "custom";
+
+type PresetFieldTemplate = ReturnType<typeof getFieldPresetTemplates>[number] & {
+  iconKey?: string;
+};
+
+type PaletteField = {
+  id: string;
   name: string;
   label: string;
   type: "text" | "signature" | "image";
-  party: string;
+  source: "auto" | "prefill" | "derived" | "manual";
   shared: boolean;
-  source: FieldSource;
   tag: string;
-  prefiller: string;
   preset: string;
+  prefiller: string;
   tooltip_label: string;
   validator: string;
   validator_ir: ValidatorIRv0 | null;
-  is_phantom: boolean;
-}
-
-interface FieldOption {
-  id: string;
-  name: string;
-}
-
-const CUSTOM_TAG = "custom";
-const CUSTOM_PRESET = "default";
-
-const DEFAULT_CUSTOM_FIELD_DRAFT: CustomFieldDraft = {
-  name: "",
-  label: "",
-  type: "text",
-  party: "",
-  shared: true,
-  source: "manual",
-  tag: CUSTOM_TAG,
-  prefiller: "",
-  preset: CUSTOM_PRESET,
-  tooltip_label: "",
-  validator: "",
-  validator_ir: null,
-  is_phantom: false,
+  iconKey?: string;
+  paletteSource: PaletteSource;
 };
 
-const CUSTOM_FIELD_MODAL_NAME = "editor-custom-field-add";
+type DragFieldPayload = Omit<PaletteField, "iconKey" | "paletteSource"> & {
+  __palette_source: PaletteSource;
+};
 
-function CustomFieldAddModalContent({
-  presetTemplates,
-  fieldOptions,
-  tagOptions,
-  onClose,
-}: {
-  presetTemplates: FieldLibraryPresetTemplateOption[];
-  fieldOptions: FieldOption[];
-  tagOptions: string[];
-  onClose: () => void;
-}) {
-  const queryClient = useQueryClient();
-  const [selectedPresetId, setSelectedPresetId] = useState<string>("");
-  const [customFieldDraft, setCustomFieldDraft] = useState<CustomFieldDraft>(
-    DEFAULT_CUSTOM_FIELD_DRAFT
-  );
-  const [isSavingCustomField, setIsSavingCustomField] = useState(false);
-  const isPresetSelected = Boolean(selectedPresetId);
+const normalizeSearch = (value: string) => value.trim().toLowerCase();
 
-  const handlePresetSelect = (presetId: string) => {
-    setSelectedPresetId(presetId);
-    const preset = presetTemplates.find((entry) => entry.id === presetId);
-    if (!preset) return;
-    if (preset.disabled) return;
+const matchesSearch = (field: Pick<PaletteField, "name" | "label">, query: string) => {
+  if (!query) return true;
+  return field.name.toLowerCase().includes(query) || field.label.toLowerCase().includes(query);
+};
 
-    const label = preset.label || "Custom Field";
-    const draftFromPreset = createCustomFieldDraftFromPreset(
-      {
-        ...preset,
-        label,
-        source: normalizeFieldSource(preset.source),
-        prefiller: preset.prefiller ?? "",
-        tooltip_label: preset.tooltip_label ?? "",
-        validator: preset.validator ?? "",
-        validator_ir: preset.validator_ir ?? null,
-      },
-      deriveFieldNameFromLabel,
-      CUSTOM_TAG
-    );
-    setCustomFieldDraft({
-      ...draftFromPreset,
-      shared: draftFromPreset.shared ?? true,
-      source: draftFromPreset.source || "manual",
-      tag: draftFromPreset.tag || CUSTOM_TAG,
-      prefiller: draftFromPreset.prefiller ?? "",
-      preset: draftFromPreset.preset ?? CUSTOM_PRESET,
-      tooltip_label: draftFromPreset.tooltip_label ?? "",
-      validator: draftFromPreset.validator ?? "",
-      validator_ir: draftFromPreset.validator_ir ?? null,
-      is_phantom: draftFromPreset.is_phantom ?? false,
-      party: draftFromPreset.party || "",
-      type: (draftFromPreset.type as CustomFieldDraft["type"]) || "text",
-    });
-  };
+const toDisplayTag = (tag: string) =>
+  tag.length > 0 ? tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase() : "Ungrouped";
 
-  const handleCustomLabelChange = (label: string) => {
-    setCustomFieldDraft((prev) => ({
-      ...prev,
-      label,
-      name: deriveFieldNameFromLabel(label),
-    }));
-  };
-
-  const handleCreateCustomField = async () => {
-    if (!selectedPresetId) {
-      toast.error("Select a preset template first.");
-      return;
-    }
-    if (!customFieldDraft.name.trim() || !customFieldDraft.label.trim()) {
-      toast.error("Name and label are required.");
-      return;
-    }
-
-    setIsSavingCustomField(true);
-    try {
-      await formsControllerRegisterField(
-        toRegisterFieldPayload(customFieldDraft, {
-          defaultTag: CUSTOM_TAG,
-          preset: CUSTOM_PRESET,
-        })
-      );
-
-      await queryClient.invalidateQueries({
-        queryKey: getFormsControllerGetFieldRegistryQueryKey(),
-      });
-
-      toast.success("Custom field saved to library.");
-      onClose();
-    } catch (error) {
-      toast.error(
-        `Failed to save custom field: ${error instanceof Error ? error.message : "Error"}`
-      );
-    } finally {
-      setIsSavingCustomField(false);
-    }
-  };
-
-  return (
-    <div className="w-xl space-y-4">
-      <CustomFieldModalForm
-        value={{
-          name: customFieldDraft.name,
-          label: customFieldDraft.label,
-          tag: customFieldDraft.tag,
-          tooltip_label: customFieldDraft.tooltip_label,
-          type: customFieldDraft.type,
-          source: customFieldDraft.source,
-          shared: customFieldDraft.shared,
-          prefiller: customFieldDraft.prefiller,
-          validator: customFieldDraft.validator,
-          validator_ir: customFieldDraft.validator_ir,
-        }}
-        fieldOptions={fieldOptions}
-        tagOptions={tagOptions}
-        presetTemplates={presetTemplates.map((preset) => ({
-          id: preset.id,
-          name: preset.name || "",
-          label: preset.label,
-          group: preset.group,
-          disabled: preset.disabled,
-        }))}
-        selectedPresetId={selectedPresetId}
-        onPresetChange={handlePresetSelect}
-        onLabelChange={handleCustomLabelChange}
-        showDerivedNameHint={true}
-        onChange={(updates) =>
-          setCustomFieldDraft((prev) => ({
-            ...prev,
-            ...updates,
-            type: (updates.type as CustomFieldDraft["type"]) ?? prev.type,
-            source: (updates.source as FieldSource) ?? prev.source,
-          }))
-        }
-      />
-      <div className="flex flex-row justify-between gap-1">
-        <div className="flex-1" />
-
-        <Button
-          onClick={() => void handleCreateCustomField()}
-          disabled={isSavingCustomField || !isPresetSelected}
-        >
-          {isSavingCustomField ? "Saving..." : "Save Custom Field"}
-        </Button>
-      </div>
-    </div>
-  );
-}
+const createUniqueFieldKey = (base: string) =>
+  `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 export function BlocksPanel({
   blocks,
@@ -249,7 +78,6 @@ export function BlocksPanel({
   signingParties,
 }: BlocksPanelProps) {
   const { registry } = useFieldTemplateContext();
-  const { openModal, closeModal } = useModal();
   const { handleBlockCreate, searchQuery, setSearchQuery } = useFormEditorTab();
   const { visiblePage } = usePdfViewer();
 
@@ -257,72 +85,96 @@ export function BlocksPanel({
     signingParties.find((party) => party._id === selectedPartyId) || signingParties[0];
   const selectedPartyColor = getPartyColorByIndex(Math.max(0, (selectedParty?.order || 1) - 1));
 
-  const presetTemplates = useMemo(
-    () => getFieldPresetTemplates() as FieldLibraryPresetTemplateOption[],
-    []
-  );
+  const defaultFields = useMemo<PaletteField[]>(() => {
+    const presets = getFieldPresetTemplates() as PresetFieldTemplate[];
+    return presets.map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      label: preset.label || preset.name,
+      type: preset.type || "text",
+      source: preset.source || "manual",
+      shared: typeof preset.shared === "boolean" ? preset.shared : true,
+      tag: preset.tag || "preset",
+      preset: preset.preset || "preset",
+      prefiller: preset.prefiller || "",
+      tooltip_label: preset.tooltip_label || "",
+      validator: preset.validator || "",
+      validator_ir: preset.validator_ir || null,
+      iconKey: preset.iconKey,
+      paletteSource: "default" as const,
+    }));
+  }, []);
 
-  const customLibraryFields = useMemo(() => {
-    return registry.filter((field) => !isPresetRegistryField(field));
+  const customFields = useMemo<PaletteField[]>(() => {
+    return registry
+      .filter((field) => !isPresetRegistryField(field))
+      .map((field) => ({
+        id: field.id,
+        name: field.name || field.id,
+        label: field.label || field.name || field.id,
+        type: (field.type as PaletteField["type"]) || "text",
+        source: (field.source as PaletteField["source"]) || "manual",
+        shared: typeof field.shared === "boolean" ? field.shared : true,
+        tag: field.tag || "Ungrouped",
+        preset: field.preset || "default",
+        prefiller: field.prefiller || "",
+        tooltip_label: field.tooltip_label || "",
+        validator: field.validator || "",
+        validator_ir: (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
+        paletteSource: "custom" as const,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [registry]);
 
-  const registryTagOptions = useMemo(() => buildTagOptionsFromRegistry(registry), [registry]);
+  const searchQueryNormalized = useMemo(() => normalizeSearch(searchQuery), [searchQuery]);
 
-  const filteredFields = useMemo(() => {
-    if (!searchQuery.trim()) return customLibraryFields;
-    const query = searchQuery.toLowerCase();
-    return customLibraryFields.filter(
-      (field) =>
-        field.name?.toLowerCase().includes(query) || field.label?.toLowerCase().includes(query)
-    );
-  }, [customLibraryFields, searchQuery]);
-
-  const groupedFields = useMemo(() => {
-    const tags = Array.from(
-      new Set(filteredFields.map((f) => f.tag || "Ungrouped").filter(Boolean))
-    );
-    return tags
-      .sort((a, b) => {
-        if (a.toLowerCase() === "preset") return -1;
-        if (b.toLowerCase() === "preset") return 1;
-        return a.localeCompare(b);
-      })
-      .map((tag) => ({
-        tag,
-        fields: filteredFields
-          .filter((f) => f.tag === tag)
-          .sort((a, b) => (a.label || a.name || "").localeCompare(b.label || b.name || "")),
-      }));
-  }, [filteredFields]);
-
-  const handleDragStart = (e: React.DragEvent, fieldData: FieldRegistryEntryDetails) => {
-    e.dataTransfer.effectAllowed = "copy";
-    e.dataTransfer.setData("field", JSON.stringify(fieldData));
-  };
-
-  const handleOpenCustomFieldModal = () => {
-    openModal(
-      CUSTOM_FIELD_MODAL_NAME,
-      <CustomFieldAddModalContent
-        presetTemplates={presetTemplates}
-        fieldOptions={customFieldOptions}
-        tagOptions={registryTagOptions}
-        onClose={() => closeModal(CUSTOM_FIELD_MODAL_NAME)}
-      />,
-      {
-        title: "Add Custom Field",
-        showHeaderDivider: true,
-        panelClassName: "sm:max-w-3xl",
-      }
-    );
-  };
-
-  const customFieldOptions = useMemo<FieldOption[]>(
-    () => buildFieldOptionsFromBlocks(blocks),
-    [blocks]
+  const filteredDefaultFields = useMemo(
+    () => defaultFields.filter((field) => matchesSearch(field, searchQueryNormalized)),
+    [defaultFields, searchQueryNormalized]
   );
 
-  const handleFieldAdd = (field: FieldRegistryEntryDetails) => {
+  const filteredCustomFields = useMemo(
+    () => customFields.filter((field) => matchesSearch(field, searchQueryNormalized)),
+    [customFields, searchQueryNormalized]
+  );
+
+  const groupedCustomFields = useMemo(() => {
+    const tags = Array.from(
+      new Set(filteredCustomFields.map((field) => field.tag).filter((tag) => tag.trim().length > 0))
+    );
+
+    return tags
+      .sort((a, b) => a.localeCompare(b))
+      .map((tag) => ({
+        tag,
+        fields: filteredCustomFields
+          .filter((field) => field.tag === tag)
+          .sort((a, b) => a.label.localeCompare(b.label)),
+      }));
+  }, [filteredCustomFields]);
+
+  const handleDragStart = (e: DragEvent, field: PaletteField) => {
+    const payload: DragFieldPayload = {
+      id: field.id,
+      name: field.name,
+      label: field.label,
+      type: field.type,
+      source: field.source,
+      shared: field.shared,
+      tag: field.tag,
+      preset: field.preset,
+      prefiller: field.prefiller,
+      tooltip_label: field.tooltip_label,
+      validator: field.validator,
+      validator_ir: field.validator_ir,
+      __palette_source: field.paletteSource,
+    };
+
+    e.dataTransfer.effectAllowed = "copy";
+    e.dataTransfer.setData("field", JSON.stringify(payload));
+  };
+
+  const handleFieldAdd = (field: PaletteField) => {
     const partyId = selectedPartyId || signingParties[0]?._id;
     if (!partyId) return;
 
@@ -387,7 +239,10 @@ export function BlocksPanel({
       nextY = Math.min(pageMaxY - fieldHeight, last.field_schema!.y + rowStep);
     }
 
-    const fieldKey = field.name || field.id;
+    const baseFieldKey = field.name || field.id;
+    const fieldKey =
+      field.paletteSource === "default" ? createUniqueFieldKey(baseFieldKey) : baseFieldKey;
+
     const existingForField = blocks.find(
       (block) =>
         block.block_type === "form_field" &&
@@ -421,8 +276,7 @@ export function BlocksPanel({
         validator: baseSchema?.validator ?? field.validator,
         validator_ir:
           (baseSchema as { validator_ir?: ValidatorIRv0 | null } | undefined)?.validator_ir ??
-          (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ??
-          null,
+          field.validator_ir,
         size: baseSchema?.size,
         wrap: baseSchema?.wrap ?? true,
         font: baseSchema?.font,
@@ -431,6 +285,8 @@ export function BlocksPanel({
 
     handleBlockCreate(newBlock);
   };
+
+  const hasResults = filteredDefaultFields.length > 0 || groupedCustomFields.length > 0;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -490,56 +346,86 @@ export function BlocksPanel({
       </div>
 
       <div className="flex-1 overflow-auto p-3">
-        {groupedFields.length === 0 ? (
+        {!hasResults ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-muted-foreground text-sm">No custom fields found</p>
+            <p className="text-muted-foreground text-sm">No fields found</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {groupedFields.map(({ tag, fields }) => {
-              const tagDisplay = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
-              return (
-                <Collapsible key={tag} defaultOpen={true} className="space-y-1.5">
-                  <CollapsibleTrigger className="group hover:bg-primary/5 flex w-full items-center justify-between rounded-[0.33em] px-2 py-1.5 text-sm font-semibold">
-                    <span className="flex items-center gap-2">
-                      <ChevronDown className="h-4 w-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                      {tagDisplay}
-                    </span>
-                    <span className="text-muted-foreground ml-2 text-xs font-normal">
-                      ({fields.length})
-                    </span>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-1.5">
-                    {fields.map((field) => (
-                      <button
-                        key={field.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, field)}
-                        onClick={() => handleFieldAdd(field)}
-                        className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
-                        type="button"
-                      >
-                        <span className="text-sm text-slate-800">{field.label || field.name}</span>
-                      </button>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
-              );
-            })}
+          <div className="space-y-4">
+            <section className="space-y-1.5">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                  Default Fields
+                </p>
+              </div>
+
+              {filteredDefaultFields.length === 0 ? (
+                <p className="px-2 py-1 text-xs text-slate-500">
+                  No default fields match this search.
+                </p>
+              ) : (
+                filteredDefaultFields.map((field) => {
+                  const Icon = getPresetFieldIcon(field.iconKey, field.name);
+                  return (
+                    <button
+                      key={field.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, field)}
+                      onClick={() => handleFieldAdd(field)}
+                      className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center gap-2 rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
+                      type="button"
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                      <span className="text-sm text-slate-800">{field.label}</span>
+                    </button>
+                  );
+                })
+              )}
+            </section>
+
+            <section className="space-y-1.5">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                  Custom Fields
+                </p>
+              </div>
+
+              {groupedCustomFields.length === 0 ? (
+                <p className="px-2 py-1 text-xs text-slate-500">
+                  No custom fields match this search.
+                </p>
+              ) : (
+                groupedCustomFields.map(({ tag, fields }) => (
+                  <Collapsible key={tag} defaultOpen={true} className="space-y-1.5">
+                    <CollapsibleTrigger className="group hover:bg-primary/5 flex w-full items-center justify-between rounded-[0.33em] px-2 py-1.5 text-sm font-semibold">
+                      <span className="flex items-center gap-2">
+                        <ChevronDown className="h-4 w-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                        {toDisplayTag(tag)}
+                      </span>
+                      <span className="text-muted-foreground ml-2 text-xs font-normal">
+                        ({fields.length})
+                      </span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-1.5">
+                      {fields.map((field) => (
+                        <button
+                          key={field.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, field)}
+                          onClick={() => handleFieldAdd(field)}
+                          className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
+                          type="button"
+                        >
+                          <span className="text-sm text-slate-800">{field.label}</span>
+                        </button>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))
+              )}
+            </section>
           </div>
         )}
-      </div>
-
-      <div className="border-t bg-white p-3">
-        <Button
-          onClick={handleOpenCustomFieldModal}
-          size="sm"
-          variant="outline"
-          className="w-full gap-2 border-dashed"
-        >
-          <Plus className="h-4 w-4" />
-          Add custom field
-        </Button>
       </div>
     </div>
   );
