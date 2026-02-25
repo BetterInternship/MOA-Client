@@ -267,6 +267,7 @@ export function CustomFieldModalForm({
             schemaType={value.type}
             validator={value.validator || ""}
             validatorIr={value.validator_ir || null}
+            fieldOptions={fieldOptions}
             onChange={(next) => onChange(next)}
           />
           <div className="rounded-[0.33em] border border-slate-200 bg-slate-50 p-3">

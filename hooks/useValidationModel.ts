@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  createValidatorRule,
+  type ValidatorConfig,
+  zodCodeToValidatorConfig,
+} from "@/lib/validator-engine";
+import {
   getAllowedRules,
   persistedIRToValidatorConfig,
   persistedIRToZod,
   validatorConfigToPersistedIR,
   type ValidatorIRv0,
 } from "@/lib/validator-ir";
-import { zodCodeToValidatorConfig, type ValidatorConfig } from "@/lib/validator-engine";
 import { deriveValidatorBaseType } from "@/lib/validation-base-type";
 import { resolveValidationImportState } from "@/lib/validation-legacy";
 
@@ -57,6 +61,7 @@ export function useValidationModel({
   const [config, setConfig] = useState<ValidatorConfig>(parsedConfig);
   const autoConvertKeyRef = useRef<string | null>(null);
   const irCanonicalSyncKeyRef = useRef<string | null>(null);
+  const seedPlainTextKeyRef = useRef<string | null>(null);
   const debugSourceKeyRef = useRef<string | null>(null);
   const debugPayloadKeyRef = useRef<string | null>(null);
 
@@ -84,6 +89,29 @@ export function useValidationModel({
     });
     onChange({ validator: persistedIRToZod(ir), validator_ir: ir });
   }, [autoConverted, baseType, parsedConfig, onChange, validatorCode]);
+
+  useEffect(() => {
+    if (mode !== "simple" || baseType !== "text") {
+      seedPlainTextKeyRef.current = null;
+      return;
+    }
+    if (validatorIr || validatorCode.trim() || config.rules.length > 0) {
+      seedPlainTextKeyRef.current = null;
+      return;
+    }
+
+    const seedKey = `${schemaType || "unknown"}::${baseType}`;
+    if (seedPlainTextKeyRef.current === seedKey) return;
+    seedPlainTextKeyRef.current = seedKey;
+
+    const nextConfig: ValidatorConfig = { rules: [createValidatorRule("plainText")] };
+    setConfig(nextConfig);
+    const ir = validatorConfigToPersistedIR(nextConfig, baseType, {
+      mode: "builder",
+      importStatus: "exact",
+    });
+    onChange({ validator: persistedIRToZod(ir), validator_ir: ir });
+  }, [mode, baseType, validatorIr, validatorCode, config.rules.length, schemaType, onChange]);
 
   // Keep IR canonical in simple mode: if backend validator string diverges from IR, recompile validator.
   useEffect(() => {
