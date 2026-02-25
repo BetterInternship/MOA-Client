@@ -426,6 +426,7 @@ export function RevampedBlockEditor() {
                 validator={parentValidatorValue}
                 schemaType={fieldMetadata?.type}
                 validatorIr={(fieldMetadata as any)?.validator_ir || null}
+                fieldOptions={parentFieldOptions}
                 onChange={(next) => {
                   setEditingValues((prev) => ({
                     ...prev,
@@ -659,6 +660,7 @@ export function RevampedBlockEditor() {
             validator={(schema?.validator || "") as string}
             schemaType={schema?.type}
             validatorIr={(schema?.validator_ir || null) as any}
+            fieldOptions={childFieldOptions}
             onChange={(next) => {
               handleFieldPatch({
                 validator: next.validator,
