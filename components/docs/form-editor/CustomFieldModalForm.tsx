@@ -63,6 +63,10 @@ interface CustomFieldModalFormProps {
   tagOptions?: string[];
 }
 
+/**
+ * Shared field create/edit form used by field registry modals.
+ * Preset selection seeds defaults; users can still override every value before save.
+ */
 export function CustomFieldModalForm({
   value,
   fieldOptions,
@@ -78,7 +82,9 @@ export function CustomFieldModalForm({
   const corePresetTemplates = (presetTemplates || []).filter(
     (preset) => (preset.group || "core") === "core"
   );
-  const formatPresetTemplates = (presetTemplates || []).filter((preset) => preset.group === "format");
+  const formatPresetTemplates = (presetTemplates || []).filter(
+    (preset) => preset.group === "format"
+  );
   const hasPresetGroups = formatPresetTemplates.length > 0;
   const selectedPreset = (presetTemplates || []).find((preset) => preset.id === selectedPresetId);
   const SelectedPresetIcon = selectedPreset
@@ -125,7 +131,7 @@ export function CustomFieldModalForm({
                 <SelectValue placeholder="Select a preset" />
               )}
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[1100]">
               <SelectItem value="__none">Select a preset</SelectItem>
 
               {hasPresetGroups ? (
@@ -171,7 +177,11 @@ export function CustomFieldModalForm({
                 presetTemplates.map((preset) => {
                   const Icon = getPresetFieldIcon(preset.iconKey, preset.name);
                   return (
-                    <SelectItem key={preset.id} value={preset.id} disabled={Boolean(preset.disabled)}>
+                    <SelectItem
+                      key={preset.id}
+                      value={preset.id}
+                      disabled={Boolean(preset.disabled)}
+                    >
                       <span className="flex items-center gap-2">
                         <Icon className="h-4 w-4 text-slate-500" />
                         <span>{preset.label || preset.name}</span>

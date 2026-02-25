@@ -94,6 +94,7 @@ const FormRegistryPage = () => {
     loadComparison();
   }, []);
 
+  // Pulls dev-vs-prod sync status used by badges and summary cards.
   const loadComparison = async () => {
     setComparisonLoading(true);
     setComparisonError(null);
@@ -222,6 +223,9 @@ const FormRegistryPage = () => {
   );
 
   const sections = useMemo(() => {
+    // Build collapsible sections from two sources:
+    // 1) full registry (`all`)
+    // 2) optional group folders from form-groups API.
     const formsByName = new Map(tableData.map((row) => [row.name, row]));
     const groupSections: RegistrySection[] = [];
 

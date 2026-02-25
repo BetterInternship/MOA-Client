@@ -37,6 +37,7 @@ export const createCustomFieldDraftFromPreset = (
   deriveName: (label: string) => string,
   defaultTag: string
 ): CustomFieldDraftModel => {
+  // Normalizes package preset metadata into a fully editable local draft.
   const label = preset.label || "Custom Field";
   return {
     name: deriveName(label),
@@ -62,6 +63,7 @@ export const toRegisterFieldPayload = (
     preset?: string;
   }
 ) => ({
+  // API payload normalization. Empty strings become null where backend expects nullable columns.
   name: draft.name.trim(),
   label: draft.label.trim(),
   type: draft.type,

@@ -11,7 +11,7 @@
 import { FieldRegistryEntryDetails, useFormsControllerGetFieldRegistry } from "@/app/api";
 import { createContext, useContext } from "react";
 
-// Context interface
+// Shared registry access for editor surfaces that need field metadata (label/name lookup).
 export interface IFieldTemplateContext {
   registry: FieldRegistryEntryDetails[];
   getFieldLabel: (fieldId: string) => string;
@@ -49,13 +49,11 @@ export const getFieldLabelByName = (
 };
 
 /**
- * Gives access to data bank of field templates
- *
- * @component
- * @provider
+ * Loads the field registry once and exposes helper accessors.
+ * Consumers should prefer these helpers over duplicating lookup logic.
  */
 export const FieldTemplateContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const { data: registry } = useFormsControllerGetFieldRegistry();
+  const { data: registry } = useFormsControllerGetFieldRegistry({});
   const registryArray = registry?.fields ?? [];
 
   const fieldTemplateContext: IFieldTemplateContext = {

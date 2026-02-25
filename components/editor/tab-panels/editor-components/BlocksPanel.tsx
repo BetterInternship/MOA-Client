@@ -71,6 +71,11 @@ const toDisplayTag = (tag: string) =>
 const createUniqueFieldKey = (base: string) =>
   `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+/**
+ * Left-side field palette for the form editor.
+ * - Default fields come from package presets (one-off field keys on drop).
+ * - Custom fields come from DB registry (shared field keys on drop).
+ */
 export function BlocksPanel({
   blocks,
   selectedPartyId,
@@ -190,6 +195,7 @@ export function BlocksPanel({
     const rowStep = fieldHeight + gapY;
     const colStep = fieldWidth + gapX;
 
+    // Use current page occupancy to place new fields in the next open slot.
     const pageFieldBlocks = blocks.filter(
       (block) =>
         block.block_type === "form_field" &&
@@ -239,6 +245,7 @@ export function BlocksPanel({
       nextY = Math.min(pageMaxY - fieldHeight, last.field_schema!.y + rowStep);
     }
 
+    // Default presets are intentionally one-off; custom registry fields remain shared by name.
     const baseFieldKey = field.name || field.id;
     const fieldKey =
       field.paletteSource === "default" ? createUniqueFieldKey(baseFieldKey) : baseFieldKey;

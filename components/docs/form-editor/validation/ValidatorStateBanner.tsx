@@ -1,5 +1,11 @@
 import type { ValidationImportState } from "@/lib/validation-legacy";
 
+/**
+ * Context banner for imported/legacy validator states.
+ * - `exact`: hidden
+ * - `partial`: editable no-code with warning
+ * - `custom`: advanced rule, typically nudges to raw mode
+ */
 export function ValidatorStateBanner({
   importState,
   mode,

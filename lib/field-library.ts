@@ -8,9 +8,11 @@ type RegistryLikeField = {
   preset?: string;
 };
 
+// Presets are sourced from package metadata and tagged as `preset` in legacy registry records.
 export const isPresetRegistryField = (field: RegistryLikeField) =>
   field.preset?.toLowerCase() === "preset" || field.tag?.toLowerCase() === "preset";
 
+// UI-friendly autocomplete options from registry records.
 export const buildFieldOptionsFromRegistry = (fields: RegistryLikeField[]) =>
   fields
     .map((field) => ({
@@ -30,6 +32,7 @@ export const buildTagOptionsFromRegistry = (fields: RegistryLikeField[]) =>
   ).sort((a, b) => a.localeCompare(b));
 
 export const buildFieldOptionsFromBlocks = (blocks: IFormBlock[]) => {
+  // Deduplicate by field key so duplicate blocks of the same field only appear once in selectors.
   const map = new Map<string, { id: string; name: string }>();
   blocks.forEach((block) => {
     if (block.block_type !== "form_field") return;

@@ -6,6 +6,7 @@ import {
 } from "@/lib/validator-engine";
 import type { ValidatorBaseType } from "@/lib/validator-ir";
 
+// IR-backed date presets represented through `customRefine` code snippets.
 export type DateRelativeValidator =
   | { kind: "none" }
   | { kind: "dateOnOrAfterToday"; message?: string }
@@ -35,6 +36,7 @@ export type ToggleValidatorState = {
   message?: string;
 };
 
+// View model consumed by toggle-first UI rows.
 export type ToggleValidatorViewModel = Record<ToggleValidatorId, ToggleValidatorState>;
 
 const DATE_REFINEMENT_DEFAULT_MESSAGE = "Invalid date";
@@ -46,6 +48,7 @@ const RELATIVE_DATE_RULES = new Set([
   "dateOnOrBeforeField",
 ]);
 
+// Generic helpers for immutable rule CRUD against ValidatorConfig.
 function getRule(config: ValidatorConfig, type: ValidatorRuleType): ValidatorRule | undefined {
   return config.rules.find((rule) => rule.type === type);
 }
@@ -88,6 +91,7 @@ function toStringOrUndefined(value: string | number | undefined): string | undef
   return text.length ? text : undefined;
 }
 
+// Best-effort parser from existing customRefine code to supported date-relative presets.
 function parseDateRelativeRule(rule: ValidatorRule | undefined): DateRelativeValidator {
   if (!rule || rule.type !== "customRefine") return { kind: "none" };
   const code = String(rule.params?.customCode || "");
@@ -111,6 +115,7 @@ function parseDateRelativeRule(rule: ValidatorRule | undefined): DateRelativeVal
   return { kind: "none" };
 }
 
+// Compiler from date-relative preset -> validator-engine customRefine rule.
 function buildDateRelativeRule(relative: DateRelativeValidator): ValidatorRule | null {
   switch (relative.kind) {
     case "dateOnOrAfterToday":
@@ -158,10 +163,12 @@ function buildDateRelativeRule(relative: DateRelativeValidator): ValidatorRule |
   }
 }
 
+// Extracts date-relative preset from config for date toggle UI rows.
 export function getDateRelativeValidator(config: ValidatorConfig): DateRelativeValidator {
   return parseDateRelativeRule(config.rules.find((rule) => rule.type === "customRefine"));
 }
 
+// Enforces single date-relative customRefine rule by replacing existing customRefine entries.
 export function setDateRelativeValidator(
   config: ValidatorConfig,
   relative: DateRelativeValidator
@@ -171,6 +178,7 @@ export function setDateRelativeValidator(
   return relativeRule ? { ...config, rules: [...nextRules, relativeRule] } : { ...config, rules: nextRules };
 }
 
+// Projects raw ValidatorConfig to the toggle UI state used by each base type section.
 export function getToggleValidatorViewModel(config: ValidatorConfig): ToggleValidatorViewModel {
   const minItems = getRule(config, "array")?.params?.minItems;
   const maxItems = getRule(config, "array")?.params?.maxItems;
@@ -239,6 +247,7 @@ export function getToggleValidatorViewModel(config: ValidatorConfig): ToggleVali
   };
 }
 
+// Toggle handlers are centralized here so UI components stay stateless/dumb.
 export function setToggleValidatorEnabled(
   config: ValidatorConfig,
   id: ToggleValidatorId,
@@ -366,6 +375,7 @@ export function setArrayOptions(config: ValidatorConfig, options: string[]): Val
   });
 }
 
+// Safety guard for host UIs that need to branch by base type.
 export function supportsRuleInBase(baseType: ValidatorBaseType, id: ToggleValidatorId): boolean {
   if (baseType === "text") {
     return ["required", "minLength", "maxLength", "plainText", "regex"].includes(id);

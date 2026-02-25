@@ -8,6 +8,7 @@ import { SigningPartiesTab } from "@/components/editor/tab-panels/SigningParties
 import { SubscribersTab } from "@/components/editor/tab-panels/SubscribersTab";
 import { FormSettingsTab } from "@/components/editor/tab-panels/FormSettingsTab";
 
+// Central tab switchboard for the editor route.
 export function EditorContent() {
   const { activeTab } = useFormEditor();
 

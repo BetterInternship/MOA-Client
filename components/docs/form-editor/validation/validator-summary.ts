@@ -5,6 +5,10 @@ import {
   getToggleValidatorViewModel,
 } from "@/components/docs/form-editor/validation/validator-state";
 
+/**
+ * Compact human-readable summary used below the "Validation" header.
+ * This is display-only and intentionally derived from current config each render.
+ */
 export function buildValidatorSummary(config: ValidatorConfig, baseType: ValidatorBaseType): string {
   const vm = getToggleValidatorViewModel(config);
   const parts: string[] = [];

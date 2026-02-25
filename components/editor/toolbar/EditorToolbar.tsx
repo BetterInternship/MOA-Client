@@ -29,6 +29,12 @@ function formatTimestamp(timestamp: string): string {
   }
 }
 
+/**
+ * Header toolbar for editor page:
+ * - global navigation
+ * - quick mode switches (settings/preview)
+ * - save action bound to FormEditor context
+ */
 export function EditorToolbar() {
   const { formMetadata, formDocument, isSaving, saveForm, activeTab, setActiveTab } =
     useFormEditor();
@@ -44,8 +50,6 @@ export function EditorToolbar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>Navigate</DropdownMenuLabel>
-            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/dashboard">My Signed Forms</Link>
             </DropdownMenuItem>

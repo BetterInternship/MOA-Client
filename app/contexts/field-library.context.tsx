@@ -34,6 +34,7 @@ type FieldLibraryContextValue = {
   tagOptions: string[];
 };
 
+// Modal-scoped context for field create/edit screens to avoid prop drilling.
 const FieldLibraryContext = createContext<FieldLibraryContextValue | null>(null);
 
 export function FieldLibraryProvider({
@@ -49,6 +50,7 @@ export function FieldLibraryProvider({
 export function useFieldLibrary() {
   const context = useContext(FieldLibraryContext);
   if (!context) {
+    // Fail fast if a modal forgets to wrap with provider.
     throw new Error("useFieldLibrary must be used within FieldLibraryProvider");
   }
   return context;

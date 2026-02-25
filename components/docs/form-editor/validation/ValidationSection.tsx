@@ -20,6 +20,10 @@ export interface ValidationSectionProps {
   onChange: (next: { validator: string; validator_ir: ValidatorIRv0 | null }) => void;
 }
 
+/**
+ * Raw Zod editor used when users switch from no-code toggles to code mode.
+ * Any change here is treated as source-of-truth Zod and clears `validator_ir`.
+ */
 export function ValidationRawEditor({ value, onChange }: { value: string; onChange: (code: string) => void }) {
   return (
     <div className="space-y-1">
@@ -34,6 +38,10 @@ export function ValidationRawEditor({ value, onChange }: { value: string; onChan
   );
 }
 
+/**
+ * Top-level validation section shown in field editors.
+ * Keeps host API stable while delegating mode/state behavior to `useValidationModel`.
+ */
 export function ValidationSection({
   title = "Validation",
   schemaType,

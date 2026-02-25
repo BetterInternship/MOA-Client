@@ -52,6 +52,10 @@ import {
   SelectContent,
 } from "@/components/ui/select";
 
+/**
+ * Reusable table shell used by registry screens.
+ * Provides consistent filtering, sorting, column visibility, selection, and pagination UX.
+ */
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
