@@ -14,6 +14,10 @@ import {
   SCHEMA_VERSION,
 } from "@betterinternship/core/forms";
 
+/**
+ * Global editor state container for the form editor route.
+ * Keeps all tab surfaces (builder/preview/settings) synchronized on one metadata source.
+ */
 const BLANK_FORM_METADATA: IFormMetadata = {
   name: "new-form",
   label: "New Form",
@@ -92,6 +96,7 @@ export function FormEditorProvider({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Shallow metadata updates for top-level form fields (name/label/etc).
   const updateFormMetadata = useCallback((updates: Partial<IFormMetadata>) => {
     setFormMetadata((prev) => ({
       ...prev,
@@ -99,6 +104,7 @@ export function FormEditorProvider({
     }));
   }, []);
 
+  // Normalize block schemas before committing to state so save payload shape stays stable.
   const updateBlocks = useCallback((blocks: IFormBlock[]) => {
     const normalizedBlocks = normalizeBlocksForSave(blocks);
     setFormMetadata((prev) => {
@@ -129,6 +135,7 @@ export function FormEditorProvider({
 
   const queryClient = useQueryClient();
 
+  // Persist latest in-memory metadata snapshot and refresh dependent queries.
   const saveForm = useCallback(async () => {
     if (!formMetadata) return;
     setIsSaving(true);

@@ -27,6 +27,7 @@ export type PresetFieldIconKey =
   | "phone"
   | "email";
 
+// UI-only icon token map. Presets pass `iconKey` from package metadata.
 const PRESET_FIELD_ICON_MAP: Record<PresetFieldIconKey, LucideIcon> = {
   shortText: Type,
   longText: AlignLeft,
@@ -67,6 +68,7 @@ export function resolvePresetFieldIconKey(
   return null;
 }
 
+// Public helper used by BlocksPanel and preset picker; defaults to a neutral circle icon.
 export function getPresetFieldIcon(iconKey?: string | null, presetName?: string | null): LucideIcon {
   const resolvedKey = resolvePresetFieldIconKey(iconKey, presetName);
   return resolvedKey ? PRESET_FIELD_ICON_MAP[resolvedKey] : Circle;

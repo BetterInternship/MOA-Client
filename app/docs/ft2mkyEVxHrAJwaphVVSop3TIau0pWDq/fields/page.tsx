@@ -35,10 +35,7 @@ import {
 } from "@/lib/custom-field-mappers";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
-import {
-  buildFieldOptionsFromRegistry,
-  buildTagOptionsFromRegistry,
-} from "@/lib/field-library";
+import { buildFieldOptionsFromRegistry, buildTagOptionsFromRegistry } from "@/lib/field-library";
 import { getFieldPresetTemplates } from "@betterinternship/core/forms";
 
 interface FieldRegistryEntry {
@@ -67,6 +64,7 @@ type FieldRegistryMinimalEntry = {
   tag?: string;
 };
 
+// Stable ordering keeps grouped field lists predictable across rerenders and searches.
 const sortFields = (list: FieldRegistryMinimalEntry[]) =>
   (list ?? []).slice().sort((a, b) => {
     const labelA = (a.label || a.name || "").toLowerCase();
@@ -81,13 +79,7 @@ const sortFields = (list: FieldRegistryMinimalEntry[]) =>
 
 const FieldRegistryPage = () => {
   const queryClient = useQueryClient();
-  const fieldRegistry = useFormsControllerGetFieldRegistry({
-    query: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: false,
-    },
-  });
+  const fieldRegistry = useFormsControllerGetFieldRegistry({});
 
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedTags, setExpandedTags] = useState<Record<string, boolean>>({});
@@ -149,6 +141,7 @@ const FieldRegistryPage = () => {
 
   const modalLibraryValue = useMemo(
     () => ({
+      // Pre-compute modal data contracts so add/edit modals stay presentation-focused.
       fieldOptions: buildFieldOptionsFromRegistry(fields) as FieldLibraryFieldOption[],
       presetTemplates: getFieldPresetTemplates() as FieldLibraryPresetTemplateOption[],
       tagOptions: allAvailableTags,
@@ -226,6 +219,7 @@ const FieldRegistryPage = () => {
     setBulkMoving(true);
     try {
       const ids = Array.from(selectedIds);
+      // Endpoint is single-record update, so bulk move fans out requests by selected id.
       await Promise.all(
         ids.map(async (id) => {
           const fieldRes = await formsControllerGetFieldFromRegistry({ id });
@@ -421,6 +415,7 @@ const FieldEditor = ({
   const [field, setField] = useState<FieldRegistryEntry>();
   const [editing, setEditing] = useState(false);
 
+  // Update API expects a full field payload, so we normalize optional values before submit.
   const handleEdit = async () => {
     if (!fieldId || !field || !field.name || !field.preset) return;
 
@@ -532,6 +527,7 @@ const FieldRegistration = ({
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [registering, setRegistering] = useState(false);
 
+  // Selecting a package preset hydrates a full editable draft in one step.
   const handlePresetSelect = (presetId: string) => {
     setSelectedPresetId(presetId);
     if (!presetId) return;
@@ -632,10 +628,7 @@ const FieldRegistration = ({
       />
       <div className="flex flex-row justify-between gap-1">
         <div className="flex-1" />
-        <Button
-          disabled={registering || !selectedPresetId}
-          onClick={() => void handleAdd()}
-        >
+        <Button disabled={registering || !selectedPresetId} onClick={() => void handleAdd()}>
           {registering ? "Registering..." : "Register"}
         </Button>
       </div>

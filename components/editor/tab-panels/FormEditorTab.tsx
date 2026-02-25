@@ -8,6 +8,10 @@ import { BlocksPanel } from "./editor-components/BlocksPanel";
 import { RevampedBlockEditor } from "./editor-components/RevampedBlockEditor";
 import { FormViewCanvas } from "./editor-components/FormViewCanvas";
 
+/**
+ * Main builder surface (left palette + center PDF + right block editor).
+ * Wrapped with tab/pdf providers so child panels share selection and placement state.
+ */
 function FormEditorTabContent() {
   const { formMetadata } = useFormEditor();
   const { selectedPartyId, setSelectedPartyId, editorViewMode } = useFormEditorTab();

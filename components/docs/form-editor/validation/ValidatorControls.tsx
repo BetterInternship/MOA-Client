@@ -12,6 +12,10 @@ import {
 import { FormInput, FormTextarea, TimeInputNative } from "@/components/docs/forms/EditForm";
 import { Switch } from "@/components/ui/switch";
 
+/**
+ * Shared presentational controls for validation rows.
+ * These intentionally contain no rule logic and only render inputs/toggles.
+ */
 export function ValidatorRow({
   label,
   description,
@@ -230,6 +234,7 @@ export function ValidatorMessageInput({
   const [open, setOpen] = useState(Boolean(value));
   return (
     <div className="space-y-1">
+      {/* Keep message UI collapsed by default to reduce visual noise in the sidebar. */}
       {!open && (
         <button
           type="button"

@@ -62,6 +62,8 @@ function FormEditorContent() {
     name: formName || "",
   });
 
+  // Bootstraps editor state from API response and optionally downloads the latest PDF blob.
+  // This keeps the PDF viewer, metadata panel, and save flow working from the same context state.
   useEffect(() => {
     const initForm = () => {
       try {
@@ -73,7 +75,7 @@ function FormEditorContent() {
           setFormVersion(fetchedData.formVersion || null);
           setDocumentUrl(fetchedData.formUrl || null);
 
-          // Fetch the PDF from the formUrl and set it as documentFile
+          // Fetch remote PDF and hydrate `documentFile` so editor tools can operate on a File object.
           if (fetchedData.formUrl) {
             fetch(fetchedData.formUrl)
               .then((res) => {
@@ -87,7 +89,7 @@ function FormEditorContent() {
                 const file = new File([blob], fileName, { type: "application/pdf" });
                 setDocumentFile(file);
                 setLastLoadedFileName(fileName);
-                // Loading complete only after PDF is loaded
+                // Editor is ready only after both metadata and PDF are in context.
                 setIsLoading(false);
               })
               .catch((err) => {
@@ -95,10 +97,11 @@ function FormEditorContent() {
                 setIsLoading(false);
               });
           } else {
-            // No PDF to load, loading complete
+            // Metadata-only form (no base document yet).
             setIsLoading(false);
           }
         } else {
+          // Create-new form path: seed blank metadata.
           setFormMetadata(BLANK_FORM_METADATA);
           setFormDocument(null);
           setFormVersion(null);

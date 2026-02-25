@@ -36,6 +36,11 @@ export type ValidationFieldOption = {
   partyName?: string;
 };
 
+/**
+ * Base-type scoped renderer for no-code validator controls.
+ * All mutations flow through `validator-state` helpers so rule behavior is consistent
+ * across all editor surfaces that use ValidationSection.
+ */
 export function ValidatorGroups({
   baseType,
   config,
@@ -56,6 +61,7 @@ export function ValidatorGroups({
   const arrayOptions = getArrayOptions(config);
   const regexFlags = getRegexFlags(config);
 
+  // Thin wrappers keep JSX concise and enforce immutable updates in one place.
   const toggle = (id: Parameters<typeof setToggleValidatorEnabled>[1], enabled: boolean) =>
     onConfigChange(setToggleValidatorEnabled(config, id, enabled));
   const setValue = (id: Parameters<typeof setToggleValidatorValue>[1], value: string | number) =>
