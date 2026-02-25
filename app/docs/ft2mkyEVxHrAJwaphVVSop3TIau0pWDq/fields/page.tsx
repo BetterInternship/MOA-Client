@@ -37,9 +37,9 @@ import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
 import {
   buildFieldOptionsFromRegistry,
-  buildPresetTemplatesFromRegistry,
   buildTagOptionsFromRegistry,
 } from "@/lib/field-library";
+import { getFieldPresetTemplates } from "@betterinternship/core/forms";
 
 interface FieldRegistryEntry {
   id?: string;
@@ -150,9 +150,7 @@ const FieldRegistryPage = () => {
   const modalLibraryValue = useMemo(
     () => ({
       fieldOptions: buildFieldOptionsFromRegistry(fields) as FieldLibraryFieldOption[],
-      presetTemplates: buildPresetTemplatesFromRegistry(
-        fields
-      ) as FieldLibraryPresetTemplateOption[],
+      presetTemplates: getFieldPresetTemplates() as FieldLibraryPresetTemplateOption[],
       tagOptions: allAvailableTags,
     }),
     [fields, allAvailableTags]
@@ -532,43 +530,38 @@ const FieldRegistration = ({
     validator_ir: null,
   });
   const [selectedPresetId, setSelectedPresetId] = useState("");
-  const [loadingPreset, setLoadingPreset] = useState(false);
   const [registering, setRegistering] = useState(false);
 
-  const handlePresetSelect = async (presetId: string) => {
+  const handlePresetSelect = (presetId: string) => {
     setSelectedPresetId(presetId);
     if (!presetId) return;
 
-    setLoadingPreset(true);
-    try {
-      const data = await formsControllerGetFieldFromRegistry({ id: presetId });
-      const preset = data?.field;
-      if (!preset) return;
-
-      const label = preset.label || "";
-      setField((prev) => ({
-        ...prev,
-        ...createCustomFieldDraftFromPreset(
-          {
-            ...preset,
-            label,
-            type: (preset.type as "text" | "signature" | "image") || "text",
-            source: normalizeFieldSource(preset.source),
-            shared: preset.shared?.toString() === "true",
-            prefiller: preset.prefiller ?? "",
-            tooltip_label: preset.tooltip_label ?? "",
-            validator: preset.validator ?? "",
-            validator_ir: (preset as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
-          },
-          deriveFieldNameFromLabel,
-          prev?.tag || "uncategorized"
-        ),
-      }));
-    } catch {
-      toast.error("Failed to load preset template.");
-    } finally {
-      setLoadingPreset(false);
+    const preset = presetTemplates.find((entry) => entry.id === presetId);
+    if (!preset) {
+      toast.error("Preset template not found.");
+      return;
     }
+    if (preset.disabled) return;
+
+    const label = preset.label || "";
+    setField((prev) => ({
+      ...prev,
+      ...createCustomFieldDraftFromPreset(
+        {
+          ...preset,
+          label,
+          type: (preset.type as "text" | "signature" | "image") || "text",
+          source: normalizeFieldSource(preset.source),
+          shared: preset.shared ?? true,
+          prefiller: preset.prefiller ?? "",
+          tooltip_label: preset.tooltip_label ?? "",
+          validator: preset.validator ?? "",
+          validator_ir: preset.validator_ir ?? null,
+        },
+        deriveFieldNameFromLabel,
+        prev?.tag || "uncategorized"
+      ),
+    }));
   };
 
   const handleAdd = async () => {
@@ -640,7 +633,7 @@ const FieldRegistration = ({
       <div className="flex flex-row justify-between gap-1">
         <div className="flex-1" />
         <Button
-          disabled={registering || loadingPreset || !selectedPresetId}
+          disabled={registering || !selectedPresetId}
           onClick={() => void handleAdd()}
         >
           {registering ? "Registering..." : "Register"}

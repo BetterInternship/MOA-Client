@@ -83,6 +83,7 @@ interface ValidationRuleChipsProps {
   onSelectRule: (ruleId: string) => void;
   onRemoveRule: (ruleId: string) => void;
   readOnly?: boolean;
+  hiddenRuleTypes?: ValidatorRuleType[];
 }
 
 export function ValidationRuleChips({
@@ -91,12 +92,14 @@ export function ValidationRuleChips({
   onSelectRule,
   onRemoveRule,
   readOnly = false,
+  hiddenRuleTypes = [],
 }: ValidationRuleChipsProps) {
-  if (!config.rules.length) return <p className="text-xs text-slate-500">Add a rule</p>;
+  const visibleRules = config.rules.filter((rule) => !hiddenRuleTypes.includes(rule.type));
+  if (!visibleRules.length) return <p className="text-xs text-slate-500">Add a rule</p>;
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {config.rules.map((rule) => {
+      {visibleRules.map((rule) => {
         const label = getRuleDefinition(rule.type)?.label || rule.type;
         const isSelected = selectedRuleId === rule.id;
         return (
@@ -285,6 +288,7 @@ export function ValidationSection({
   onChange,
 }: ValidationSectionProps) {
   const {
+    baseType,
     mode,
     setMode,
     config,
@@ -302,11 +306,26 @@ export function ValidationSection({
   });
 
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
+  const hiddenRuleTypes = useMemo<ValidatorRuleType[]>(
+    () => (baseType === "text" ? ["email", "url"] : []),
+    [baseType]
+  );
+  const visibleRules = useMemo(
+    () => config.rules.filter((rule) => !hiddenRuleTypes.includes(rule.type)),
+    [config.rules, hiddenRuleTypes]
+  );
+  const menuAllowedRuleTypes = useMemo(
+    () =>
+      baseType === "text"
+        ? allowedRuleTypes.filter((ruleType) => ruleType !== "email" && ruleType !== "url")
+        : allowedRuleTypes,
+    [allowedRuleTypes, baseType]
+  );
   const activeRuleId = useMemo(() => {
-    if (!config.rules.length) return null;
-    if (selectedRuleId && config.rules.some((rule) => rule.id === selectedRuleId)) return selectedRuleId;
-    return config.rules[0].id;
-  }, [config.rules, selectedRuleId]);
+    if (!visibleRules.length) return null;
+    if (selectedRuleId && visibleRules.some((rule) => rule.id === selectedRuleId)) return selectedRuleId;
+    return visibleRules[0].id;
+  }, [selectedRuleId, visibleRules]);
 
   const removeRule = (ruleId: string) =>
     onConfigChange({
@@ -339,7 +358,7 @@ export function ValidationSection({
           <div className="flex items-center gap-2">
             <ValidationAddRuleMenu
               config={config}
-              allowedRuleTypes={allowedRuleTypes}
+              allowedRuleTypes={menuAllowedRuleTypes}
               onConfigChange={onConfigChange}
               readOnly={isReadOnlyLegacy}
             />
@@ -350,6 +369,7 @@ export function ValidationSection({
             onSelectRule={setSelectedRuleId}
             onRemoveRule={removeRule}
             readOnly={isReadOnlyLegacy}
+            hiddenRuleTypes={hiddenRuleTypes}
           />
           <ValidationRuleEditor
             config={config}

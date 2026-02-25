@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { ValidatorIRv0 } from "@/lib/validator-ir";
 
 export type FieldLibraryFieldOption = {
   id: string;
@@ -11,6 +12,19 @@ export type FieldLibraryPresetTemplateOption = {
   id: string;
   name: string;
   label?: string;
+  group?: "core" | "format";
+  disabled?: boolean;
+  type?: "text" | "signature" | "image";
+  source?: "auto" | "prefill" | "derived" | "manual";
+  shared?: boolean;
+  tag?: string;
+  preset?: string;
+  prefiller?: string;
+  tooltip_label?: string;
+  validator?: string;
+  validator_ir?: ValidatorIRv0 | null;
+  is_phantom?: boolean;
+  party?: string;
 };
 
 type FieldLibraryContextValue = {
@@ -38,4 +52,3 @@ export function useFieldLibrary() {
   }
   return context;
 }
-
