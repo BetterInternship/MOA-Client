@@ -36,7 +36,6 @@ export function ValidationRawEditor({
         placeholder='z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), z.string())'
         className="min-h-24 font-mono text-xs"
       />
-      <p className="text-xs text-slate-500">Raw Zod expression</p>
     </div>
   );
 }
