@@ -47,9 +47,7 @@ const resolveDroppedFieldKey = (field: DraggedFieldPayload) => {
   if (field.__palette_source === "default") {
     return createUniqueFieldKey(base);
   }
-  if (field.__palette_source === "custom") {
-    return base;
-  }
+
   return field.preset ? `${base}:${field.preset}` : base;
 };
 

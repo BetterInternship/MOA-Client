@@ -2,10 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
-import {
-  IFormBlock,
-  getFieldPresetTemplates,
-} from "@betterinternship/core/forms";
+import { IFormBlock, getFieldPresetTemplates } from "@betterinternship/core/forms";
 import { useState, useEffect, useMemo } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
@@ -354,7 +351,7 @@ export function RevampedBlockEditor() {
       <div className="flex h-full flex-col overflow-hidden">
         <div className="flex-1 space-y-3 overflow-auto p-3">
           <Card className="gap-2 p-2.5">
-            <h4 className="text-muted-foreground text-xs font-semibold">Recipient</h4>
+            <h4 className="text-muted-foreground text-xs font-semibold uppercase">Recipient</h4>
             <RecipientBadgeDropdown
               value={
                 (editingValues.signingPartyId !== undefined
@@ -378,7 +375,9 @@ export function RevampedBlockEditor() {
           {/* Text Content - for header, paragraph, phantom_field */}
           {isSimpleBlock && (
             <Card className="gap-2.5 p-2.5">
-              <h4 className="text-muted-foreground text-xs font-semibold">Text content</h4>
+              <h4 className="text-muted-foreground text-xs font-semibold uppercase">
+                Text content
+              </h4>
               <FormTextarea
                 value={editedTextContent}
                 setter={(value) => {
@@ -404,7 +403,9 @@ export function RevampedBlockEditor() {
           {/* Field settings */}
           {!isSimpleBlock && fieldMetadata && (
             <Card className="gap-2.5 p-2.5">
-              <h4 className="text-muted-foreground text-xs font-semibold">Field settings</h4>
+              <h4 className="text-muted-foreground text-xs font-semibold uppercase">
+                Field settings
+              </h4>
               <FormInput
                 label="Field Label"
                 value={
@@ -490,22 +491,22 @@ export function RevampedBlockEditor() {
                         } as any);
                     }}
                   />
-                  <DefaultValueSection
-                    title="Placeholder"
-                    source={parentSource}
-                    value={parentPrefillerValue}
-                    fieldOptions={parentFieldOptions}
-                    onChange={(value) => {
-                      setEditingValues((prev) => ({ ...prev, prefiller: value }));
-                      if (parentGroup) handleParentUpdate(parentGroup.id, { prefiller: value });
-                    }}
-                  />
+                  <div className="mt-4">
+                    <DefaultValueSection
+                      title="Placeholder"
+                      source={parentSource}
+                      value={parentPrefillerValue}
+                      fieldOptions={parentFieldOptions}
+                      simpleMode="manual-only"
+                      onChange={(value) => {
+                        setEditingValues((prev) => ({ ...prev, prefiller: value }));
+                        if (parentGroup) handleParentUpdate(parentGroup.id, { prefiller: value });
+                      }}
+                    />
+                  </div>
                   <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                     <div className="space-y-0.5">
                       <p className="text-xs font-semibold text-slate-700">Derived value</p>
-                      <p className="text-[11px] text-slate-500">
-                        Enable to compute this field from defaults.
-                      </p>
                     </div>
                     <Switch
                       checked={isParentDerived}
@@ -546,7 +547,7 @@ export function RevampedBlockEditor() {
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 space-y-3 overflow-auto p-3">
         <Card className="gap-2 p-2.5">
-          <h4 className="text-muted-foreground text-xs font-semibold">Recipient</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold uppercase">Recipient</h4>
           <RecipientBadgeDropdown
             value={editedBlock.signing_party_id || ""}
             options={(formMetadata?.signing_parties || []).map((party, idx) => ({
@@ -563,7 +564,7 @@ export function RevampedBlockEditor() {
         </Card>
 
         <Card className="gap-2.5 p-2.5">
-          <h4 className="text-muted-foreground text-xs font-semibold">Layout & Text</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold uppercase">Layout & Text</h4>
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="X"
@@ -626,7 +627,7 @@ export function RevampedBlockEditor() {
         </Card>
 
         <Card className="gap-2.5 p-2.5">
-          <h4 className="text-muted-foreground text-xs font-semibold">Text Alignment</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold uppercase">Text Alignment</h4>
           <div className="space-y-1">
             <p className="text-xs text-slate-600">Horizontal</p>
             <div className="flex gap-1">
@@ -716,7 +717,7 @@ export function RevampedBlockEditor() {
         </Card>
 
         <Card className="gap-2.5 p-2.5">
-          <h4 className="text-muted-foreground text-xs font-semibold">Field settings</h4>
+          <h4 className="text-muted-foreground text-xs font-semibold uppercase">Field settings</h4>
           <FormInput
             label="Field Label"
             value={schema?.label || ""}
@@ -775,19 +776,19 @@ export function RevampedBlockEditor() {
                   });
                 }}
               />
-              <DefaultValueSection
-                title="Placeholder"
-                source={childSource}
-                value={(schema?.prefiller || "") as string}
-                fieldOptions={childFieldOptions}
-                onChange={(value) => handleFieldChange("prefiller", value)}
-              />
+              <div className="mt-4">
+                <DefaultValueSection
+                  title="Placeholder"
+                  source={childSource}
+                  value={(schema?.prefiller || "") as string}
+                  fieldOptions={childFieldOptions}
+                  simpleMode="manual-only"
+                  onChange={(value) => handleFieldChange("prefiller", value)}
+                />
+              </div>
               <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                 <div className="space-y-0.5">
                   <p className="text-xs font-semibold text-slate-700">Derived value</p>
-                  <p className="text-[11px] text-slate-500">
-                    Enable to compute this field from defaults.
-                  </p>
                 </div>
                 <Switch
                   checked={isChildDerived}
@@ -803,4 +804,3 @@ export function RevampedBlockEditor() {
     </div>
   );
 }
-

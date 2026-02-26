@@ -80,7 +80,7 @@ export function ValidatorGroups({
 
   if (baseType === "text") {
     return (
-      <div className="space-y-2">
+      <div>
         {renderRequiredRow()}
 
         <ValidatorRow
@@ -89,17 +89,22 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("minLength", enabled)}
           disabled={readOnly}
         >
-          <ValidatorNumberInput
-            value={vm.minLength.value as number | undefined}
-            onChange={(next) => setValue("minLength", next)}
-            placeholder="Minimum"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.minLength.message}
-            onChange={(next) => setMessage("minLength", next)}
-            disabled={readOnly}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ValidatorNumberInput
+                value={vm.minLength.value as number | undefined}
+                onChange={(next) => setValue("minLength", next)}
+                placeholder="Minimum"
+                disabled={readOnly}
+              />
+            </div>
+            <ValidatorMessageInput
+              value={vm.minLength.message}
+              onChange={(next) => setMessage("minLength", next)}
+              disabled={readOnly}
+              expandBelow
+            />
+          </div>
         </ValidatorRow>
 
         <ValidatorRow
@@ -108,22 +113,26 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("maxLength", enabled)}
           disabled={readOnly}
         >
-          <ValidatorNumberInput
-            value={vm.maxLength.value as number | undefined}
-            onChange={(next) => setValue("maxLength", next)}
-            placeholder="Maximum"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.maxLength.message}
-            onChange={(next) => setMessage("maxLength", next)}
-            disabled={readOnly}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ValidatorNumberInput
+                value={vm.maxLength.value as number | undefined}
+                onChange={(next) => setValue("maxLength", next)}
+                placeholder="Maximum"
+                disabled={readOnly}
+              />
+            </div>
+            <ValidatorMessageInput
+              value={vm.maxLength.message}
+              onChange={(next) => setMessage("maxLength", next)}
+              disabled={readOnly}
+              expandBelow
+            />
+          </div>
         </ValidatorRow>
 
         <ValidatorRow
           label="Plain text only"
-          description="Only letters, spaces, and standard punctuation."
           enabled={vm.plainText.enabled}
           onToggle={(enabled) => toggle("plainText", enabled)}
           disabled={readOnly}
@@ -167,17 +176,22 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("minLength", enabled)}
           disabled={readOnly}
         >
-          <ValidatorNumberInput
-            value={vm.minLength.value as number | undefined}
-            onChange={(next) => setValue("minLength", next)}
-            placeholder="Minimum"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.minLength.message}
-            onChange={(next) => setMessage("minLength", next)}
-            disabled={readOnly}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ValidatorNumberInput
+                value={vm.minLength.value as number | undefined}
+                onChange={(next) => setValue("minLength", next)}
+                placeholder="Minimum"
+                disabled={readOnly}
+              />
+            </div>
+            <ValidatorMessageInput
+              value={vm.minLength.message}
+              onChange={(next) => setMessage("minLength", next)}
+              disabled={readOnly}
+              expandBelow
+            />
+          </div>
         </ValidatorRow>
         <ValidatorRow
           label="Maximum characters"
@@ -185,17 +199,22 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("maxLength", enabled)}
           disabled={readOnly}
         >
-          <ValidatorNumberInput
-            value={vm.maxLength.value as number | undefined}
-            onChange={(next) => setValue("maxLength", next)}
-            placeholder="Maximum"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.maxLength.message}
-            onChange={(next) => setMessage("maxLength", next)}
-            disabled={readOnly}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ValidatorNumberInput
+                value={vm.maxLength.value as number | undefined}
+                onChange={(next) => setValue("maxLength", next)}
+                placeholder="Maximum"
+                disabled={readOnly}
+              />
+            </div>
+            <ValidatorMessageInput
+              value={vm.maxLength.message}
+              onChange={(next) => setMessage("maxLength", next)}
+              disabled={readOnly}
+              expandBelow
+            />
+          </div>
         </ValidatorRow>
         <ValidatorRow
           label="Plain text only"
@@ -247,17 +266,22 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("min", enabled)}
           disabled={readOnly}
         >
-          <ValidatorNumberInput
-            value={vm.min.value as number | undefined}
-            onChange={(next) => setValue("min", next)}
-            placeholder="Minimum value"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.min.message}
-            onChange={(next) => setMessage("min", next)}
-            disabled={readOnly}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ValidatorNumberInput
+                value={vm.min.value as number | undefined}
+                onChange={(next) => setValue("min", next)}
+                placeholder="Minimum value"
+                disabled={readOnly}
+              />
+            </div>
+            <ValidatorMessageInput
+              value={vm.min.message}
+              onChange={(next) => setMessage("min", next)}
+              disabled={readOnly}
+              expandBelow
+            />
+          </div>
         </ValidatorRow>
         <ValidatorRow
           label="Maximum value"
@@ -265,17 +289,22 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("max", enabled)}
           disabled={readOnly}
         >
-          <ValidatorNumberInput
-            value={vm.max.value as number | undefined}
-            onChange={(next) => setValue("max", next)}
-            placeholder="Maximum value"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.max.message}
-            onChange={(next) => setMessage("max", next)}
-            disabled={readOnly}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ValidatorNumberInput
+                value={vm.max.value as number | undefined}
+                onChange={(next) => setValue("max", next)}
+                placeholder="Maximum value"
+                disabled={readOnly}
+              />
+            </div>
+            <ValidatorMessageInput
+              value={vm.max.message}
+              onChange={(next) => setMessage("max", next)}
+              disabled={readOnly}
+              expandBelow
+            />
+          </div>
         </ValidatorRow>
       </div>
     );
@@ -405,7 +434,8 @@ export function ValidatorGroups({
                 setDateRelativeValidator(config, {
                   kind: "dateOnOrAfterField",
                   field: next,
-                  message: relativeDate.kind === "dateOnOrAfterField" ? relativeDate.message : undefined,
+                  message:
+                    relativeDate.kind === "dateOnOrAfterField" ? relativeDate.message : undefined,
                 })
               )
             }
@@ -559,17 +589,22 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("minItems", enabled)}
           disabled={readOnly}
         >
-          <ValidatorNumberInput
-            value={vm.minItems.value as number | undefined}
-            onChange={(next) => setValue("minItems", next)}
-            placeholder="Minimum items"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.minItems.message}
-            onChange={(next) => setMessage("minItems", next)}
-            disabled={readOnly}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ValidatorNumberInput
+                value={vm.minItems.value as number | undefined}
+                onChange={(next) => setValue("minItems", next)}
+                placeholder="Minimum items"
+                disabled={readOnly}
+              />
+            </div>
+            <ValidatorMessageInput
+              value={vm.minItems.message}
+              onChange={(next) => setMessage("minItems", next)}
+              disabled={readOnly}
+              expandBelow
+            />
+          </div>
         </ValidatorRow>
         <ValidatorRow
           label="Maximum selected items"
@@ -577,17 +612,22 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("maxItems", enabled)}
           disabled={readOnly}
         >
-          <ValidatorNumberInput
-            value={vm.maxItems.value as number | undefined}
-            onChange={(next) => setValue("maxItems", next)}
-            placeholder="Maximum items"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.maxItems.message}
-            onChange={(next) => setMessage("maxItems", next)}
-            disabled={readOnly}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <ValidatorNumberInput
+                value={vm.maxItems.value as number | undefined}
+                onChange={(next) => setValue("maxItems", next)}
+                placeholder="Maximum items"
+                disabled={readOnly}
+              />
+            </div>
+            <ValidatorMessageInput
+              value={vm.maxItems.message}
+              onChange={(next) => setMessage("maxItems", next)}
+              disabled={readOnly}
+              expandBelow
+            />
+          </div>
         </ValidatorRow>
       </div>
     );

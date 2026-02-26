@@ -23,13 +23,24 @@ export function findPresetByFieldKey(
   const normalizedFieldKey = normalize(fieldKey || "");
   if (!normalizedFieldKey) return null;
 
+  const presetSegment = normalizedFieldKey.includes(":")
+    ? normalizedFieldKey.split(":").at(-1) || ""
+    : "";
+  if (presetSegment) {
+    const bySegment =
+      presets.find((preset) => {
+        const presetId = normalize(preset.id || "");
+        const presetName = normalize(preset.name || "");
+        return presetSegment === presetId || presetSegment === presetName;
+      }) || null;
+    if (bySegment) return bySegment;
+  }
+
   return (
     presets.find((preset) => {
       const presetName = normalize(preset.name || "");
       if (!presetName) return false;
-      return (
-        normalizedFieldKey === presetName || normalizedFieldKey.startsWith(`${presetName}_`)
-      );
+      return normalizedFieldKey === presetName || normalizedFieldKey.startsWith(`${presetName}_`);
     }) || null
   );
 }

@@ -68,13 +68,10 @@ const matchesSearch = (field: Pick<PaletteField, "name" | "label">, query: strin
 const toDisplayTag = (tag: string) =>
   tag.length > 0 ? tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase() : "Ungrouped";
 
-const createUniqueFieldKey = (base: string) =>
-  `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
 /**
  * Left-side field palette for the form editor.
- * - Default fields come from package presets (one-off field keys on drop).
- * - Custom fields come from DB registry (shared field keys on drop).
+ * - Default fields come from package presets.
+ * - Custom fields come from DB registry.
  */
 export function BlocksPanel({
   blocks,
@@ -245,10 +242,9 @@ export function BlocksPanel({
       nextY = Math.min(pageMaxY - fieldHeight, last.field_schema!.y + rowStep);
     }
 
-    // Default presets are intentionally one-off; custom registry fields remain shared by name.
     const baseFieldKey = field.name || field.id;
-    const fieldKey =
-      field.paletteSource === "default" ? createUniqueFieldKey(baseFieldKey) : baseFieldKey;
+    const presetTag = (field.preset || "").trim();
+    const fieldKey = presetTag ? `${baseFieldKey}:${presetTag}` : baseFieldKey;
 
     const existingForField = blocks.find(
       (block) =>

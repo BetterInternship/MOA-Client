@@ -29,6 +29,7 @@ interface DefaultValueSimplePickerProps {
   fieldOptions: DefaultValueFieldOption[];
   isLocked: boolean;
   onChange: (prefiller: string) => void;
+  simpleMode?: "full" | "manual-only";
 }
 
 export function DefaultValueSimplePicker({
@@ -40,7 +41,26 @@ export function DefaultValueSimplePicker({
   fieldOptions,
   isLocked,
   onChange,
+  simpleMode = "full",
 }: DefaultValueSimplePickerProps) {
+  if (simpleMode === "manual-only") {
+    return (
+      <Input
+        value={manualValue}
+        onChange={(e) => setManualValue(e.target.value)}
+        onBlur={() => onChange(buildManualPrefiller(manualValue))}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onChange(buildManualPrefiller(manualValue));
+          }
+        }}
+        placeholder="Type value"
+        disabled={isLocked}
+        className="h-8 text-sm"
+      />
+    );
+  }
+
   const triggerText =
     parsed.kind === "field"
       ? fieldOptions.find((option) => option.id === parsed.fieldRef)?.name || parsed.fieldRef
@@ -145,6 +165,7 @@ interface DefaultValueSectionProps {
   value: string;
   fieldOptions: DefaultValueFieldOption[];
   onChange: (value: string) => void;
+  simpleMode?: "full" | "manual-only";
 }
 
 export function DefaultValueSection({
@@ -153,6 +174,7 @@ export function DefaultValueSection({
   value,
   fieldOptions,
   onChange,
+  simpleMode = "full",
 }: DefaultValueSectionProps) {
   const {
     mode,
@@ -172,7 +194,9 @@ export function DefaultValueSection({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs text-slate-600">{title}</h4>
+        <h4 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+          {title}
+        </h4>
         <div className="flex items-center gap-2">
           {parsed.kind === "custom" && (
             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
@@ -205,6 +229,7 @@ export function DefaultValueSection({
           fieldOptions={fieldOptions}
           isLocked={isLocked}
           onChange={onChange}
+          simpleMode={simpleMode}
         />
       ) : (
         <DefaultValueRawEditor
