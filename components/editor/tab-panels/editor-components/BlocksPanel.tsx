@@ -12,7 +12,7 @@ import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { isPresetRegistryField } from "@/lib/field-library";
 import { getPartyColorByIndex } from "@/lib/party-colors";
-import { getPresetFieldIcon } from "@/lib/preset-field-icons";
+import { getPresetFieldIcon, type PresetFieldIconKey } from "@/lib/preset-field-icons";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, ChevronDown } from "lucide-react";
@@ -67,6 +67,19 @@ const matchesSearch = (field: Pick<PaletteField, "name" | "label">, query: strin
 
 const toDisplayTag = (tag: string) =>
   tag.length > 0 ? tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase() : "Ungrouped";
+
+const BASE_TYPE_ICON_MAP: Partial<Record<ValidatorIRv0["baseType"], PresetFieldIconKey>> = {
+  text: "shortText",
+  textarea: "longText",
+  number: "number",
+  date: "date",
+  time: "time",
+  enum: "dropdown",
+  array: "multiselect",
+  checkbox: "multiselect",
+  signature: "signature",
+  image: "signature",
+};
 
 /**
  * Left-side field palette for the form editor.
@@ -417,18 +430,25 @@ export function BlocksPanel({
                   </span>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-1.5">
-                  {fields.map((field) => (
-                    <button
-                      key={field.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, field)}
-                      onClick={() => handleFieldAdd(field)}
-                      className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
-                      type="button"
-                    >
-                      <span className="text-sm text-slate-800">{field.label}</span>
-                    </button>
-                  ))}
+                  {fields.map((field) => {
+                    const iconKey = field.validator_ir
+                      ? BASE_TYPE_ICON_MAP[field.validator_ir.baseType]
+                      : undefined;
+                    const Icon = getPresetFieldIcon(iconKey);
+                    return (
+                      <button
+                        key={field.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, field)}
+                        onClick={() => handleFieldAdd(field)}
+                        className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center gap-2 rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
+                        type="button"
+                      >
+                        <Icon className="h-4 w-4 flex-shrink-0 text-slate-400 mt-0.5" />
+                        <span className="text-sm text-slate-800">{field.label}</span>
+                      </button>
+                    );
+                  })}
                 </CollapsibleContent>
               </Collapsible>
             ))}
