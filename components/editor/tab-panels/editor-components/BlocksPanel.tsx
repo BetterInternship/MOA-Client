@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type DragEvent } from "react";
+import { useMemo, useState, type DragEvent } from "react";
 import {
   getFieldPresetTemplates,
   IFormBlock,
@@ -82,6 +82,7 @@ export function BlocksPanel({
   const { registry } = useFieldTemplateContext();
   const { handleBlockCreate, searchQuery, setSearchQuery } = useFormEditorTab();
   const { visiblePage } = usePdfViewer();
+  const [fieldTab, setFieldTab] = useState<"default" | "custom">("default");
 
   const selectedParty =
     signingParties.find((party) => party._id === selectedPartyId) || signingParties[0];
@@ -289,7 +290,9 @@ export function BlocksPanel({
     handleBlockCreate(newBlock);
   };
 
-  const hasResults = filteredDefaultFields.length > 0 || groupedCustomFields.length > 0;
+  const hasDefaultResults = filteredDefaultFields.length > 0;
+  const hasCustomResults = groupedCustomFields.length > 0;
+  const hasActiveTabResults = fieldTab === "default" ? hasDefaultResults : hasCustomResults;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -348,85 +351,87 @@ export function BlocksPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-3">
-        {!hasResults ? (
+      <div className="flex-1 overflow-auto p-3 space-y-2">
+        <div className="grid grid-cols-2 gap-1 rounded-[0.33em] border border-slate-300 bg-white">
+          <button
+            type="button"
+            onClick={() => setFieldTab("default")}
+            className={`rounded-[0.33em] p-2 text-xs font-semibold transition-colors ${
+              fieldTab === "default"
+                ? "bg-slate-100 text-slate-800"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            }`}
+          >
+            Default Fields
+          </button>
+          <button
+            type="button"
+            onClick={() => setFieldTab("custom")}
+            className={`rounded-[0.33em] px-2 py-1 text-xs font-semibold transition-colors ${
+              fieldTab === "custom"
+                ? "bg-slate-100 text-slate-800"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            }`}
+          >
+            Custom Fields
+          </button>
+        </div>
+        {!hasActiveTabResults ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-muted-foreground text-sm">No fields found</p>
+            <p className="text-muted-foreground text-sm">
+              {fieldTab === "default"
+                ? "No default fields match this search."
+                : "No custom fields match this search."}
+            </p>
+          </div>
+        ) : fieldTab === "default" ? (
+          <div className="space-y-1.5">
+            {filteredDefaultFields.map((field) => {
+              const Icon = getPresetFieldIcon(field.iconKey, field.name);
+              return (
+                <button
+                  key={field.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, field)}
+                  onClick={() => handleFieldAdd(field)}
+                  className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center gap-2 rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
+                  type="button"
+                >
+                  <Icon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                  <span className="text-sm text-slate-800">{field.label}</span>
+                </button>
+              );
+            })}
           </div>
         ) : (
-          <div className="space-y-4">
-            <section className="space-y-1.5">
-              <div className="flex items-center justify-between px-1">
-                <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                  Default Fields
-                </p>
-              </div>
-
-              {filteredDefaultFields.length === 0 ? (
-                <p className="px-2 py-1 text-xs text-slate-500">
-                  No default fields match this search.
-                </p>
-              ) : (
-                filteredDefaultFields.map((field) => {
-                  const Icon = getPresetFieldIcon(field.iconKey, field.name);
-                  return (
+          <div className="space-y-1.5">
+            {groupedCustomFields.map(({ tag, fields }) => (
+              <Collapsible key={tag} defaultOpen={true} className="space-y-1.5">
+                <CollapsibleTrigger className="group hover:bg-primary/5 flex w-full items-center justify-between rounded-[0.33em] px-2 py-1.5 text-sm font-semibold">
+                  <span className="flex items-center gap-2">
+                    <ChevronDown className="h-4 w-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                    {toDisplayTag(tag)}
+                  </span>
+                  <span className="text-muted-foreground ml-2 text-xs font-normal">
+                    ({fields.length})
+                  </span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-1.5">
+                  {fields.map((field) => (
                     <button
                       key={field.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, field)}
                       onClick={() => handleFieldAdd(field)}
-                      className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center gap-2 rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
+                      className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
                       type="button"
                     >
-                      <Icon className="h-4 w-4 flex-shrink-0 text-slate-500" />
                       <span className="text-sm text-slate-800">{field.label}</span>
                     </button>
-                  );
-                })
-              )}
-            </section>
-
-            <section className="space-y-1.5">
-              <div className="flex items-center justify-between px-1">
-                <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                  Custom Fields
-                </p>
-              </div>
-
-              {groupedCustomFields.length === 0 ? (
-                <p className="px-2 py-1 text-xs text-slate-500">
-                  No custom fields match this search.
-                </p>
-              ) : (
-                groupedCustomFields.map(({ tag, fields }) => (
-                  <Collapsible key={tag} defaultOpen={true} className="space-y-1.5">
-                    <CollapsibleTrigger className="group hover:bg-primary/5 flex w-full items-center justify-between rounded-[0.33em] px-2 py-1.5 text-sm font-semibold">
-                      <span className="flex items-center gap-2">
-                        <ChevronDown className="h-4 w-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                        {toDisplayTag(tag)}
-                      </span>
-                      <span className="text-muted-foreground ml-2 text-xs font-normal">
-                        ({fields.length})
-                      </span>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-1.5">
-                      {fields.map((field) => (
-                        <button
-                          key={field.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, field)}
-                          onClick={() => handleFieldAdd(field)}
-                          className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
-                          type="button"
-                        >
-                          <span className="text-sm text-slate-800">{field.label}</span>
-                        </button>
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))
-              )}
-            </section>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
           </div>
         )}
       </div>
