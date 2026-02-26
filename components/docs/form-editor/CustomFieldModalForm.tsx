@@ -80,6 +80,10 @@ export function CustomFieldModalForm({
   tagOptions = [],
 }: CustomFieldModalFormProps) {
   const isDerived = value.source === "derived";
+  const isPrefill = value.source === "prefill";
+  const isAuto = value.source === "auto";
+  const showValidation = !isDerived && !isPrefill && !isAuto;
+  const showPlaceholder = !isDerived && !isAuto;
   const corePresetTemplates = (presetTemplates || []).filter(
     (preset) => (preset.group || "core") === "core"
   );
@@ -281,23 +285,27 @@ export function CustomFieldModalForm({
             </>
           ) : (
             <>
-              <ValidationSection
-                schemaType={value.type}
-                validator={value.validator || ""}
-                validatorIr={value.validator_ir || null}
-                fieldOptions={fieldOptions}
-                onChange={(next) => onChange(next)}
-              />
-              <div className="mt-4">
-                <DefaultValueSection
-                  title="Placeholder"
-                  source={value.source}
-                  value={value.prefiller || ""}
+              {showValidation && (
+                <ValidationSection
+                  schemaType={value.type}
+                  validator={value.validator || ""}
+                  validatorIr={value.validator_ir || null}
                   fieldOptions={fieldOptions}
-                  simpleMode="manual-only"
-                  onChange={(next) => onChange({ prefiller: next })}
+                  onChange={(next) => onChange(next)}
                 />
-              </div>
+              )}
+              {showPlaceholder && (
+                <div className="mt-4">
+                  <DefaultValueSection
+                    title="Placeholder"
+                    source={value.source}
+                    value={value.prefiller || ""}
+                    fieldOptions={fieldOptions}
+                    simpleMode="manual-only"
+                    onChange={(next) => onChange({ prefiller: next })}
+                  />
+                </div>
+              )}
               <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                 <Switch
                   checked={isDerived}

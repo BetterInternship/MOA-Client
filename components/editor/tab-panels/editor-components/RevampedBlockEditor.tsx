@@ -326,6 +326,10 @@ export function RevampedBlockEditor() {
       (editingValues.source !== undefined ? editingValues.source : fieldMetadata?.source) ||
       "manual";
     const isParentDerived = parentSource === "derived";
+    const isParentPrefill = parentSource === "prefill";
+    const isParentAuto = parentSource === "auto";
+    const showParentValidation = !isParentDerived && !isParentPrefill && !isParentAuto;
+    const showParentPlaceholder = !isParentDerived && !isParentAuto;
     const parentSchemaType =
       (editingValues.type !== undefined ? editingValues.type : fieldMetadata?.type) || "text";
     const parentPrefillerValue = (
@@ -473,37 +477,41 @@ export function RevampedBlockEditor() {
                 </>
               ) : (
                 <>
-                  <ValidationSection
-                    validator={parentValidatorValue}
-                    schemaType={parentSchemaType}
-                    validatorIr={parentValidatorIrValue as any}
-                    fieldOptions={parentFieldOptions}
-                    onChange={(next) => {
-                      setEditingValues((prev) => ({
-                        ...prev,
-                        validator: next.validator,
-                        validator_ir: next.validator_ir,
-                      }));
-                      if (parentGroup)
-                        handleParentUpdate(parentGroup.id, {
+                  {showParentValidation && (
+                    <ValidationSection
+                      validator={parentValidatorValue}
+                      schemaType={parentSchemaType}
+                      validatorIr={parentValidatorIrValue as any}
+                      fieldOptions={parentFieldOptions}
+                      onChange={(next) => {
+                        setEditingValues((prev) => ({
+                          ...prev,
                           validator: next.validator,
                           validator_ir: next.validator_ir,
-                        } as any);
-                    }}
-                  />
-                  <div className="mt-4">
-                    <DefaultValueSection
-                      title="Placeholder"
-                      source={parentSource}
-                      value={parentPrefillerValue}
-                      fieldOptions={parentFieldOptions}
-                      simpleMode="manual-only"
-                      onChange={(value) => {
-                        setEditingValues((prev) => ({ ...prev, prefiller: value }));
-                        if (parentGroup) handleParentUpdate(parentGroup.id, { prefiller: value });
+                        }));
+                        if (parentGroup)
+                          handleParentUpdate(parentGroup.id, {
+                            validator: next.validator,
+                            validator_ir: next.validator_ir,
+                          } as any);
                       }}
                     />
-                  </div>
+                  )}
+                  {showParentPlaceholder && (
+                    <div className="mt-4">
+                      <DefaultValueSection
+                        title="Placeholder"
+                        source={parentSource}
+                        value={parentPrefillerValue}
+                        fieldOptions={parentFieldOptions}
+                        simpleMode="manual-only"
+                        onChange={(value) => {
+                          setEditingValues((prev) => ({ ...prev, prefiller: value }));
+                          if (parentGroup) handleParentUpdate(parentGroup.id, { prefiller: value });
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                     <div className="space-y-0.5">
                       <p className="text-xs font-semibold text-slate-700">Derived value</p>
@@ -538,6 +546,10 @@ export function RevampedBlockEditor() {
   const childFieldOptions = getFieldOptions();
   const childSource = getSource(schema);
   const isChildDerived = childSource === "derived";
+  const isChildPrefill = childSource === "prefill";
+  const isChildAuto = childSource === "auto";
+  const showChildValidation = !isChildDerived && !isChildPrefill && !isChildAuto;
+  const showChildPlaceholder = !isChildDerived && !isChildAuto;
   const childFieldKey = String(schema?.field || "");
   const isDefaultChildField = isDefaultPresetFieldKey(childFieldKey, presetTemplates);
   const matchedChildPreset = findPresetByFieldKey(childFieldKey, presetTemplates);
@@ -764,28 +776,32 @@ export function RevampedBlockEditor() {
             </>
           ) : (
             <>
-              <ValidationSection
-                validator={(schema?.validator || "") as string}
-                schemaType={schema?.type}
-                validatorIr={(schema?.validator_ir || null) as any}
-                fieldOptions={childFieldOptions}
-                onChange={(next) => {
-                  handleFieldPatch({
-                    validator: next.validator,
-                    validator_ir: next.validator_ir,
-                  });
-                }}
-              />
-              <div className="mt-4">
-                <DefaultValueSection
-                  title="Placeholder"
-                  source={childSource}
-                  value={(schema?.prefiller || "") as string}
+              {showChildValidation && (
+                <ValidationSection
+                  validator={(schema?.validator || "") as string}
+                  schemaType={schema?.type}
+                  validatorIr={(schema?.validator_ir || null) as any}
                   fieldOptions={childFieldOptions}
-                  simpleMode="manual-only"
-                  onChange={(value) => handleFieldChange("prefiller", value)}
+                  onChange={(next) => {
+                    handleFieldPatch({
+                      validator: next.validator,
+                      validator_ir: next.validator_ir,
+                    });
+                  }}
                 />
-              </div>
+              )}
+              {showChildPlaceholder && (
+                <div className="mt-4">
+                  <DefaultValueSection
+                    title="Placeholder"
+                    source={childSource}
+                    value={(schema?.prefiller || "") as string}
+                    fieldOptions={childFieldOptions}
+                    simpleMode="manual-only"
+                    onChange={(value) => handleFieldChange("prefiller", value)}
+                  />
+                </div>
+              )}
               <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                 <div className="space-y-0.5">
                   <p className="text-xs font-semibold text-slate-700">Derived value</p>

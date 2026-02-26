@@ -179,7 +179,16 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
   const formFieldSchema = editedBlock.field_schema;
   const phantomFieldSchema = editedBlock.phantom_field_schema;
   const isFormFieldDerived = formFieldSchema?.source === "derived";
+  const isFormFieldPrefill = formFieldSchema?.source === "prefill";
+  const isFormFieldAuto = formFieldSchema?.source === "auto";
+  const showFormValidation = !isFormFieldDerived && !isFormFieldPrefill && !isFormFieldAuto;
+  const showFormPlaceholder = !isFormFieldDerived && !isFormFieldAuto;
   const isPhantomFieldDerived = phantomFieldSchema?.source === "derived";
+  const isPhantomFieldPrefill = phantomFieldSchema?.source === "prefill";
+  const isPhantomFieldAuto = phantomFieldSchema?.source === "auto";
+  const showPhantomValidation =
+    !isPhantomFieldDerived && !isPhantomFieldPrefill && !isPhantomFieldAuto;
+  const showPhantomPlaceholder = !isPhantomFieldDerived && !isPhantomFieldAuto;
   const matchedFormFieldPreset = formFieldSchema
     ? findPresetByFieldKey(formFieldSchema.field, presetTemplates)
     : null;
@@ -300,27 +309,31 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               </>
             ) : (
               <>
-                <ValidationSection
-                  schemaType={editedBlock.field_schema.type}
-                  validator={editedBlock.field_schema.validator || ""}
-                  validatorIr={(editedBlock.field_schema as any).validator_ir || null}
-                  onChange={(next) => {
-                    handleFieldSchemaPatch({
-                      validator: next.validator,
-                      validator_ir: next.validator_ir,
-                    } as any);
-                  }}
-                />
-                <div className="mt-4">
-                  <DefaultValueSection
-                    title="Placeholder"
-                    source={editedBlock.field_schema.source}
-                    value={editedBlock.field_schema.prefiller || ""}
-                    fieldOptions={[]}
-                    simpleMode="manual-only"
-                    onChange={(val) => handleFieldSchemaChange("prefiller", val)}
+                {showFormValidation && (
+                  <ValidationSection
+                    schemaType={editedBlock.field_schema.type}
+                    validator={editedBlock.field_schema.validator || ""}
+                    validatorIr={(editedBlock.field_schema as any).validator_ir || null}
+                    onChange={(next) => {
+                      handleFieldSchemaPatch({
+                        validator: next.validator,
+                        validator_ir: next.validator_ir,
+                      } as any);
+                    }}
                   />
-                </div>
+                )}
+                {showFormPlaceholder && (
+                  <div className="mt-4">
+                    <DefaultValueSection
+                      title="Placeholder"
+                      source={editedBlock.field_schema.source}
+                      value={editedBlock.field_schema.prefiller || ""}
+                      fieldOptions={[]}
+                      simpleMode="manual-only"
+                      onChange={(val) => handleFieldSchemaChange("prefiller", val)}
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                   <Switch
                     checked={Boolean(isFormFieldDerived)}
@@ -410,27 +423,31 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               </>
             ) : (
               <>
-                <ValidationSection
-                  schemaType={editedBlock.phantom_field_schema.type}
-                  validator={editedBlock.phantom_field_schema.validator || ""}
-                  validatorIr={(editedBlock.phantom_field_schema as any).validator_ir || null}
-                  onChange={(next) => {
-                    handlePhantomFieldSchemaPatch({
-                      validator: next.validator,
-                      validator_ir: next.validator_ir,
-                    } as any);
-                  }}
-                />
-                <div className="mt-4">
-                  <DefaultValueSection
-                    title="Placeholder"
-                    source={editedBlock.phantom_field_schema.source}
-                    value={editedBlock.phantom_field_schema.prefiller || ""}
-                    fieldOptions={[]}
-                    simpleMode="manual-only"
-                    onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+                {showPhantomValidation && (
+                  <ValidationSection
+                    schemaType={editedBlock.phantom_field_schema.type}
+                    validator={editedBlock.phantom_field_schema.validator || ""}
+                    validatorIr={(editedBlock.phantom_field_schema as any).validator_ir || null}
+                    onChange={(next) => {
+                      handlePhantomFieldSchemaPatch({
+                        validator: next.validator,
+                        validator_ir: next.validator_ir,
+                      } as any);
+                    }}
                   />
-                </div>
+                )}
+                {showPhantomPlaceholder && (
+                  <div className="mt-4">
+                    <DefaultValueSection
+                      title="Placeholder"
+                      source={editedBlock.phantom_field_schema.source}
+                      value={editedBlock.phantom_field_schema.prefiller || ""}
+                      fieldOptions={[]}
+                      simpleMode="manual-only"
+                      onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-slate-700">Derived value</p>
