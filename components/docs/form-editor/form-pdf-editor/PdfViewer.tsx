@@ -237,6 +237,11 @@ export function PdfViewer() {
                 : draggedField.validator
                   ? { validator: draggedField.validator }
                   : {}),
+              ...(baseSchema?.validator_ir
+                ? { validator_ir: baseSchema.validator_ir }
+                : draggedField.__palette_source === "custom" && draggedField.validator_ir
+                  ? { validator_ir: draggedField.validator_ir }
+                  : {}),
               ...(baseSchema?.size ? { size: baseSchema.size } : {}),
               ...(typeof baseSchema?.wrap === "boolean"
                 ? { wrap: baseSchema.wrap }
@@ -691,6 +696,11 @@ const PdfPageCanvas = memo(
               ? { validator: baseSchema.validator }
               : draggedField.validator
                 ? { validator: draggedField.validator }
+                : {}),
+            ...(baseSchema?.validator_ir
+              ? { validator_ir: baseSchema.validator_ir }
+              : draggedField.__palette_source === "custom" && draggedField.validator_ir
+                ? { validator_ir: draggedField.validator_ir }
                 : {}),
             ...(baseSchema?.size ? { size: baseSchema.size } : {}),
             ...(typeof baseSchema?.wrap === "boolean" ? { wrap: baseSchema.wrap } : { wrap: true }),
