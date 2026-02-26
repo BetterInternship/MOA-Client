@@ -288,20 +288,17 @@ export function CustomFieldModalForm({
                 fieldOptions={fieldOptions}
                 onChange={(next) => onChange(next)}
               />
-              <DefaultValueSection
-                title="Placeholder"
-                source={value.source}
-                value={value.prefiller || ""}
-                fieldOptions={fieldOptions}
-                onChange={(next) => onChange({ prefiller: next })}
-              />
+              <div className="mt-4">
+                <DefaultValueSection
+                  title="Placeholder"
+                  source={value.source}
+                  value={value.prefiller || ""}
+                  fieldOptions={fieldOptions}
+                  simpleMode="manual-only"
+                  onChange={(next) => onChange({ prefiller: next })}
+                />
+              </div>
               <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
-                <div className="space-y-0.5">
-                  <p className="text-xs font-semibold text-slate-700">Derived value</p>
-                  <p className="text-[11px] text-slate-500">
-                    Enable to compute this field from defaults.
-                  </p>
-                </div>
                 <Switch
                   checked={isDerived}
                   onCheckedChange={(checked) =>

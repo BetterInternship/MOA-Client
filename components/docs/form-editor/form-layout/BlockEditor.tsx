@@ -72,21 +72,21 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
       const currentSchema = editedBlock.field_schema || editedBlock.phantom_field_schema;
 
       // Common properties to retain when switching between form_field and form_phantom_field
-          const commonProps = currentSchema
-            ? {
-                field: currentSchema.field || "",
-                type: currentSchema.type || "text",
-                label: currentSchema.label || "",
-                tooltip_label: currentSchema.tooltip_label || "",
-                shared: "shared" in currentSchema ? currentSchema.shared : false,
-                source: currentSchema.source || "manual",
-                signing_party_id:
-                  "signing_party_id" in currentSchema ? currentSchema.signing_party_id : "",
-                prefiller: currentSchema.prefiller || "",
-                validator: currentSchema.validator || "",
-                validator_ir: (currentSchema as any).validator_ir || null,
-              }
-            : null;
+      const commonProps = currentSchema
+        ? {
+            field: currentSchema.field || "",
+            type: currentSchema.type || "text",
+            label: currentSchema.label || "",
+            tooltip_label: currentSchema.tooltip_label || "",
+            shared: "shared" in currentSchema ? currentSchema.shared : false,
+            source: currentSchema.source || "manual",
+            signing_party_id:
+              "signing_party_id" in currentSchema ? currentSchema.signing_party_id : "",
+            prefiller: currentSchema.prefiller || "",
+            validator: currentSchema.validator || "",
+            validator_ir: (currentSchema as any).validator_ir || null,
+          }
+        : null;
 
       if (blockType === "form_field") {
         newBlock = {
@@ -311,20 +311,17 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
                     } as any);
                   }}
                 />
-                <DefaultValueSection
-                  title="Placeholder"
-                  source={editedBlock.field_schema.source}
-                  value={editedBlock.field_schema.prefiller || ""}
-                  fieldOptions={[]}
-                  onChange={(val) => handleFieldSchemaChange("prefiller", val)}
-                />
+                <div className="mt-4">
+                  <DefaultValueSection
+                    title="Placeholder"
+                    source={editedBlock.field_schema.source}
+                    value={editedBlock.field_schema.prefiller || ""}
+                    fieldOptions={[]}
+                    simpleMode="manual-only"
+                    onChange={(val) => handleFieldSchemaChange("prefiller", val)}
+                  />
+                </div>
                 <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-slate-700">Derived value</p>
-                    <p className="text-[11px] text-slate-500">
-                      Enable to compute this field from defaults.
-                    </p>
-                  </div>
                   <Switch
                     checked={Boolean(isFormFieldDerived)}
                     onCheckedChange={(checked) =>
@@ -364,7 +361,10 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
                 setter={(value) => {
                   const nextPreset = presetTemplates.find((preset) => preset.id === value);
                   if (!nextPreset) return;
-                  const presetPatch = applyPresetToSchema(editedBlock.phantom_field_schema, nextPreset);
+                  const presetPatch = applyPresetToSchema(
+                    editedBlock.phantom_field_schema,
+                    nextPreset
+                  );
                   handlePhantomFieldSchemaPatch(presetPatch as Partial<IFormPhantomField>);
                 }}
                 required={false}
@@ -421,19 +421,19 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
                     } as any);
                   }}
                 />
-                <DefaultValueSection
-                  title="Placeholder"
-                  source={editedBlock.phantom_field_schema.source}
-                  value={editedBlock.phantom_field_schema.prefiller || ""}
-                  fieldOptions={[]}
-                  onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
-                />
+                <div className="mt-4">
+                  <DefaultValueSection
+                    title="Placeholder"
+                    source={editedBlock.phantom_field_schema.source}
+                    value={editedBlock.phantom_field_schema.prefiller || ""}
+                    fieldOptions={[]}
+                    simpleMode="manual-only"
+                    onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+                  />
+                </div>
                 <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-slate-700">Derived value</p>
-                    <p className="text-[11px] text-slate-500">
-                      Enable to compute this field from defaults.
-                    </p>
                   </div>
                   <Switch
                     checked={Boolean(isPhantomFieldDerived)}

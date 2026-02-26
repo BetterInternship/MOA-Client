@@ -1,10 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { useValidationModel } from "@/hooks/useValidationModel";
-import { buildValidatorSummary } from "@/components/docs/form-editor/validation/validator-summary";
 import {
   ValidatorGroups,
   type ValidationFieldOption,
@@ -12,7 +10,6 @@ import {
 import { ValidatorStateBanner } from "@/components/docs/form-editor/validation/ValidatorStateBanner";
 
 export interface ValidationSectionProps {
-  title?: string;
   schemaType?: string;
   validator: string;
   validatorIr?: ValidatorIRv0 | null;
@@ -24,7 +21,13 @@ export interface ValidationSectionProps {
  * Raw Zod editor used when users switch from no-code toggles to code mode.
  * Any change here is treated as source-of-truth Zod and clears `validator_ir`.
  */
-export function ValidationRawEditor({ value, onChange }: { value: string; onChange: (code: string) => void }) {
+export function ValidationRawEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (code: string) => void;
+}) {
   return (
     <div className="space-y-1">
       <Textarea
@@ -43,7 +46,6 @@ export function ValidationRawEditor({ value, onChange }: { value: string; onChan
  * Keeps host API stable while delegating mode/state behavior to `useValidationModel`.
  */
 export function ValidationSection({
-  title = "Validation",
   schemaType,
   validator,
   validatorIr,
@@ -66,37 +68,54 @@ export function ValidationSection({
     validatorIr,
     onChange,
   });
-
-  const summary = useMemo(() => buildValidatorSummary(config, baseType), [config, baseType]);
+  const hasStateBanner = importState.status !== "exact";
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs text-slate-600">{title}</h4>
-        <button
-          type="button"
-          onClick={() => setMode((prev) => (prev === "raw" ? "simple" : "raw"))}
-          className={`rounded-[0.33em] border px-2 py-0.5 text-xs ${
-            mode === "raw"
-              ? "border-slate-400 bg-slate-100 text-slate-800"
-              : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
-          }`}
-          title={mode === "raw" ? "Back to no-code" : "Edit raw validator"}
-        >
-          {"<>"}
-        </button>
+    <div className="relative mt-6 space-y-1.5">
+      <div className="flex items-center justify-between">
+        <h4 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+          Validation
+        </h4>
+        {!hasStateBanner ? (
+          <button
+            type="button"
+            onClick={() => setMode((prev) => (prev === "raw" ? "simple" : "raw"))}
+            className={`rounded px-1 text-[10px] leading-none ${
+              mode === "raw"
+                ? "bg-slate-100 text-slate-700"
+                : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            }`}
+            title={mode === "raw" ? "Back to no-code" : "Edit raw validator"}
+          >
+            {"<>"}
+          </button>
+        ) : null}
       </div>
-
-      <ValidatorStateBanner
-        importState={importState}
-        mode={mode}
-        onSwitchRaw={() => setMode("raw")}
-        onReplace={replaceWithSimpleRules}
-      />
+      {hasStateBanner ? (
+        <div className="flex items-center justify-between gap-2">
+          <ValidatorStateBanner
+            importState={importState}
+            mode={mode}
+            onSwitchRaw={() => setMode("raw")}
+            onReplace={replaceWithSimpleRules}
+          />
+          <button
+            type="button"
+            onClick={() => setMode((prev) => (prev === "raw" ? "simple" : "raw"))}
+            className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-none ${
+              mode === "raw"
+                ? "bg-slate-100 text-slate-700"
+                : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            }`}
+            title={mode === "raw" ? "Back to no-code" : "Edit raw validator"}
+          >
+            {"<>"}
+          </button>
+        </div>
+      ) : null}
 
       {mode === "simple" ? (
-        <div className="space-y-2">
-          <p className="text-xs text-slate-500">{summary}</p>
+        <div>
           <ValidatorGroups
             baseType={baseType}
             config={config}
