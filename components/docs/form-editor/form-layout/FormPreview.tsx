@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import type { IFormBlock, IFormSigningParty, IFormMetadata } from "@betterinternship/core/forms";
+import {
+  FormMetadata,
+  type IFormBlock,
+  type IFormSigningParty,
+  type IFormMetadata,
+} from "@betterinternship/core/forms";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormPreviewRenderer } from "./FormPreviewRenderer";
@@ -117,6 +122,37 @@ const FormPreviewContent = ({
         })),
     [filteredBlocks]
   );
+
+  // Hydrate preview values from configured field prefillers/defaults.
+  // Keep existing values so manual edits in preview are not overwritten.
+  useEffect(() => {
+    try {
+      const metadataClient = new FormMetadata(formMetadata);
+      const partyFields = metadataClient.getFieldsForClientService(selectedPartyId);
+
+      setValues((prev) => {
+        const next = { ...prev };
+
+        for (const field of partyFields) {
+          if (next[field.field] !== undefined && next[field.field] !== "") continue;
+          if (typeof field.prefiller !== "function") continue;
+
+          try {
+            const prefilled = field.prefiller({ signatory: {} });
+            if (prefilled !== undefined && prefilled !== null) {
+              next[field.field] = typeof prefilled === "string" ? prefilled : String(prefilled);
+            }
+          } catch {
+            // Ignore invalid prefiller execution in preview hydration.
+          }
+        }
+
+        return next;
+      });
+    } catch (error) {
+      console.error("Failed to hydrate preview default values:", error);
+    }
+  }, [formMetadata, selectedPartyId]);
 
   const handleGenerateTestForm = async () => {
     setIsGenerating(true);
