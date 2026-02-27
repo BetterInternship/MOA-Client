@@ -11,7 +11,7 @@ export type ValidatorIRImportResult = {
 };
 
 const BASE_RULE_MAP: Record<ValidatorBaseType, ValidatorRuleType[]> = {
-  text: ["required", "minLength", "maxLength", "email", "url", "regex", "plainText", "trim"],
+  text: ["required", "minLength", "maxLength", "email", "url", "regex", "plainText", "titleCase", "trim"],
   number: ["required", "min", "max", "number"],
   date: ["required", "minDate", "maxDate", "customRefine", "date"],
   enum: ["required", "enum"],
@@ -31,6 +31,7 @@ const RULE_KIND_TO_ENGINE: Record<string, ValidatorRuleType> = {
   url: "url",
   regex: "regex",
   plainText: "plainText",
+  titleCase: "titleCase",
   trim: "trim",
   min: "min",
   max: "max",
@@ -135,6 +136,7 @@ export function validatorConfigToPersistedIR(
       case "email":
       case "url":
       case "plainText":
+      case "titleCase":
       case "trim":
         rules.push({ kind: rule.type, message: rule.params?.message as string | undefined });
         break;
@@ -204,6 +206,7 @@ function ruleToConfigRule(rule: any): ValidatorRule | null {
     case "email":
     case "url":
     case "plainText":
+    case "titleCase":
     case "trim":
       base.params = { message: rule.message };
       return base;

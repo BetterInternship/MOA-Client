@@ -33,6 +33,7 @@ import {
   normalizeFieldSource,
   toRegisterFieldPayload,
 } from "@/lib/custom-field-mappers";
+import { normalizePresetTemplate } from "@/lib/default-field-preset-utils";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
 import { buildFieldOptionsFromRegistry, buildTagOptionsFromRegistry } from "@/lib/field-library";
@@ -143,7 +144,9 @@ const FieldRegistryPage = () => {
     () => ({
       // Pre-compute modal data contracts so add/edit modals stay presentation-focused.
       fieldOptions: buildFieldOptionsFromRegistry(fields) as FieldLibraryFieldOption[],
-      presetTemplates: getFieldPresetTemplates() as FieldLibraryPresetTemplateOption[],
+      presetTemplates: (getFieldPresetTemplates() as FieldLibraryPresetTemplateOption[]).map((preset) =>
+        normalizePresetTemplate(preset as any)
+      ),
       tagOptions: allAvailableTags,
     }),
     [fields, allAvailableTags]

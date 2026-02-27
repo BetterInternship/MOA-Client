@@ -10,6 +10,7 @@ import {
 import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
+import { normalizePresetTemplate } from "@/lib/default-field-preset-utils";
 import { isPresetRegistryField } from "@/lib/field-library";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { getPresetFieldIcon, type PresetFieldIconKey } from "@/lib/preset-field-icons";
@@ -102,7 +103,9 @@ export function BlocksPanel({
   const selectedPartyColor = getPartyColorByIndex(Math.max(0, (selectedParty?.order || 1) - 1));
 
   const defaultFields = useMemo<PaletteField[]>(() => {
-    const presets = getFieldPresetTemplates() as PresetFieldTemplate[];
+    const presets = (getFieldPresetTemplates() as PresetFieldTemplate[]).map((preset) =>
+      normalizePresetTemplate(preset)
+    );
     return presets.map((preset) => ({
       id: preset.id,
       name: preset.name,

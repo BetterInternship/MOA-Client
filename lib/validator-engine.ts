@@ -29,6 +29,7 @@ export type ValidatorRuleType =
   | "minDate"
   | "maxDate"
   | "plainText"
+  | "titleCase"
   | "customRefine"
   | "minTime"
   | "maxTime";
@@ -201,7 +202,13 @@ const RULE_DEFINITIONS: Record<
   },
   plainText: {
     label: "Plain Text Only",
-    description: "Title case and characters only (A–Z, 0–9, spaces, basic punctuation)",
+    description: "Characters only (letters, spaces, basic punctuation; no emojis)",
+    needsValue: false,
+    valueType: "none",
+  },
+  titleCase: {
+    label: "Title Case",
+    description: "Capitalize first letter of each word",
     needsValue: false,
     valueType: "none",
   },
@@ -389,9 +396,13 @@ function buildStringValidatorChain(rules: ValidatorRule[]): string {
     code += '.describe("time")';
   }
 
-  // Plain text preset (title case and characters only)
+  // Plain text preset; optional hidden title-case rule is supported for special presets (e.g., Name).
   if (rules.some((r) => r.type === "plainText")) {
-    return `z.string({ required_error: "This field is required." }).trim().min(1, { message: "This field is required." }).max(100).regex(/^(?!.*[\\p{Extended_Pictographic}\\uFE0F])(?!.*[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F])(?!.*[\\u202A-\\u202E\\u2066-\\u2069])[\\p{L}\\p{M}\\p{Pc}\\p{Pd}\\p{Ps}\\p{Pe}\\p{Pi}\\p{Pf}\\p{Po}\\p{Zs}\\n\\r\\t]+$/u, "This field accepts letters, spaces, and common punctuation only. No numbers or emojis.").refine(s => s.replace(/\\p{L}+/gu, w => w[0].toLocaleUpperCase() + w.slice(1).toLocaleLowerCase()) === s, "Please write in title case (capitalize the first letter of each word).")`;
+    let plainTextCode = `z.string({ required_error: "This field is required." }).trim().min(1, { message: "This field is required." }).max(100).regex(/^(?!.*[\\p{Extended_Pictographic}\\uFE0F])(?!.*[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F])(?!.*[\\u202A-\\u202E\\u2066-\\u2069])[\\p{L}\\p{M}\\p{Pc}\\p{Pd}\\p{Ps}\\p{Pe}\\p{Pi}\\p{Pf}\\p{Po}\\p{Zs}\\n\\r\\t]+$/u, "This field accepts letters, spaces, and common punctuation only. No numbers or emojis.")`;
+    if (rules.some((r) => r.type === "titleCase")) {
+      plainTextCode += `.refine((s) => s.replace(/\\p{L}+/gu, (w) => w[0].toLocaleUpperCase() + w.slice(1).toLocaleLowerCase()) === s, "Please write in title case (capitalize the first letter of each word).")`;
+    }
+    return plainTextCode;
   }
 
   return code;
@@ -514,11 +525,16 @@ export function zodCodeToValidatorConfig(zodCode: string): ValidatorConfig {
     }
   }
 
-  // Detect plainText preset by checking for the specific regex and refine pattern
+  // Detect plainText preset by checking for the plain-text unicode safety pattern.
+  // Supports both legacy (with title-case refine) and current (without title-case refine) shapes.
   {
-    const plainTextRegex = /Extended_Pictographic.*u.*refine.*toLocaleUpperCase.*toLocaleLowerCase/;
+    const plainTextRegex = /Extended_Pictographic/;
     if (plainTextRegex.test(sanitized)) {
       rules.push(createValidatorRule("plainText"));
+      const hasTitleCaseRefine =
+        /toLocaleUpperCase\(\)\s*\+\s*w\.slice\(1\)\.toLocaleLowerCase\(\)\s*===\s*s/.test(sanitized) ||
+        /title case/i.test(sanitized);
+      if (hasTitleCaseRefine) rules.push(createValidatorRule("titleCase"));
       return { rules };
     }
   }
@@ -734,7 +750,7 @@ export function validatorConfigToZodCode(config: ValidatorConfig): string {
 
 export function getAvailableRules() {
   return Object.entries(RULE_DEFINITIONS)
-    .filter(([type]) => type !== "trim")
+    .filter(([type]) => type !== "trim" && type !== "regex" && type !== "titleCase")
     .map(([type, def]) => ({
       type: type as ValidatorRuleType,
       ...def,
@@ -872,3 +888,4 @@ export function testValidatorParsing(zodCode: string) {
   const config = zodCodeToValidatorConfig(zodCode);
   return config;
 }
+

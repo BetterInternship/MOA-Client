@@ -2,15 +2,46 @@ import type { FieldPresetTemplate } from "@betterinternship/core/forms";
 
 const normalize = (value: string) => value.trim().toLowerCase();
 
-const cloneValidatorIr = (validatorIr: FieldPresetTemplate["validator_ir"]) =>
-  validatorIr
-    ? {
-        ...validatorIr,
-        rules: Array.isArray(validatorIr.rules)
-          ? validatorIr.rules.map((rule) => ({ ...rule }))
-          : [],
-      }
-    : null;
+const hasTitleCaseInValidator = (validator: string) =>
+  /toLocaleUpperCase\(\)\s*\+\s*\w+\.slice\(1\)\.toLocaleLowerCase\(\)\s*===\s*\w+/i.test(validator) ||
+  /title case/i.test(validator);
+
+const isNamePreset = (preset: Pick<FieldPresetTemplate, "id" | "name">) =>
+  normalize(preset.name || "") === "name" || normalize(preset.id || "") === "preset-name";
+
+const cloneValidatorIr = (
+  preset: Pick<FieldPresetTemplate, "id" | "name" | "validator">,
+  validatorIr: FieldPresetTemplate["validator_ir"]
+) => {
+  if (!validatorIr) return null;
+
+  const cloned = {
+    ...validatorIr,
+    rules: Array.isArray(validatorIr.rules) ? validatorIr.rules.map((rule) => ({ ...rule })) : [],
+  } as any;
+
+  // Backward-compatible patch:
+  // if a Name preset ships with raw title-case validator but IR only has plainText,
+  // inject hidden titleCase IR rule so IR-canonical sync does not strip title-case.
+  if (
+    isNamePreset(preset) &&
+    hasTitleCaseInValidator(String(preset.validator || "")) &&
+    cloned.baseType === "text"
+  ) {
+    const hasPlainText = cloned.rules.some((rule: any) => rule?.kind === "plainText");
+    const hasTitleCase = cloned.rules.some((rule: any) => rule?.kind === "titleCase");
+    if (hasPlainText && !hasTitleCase) cloned.rules.push({ kind: "titleCase" });
+  }
+
+  return cloned as FieldPresetTemplate["validator_ir"];
+};
+
+export function normalizePresetTemplate(preset: FieldPresetTemplate): FieldPresetTemplate {
+  return {
+    ...preset,
+    validator_ir: cloneValidatorIr(preset, preset.validator_ir),
+  };
+}
 
 export function isDefaultPresetFieldKey(fieldKey: string, presets: FieldPresetTemplate[]): boolean {
   return findPresetByFieldKey(fieldKey, presets) !== null;
@@ -53,9 +84,10 @@ export function applyPresetToSchema(
   validator: string;
   validator_ir: FieldPresetTemplate["validator_ir"];
 } {
+  const normalizedPreset = normalizePresetTemplate(preset);
   return {
-    type: preset.type,
-    validator: preset.validator || "",
-    validator_ir: cloneValidatorIr(preset.validator_ir),
+    type: normalizedPreset.type,
+    validator: normalizedPreset.validator || "",
+    validator_ir: normalizedPreset.validator_ir,
   };
 }

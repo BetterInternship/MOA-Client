@@ -20,7 +20,6 @@ export type ToggleValidatorId =
   | "maxLength"
   | "plainText"
   | "trim"
-  | "regex"
   | "min"
   | "max"
   | "minDate"
@@ -79,13 +78,15 @@ function upsertRule(
   };
 }
 
-function toNumberOrUndefined(value: string | number | undefined): number | undefined {
+function toNumberOrUndefined(value: string | number | string[] | undefined): number | undefined {
+  if (Array.isArray(value)) return undefined;
   if (value === undefined || value === null || value === "") return undefined;
   const next = typeof value === "number" ? value : Number(value);
   return Number.isFinite(next) ? next : undefined;
 }
 
-function toStringOrUndefined(value: string | number | undefined): string | undefined {
+function toStringOrUndefined(value: string | number | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return undefined;
   if (value === undefined || value === null) return undefined;
   const text = String(value).trim();
   return text.length ? text : undefined;
@@ -199,11 +200,6 @@ export function getToggleValidatorViewModel(config: ValidatorConfig): ToggleVali
     },
     plainText: { enabled: Boolean(getRule(config, "plainText")) },
     trim: { enabled: Boolean(getRule(config, "trim")) },
-    regex: {
-      enabled: Boolean(getRule(config, "regex")),
-      value: toStringOrUndefined(getRule(config, "regex")?.params?.value),
-      message: toStringOrUndefined(getRule(config, "regex")?.params?.message),
-    },
     min: {
       enabled: Boolean(getRule(config, "min")),
       value: toNumberOrUndefined(getRule(config, "min")?.params?.value),
@@ -328,17 +324,6 @@ export function setToggleValidatorMessage(
   });
 }
 
-export function getRegexFlags(config: ValidatorConfig): string {
-  return String(getRule(config, "regex")?.params?.flags || "");
-}
-
-export function setRegexFlags(config: ValidatorConfig, flags: string): ValidatorConfig {
-  return upsertRule(config, "regex", {
-    ...(getRule(config, "regex")?.params || {}),
-    flags: toStringOrUndefined(flags),
-  });
-}
-
 export function getEnumOptions(config: ValidatorConfig): string[] {
   const value = getRule(config, "enum")?.params?.value;
   return Array.isArray(value) ? value.map(String) : [];
@@ -378,10 +363,10 @@ export function setArrayOptions(config: ValidatorConfig, options: string[]): Val
 // Safety guard for host UIs that need to branch by base type.
 export function supportsRuleInBase(baseType: ValidatorBaseType, id: ToggleValidatorId): boolean {
   if (baseType === "text") {
-    return ["required", "minLength", "maxLength", "plainText", "regex"].includes(id);
+    return ["required", "minLength", "maxLength", "plainText"].includes(id);
   }
   if (baseType === "textarea") {
-    return ["required", "minLength", "maxLength", "plainText", "trim", "regex"].includes(id);
+    return ["required", "minLength", "maxLength", "plainText", "trim"].includes(id);
   }
   if (baseType === "number") {
     return ["required", "min", "max"].includes(id);
