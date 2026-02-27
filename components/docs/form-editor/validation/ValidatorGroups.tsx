@@ -10,7 +10,6 @@ import {
   ValidatorOptionsInput,
   ValidatorRow,
   ValidatorStaticRow,
-  ValidatorTextInput,
   ValidatorTimeInput,
 } from "@/components/docs/form-editor/validation/ValidatorControls";
 import {
@@ -18,13 +17,11 @@ import {
   getDateRelativeValidator,
   getEnumMessage,
   getEnumOptions,
-  getRegexFlags,
   getToggleValidatorViewModel,
   setArrayOptions,
   setDateRelativeValidator,
   setEnumMessage,
   setEnumOptions,
-  setRegexFlags,
   setToggleValidatorEnabled,
   setToggleValidatorMessage,
   setToggleValidatorValue,
@@ -56,10 +53,10 @@ export function ValidatorGroups({
 }) {
   const vm = getToggleValidatorViewModel(config);
   const relativeDate = getDateRelativeValidator(config);
+  const relativeDateMessage = "message" in relativeDate ? relativeDate.message : undefined;
   const enumOptions = getEnumOptions(config);
   const enumMessage = getEnumMessage(config);
   const arrayOptions = getArrayOptions(config);
-  const regexFlags = getRegexFlags(config);
 
   // Thin wrappers keep JSX concise and enforce immutable updates in one place.
   const toggle = (id: Parameters<typeof setToggleValidatorEnabled>[1], enabled: boolean) =>
@@ -138,30 +135,6 @@ export function ValidatorGroups({
           disabled={readOnly}
         />
 
-        <ValidatorRow
-          label="Custom pattern (regex)"
-          enabled={vm.regex.enabled}
-          onToggle={(enabled) => toggle("regex", enabled)}
-          disabled={readOnly}
-        >
-          <ValidatorTextInput
-            value={vm.regex.value as string | undefined}
-            onChange={(next) => setValue("regex", next)}
-            placeholder="Pattern (without slashes)"
-            disabled={readOnly}
-          />
-          <ValidatorTextInput
-            value={regexFlags}
-            onChange={(next) => onConfigChange(setRegexFlags(config, next))}
-            placeholder="Flags (e.g. i, u)"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.regex.message}
-            onChange={(next) => setMessage("regex", next)}
-            disabled={readOnly}
-          />
-        </ValidatorRow>
       </div>
     );
   }
@@ -228,30 +201,6 @@ export function ValidatorGroups({
           onToggle={(enabled) => toggle("trim", enabled)}
           disabled={readOnly}
         />
-        <ValidatorRow
-          label="Custom pattern (regex)"
-          enabled={vm.regex.enabled}
-          onToggle={(enabled) => toggle("regex", enabled)}
-          disabled={readOnly}
-        >
-          <ValidatorTextInput
-            value={vm.regex.value as string | undefined}
-            onChange={(next) => setValue("regex", next)}
-            placeholder="Pattern (without slashes)"
-            disabled={readOnly}
-          />
-          <ValidatorTextInput
-            value={regexFlags}
-            onChange={(next) => onConfigChange(setRegexFlags(config, next))}
-            placeholder="Flags (e.g. i, u)"
-            disabled={readOnly}
-          />
-          <ValidatorMessageInput
-            value={vm.regex.message}
-            onChange={(next) => setMessage("regex", next)}
-            disabled={readOnly}
-          />
-        </ValidatorRow>
       </div>
     );
   }
@@ -356,7 +305,7 @@ export function ValidatorGroups({
               setDateRelativeValidator(
                 config,
                 enabled
-                  ? { kind: "dateOnOrAfterToday", message: relativeDate.message }
+                  ? { kind: "dateOnOrAfterToday", message: relativeDateMessage }
                   : { kind: "none" }
               )
             )
@@ -384,7 +333,7 @@ export function ValidatorGroups({
               setDateRelativeValidator(
                 config,
                 enabled
-                  ? { kind: "dateOnOrBeforeToday", message: relativeDate.message }
+                  ? { kind: "dateOnOrBeforeToday", message: relativeDateMessage }
                   : { kind: "none" }
               )
             )
@@ -418,7 +367,7 @@ export function ValidatorGroups({
                         relativeDate.kind === "dateOnOrAfterField"
                           ? relativeDate.field
                           : (fieldOptions[0]?.id ?? ""),
-                      message: relativeDate.message,
+                      message: relativeDateMessage,
                     }
                   : { kind: "none" }
               )
@@ -469,7 +418,7 @@ export function ValidatorGroups({
                         relativeDate.kind === "dateOnOrBeforeField"
                           ? relativeDate.field
                           : (fieldOptions[0]?.id ?? ""),
-                      message: relativeDate.message,
+                      message: relativeDateMessage,
                     }
                   : { kind: "none" }
               )

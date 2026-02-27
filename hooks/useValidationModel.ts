@@ -131,7 +131,24 @@ export function useValidationModel({
       return;
     }
 
-    const compiledValidator = persistedIRToZod(importState.ir);
+    let effectiveIr = importState.ir;
+    const rules = Array.isArray((importState.ir as any).rules) ? ([...(importState.ir as any).rules] as any[]) : [];
+    const titleCaseInRaw =
+      /toLocaleUpperCase\(\)\s*\+\s*\w+\.slice\(1\)\.toLocaleLowerCase\(\)\s*===\s*\w+/i.test(
+        validatorCode
+      ) || /title case/i.test(validatorCode);
+    const hasPlainText = rules.some((rule) => rule?.kind === "plainText");
+    const hasTitleCase = rules.some((rule) => rule?.kind === "titleCase");
+    if (baseType === "text" && titleCaseInRaw && hasPlainText && !hasTitleCase) {
+      effectiveIr = {
+        ...(importState.ir as any),
+        rules: [...rules, { kind: "titleCase" }],
+        mode: (importState.ir as any).mode || "builder",
+        importStatus: (importState.ir as any).importStatus || "exact",
+      } as ValidatorIRv0;
+    }
+
+    const compiledValidator = persistedIRToZod(effectiveIr);
     if (compiledValidator === validatorCode) {
       irCanonicalSyncKeyRef.current = null;
       return;
@@ -143,7 +160,7 @@ export function useValidationModel({
 
     onChange({
       validator: compiledValidator,
-      validator_ir: importState.ir,
+      validator_ir: effectiveIr,
     });
   }, [mode, importState.ir, validatorCode, baseType, onChange]);
 

@@ -44,6 +44,7 @@ const PRESET_FIELD_ICON_MAP: Record<PresetFieldIconKey, LucideIcon> = {
 
 const PRESET_NAME_TO_ICON_KEY: Record<string, PresetFieldIconKey> = {
   short_text: "shortText",
+  name: "shortText",
   long_text: "longText",
   number: "number",
   signature: "signature",
