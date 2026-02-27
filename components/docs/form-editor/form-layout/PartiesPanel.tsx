@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,11 @@ interface ValidationErrors {
   source?: string;
 }
 
+type PartySaveOverrides = {
+  values?: Partial<IFormSigningParty>;
+  isEmail?: boolean;
+};
+
 export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) => {
   const safeParties = parties || [];
   const orderedParties = [...safeParties].sort((a, b) => a.order - b.order);
@@ -31,6 +36,20 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
   } | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [partyCounter, setPartyCounter] = useState(0);
+  const latestOrderedPartiesRef = useRef<IFormSigningParty[]>(orderedParties);
+  const latestEditValuesRef = useRef<Record<string, Partial<IFormSigningParty>>>(editValues);
+  const latestEmailModesRef = useRef<Record<string, boolean>>(emailModes);
+  const onPartiesChangeRef = useRef(onPartiesChange);
+
+  const resolveIsEmailMode = (
+    partyId: string,
+    values?: Partial<IFormSigningParty>,
+    override?: boolean
+  ) => {
+    if (override !== undefined) return override;
+    const hasEmail = !!values?.signatory_account?.email?.trim();
+    return hasEmail || !!emailModes[partyId];
+  };
 
   const getPartyDisplayTitle = (party: IFormSigningParty | undefined) => {
     if (!party) return "";
@@ -41,13 +60,18 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (openDropdownId && !target.closest("[data-party-source-dropdown]")) {
+        const values = editValues[openDropdownId];
+        autoSaveParty(openDropdownId, {
+          values,
+          isEmail: resolveIsEmailMode(openDropdownId, values),
+        });
         setOpenDropdownId(null);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openDropdownId]);
+  }, [openDropdownId, editValues, emailModes]);
 
   useEffect(() => {
     const hasInitiator = safeParties.some((p) => p.order === 1);
@@ -81,14 +105,11 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     setPartyCounter(maxPartyNumber);
   }, []);
 
-  const validateForm = (
-    partyId: string,
-    overrides?: { values?: Partial<IFormSigningParty>; isEmail?: boolean }
-  ): boolean => {
+  const validateForm = (partyId: string, overrides?: PartySaveOverrides): boolean => {
     const errors: ValidationErrors = {};
     const values = overrides?.values ?? editValues[partyId];
     const partyIndex = orderedParties.findIndex((p) => p._id === partyId);
-    const isEmail = overrides?.isEmail ?? !!emailModes[partyId];
+    const isEmail = resolveIsEmailMode(partyId, values, overrides?.isEmail);
 
     if (!values?.signatory_title || values.signatory_title.trim() === "") {
       errors.title = "Title is required";
@@ -111,17 +132,14 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
     return Object.keys(errors).length === 0;
   };
 
-  const autoSaveParty = (
-    partyId: string,
-    overrides?: { values?: Partial<IFormSigningParty>; isEmail?: boolean }
-  ) => {
+  const autoSaveParty = (partyId: string, overrides?: PartySaveOverrides) => {
     if (!validateForm(partyId, overrides)) return;
 
     const findIndex = orderedParties.findIndex((p) => p._id === partyId);
     if (findIndex === -1) return;
 
     const values = overrides?.values ?? editValues[partyId];
-    const isEmail = overrides?.isEmail ?? emailModes[partyId];
+    const isEmail = resolveIsEmailMode(partyId, values, overrides?.isEmail);
 
     const updatedParties = orderedParties.map((p) => {
       if (p._id !== partyId) return p;
@@ -146,6 +164,47 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
 
     onPartiesChange(updatedParties);
   };
+
+  useEffect(() => {
+    latestOrderedPartiesRef.current = orderedParties;
+    latestEditValuesRef.current = editValues;
+    latestEmailModesRef.current = emailModes;
+    onPartiesChangeRef.current = onPartiesChange;
+  }, [orderedParties, editValues, emailModes, onPartiesChange]);
+
+  // Persist in-progress edits when leaving the tab (component unmount).
+  // This prevents losing direct-email/source changes when blur events did not fire.
+  useEffect(() => {
+    return () => {
+      const latestOrderedParties = latestOrderedPartiesRef.current;
+      const latestEditValues = latestEditValuesRef.current;
+      const latestEmailModes = latestEmailModesRef.current;
+      if (!latestOrderedParties.length) return;
+
+      const updatedParties = latestOrderedParties.map((party, index) => {
+        const values = latestEditValues[party._id] ?? party;
+        const isEmail = !!values?.signatory_account?.email?.trim() || !!latestEmailModes[party._id];
+        const nextParty = { ...party, ...values } as IFormSigningParty;
+
+        if (index === 0) {
+          nextParty.signatory_account = undefined;
+          nextParty.signatory_source = undefined;
+        } else if (isEmail) {
+          nextParty.signatory_source = undefined;
+        } else {
+          if (nextParty.signatory_source) {
+            nextParty.signatory_source.label = `${values?.signatory_title || "Party"} Email Address`;
+          }
+          nextParty.signatory_account = undefined;
+        }
+
+        const { signed: _signed, ...partyWithoutSigned } = nextParty;
+        return partyWithoutSigned as IFormSigningParty;
+      });
+
+      onPartiesChangeRef.current(updatedParties);
+    };
+  }, []);
 
   const persistPartyTitle = (partyId: string, title: string) => {
     const updatedParties = orderedParties.map((p) => {
@@ -358,9 +417,17 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                       <div className="relative min-w-0" data-party-source-dropdown>
                         <label className="mb-1 block text-xs text-slate-600">Source</label>
                         <button
-                          onClick={() =>
-                            setOpenDropdownId(openDropdownId === party._id ? null : party._id)
-                          }
+                          onClick={() => {
+                            if (openDropdownId === party._id) {
+                              autoSaveParty(party._id, {
+                                values: editValues[party._id] ?? values,
+                                isEmail: resolveIsEmailMode(party._id, editValues[party._id] ?? values),
+                              });
+                              setOpenDropdownId(null);
+                              return;
+                            }
+                            setOpenDropdownId(party._id);
+                          }}
                           className={`flex h-8 w-full items-center justify-between rounded-[0.33em] border bg-white px-2.5 text-sm transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                             partyErrors.source
                               ? "border-red-500"
@@ -470,7 +537,7 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                                     [party._id]: { ...partyErrors, source: undefined },
                                   }));
                                 }}
-                                onBlur={(e) =>
+                                onBlur={(e) => {
                                   autoSaveParty(party._id, {
                                     values: {
                                       ...values,
@@ -481,8 +548,8 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                                       },
                                     },
                                     isEmail: true,
-                                  })
-                                }
+                                  });
+                                }}
                                 placeholder="email@example.com"
                                 className="h-8 w-full rounded-[0.33em] border border-slate-300 px-2 text-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
                               />
