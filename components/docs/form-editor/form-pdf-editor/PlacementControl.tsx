@@ -15,7 +15,7 @@ import { X } from "lucide-react";
 import { FieldTypeSelect } from "./FieldTypeSelect";
 import { CoordinateInputs } from "./CoordinatorInputs";
 import { AlignmentInputs } from "./AlignmentInputs";
-import { getFieldLabel } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
+import { getFieldLabel } from "@/app/contexts/field-template.ctx";
 import type { FieldRegistryEntry } from "@/app/api";
 import { Divider } from "@/components/ui/divider";
 

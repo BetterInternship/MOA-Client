@@ -11,28 +11,14 @@ import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { useFormsControllerGetLatestFormDocumentAndMetadata } from "@/app/api";
-import { SCHEMA_VERSION, type IFormMetadata } from "@betterinternship/core/forms";
+import {
+  SCHEMA_VERSION,
+  type IFormMetadata,
+  BLANK_FORM_METADATA,
+} from "@betterinternship/core/forms";
 import { FormEditorProvider, useFormEditor } from "@/app/contexts/form-editor.context";
 import { EditorToolbar } from "@/components/editor/toolbar/EditorToolbar";
 import { EditorContent } from "@/components/editor/tabs/EditorContent";
-
-// Blank form metadata for new forms
-const BLANK_FORM_METADATA: IFormMetadata = {
-  name: "new-form",
-  label: "New Form",
-  schema_version: SCHEMA_VERSION,
-  schema: {
-    blocks: [],
-  },
-  signing_parties: [
-    {
-      _id: "initiator",
-      order: 1,
-      signatory_title: "initiator",
-    },
-  ],
-  subscribers: [],
-};
 
 function FormEditorLoadingFallback() {
   return (
