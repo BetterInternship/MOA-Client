@@ -142,8 +142,8 @@ const PdfJsEditorPage = () => {
         y: field.y,
         w: field.w,
         h: field.h,
-        align_h: (field.align_h ?? "left") as "left" | "center" | "right",
-        align_v: (field.align_v ?? "top") as "top" | "middle" | "bottom",
+        align_h: (field.align_h ?? "center") as "left" | "center" | "right",
+        align_v: (field.align_v ?? "bottom") as "top" | "middle" | "bottom",
         size: field.size ?? 11,
         wrap: field.wrap ?? true,
       };
@@ -156,8 +156,8 @@ const PdfJsEditorPage = () => {
   const [fields, setFields] = useState<FormField[]>(INITIAL_FIELDS);
   const [isPlacingField, setIsPlacingField] = useState<boolean>(false);
   const [placementFieldType, setPlacementFieldType] = useState<string>("text");
-  const [placementAlign_h, setPlacementAlign_h] = useState<"left" | "center" | "right">("left");
-  const [placementAlign_v, setPlacementAlign_v] = useState<"top" | "middle" | "bottom">("top");
+  const [placementAlign_h, setPlacementAlign_h] = useState<"left" | "center" | "right">("center");
+  const [placementAlign_v, setPlacementAlign_v] = useState<"top" | "middle" | "bottom">("bottom");
   const [placementSize, setPlacementSize] = useState<number>(11);
   const [placementWrap, setPlacementWrap] = useState<boolean>(true);
   const [formLabel, setFormLabel] = useState<string>(formMetadata.getLabel());
@@ -227,8 +227,8 @@ const PdfJsEditorPage = () => {
             y: field.y,
             w: field.w,
             h: field.h,
-            align_h: (field.align_h ?? "left") as "left" | "center" | "right",
-            align_v: (field.align_v ?? "top") as "top" | "middle" | "bottom",
+            align_h: (field.align_h ?? "center") as "left" | "center" | "right",
+            align_v: (field.align_v ?? "bottom") as "top" | "middle" | "bottom",
             size: field.size ?? 11,
             wrap: field.wrap ?? true,
           };
@@ -244,8 +244,8 @@ const PdfJsEditorPage = () => {
         (f) => (f._id || `${f.field}:${f.page}`) === selectedFieldId
       );
       if (selectedField) {
-        setPlacementAlign_h(selectedField.align_h ?? "left");
-        setPlacementAlign_v(selectedField.align_v ?? "top");
+        setPlacementAlign_h(selectedField.align_h ?? "center");
+        setPlacementAlign_v(selectedField.align_v ?? "bottom");
         setPlacementSize(selectedField.size ?? 11);
         setPlacementWrap(selectedField.wrap ?? true);
       }

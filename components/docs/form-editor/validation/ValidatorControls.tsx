@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import type { ReactNode } from "react";
-import { MessageSquarePlus, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -223,91 +221,5 @@ export function ValidatorFieldReferenceInput({
         ))}
       </SelectContent>
     </Select>
-  );
-}
-
-export function ValidatorMessageInput({
-  value,
-  onChange,
-  disabled,
-  expandBelow = false,
-}: {
-  value?: string;
-  onChange: (next: string) => void;
-  disabled?: boolean;
-  expandBelow?: boolean;
-}) {
-  const [open, setOpen] = useState(Boolean(value));
-
-  if (expandBelow) {
-    return (
-      <div className="contents">
-        <div className="shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              if (open) {
-                setOpen(false);
-                if (value) onChange("");
-                return;
-              }
-              setOpen(true);
-            }}
-            disabled={disabled}
-            aria-label={open ? "Hide message" : "Customize message"}
-            title={open ? "Hide message" : "Customize message"}
-            className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
-          >
-            {open ? <X className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
-          </button>
-        </div>
-        {open && (
-          <div className="basis-full pt-1">
-            <FormInput
-              value={value || ""}
-              setter={onChange}
-              required={false}
-              disabled={disabled}
-              placeholder="Custom error message"
-              className="h-8 text-xs"
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-1">
-      <button
-        type="button"
-        onClick={() => {
-          if (open) {
-            setOpen(false);
-            if (value) onChange("");
-            return;
-          }
-          setOpen(true);
-        }}
-        disabled={disabled}
-        aria-label={open ? "Hide message" : "Customize message"}
-        title={open ? "Hide message" : "Customize message"}
-        className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
-      >
-        {open ? <X className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
-      </button>
-      {open && (
-        <div className="space-y-1.5">
-          <FormInput
-            value={value || ""}
-            setter={onChange}
-            required={false}
-            disabled={disabled}
-            placeholder="Custom error message"
-            className="h-8 text-xs"
-          />
-        </div>
-      )}
-    </div>
   );
 }

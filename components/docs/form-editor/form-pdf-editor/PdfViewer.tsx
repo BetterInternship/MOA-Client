@@ -221,7 +221,7 @@ export function PdfViewer() {
               w: 100,
               h: 12,
               align_h: baseSchema?.align_h || "center",
-              align_v: baseSchema?.align_v || "middle",
+              align_v: baseSchema?.align_v || "bottom",
               shared:
                 typeof baseSchema?.shared === "boolean"
                   ? baseSchema.shared
@@ -681,7 +681,7 @@ const PdfPageCanvas = memo(
             w: fieldWidth,
             h: fieldHeight,
             align_h: baseSchema?.align_h || "center",
-            align_v: baseSchema?.align_v || "middle",
+            align_v: baseSchema?.align_v || "bottom",
             shared:
               typeof baseSchema?.shared === "boolean"
                 ? baseSchema.shared
