@@ -7,7 +7,7 @@ import {
   IFormField,
   IFormSigningParty,
 } from "@betterinternship/core/forms";
-import { useFieldTemplateContext } from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
+import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { normalizePresetTemplate } from "@/lib/default-field-preset-utils";
@@ -367,7 +367,7 @@ export function BlocksPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-3 space-y-2">
+      <div className="flex-1 space-y-2 overflow-auto p-3">
         <div className="grid grid-cols-2 gap-1 rounded-[0.33em] border border-slate-300 bg-white">
           <button
             type="button"
@@ -447,7 +447,7 @@ export function BlocksPanel({
                         className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center gap-2 rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
                         type="button"
                       >
-                        <Icon className="h-4 w-4 flex-shrink-0 text-slate-400 mt-0.5" />
+                        <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" />
                         <span className="text-sm text-slate-800">{field.label}</span>
                       </button>
                     );
