@@ -117,8 +117,8 @@ const FormPreviewContent = ({
           h: block.field_schema?.h || 12,
           size: block.field_schema?.size ?? 11,
           wrap: block.field_schema?.wrap ?? true,
-          align_h: block.field_schema?.align_h ?? "left",
-          align_v: block.field_schema?.align_v ?? "top",
+          align_h: block.field_schema?.align_h ?? "center",
+          align_v: block.field_schema?.align_v ?? "bottom",
         })),
     [filteredBlocks]
   );

@@ -52,7 +52,7 @@ export const EditorSidebar = ({
   onCancelPlacing,
   onCoordinatesChange,
   placementAlign_h = "center",
-  placementAlign_v = "middle",
+  placementAlign_v = "bottom",
   size,
   wrap,
   onAlignmentChange,

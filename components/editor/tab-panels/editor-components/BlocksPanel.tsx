@@ -286,7 +286,7 @@ export function BlocksPanel({
         w: fieldWidth,
         h: fieldHeight,
         align_h: baseSchema?.align_h || "center",
-        align_v: baseSchema?.align_v || "middle",
+        align_v: baseSchema?.align_v || "bottom",
         label: baseSchema?.label || field.label || field.name || field.id,
         tooltip_label: baseSchema?.tooltip_label || field.tooltip_label || "",
         shared:
