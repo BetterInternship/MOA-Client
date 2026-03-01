@@ -649,7 +649,7 @@ export function RevampedBlockEditor() {
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="X"
-              type="text"
+              type="number"
               inputMode="numeric"
               pattern="-?[0-9]*"
               value={getIntegerInputValue("x", schema?.x, 0)}
@@ -658,7 +658,7 @@ export function RevampedBlockEditor() {
             />
             <FormInput
               label="Y"
-              type="text"
+              type="number"
               inputMode="numeric"
               pattern="-?[0-9]*"
               value={getIntegerInputValue("y", schema?.y, 0)}
@@ -669,7 +669,7 @@ export function RevampedBlockEditor() {
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="Width"
-              type="text"
+              type="number"
               inputMode="numeric"
               pattern="[0-9]*"
               value={getIntegerInputValue("w", schema?.w, 100)}
@@ -678,7 +678,7 @@ export function RevampedBlockEditor() {
             />
             <FormInput
               label="Height"
-              type="text"
+              type="number"
               inputMode="numeric"
               pattern="[0-9]*"
               value={getIntegerInputValue("h", schema?.h, 20)}
@@ -712,7 +712,7 @@ export function RevampedBlockEditor() {
             </div>
             <FormInput
               label="Font size"
-              type="text"
+              type="number"
               inputMode="numeric"
               pattern="[0-9]*"
               value={getIntegerInputValue("size", schema?.size, 12)}
