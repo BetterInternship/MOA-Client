@@ -42,6 +42,7 @@ import {
 } from "@/lib/field-library";
 import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
 import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
+import { cn } from "@/lib/utils";
 
 interface FieldRegistryEntry {
   id?: string;
@@ -85,7 +86,7 @@ const sortFields = (list: FieldRegistryMinimalEntry[]) =>
     return labelA.localeCompare(labelB);
   });
 
-const FieldRegistryPage = () => {
+const FieldRegistryPage = ({ embedded = false }: { embedded?: boolean }) => {
   const queryClient = useQueryClient();
   const fieldRegistry = useFormsControllerGetFieldRegistry({});
 
@@ -271,9 +272,23 @@ const FieldRegistryPage = () => {
 
   return (
     <FieldLibraryProvider value={modalLibraryValue}>
-      <div className="mx-auto mt-4 max-w-5xl space-y-3 overflow-hidden">
-        <div className="grid gap-4 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="space-y-3 lg:flex lg:min-h-0 lg:flex-col">
+      <div
+        className={cn(
+          embedded ? "h-full w-full overflow-hidden" : "mx-auto mt-4 max-w-5xl space-y-3"
+        )}
+      >
+        <div
+          className={cn(
+            "grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]",
+            embedded ? "h-full min-h-0" : "lg:h-full lg:min-h-0"
+          )}
+        >
+          <div
+            className={cn(
+              "space-y-3",
+              embedded ? "flex min-h-0 flex-col" : "lg:flex lg:min-h-0 lg:flex-col"
+            )}
+          >
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight">Field Registry</h1>
               <div className="flex-1" />
@@ -311,7 +326,14 @@ const FieldRegistryPage = () => {
                 </Button>
               </div>
             )}
-            <div className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+            <div
+              className={cn(
+                "space-y-2",
+                embedded
+                  ? "min-h-0 flex-1 overflow-y-auto pr-1"
+                  : "lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
+              )}
+            >
               {fieldRegistry.isLoading || fieldRegistry.isFetching ? (
                 <Loader>Loading fields...</Loader>
               ) : groupedFields.length === 0 ? (
@@ -413,7 +435,14 @@ const FieldRegistryPage = () => {
             </div>
           </div>
 
-          <div className="rounded-[0.33em] border border-slate-200 bg-white p-3 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden">
+          <div
+            className={cn(
+              "rounded-[0.33em] border border-slate-200 bg-white p-3",
+              embedded
+                ? "flex h-full min-h-0 flex-col overflow-hidden"
+                : "lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden"
+            )}
+          >
             {editorPane.mode === "none" ? (
               <div className="flex h-full min-h-[180px] items-center justify-center">
                 <p className="text-sm text-slate-500">

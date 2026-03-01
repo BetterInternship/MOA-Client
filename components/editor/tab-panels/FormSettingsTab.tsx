@@ -8,18 +8,19 @@ import { Label } from "@/components/ui/label";
 import { FormMetadataTab } from "@/components/editor/tab-panels/FormMetadataTab";
 import { SigningPartiesTab } from "@/components/editor/tab-panels/SigningPartiesTab";
 import { SubscribersTab } from "@/components/editor/tab-panels/SubscribersTab";
+import FieldRegistryPage from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/fields/page";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import { SCHEMA_VERSION } from "@betterinternship/core/forms";
 
-type SettingsSection = "metadata" | "recipients" | "subscribers" | "settings";
+type SettingsSection = "metadata" | "recipients" | "subscribers" | "settings" | "field-registry";
 
 export function FormSettingsTab() {
   const [section, setSection] = useState<SettingsSection>("settings");
   const { setActiveTab } = useFormEditor();
 
   return (
-    <div className="flex h-full w-full overflow-hidden">
+    <div className="flex h-full min-h-0 w-full overflow-hidden">
       <div className="w-56 border-r bg-slate-50/70 p-3">
         <Button
           variant="ghost"
@@ -75,14 +76,38 @@ export function FormSettingsTab() {
           >
             Subscribers
           </button>
+
+          <div className="my-2 border-t border-slate-200" />
+
+          <button
+            onClick={() => setSection("field-registry")}
+            className={cn(
+              "w-full rounded-[0.33em] px-3 py-2 text-left text-sm",
+              section === "field-registry"
+                ? "bg-primary/10 text-primary font-medium"
+                : "text-slate-700 hover:bg-slate-100"
+            )}
+          >
+            Field Registry
+          </button>
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 overflow-auto">
+      <div
+        className={cn(
+          "min-w-0 min-h-0 flex-1",
+          section === "field-registry" ? "overflow-hidden" : "overflow-auto"
+        )}
+      >
         {section === "settings" && <FormSettingsContent />}
         {section === "metadata" && <FormMetadataTab />}
         {section === "recipients" && <SigningPartiesTab />}
         {section === "subscribers" && <SubscribersTab />}
+        {section === "field-registry" && (
+          <div className="h-full min-h-0 p-4">
+            <FieldRegistryPage embedded />
+          </div>
+        )}
       </div>
     </div>
   );
