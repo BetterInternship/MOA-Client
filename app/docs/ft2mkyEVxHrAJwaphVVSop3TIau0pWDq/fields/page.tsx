@@ -197,6 +197,10 @@ const FieldRegistryPage = ({ embedded = false }: { embedded?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: getFormsControllerGetFieldRegistryQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getFormsControllerGetFieldFromRegistryQueryKey() }),
     ]);
+    await queryClient.refetchQueries({
+      queryKey: getFormsControllerGetFieldRegistryQueryKey(),
+      type: "active",
+    });
     queryClient.removeQueries({
       queryKey: getFormsControllerGetFieldFromRegistryQueryKey(),
       type: "inactive",
@@ -575,15 +579,20 @@ const FieldEditor = ({
               onLabelChange={(label) =>
                 setField((prev) =>
                   prev
-                    ? {
-                        ...prev,
-                        label,
-                        name: deriveFieldNameFromLabel(label),
-                      }
+                    ? isPresetRegistryField(prev as any)
+                      ? {
+                          ...prev,
+                          label,
+                        }
+                      : {
+                          ...prev,
+                          label,
+                          name: deriveFieldNameFromLabel(label),
+                        }
                     : prev
                 )
               }
-              showDerivedNameHint={true}
+              showDerivedNameHint={!isPresetRegistryField(field as any)}
               tagReadOnly={isPresetRegistryField(field as any)}
               hideTagField={isPresetRegistryField(field as any)}
               onChange={(updates) => setField((prev) => (prev ? { ...prev, ...updates } : prev))}
