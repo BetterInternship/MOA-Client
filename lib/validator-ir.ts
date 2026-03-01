@@ -322,6 +322,11 @@ export function persistedIRToZod(ir: ValidatorIRv0): string {
     return `z.preprocess((v) => !!v, z.boolean().refine((v) => v === true, { message: "${message}" }).describe("checkbox"))`;
   }
 
+  // Keep time base validator stable when no-code mode recompiles from IR.
+  if (ir.baseType === "time") {
+    return 'z.string().describe("time")';
+  }
+
   const config = persistedIRToValidatorConfig(ir);
   let zod = validatorConfigToZodCode(config);
   if (ir.baseType === "textarea" && !zod.includes('describe("textarea")')) {
@@ -417,3 +422,4 @@ export function validateValidatorIR(ir: unknown): { ok: boolean; errors: string[
 
   return { ok: errors.length === 0, errors };
 }
+
