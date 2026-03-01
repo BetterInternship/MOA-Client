@@ -2,11 +2,12 @@ import {
   getFieldPresetTemplates,
   type FieldPresetTemplate,
 } from "@betterinternship/core/forms";
-import type { ValidatorIRv0 } from "@/lib/validator-ir";
+import { validateValidatorIR, type ValidatorIRv0 } from "@/lib/validator-ir";
 import { normalizePresetTemplate } from "@/lib/default-field-preset-utils";
 import { sanitizeFieldSchemaDefaults, type FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 
 type RegistryPresetLike = {
+  id?: string | null;
   name?: string | null;
   label?: string | null;
   type?: string | null;
@@ -28,6 +29,23 @@ export type ResolvedSystemPresetTemplate = FieldPresetTemplate & {
 };
 
 const normalizeKey = (value: string | null | undefined) => String(value || "").trim().toLowerCase();
+
+const sanitizeValidatorIr = (value: unknown): ValidatorIRv0 | null => {
+  if (value == null) return null;
+
+  let candidate: unknown = value;
+  if (typeof candidate === "string") {
+    try {
+      candidate = JSON.parse(candidate);
+    } catch {
+      return null;
+    }
+  }
+
+  const parsed = validateValidatorIR(candidate);
+  if (!parsed.ok) return null;
+  return candidate as ValidatorIRv0;
+};
 
 const isSystemPresetRow = (entry: RegistryPresetLike) =>
   normalizeKey(entry.tag) === "preset" || normalizeKey(entry.preset) === "system";
@@ -51,41 +69,77 @@ export const resolveSystemPresetTemplates = (
   registryRows: RegistryPresetLike[]
 ): ResolvedSystemPresetTemplate[] => {
   const packagePresets = getFieldPresetTemplates().map((preset) => normalizePresetTemplate(preset));
-  const systemRowsByName = new Map<string, RegistryPresetLike>();
-
-  for (const row of registryRows) {
-    if (!isSystemPresetRow(row)) continue;
-    const key = normalizeKey(row.name);
-    if (!key) continue;
-    systemRowsByName.set(key, row);
+  const packagePresetByName = new Map<string, FieldPresetTemplate>();
+  for (const preset of packagePresets) {
+    packagePresetByName.set(normalizeKey(preset.name), preset);
   }
 
-  return packagePresets.map((preset) => {
-    const systemRow = systemRowsByName.get(normalizeKey(preset.name));
-    const defaults = sanitizeFieldSchemaDefaults(systemRow?.field_schema_defaults);
-    const packageDefaults = sanitizeFieldSchemaDefaults(
-      (preset as unknown as { field_schema_defaults?: unknown }).field_schema_defaults
-    );
+  const systemRows = registryRows.filter(isSystemPresetRow);
+  const resolvedFromDb: ResolvedSystemPresetTemplate[] = systemRows
+    .map((row) => {
+      const rowName = normalizeKey(row.name);
+      if (!rowName) return null;
 
-    const mergedPreset = normalizePresetTemplate({
-      ...preset,
-      label: systemRow?.label || preset.label,
-      type: toPresetType(systemRow?.type, preset.type),
-      source: toPresetSource(systemRow?.source, preset.source),
-      shared: typeof systemRow?.shared === "boolean" ? systemRow.shared : preset.shared,
-      tag: systemRow?.tag || preset.tag,
-      preset: systemRow?.preset || preset.preset || "default",
-      prefiller: systemRow?.prefiller ?? preset.prefiller,
-      tooltip_label: systemRow?.tooltip_label ?? preset.tooltip_label,
-      validator: systemRow?.validator ?? preset.validator,
-      validator_ir: systemRow?.validator_ir ?? preset.validator_ir,
-      is_phantom: typeof systemRow?.is_phantom === "boolean" ? systemRow.is_phantom : preset.is_phantom,
-      party: systemRow?.party ?? preset.party,
-    } as FieldPresetTemplate);
+      const packagePreset = packagePresetByName.get(rowName);
+      const packageValidatorIr = sanitizeValidatorIr(packagePreset?.validator_ir);
+      const rowValidatorIr = sanitizeValidatorIr(row.validator_ir);
+      const packageDefaults = sanitizeFieldSchemaDefaults(
+        (packagePreset as unknown as { field_schema_defaults?: unknown } | undefined)
+          ?.field_schema_defaults
+      );
+      const rowDefaults = sanitizeFieldSchemaDefaults(row.field_schema_defaults);
 
-    return {
-      ...mergedPreset,
-      field_schema_defaults: defaults || packageDefaults,
-    } as ResolvedSystemPresetTemplate;
-  });
+      const mergedPreset = normalizePresetTemplate({
+        ...(packagePreset || {
+          id: row.id || `preset-${rowName}`,
+          name: row.name || rowName,
+          label: row.label || row.name || rowName,
+          type: "text",
+          source: "manual",
+          shared: true,
+          tag: "preset",
+          preset: "system",
+          prefiller: "",
+          tooltip_label: "",
+          validator: "",
+          validator_ir: null,
+          is_phantom: false,
+        }),
+        label: row.label || packagePreset?.label,
+        type: toPresetType(row.type, packagePreset?.type || "text"),
+        source: toPresetSource(row.source, packagePreset?.source || "manual"),
+        shared: typeof row.shared === "boolean" ? row.shared : (packagePreset?.shared ?? true),
+        tag: row.tag || packagePreset?.tag,
+        preset: row.preset || packagePreset?.preset || "system",
+        prefiller: row.prefiller ?? packagePreset?.prefiller,
+        tooltip_label: row.tooltip_label ?? packagePreset?.tooltip_label,
+        validator: row.validator ?? packagePreset?.validator,
+        validator_ir: rowValidatorIr ?? packageValidatorIr,
+        is_phantom:
+          typeof row.is_phantom === "boolean" ? row.is_phantom : (packagePreset?.is_phantom ?? false),
+        party: row.party ?? packagePreset?.party,
+      } as FieldPresetTemplate);
+
+      return {
+        ...mergedPreset,
+        field_schema_defaults: rowDefaults || packageDefaults,
+      } as ResolvedSystemPresetTemplate;
+    })
+    .filter((preset): preset is ResolvedSystemPresetTemplate => Boolean(preset));
+
+  // Keep package fallback rows for any system presets missing in DB.
+  const resolvedNames = new Set(resolvedFromDb.map((preset) => normalizeKey(preset.name)));
+  const fallbackFromPackage = packagePresets
+    .filter((preset) => !resolvedNames.has(normalizeKey(preset.name)))
+    .map((preset) => {
+      const packageDefaults = sanitizeFieldSchemaDefaults(
+        (preset as unknown as { field_schema_defaults?: unknown }).field_schema_defaults
+      );
+      return {
+        ...preset,
+        field_schema_defaults: packageDefaults,
+      } as ResolvedSystemPresetTemplate;
+    });
+
+  return [...resolvedFromDb, ...fallbackFromPackage];
 };
