@@ -238,7 +238,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
       const unit: FormViewUnit = {
         id: groupId,
         kind: "field",
-        label: schema?.label || fieldName,
+        label: schema?.label ?? fieldName,
         partyId: activePartyId,
         blockIds: [block._id],
         primaryBlockId: block._id,
@@ -741,3 +741,4 @@ export function useFormEditorTab() {
   }
   return context;
 }
+
