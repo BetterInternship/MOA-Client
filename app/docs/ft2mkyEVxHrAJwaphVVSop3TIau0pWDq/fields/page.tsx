@@ -5,6 +5,7 @@ import {
   formsControllerGetFieldFromRegistry,
   formsControllerRegisterField,
   formsControllerUpdateField,
+  getFormsControllerGetFieldFromRegistryQueryKey,
   getFormsControllerGetFieldRegistryQueryKey,
   useFormsControllerGetFieldFromRegistry,
   useFormsControllerGetFieldRegistry,
@@ -33,11 +34,11 @@ import {
   normalizeFieldSource,
   toRegisterFieldPayload,
 } from "@/lib/custom-field-mappers";
-import { normalizePresetTemplate } from "@/lib/default-field-preset-utils";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
 import { buildFieldOptionsFromRegistry, buildTagOptionsFromRegistry } from "@/lib/field-library";
-import { getFieldPresetTemplates } from "@betterinternship/core/forms";
+import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
+import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 
 interface FieldRegistryEntry {
   id?: string;
@@ -50,6 +51,7 @@ interface FieldRegistryEntry {
   tooltip_label: string;
   validator: string;
   validator_ir?: ValidatorIRv0 | null;
+  field_schema_defaults?: FieldSchemaDefaults | null;
   prefiller: string;
   is_phantom?: boolean;
   party?: string;
@@ -144,12 +146,12 @@ const FieldRegistryPage = () => {
     () => ({
       // Pre-compute modal data contracts so add/edit modals stay presentation-focused.
       fieldOptions: buildFieldOptionsFromRegistry(fields) as FieldLibraryFieldOption[],
-      presetTemplates: (getFieldPresetTemplates() as FieldLibraryPresetTemplateOption[]).map((preset) =>
-        normalizePresetTemplate(preset as any)
-      ),
+      presetTemplates: resolveSystemPresetTemplates(
+        (fieldRegistry.data?.fields as FieldRegistryEntry[]) || []
+      ) as FieldLibraryPresetTemplateOption[],
       tagOptions: allAvailableTags,
     }),
-    [fields, allAvailableTags]
+    [fields, allAvailableTags, fieldRegistry.data?.fields]
   );
 
   const toggleTag = (tag: string) => {
@@ -205,7 +207,14 @@ const FieldRegistryPage = () => {
   };
 
   const refreshRegistry = async () => {
-    await queryClient.invalidateQueries({ queryKey: getFormsControllerGetFieldRegistryQueryKey() });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getFormsControllerGetFieldRegistryQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getFormsControllerGetFieldFromRegistryQueryKey() }),
+    ]);
+    queryClient.removeQueries({
+      queryKey: getFormsControllerGetFieldFromRegistryQueryKey(),
+      type: "inactive",
+    });
   };
 
   const handleBulkMove = async () => {
@@ -243,6 +252,9 @@ const FieldRegistryPage = () => {
             tooltip_label: field.tooltip_label ?? null,
             validator: field.validator ?? null,
             validator_ir: (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
+            field_schema_defaults:
+              (field as { field_schema_defaults?: FieldSchemaDefaults | null }).field_schema_defaults ??
+              null,
             is_phantom: field.is_phantom ?? false,
           } as any);
         })
@@ -433,6 +445,7 @@ const FieldEditor = ({
         tooltip_label: field.tooltip_label ?? null,
         validator: field.validator ?? null,
         prefiller: field.prefiller ?? null,
+        field_schema_defaults: field.field_schema_defaults ?? null,
         is_phantom: field?.is_phantom ?? false,
       } as any);
       await onSaved?.();
@@ -451,6 +464,9 @@ const FieldEditor = ({
         tooltip_label: data.field.tooltip_label ?? "",
         validator: data.field.validator ?? "",
         validator_ir: (data.field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
+        field_schema_defaults:
+          (data.field as { field_schema_defaults?: FieldSchemaDefaults | null }).field_schema_defaults ??
+          null,
         prefiller: data.field.prefiller ?? "",
       });
     } else {
@@ -477,6 +493,7 @@ const FieldEditor = ({
                 prefiller: field.prefiller || "",
                 validator: field.validator || "",
                 validator_ir: field.validator_ir || null,
+                field_schema_defaults: field.field_schema_defaults || null,
               }}
               fieldOptions={fieldOptions}
               tagOptions={tagOptions}
@@ -526,6 +543,7 @@ const FieldRegistration = ({
     prefiller: "",
     validator: "",
     validator_ir: null,
+    field_schema_defaults: null,
   });
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [registering, setRegistering] = useState(false);
@@ -556,6 +574,7 @@ const FieldRegistration = ({
           tooltip_label: preset.tooltip_label ?? "",
           validator: preset.validator ?? "",
           validator_ir: preset.validator_ir ?? null,
+          field_schema_defaults: preset.field_schema_defaults ?? null,
         },
         deriveFieldNameFromLabel,
         prev?.tag || "uncategorized"
@@ -586,10 +605,11 @@ const FieldRegistration = ({
             prefiller: field.prefiller || "",
             validator: field.validator || "",
             validator_ir: field.validator_ir || null,
+            field_schema_defaults: field.field_schema_defaults || null,
             is_phantom: false,
-            preset: "default",
+            preset: field.preset || "default",
           },
-          { preset: "default", defaultTag: "uncategorized" }
+          { preset: field.preset || "default", defaultTag: "uncategorized" }
         )
       );
       await onSaved?.();
@@ -613,6 +633,7 @@ const FieldRegistration = ({
           prefiller: field.prefiller || "",
           validator: field.validator || "",
           validator_ir: field.validator_ir || null,
+          field_schema_defaults: field.field_schema_defaults || null,
         }}
         fieldOptions={fieldOptions}
         presetTemplates={presetTemplates}

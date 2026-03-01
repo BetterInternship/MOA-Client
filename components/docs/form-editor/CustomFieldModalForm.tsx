@@ -22,6 +22,7 @@ import { type ValidatorIRv0 } from "@/lib/validator-ir";
 import { getPresetFieldIcon } from "@/lib/preset-field-icons";
 import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
 import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
+import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 
 export interface CustomFieldModalFormValue {
   name: string;
@@ -34,6 +35,7 @@ export interface CustomFieldModalFormValue {
   prefiller: string;
   validator: string;
   validator_ir?: ValidatorIRv0 | null;
+  field_schema_defaults?: FieldSchemaDefaults | null;
 }
 
 export interface CustomFieldFormOption {
@@ -95,6 +97,27 @@ export function CustomFieldModalForm({
   const SelectedPresetIcon = selectedPreset
     ? getPresetFieldIcon(selectedPreset.iconKey, selectedPreset.name)
     : null;
+  const schemaDefaults = value.field_schema_defaults || {};
+  const applyFieldSchemaDefaults = (updates: Partial<FieldSchemaDefaults>) => {
+    const nextDefaults: FieldSchemaDefaults = {
+      ...(value.field_schema_defaults || {}),
+      ...updates,
+    };
+
+    if (typeof nextDefaults.size !== "number" || !Number.isFinite(nextDefaults.size)) {
+      delete nextDefaults.size;
+    }
+    if (!nextDefaults.align_h) delete nextDefaults.align_h;
+    if (!nextDefaults.align_v) delete nextDefaults.align_v;
+    if (typeof nextDefaults.font !== "string" || nextDefaults.font.trim().length === 0) {
+      delete nextDefaults.font;
+    }
+    if (typeof nextDefaults.wrap !== "boolean") delete nextDefaults.wrap;
+
+    onChange({
+      field_schema_defaults: Object.keys(nextDefaults).length > 0 ? nextDefaults : null,
+    });
+  };
 
   const {
     previewBlocks,
@@ -255,6 +278,96 @@ export function CustomFieldModalForm({
                     placeholder="uncategorized"
                   />
                 )}
+              </div>
+            </div>
+
+            <div className="space-y-2 rounded-[0.33em] border border-slate-200 p-2.5">
+              <Label className="text-xs font-semibold text-slate-700">Default Render Style</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-slate-600">Wrap text</Label>
+                  <div className="flex h-9 items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5">
+                    <span className="text-xs text-slate-600">
+                      {schemaDefaults.wrap === false ? "Off" : "On"}
+                    </span>
+                    <Switch
+                      checked={schemaDefaults.wrap !== false}
+                      onCheckedChange={(checked) => applyFieldSchemaDefaults({ wrap: checked })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-slate-600">Font size</Label>
+                  <Input
+                    type="number"
+                    value={schemaDefaults.size ?? ""}
+                    onChange={(e) =>
+                      applyFieldSchemaDefaults({
+                        size:
+                          e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
+                      })
+                    }
+                    placeholder="e.g. 12"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-slate-600">Horizontal align</Label>
+                  <Select
+                    value={schemaDefaults.align_h || "__unset"}
+                    onValueChange={(next) =>
+                      applyFieldSchemaDefaults({
+                        align_h:
+                          next === "__unset" ? undefined : (next as FieldSchemaDefaults["align_h"]),
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Use system default" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[1100]">
+                      <SelectItem value="__unset">Use system default</SelectItem>
+                      <SelectItem value="left">Left</SelectItem>
+                      <SelectItem value="center">Center</SelectItem>
+                      <SelectItem value="right">Right</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-slate-600">Vertical align</Label>
+                  <Select
+                    value={schemaDefaults.align_v || "__unset"}
+                    onValueChange={(next) =>
+                      applyFieldSchemaDefaults({
+                        align_v:
+                          next === "__unset" ? undefined : (next as FieldSchemaDefaults["align_v"]),
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Use system default" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[1100]">
+                      <SelectItem value="__unset">Use system default</SelectItem>
+                      <SelectItem value="top">Top</SelectItem>
+                      <SelectItem value="middle">Middle</SelectItem>
+                      <SelectItem value="bottom">Bottom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] text-slate-600">Font (optional)</Label>
+                <Input
+                  value={schemaDefaults.font || ""}
+                  onChange={(e) =>
+                    applyFieldSchemaDefaults({
+                      font: e.target.value as unknown as FieldSchemaDefaults["font"],
+                    })
+                  }
+                  placeholder="e.g. Helvetica"
+                  className="h-9 text-sm"
+                />
               </div>
             </div>
           </div>

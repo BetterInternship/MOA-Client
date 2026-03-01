@@ -8,9 +8,11 @@ type RegistryLikeField = {
   preset?: string;
 };
 
-// Presets are sourced from package metadata and tagged as `preset` in legacy registry records.
+// Backward-compatible system detection:
+// - preferred legacy marker: tag='preset'
+// - also accepts preset='system'
 export const isPresetRegistryField = (field: RegistryLikeField) =>
-  field.preset?.toLowerCase() === "preset" || field.tag?.toLowerCase() === "preset";
+  field.tag?.toLowerCase() === "preset" || field.preset?.toLowerCase() === "system";
 
 // UI-friendly autocomplete options from registry records.
 export const buildFieldOptionsFromRegistry = (fields: RegistryLikeField[]) =>

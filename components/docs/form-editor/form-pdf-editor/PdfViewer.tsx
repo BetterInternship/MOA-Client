@@ -22,8 +22,9 @@ import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { IFormBlock, IFormMetadata } from "@betterinternship/core/forms";
+import { IFormBlock, IFormField, IFormMetadata } from "@betterinternship/core/forms";
 import { FormViewBlocksPanel } from "@/components/editor/tab-panels/editor-components/FormViewBlocksPanel";
+import { sanitizeFieldSchemaDefaults, type FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 
 export type PointerLocation = {
   page: number;
@@ -40,6 +41,7 @@ const createUniqueFieldKey = (base: string) =>
   `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 type DraggedFieldPayload = FieldRegistryEntryDetails & {
   __palette_source?: "default" | "custom";
+  field_schema_defaults?: FieldSchemaDefaults;
 };
 
 const resolveDroppedFieldKey = (field: DraggedFieldPayload) => {
@@ -205,6 +207,7 @@ export function PdfViewer() {
               block.field_schema?.field === fieldKey
           );
           const baseSchema = existingForField?.field_schema;
+          const defaults = sanitizeFieldSchemaDefaults(draggedField.field_schema_defaults);
           const newBlock: IFormBlock = {
             _id: uniqueId,
             block_type: "form_field",
@@ -220,13 +223,13 @@ export function PdfViewer() {
               y: Math.max(0, (displayY - 6) / scale),
               w: 100,
               h: 12,
-              align_h: baseSchema?.align_h || "center",
-              align_v: baseSchema?.align_v || "bottom",
+              align_h: baseSchema?.align_h ?? defaults?.align_h ?? "center",
+              align_v: baseSchema?.align_v ?? defaults?.align_v ?? "bottom",
               shared:
                 typeof baseSchema?.shared === "boolean"
                   ? baseSchema.shared
                   : (draggedField.shared ?? true),
-              source: baseSchema?.source || draggedField.source || "manual",
+              source: (baseSchema?.source || draggedField.source || "manual") as IFormField["source"],
               ...(baseSchema?.prefiller
                 ? { prefiller: baseSchema.prefiller }
                 : draggedField.prefiller
@@ -240,13 +243,15 @@ export function PdfViewer() {
               ...(baseSchema?.validator_ir
                 ? { validator_ir: baseSchema.validator_ir }
                 : draggedField.__palette_source === "custom" && draggedField.validator_ir
-                  ? { validator_ir: draggedField.validator_ir }
+                  ? { validator_ir: draggedField.validator_ir as any }
                   : {}),
-              ...(baseSchema?.size ? { size: baseSchema.size } : {}),
+              ...(baseSchema?.size ? { size: baseSchema.size } : defaults?.size ? { size: defaults.size } : {}),
               ...(typeof baseSchema?.wrap === "boolean"
                 ? { wrap: baseSchema.wrap }
-                : { wrap: true }),
-              ...(baseSchema?.font ? { font: baseSchema.font } : {}),
+                : typeof defaults?.wrap === "boolean"
+                  ? { wrap: defaults.wrap }
+                  : { wrap: true }),
+              ...(baseSchema?.font ? { font: baseSchema.font } : defaults?.font ? { font: defaults.font } : {}),
             },
           };
 
@@ -664,6 +669,7 @@ const PdfPageCanvas = memo(
             block.field_schema?.field === fieldKey
         );
         const baseSchema = existingForField?.field_schema;
+        const defaults = sanitizeFieldSchemaDefaults(draggedField.field_schema_defaults);
 
         const newBlock: IFormBlock = {
           _id: uniqueId,
@@ -680,13 +686,13 @@ const PdfPageCanvas = memo(
             y: location.pdfY - fieldHeight / 2,
             w: fieldWidth,
             h: fieldHeight,
-            align_h: baseSchema?.align_h || "center",
-            align_v: baseSchema?.align_v || "bottom",
+            align_h: baseSchema?.align_h ?? defaults?.align_h ?? "center",
+            align_v: baseSchema?.align_v ?? defaults?.align_v ?? "bottom",
             shared:
               typeof baseSchema?.shared === "boolean"
                 ? baseSchema.shared
                 : (draggedField.shared ?? true),
-            source: baseSchema?.source || draggedField.source || "manual",
+            source: (baseSchema?.source || draggedField.source || "manual") as IFormField["source"],
             ...(baseSchema?.prefiller
               ? { prefiller: baseSchema.prefiller }
               : draggedField.prefiller
@@ -700,11 +706,15 @@ const PdfPageCanvas = memo(
             ...(baseSchema?.validator_ir
               ? { validator_ir: baseSchema.validator_ir }
               : draggedField.__palette_source === "custom" && draggedField.validator_ir
-                ? { validator_ir: draggedField.validator_ir }
+                ? { validator_ir: draggedField.validator_ir as any }
                 : {}),
-            ...(baseSchema?.size ? { size: baseSchema.size } : {}),
-            ...(typeof baseSchema?.wrap === "boolean" ? { wrap: baseSchema.wrap } : { wrap: true }),
-            ...(baseSchema?.font ? { font: baseSchema.font } : {}),
+            ...(baseSchema?.size ? { size: baseSchema.size } : defaults?.size ? { size: defaults.size } : {}),
+            ...(typeof baseSchema?.wrap === "boolean"
+              ? { wrap: baseSchema.wrap }
+              : typeof defaults?.wrap === "boolean"
+                ? { wrap: defaults.wrap }
+                : { wrap: true }),
+            ...(baseSchema?.font ? { font: baseSchema.font } : defaults?.font ? { font: defaults.font } : {}),
           },
         };
 
