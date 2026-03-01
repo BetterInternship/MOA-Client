@@ -81,6 +81,19 @@ const applyPatchToPhantomFieldSchema = (schema: any, patch: ParentPatch) => ({
   validator_ir: patch.validator_ir !== undefined ? patch.validator_ir : schema.validator_ir,
 });
 
+const createUniqueFieldKey = (base: string) =>
+  `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+// Default fields are created with "<preset_name>_<timestamp>_<rand>" keys.
+// When duplicating such blocks, issue a new key so duplicates are not linked.
+const getUnlinkedDefaultDuplicateKey = (fieldKey: string): string | null => {
+  const match = fieldKey.match(/^(.*)_\d{13}_[a-z0-9]{6}$/i);
+  if (!match) return null;
+  const base = match[1]?.trim();
+  if (!base) return null;
+  return createUniqueFieldKey(base);
+};
+
 interface FormEditorTabContextType {
   // Selection state
   selectedPartyId: string | null;
@@ -480,9 +493,22 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
   const handleDuplicateBlock = useCallback(
     (block: IFormBlock) => {
+      const duplicateFieldKey =
+        block.block_type === "form_field" && block.field_schema?.field
+          ? getUnlinkedDefaultDuplicateKey(block.field_schema.field)
+          : null;
+
       const newBlock: IFormBlock = {
         ...block,
         _id: `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ...(duplicateFieldKey && block.field_schema
+          ? {
+              field_schema: {
+                ...block.field_schema,
+                field: duplicateFieldKey,
+              },
+            }
+          : {}),
       };
       updateBlocks([...blocks, newBlock]);
     },
