@@ -27,7 +27,8 @@ function normalizeSchema<T extends SchemaLike>(schema: T | undefined): T | undef
     page: typeof schema.page === "number" ? schema.page : 1,
     align_h: align_h || "center",
     align_v: align_v || "middle",
-    label: schema.label || schema.field || "",
+    // Preserve explicit empty label strings; only fall back when label is null/undefined.
+    label: schema.label ?? schema.field ?? "",
     tooltip_label: schema.tooltip_label || "",
     shared: typeof schema.shared === "boolean" ? schema.shared : true,
     source: normalizeSource(schema.source),
@@ -53,7 +54,8 @@ function normalizePhantomSchema<T extends SchemaLike>(schema: T | undefined): T 
   const normalized: SchemaLike = {
     field: schema.field || "",
     type: schema.type || "text",
-    label: schema.label || schema.field || "",
+    // Preserve explicit empty label strings; only fall back when label is null/undefined.
+    label: schema.label ?? schema.field ?? "",
     tooltip_label: schema.tooltip_label || "",
     shared: typeof schema.shared === "boolean" ? schema.shared : true,
     source: normalizeSource(schema.source),
