@@ -23,6 +23,20 @@ type UseValidationModelInput = {
   onChange: (next: NextValidationValue) => void;
 };
 
+const REQUIRED_ONLY_BASES: ReadonlySet<ValidatorIRv0["baseType"]> = new Set([
+  "email",
+  "url",
+]);
+
+function normalizeRulesForLockedBase(baseType: ValidatorIRv0["baseType"], config: ValidatorConfig) {
+  if (!REQUIRED_ONLY_BASES.has(baseType)) return config;
+
+  const allowedTypes = new Set(["required", baseType]);
+  const filteredRules = config.rules.filter((rule) => allowedTypes.has(rule.type));
+  if (filteredRules.length === config.rules.length) return config;
+  return { ...config, rules: filteredRules };
+}
+
 /**
  * Central orchestration layer for validation editing.
  * - Resolves base type and import mode from `{ validator, validator_ir }`.
@@ -46,7 +60,7 @@ export function useValidationModel({
     [validatorCode, baseType, validatorIr]
   );
 
-  const parsedConfig = useMemo(() => {
+  const rawParsedConfig = useMemo(() => {
     if (importState.ir) return persistedIRToValidatorConfig(importState.ir);
     try {
       return zodCodeToValidatorConfig(validatorCode);
@@ -54,6 +68,10 @@ export function useValidationModel({
       return { rules: [] };
     }
   }, [importState, validatorCode]);
+  const parsedConfig = useMemo(
+    () => normalizeRulesForLockedBase(baseType, rawParsedConfig),
+    [baseType, rawParsedConfig]
+  );
 
   const hasRawValidator = Boolean(validatorCode.trim());
   const shouldAutoConvert =
@@ -66,6 +84,7 @@ export function useValidationModel({
   );
   const [config, setConfig] = useState<ValidatorConfig>(parsedConfig);
   const autoConvertKeyRef = useRef<string | null>(null);
+  const restrictedRuleSyncKeyRef = useRef<string | null>(null);
   const irCanonicalSyncKeyRef = useRef<string | null>(null);
   const seedPlainTextKeyRef = useRef<string | null>(null);
   const debugSourceKeyRef = useRef<string | null>(null);
@@ -95,6 +114,33 @@ export function useValidationModel({
     });
     onChange({ validator: persistedIRToZod(ir), validator_ir: ir });
   }, [autoConverted, baseType, parsedConfig, onChange, validatorCode]);
+
+  // Enforce locked-base rule subsets (number/email/url => required-only) even for legacy payloads.
+  useEffect(() => {
+    if (mode !== "simple") {
+      restrictedRuleSyncKeyRef.current = null;
+      return;
+    }
+
+    const rawKey = JSON.stringify(rawParsedConfig.rules || []);
+    const normalizedKey = JSON.stringify(parsedConfig.rules || []);
+    if (rawKey === normalizedKey) {
+      restrictedRuleSyncKeyRef.current = null;
+      return;
+    }
+
+    const ir = validatorConfigToPersistedIR(parsedConfig, baseType, {
+      mode: "builder",
+      importStatus: "exact",
+    });
+    const compiledValidator = persistedIRToZod(ir);
+    const syncKey = `${baseType}::${compiledValidator}::${validatorCode}`;
+    if (restrictedRuleSyncKeyRef.current === syncKey) return;
+    restrictedRuleSyncKeyRef.current = syncKey;
+
+    setConfig(parsedConfig);
+    onChange({ validator: compiledValidator, validator_ir: ir });
+  }, [mode, rawParsedConfig, parsedConfig, baseType, validatorCode, onChange]);
 
   // Seed new blank text fields with plain-text validation so emojis are blocked by default.
   useEffect(() => {

@@ -3,11 +3,22 @@ import type { FieldPresetTemplate } from "@betterinternship/core/forms";
 const normalize = (value: string) => value.trim().toLowerCase();
 
 const hasTitleCaseInValidator = (validator: string) =>
-  /toLocaleUpperCase\(\)\s*\+\s*\w+\.slice\(1\)\.toLocaleLowerCase\(\)\s*===\s*\w+/i.test(validator) ||
-  /title case/i.test(validator);
+  /toLocaleUpperCase\(\)\s*\+\s*\w+\.slice\(1\)\.toLocaleLowerCase\(\)\s*===\s*\w+/i.test(
+    validator
+  ) || /title case/i.test(validator);
 
 const isNamePreset = (preset: Pick<FieldPresetTemplate, "id" | "name">) =>
   normalize(preset.name || "") === "name" || normalize(preset.id || "") === "preset-name";
+
+const isEmailPreset = (preset: Pick<FieldPresetTemplate, "id" | "name">) =>
+  normalize(preset.name || "") === "email" || normalize(preset.id || "") === "preset-email";
+
+const isUrlPreset = (preset: Pick<FieldPresetTemplate, "id" | "name">) =>
+  normalize(preset.name || "") === "url" || normalize(preset.id || "") === "preset-url";
+
+const isPhonePreset = (preset: Pick<FieldPresetTemplate, "id" | "name">) =>
+  normalize(preset.name || "") === "phone_number" ||
+  normalize(preset.id || "") === "preset-phone-number";
 
 const cloneValidatorIr = (
   preset: Pick<FieldPresetTemplate, "id" | "name" | "validator">,
@@ -31,6 +42,20 @@ const cloneValidatorIr = (
     const hasPlainText = cloned.rules.some((rule: any) => rule?.kind === "plainText");
     const hasTitleCase = cloned.rules.some((rule: any) => rule?.kind === "titleCase");
     if (hasPlainText && !hasTitleCase) cloned.rules.push({ kind: "titleCase" });
+  }
+
+  // Forward-compat migration for clients that still receive package presets with
+  // text+format-rule IR instead of dedicated email/phone/url base types.
+  const requiredRule = cloned.rules.find((rule: any) => rule?.kind === "required");
+  if (isEmailPreset(preset) && cloned.baseType === "text") {
+    cloned.baseType = "email";
+    cloned.rules = requiredRule ? [{ kind: "required", message: requiredRule.message }] : [];
+  } else if (isUrlPreset(preset) && cloned.baseType === "text") {
+    cloned.baseType = "url";
+    cloned.rules = requiredRule ? [{ kind: "required", message: requiredRule.message }] : [];
+  } else if (isPhonePreset(preset) && cloned.baseType === "text") {
+    cloned.baseType = "phone";
+    cloned.rules = requiredRule ? [{ kind: "required", message: requiredRule.message }] : [];
   }
 
   return cloned as FieldPresetTemplate["validator_ir"];

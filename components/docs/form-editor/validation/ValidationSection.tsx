@@ -6,6 +6,7 @@ import { useValidationModel } from "@/hooks/useValidationModel";
 import {
   ValidatorGroups,
   type ValidationFieldOption,
+  type ValidationRuleId,
 } from "@/components/docs/form-editor/validation/ValidatorGroups";
 import { ValidatorStateBanner } from "@/components/docs/form-editor/validation/ValidatorStateBanner";
 
@@ -14,6 +15,7 @@ export interface ValidationSectionProps {
   validator: string;
   validatorIr?: ValidatorIRv0 | null;
   fieldOptions?: ValidationFieldOption[];
+  allowedRuleIds?: ValidationRuleId[];
   onChange: (next: { validator: string; validator_ir: ValidatorIRv0 | null }) => void;
 }
 
@@ -49,6 +51,7 @@ export function ValidationSection({
   validator,
   validatorIr,
   fieldOptions = [],
+  allowedRuleIds,
   onChange,
 }: ValidationSectionProps) {
   const {
@@ -120,6 +123,7 @@ export function ValidationSection({
             config={config}
             readOnly={isReadOnlyLegacy}
             fieldOptions={fieldOptions}
+            allowedRuleIds={allowedRuleIds}
             onConfigChange={onConfigChange}
           />
         </div>

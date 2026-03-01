@@ -19,6 +19,9 @@ export const FormPhantomFieldValidatorIrBaseType = {
   checkbox: "checkbox",
   textarea: "textarea",
   time: "time",
+  email: "email",
+  phone: "phone",
+  url: "url",
   signature: "signature",
   image: "image",
 } as const;

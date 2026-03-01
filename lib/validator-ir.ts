@@ -1,7 +1,22 @@
 import type { ValidatorConfig, ValidatorRule, ValidatorRuleType } from "@/lib/validator-engine";
 import { validatorConfigToZodCode, zodCodeToValidatorConfig } from "@/lib/validator-engine";
-import type { ValidatorBaseType, ValidatorIRv0 } from "@betterinternship/core/forms";
-export type { ValidatorBaseType, ValidatorIRv0 } from "@betterinternship/core/forms";
+import type {
+  ValidatorBaseType as CoreValidatorBaseType,
+  ValidatorIRv0 as CoreValidatorIRv0,
+} from "@betterinternship/core/forms";
+
+type ExtendedRequiredRule = { kind: "required"; message?: string };
+type ExtendedValidatorIR = {
+  version: 0;
+  baseType: "email" | "phone" | "url";
+  rules: ExtendedRequiredRule[];
+  mode?: "builder" | "imported";
+  importStatus?: "exact" | "partial" | "custom";
+  unmapped?: string[];
+};
+
+export type ValidatorBaseType = CoreValidatorBaseType | ExtendedValidatorIR["baseType"];
+export type ValidatorIRv0 = CoreValidatorIRv0 | ExtendedValidatorIR;
 
 type ImportStatus = "exact" | "partial" | "custom";
 export type ValidatorIRImportResult = {
@@ -27,8 +42,11 @@ const BASE_RULE_MAP: Record<ValidatorBaseType, ValidatorRuleType[]> = {
   enum: ["required", "enum"],
   array: ["required", "array"],
   checkbox: ["required"],
-  textarea: ["required", "minLength", "maxLength", "email", "url", "regex", "plainText", "trim"],
+  textarea: ["required", "minLength", "maxLength", "email", "url", "regex", "plainText"],
   time: ["required", "minTime", "maxTime"],
+  email: ["required"],
+  phone: ["required"],
+  url: ["required"],
   signature: ["required"],
   image: ["required"],
 };
@@ -71,6 +89,9 @@ function inferBaseTypeFromZod(zodCode: string): ValidatorBaseType {
   if (c.includes('describe("checkbox")') || c.includes("z.boolean(")) return "checkbox";
   if (c.includes('describe("textarea")')) return "textarea";
   if (c.includes('describe("time")')) return "time";
+  if (c.includes(".email(")) return "email";
+  if (c.includes(".url(")) return "url";
+  if (c.includes('describe("phone")') || c.includes("\\+?[0-9()\\-\\s]{7,20}")) return "phone";
   if (c.includes("z.coerce.date(") || c.includes("new Date(")) return "date";
   if (c.includes("z.number(")) return "number";
   return "text";
@@ -340,6 +361,37 @@ export function persistedIRToZod(ir: ValidatorIRv0): string {
     return 'z.string().describe("time")';
   }
 
+  if (ir.baseType === "email") {
+    const message =
+      (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
+    const validator =
+      (ir.rules as any[]).some((r) => r.kind === "required")
+        ? `z.string().email().nonempty({ message: "${message}" })`
+        : "z.string().email()";
+    return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
+  }
+
+  if (ir.baseType === "url") {
+    const message =
+      (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
+    const validator =
+      (ir.rules as any[]).some((r) => r.kind === "required")
+        ? `z.string().url().nonempty({ message: "${message}" })`
+        : "z.string().url()";
+    return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
+  }
+
+  if (ir.baseType === "phone") {
+    const message =
+      (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
+    const requiredMessage = JSON.stringify(message);
+    const validator =
+      (ir.rules as any[]).some((r) => r.kind === "required")
+        ? `z.string().regex(/^\\+?[0-9()\\-\\s]{7,20}$/, { message: "Please enter a valid phone number." }).nonempty({ message: ${requiredMessage} }).describe("phone")`
+        : 'z.string().regex(/^\\+?[0-9()\\-\\s]{7,20}$/, { message: "Please enter a valid phone number." }).describe("phone")';
+    return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
+  }
+
   const config = persistedIRToValidatorConfig(ir);
   let zod = validatorConfigToZodCode(config);
   if (ir.baseType === "textarea" && !zod.includes('describe("textarea")')) {
@@ -397,7 +449,10 @@ export function zodToPersistedIR(
 
   // If unsupported rules were filtered out, classify as partial.
   const compatibleRulesCount = config.rules.filter((r) =>
-    isRuleCompatible(baseType, r.type)
+    isRuleCompatible(baseType, r.type) ||
+    (baseType === "email" && r.type === "email") ||
+    (baseType === "url" && r.type === "url") ||
+    (baseType === "phone" && r.type === "regex")
   ).length;
   if (compatibleRulesCount !== config.rules.length) {
     return {

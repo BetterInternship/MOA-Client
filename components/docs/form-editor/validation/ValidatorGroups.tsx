@@ -15,6 +15,7 @@ import {
   getArrayOptions,
   getDateRelativeValidator,
   getEnumOptions,
+  type ToggleValidatorId,
   getToggleValidatorViewModel,
   setArrayOptions,
   setDateRelativeValidator,
@@ -29,6 +30,8 @@ export type ValidationFieldOption = {
   partyName?: string;
 };
 
+export type ValidationRuleId = ToggleValidatorId;
+
 /**
  * Base-type scoped renderer for no-code validator controls.
  * All mutations flow through `validator-state` helpers so rule behavior is consistent
@@ -39,12 +42,14 @@ export function ValidatorGroups({
   config,
   readOnly,
   fieldOptions,
+  allowedRuleIds,
   onConfigChange,
 }: {
   baseType: ValidatorBaseType;
   config: ValidatorConfig;
   readOnly: boolean;
   fieldOptions: ValidationFieldOption[];
+  allowedRuleIds?: ValidationRuleId[];
   onConfigChange: (next: ValidatorConfig) => void;
 }) {
   const vm = getToggleValidatorViewModel(config);
@@ -58,6 +63,12 @@ export function ValidatorGroups({
     onConfigChange(setToggleValidatorEnabled(config, id, enabled));
   const setValue = (id: Parameters<typeof setToggleValidatorValue>[1], value: string | number) =>
     onConfigChange(setToggleValidatorValue(config, id, value));
+  const isAllowed = (id: ValidationRuleId) =>
+    !allowedRuleIds || allowedRuleIds.includes(id);
+  const isRequiredOnly =
+    Array.isArray(allowedRuleIds) &&
+    allowedRuleIds.length === 1 &&
+    allowedRuleIds[0] === "required";
 
   const renderRequiredRow = (label = "Required") => (
     <ValidatorRow
@@ -68,45 +79,59 @@ export function ValidatorGroups({
     />
   );
 
+  if (isRequiredOnly) {
+    return <div className="space-y-2">{renderRequiredRow()}</div>;
+  }
+
+  if (baseType === "email" || baseType === "phone" || baseType === "url") {
+    return <div className="space-y-2">{renderRequiredRow()}</div>;
+  }
+
   if (baseType === "text") {
     return (
       <div>
         {renderRequiredRow()}
 
-        <ValidatorRow
-          label="Minimum characters"
-          enabled={vm.minLength.enabled}
-          onToggle={(enabled) => toggle("minLength", enabled)}
-          disabled={readOnly}
-        >
-          <ValidatorNumberInput
-            value={vm.minLength.value as number | undefined}
-            onChange={(next) => setValue("minLength", next)}
-            placeholder="Minimum"
+        {isAllowed("minLength") && (
+          <ValidatorRow
+            label="Minimum characters"
+            enabled={vm.minLength.enabled}
+            onToggle={(enabled) => toggle("minLength", enabled)}
+            disabled={readOnly}
+          >
+            <ValidatorNumberInput
+              value={vm.minLength.value as number | undefined}
+              onChange={(next) => setValue("minLength", next)}
+              placeholder="Minimum"
+              disabled={readOnly}
+            />
+          </ValidatorRow>
+        )}
+
+        {isAllowed("maxLength") && (
+          <ValidatorRow
+            label="Maximum characters"
+            enabled={vm.maxLength.enabled}
+            onToggle={(enabled) => toggle("maxLength", enabled)}
+            disabled={readOnly}
+          >
+            <ValidatorNumberInput
+              value={vm.maxLength.value as number | undefined}
+              onChange={(next) => setValue("maxLength", next)}
+              placeholder="Maximum"
+              disabled={readOnly}
+            />
+          </ValidatorRow>
+        )}
+
+        {isAllowed("plainText") && (
+          <ValidatorRow
+            label="Plain text only"
+            enabled={vm.plainText.enabled}
+            onToggle={(enabled) => toggle("plainText", enabled)}
             disabled={readOnly}
           />
-        </ValidatorRow>
-
-        <ValidatorRow
-          label="Maximum characters"
-          enabled={vm.maxLength.enabled}
-          onToggle={(enabled) => toggle("maxLength", enabled)}
-          disabled={readOnly}
-        >
-          <ValidatorNumberInput
-            value={vm.maxLength.value as number | undefined}
-            onChange={(next) => setValue("maxLength", next)}
-            placeholder="Maximum"
-            disabled={readOnly}
-          />
-        </ValidatorRow>
-
-        <ValidatorRow
-          label="Plain text only"
-          enabled={vm.plainText.enabled}
-          onToggle={(enabled) => toggle("plainText", enabled)}
-          disabled={readOnly}
-        />
+        )}
 
       </div>
     );
@@ -116,44 +141,44 @@ export function ValidatorGroups({
     return (
       <div className="space-y-2">
         {renderRequiredRow()}
-        <ValidatorRow
-          label="Minimum characters"
-          enabled={vm.minLength.enabled}
-          onToggle={(enabled) => toggle("minLength", enabled)}
-          disabled={readOnly}
-        >
-          <ValidatorNumberInput
-            value={vm.minLength.value as number | undefined}
-            onChange={(next) => setValue("minLength", next)}
-            placeholder="Minimum"
+        {isAllowed("minLength") && (
+          <ValidatorRow
+            label="Minimum characters"
+            enabled={vm.minLength.enabled}
+            onToggle={(enabled) => toggle("minLength", enabled)}
+            disabled={readOnly}
+          >
+            <ValidatorNumberInput
+              value={vm.minLength.value as number | undefined}
+              onChange={(next) => setValue("minLength", next)}
+              placeholder="Minimum"
+              disabled={readOnly}
+            />
+          </ValidatorRow>
+        )}
+        {isAllowed("maxLength") && (
+          <ValidatorRow
+            label="Maximum characters"
+            enabled={vm.maxLength.enabled}
+            onToggle={(enabled) => toggle("maxLength", enabled)}
+            disabled={readOnly}
+          >
+            <ValidatorNumberInput
+              value={vm.maxLength.value as number | undefined}
+              onChange={(next) => setValue("maxLength", next)}
+              placeholder="Maximum"
+              disabled={readOnly}
+            />
+          </ValidatorRow>
+        )}
+        {isAllowed("plainText") && (
+          <ValidatorRow
+            label="Plain text only"
+            enabled={vm.plainText.enabled}
+            onToggle={(enabled) => toggle("plainText", enabled)}
             disabled={readOnly}
           />
-        </ValidatorRow>
-        <ValidatorRow
-          label="Maximum characters"
-          enabled={vm.maxLength.enabled}
-          onToggle={(enabled) => toggle("maxLength", enabled)}
-          disabled={readOnly}
-        >
-          <ValidatorNumberInput
-            value={vm.maxLength.value as number | undefined}
-            onChange={(next) => setValue("maxLength", next)}
-            placeholder="Maximum"
-            disabled={readOnly}
-          />
-        </ValidatorRow>
-        <ValidatorRow
-          label="Plain text only"
-          enabled={vm.plainText.enabled}
-          onToggle={(enabled) => toggle("plainText", enabled)}
-          disabled={readOnly}
-        />
-        <ValidatorRow
-          label="Trim extra spaces"
-          enabled={vm.trim.enabled}
-          onToggle={(enabled) => toggle("trim", enabled)}
-          disabled={readOnly}
-        />
+        )}
       </div>
     );
   }

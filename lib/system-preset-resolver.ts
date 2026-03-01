@@ -67,7 +67,7 @@ export const resolveSystemPresetTemplates = (
       (preset as unknown as { field_schema_defaults?: unknown }).field_schema_defaults
     );
 
-    return {
+    const mergedPreset = normalizePresetTemplate({
       ...preset,
       label: systemRow?.label || preset.label,
       type: toPresetType(systemRow?.type, preset.type),
@@ -81,6 +81,10 @@ export const resolveSystemPresetTemplates = (
       validator_ir: systemRow?.validator_ir ?? preset.validator_ir,
       is_phantom: typeof systemRow?.is_phantom === "boolean" ? systemRow.is_phantom : preset.is_phantom,
       party: systemRow?.party ?? preset.party,
+    } as FieldPresetTemplate);
+
+    return {
+      ...mergedPreset,
       field_schema_defaults: defaults || packageDefaults,
     } as ResolvedSystemPresetTemplate;
   });
