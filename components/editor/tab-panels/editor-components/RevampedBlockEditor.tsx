@@ -117,6 +117,15 @@ export function RevampedBlockEditor() {
   // Local state for immediate typing feedback - will sync back to formMetadata through handler
   // This allows responsive typing while formMetadata remains the authoritative source
   const [editingValues, setEditingValues] = useState<Record<string, any>>({});
+  type IntegerFieldKey = "x" | "y" | "w" | "h" | "size";
+  const [integerDrafts, setIntegerDrafts] = useState<Partial<Record<IntegerFieldKey, string>>>({});
+  const INTEGER_FIELD_CONFIG: Record<IntegerFieldKey, { allowNegative: boolean; min?: number }> = {
+    x: { allowNegative: true },
+    y: { allowNegative: true },
+    w: { allowNegative: false, min: 0 },
+    h: { allowNegative: false, min: 0 },
+    size: { allowNegative: false, min: 0 },
+  };
 
   useEffect(() => {
     setEditedBlock(block);
@@ -159,6 +168,10 @@ export function RevampedBlockEditor() {
   useEffect(() => {
     setEditingValues({});
   }, [parentGroup?.id]);
+
+  useEffect(() => {
+    setIntegerDrafts({});
+  }, [parentGroup?.id, editedBlock?._id]);
 
   const getSource = (schema: any) => (schema?.source as string) || "manual";
   const presetTemplates = useMemo(
@@ -256,6 +269,59 @@ export function RevampedBlockEditor() {
 
     setEditedBlock(updated);
     handleBlockUpdate(updated);
+  };
+
+  const formatIntegerDisplay = (value: unknown, fallback: number) => {
+    const raw =
+      typeof value === "number" && Number.isFinite(value)
+        ? value
+        : Number.isFinite(fallback)
+          ? fallback
+          : 0;
+    return String(Math.round(raw));
+  };
+
+  const sanitizeIntegerInput = (raw: string, allowNegative: boolean) => {
+    const compact = raw.replace(/\s+/gu, "");
+    if (!compact) return "";
+    const stripped = compact.replace(/[^\d-]/gu, "");
+    if (!allowNegative) return stripped.replace(/-/gu, "");
+
+    const isNegative = stripped.startsWith("-");
+    const digitsOnly = stripped.replace(/-/gu, "");
+    return `${isNegative ? "-" : ""}${digitsOnly}`;
+  };
+
+  const commitIntegerValue = (key: IntegerFieldKey, draft: string) => {
+    if (!draft || draft === "-") return;
+    const parsed = Number.parseInt(draft, 10);
+    if (!Number.isFinite(parsed)) return;
+
+    const { min } = INTEGER_FIELD_CONFIG[key];
+    handleFieldChange(key, min !== undefined ? Math.max(min, parsed) : parsed);
+  };
+
+  const getIntegerInputValue = (key: IntegerFieldKey, value: unknown, fallback: number) => {
+    const draft = integerDrafts[key];
+    if (draft !== undefined) return draft;
+    return formatIntegerDisplay(value, fallback);
+  };
+
+  const handleIntegerInputChange = (key: IntegerFieldKey, raw: string) => {
+    const nextDraft = sanitizeIntegerInput(raw, INTEGER_FIELD_CONFIG[key].allowNegative);
+    setIntegerDrafts((prev) => ({ ...prev, [key]: nextDraft }));
+    commitIntegerValue(key, nextDraft);
+  };
+
+  const handleIntegerInputBlur = (key: IntegerFieldKey) => {
+    const draft = integerDrafts[key];
+    if (draft === undefined) return;
+    commitIntegerValue(key, draft);
+    setIntegerDrafts((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   if (!editedBlock && !parentGroup) {
@@ -583,29 +649,41 @@ export function RevampedBlockEditor() {
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="X"
-              type="number"
-              value={String((schema?.x || 0).toFixed(1))}
-              setter={(value) => handleFieldChange("x", parseFloat(value))}
+              type="text"
+              inputMode="numeric"
+              pattern="-?[0-9]*"
+              value={getIntegerInputValue("x", schema?.x, 0)}
+              setter={(value) => handleIntegerInputChange("x", value)}
+              onBlur={() => handleIntegerInputBlur("x")}
             />
             <FormInput
               label="Y"
-              type="number"
-              value={String((schema?.y || 0).toFixed(1))}
-              setter={(value) => handleFieldChange("y", parseFloat(value))}
+              type="text"
+              inputMode="numeric"
+              pattern="-?[0-9]*"
+              value={getIntegerInputValue("y", schema?.y, 0)}
+              setter={(value) => handleIntegerInputChange("y", value)}
+              onBlur={() => handleIntegerInputBlur("y")}
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="Width"
-              type="number"
-              value={String((schema?.w || 100).toFixed(1))}
-              setter={(value) => handleFieldChange("w", parseFloat(value))}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={getIntegerInputValue("w", schema?.w, 100)}
+              setter={(value) => handleIntegerInputChange("w", value)}
+              onBlur={() => handleIntegerInputBlur("w")}
             />
             <FormInput
               label="Height"
-              type="number"
-              value={String((schema?.h || 20).toFixed(1))}
-              setter={(value) => handleFieldChange("h", parseFloat(value))}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={getIntegerInputValue("h", schema?.h, 20)}
+              setter={(value) => handleIntegerInputChange("h", value)}
+              onBlur={() => handleIntegerInputBlur("h")}
             />
           </div>
           <div className="grid grid-cols-[1fr_110px] items-end gap-2">
@@ -634,9 +712,12 @@ export function RevampedBlockEditor() {
             </div>
             <FormInput
               label="Font size"
-              type="number"
-              value={String((schema?.size || 12).toFixed(1))}
-              setter={(value) => handleFieldChange("size", parseFloat(value))}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={getIntegerInputValue("size", schema?.size, 12)}
+              setter={(value) => handleIntegerInputChange("size", value)}
+              onBlur={() => handleIntegerInputBlur("size")}
             />
           </div>
         </Card>
