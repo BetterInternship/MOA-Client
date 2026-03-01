@@ -118,6 +118,12 @@ export function CustomFieldModalForm({
       ...updates,
     };
 
+    if (typeof nextDefaults.w !== "number" || !Number.isFinite(nextDefaults.w) || nextDefaults.w <= 0) {
+      delete nextDefaults.w;
+    }
+    if (typeof nextDefaults.h !== "number" || !Number.isFinite(nextDefaults.h) || nextDefaults.h <= 0) {
+      delete nextDefaults.h;
+    }
     if (typeof nextDefaults.size !== "number" || !Number.isFinite(nextDefaults.size)) {
       delete nextDefaults.size;
     }
@@ -331,6 +337,38 @@ export function CustomFieldModalForm({
                     onChange={(e) =>
                       applyFieldSchemaDefaults({
                         size:
+                          e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
+                      })
+                    }
+                    placeholder="12"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-slate-600">Width</Label>
+                  <Input
+                    type="number"
+                    value={schemaDefaults.w ?? ""}
+                    onChange={(e) =>
+                      applyFieldSchemaDefaults({
+                        w:
+                          e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
+                      })
+                    }
+                    placeholder="100"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-slate-600">Height</Label>
+                  <Input
+                    type="number"
+                    value={schemaDefaults.h ?? ""}
+                    onChange={(e) =>
+                      applyFieldSchemaDefaults({
+                        h:
                           e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
                       })
                     }
