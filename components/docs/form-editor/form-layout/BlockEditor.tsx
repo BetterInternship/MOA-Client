@@ -41,7 +41,10 @@ interface BlockEditorProps {
 export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockEditorProps) => {
   const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(block);
   const { registry } = useFieldTemplateContext();
-  const presetTemplates = useMemo(() => resolveSystemPresetTemplates(registry as any[]), [registry]);
+  const presetTemplates = useMemo(
+    () => resolveSystemPresetTemplates(registry as any[]),
+    [registry]
+  );
   const presetOptions = useMemo(
     () =>
       presetTemplates.map((preset) => ({
@@ -289,10 +292,7 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               <>
                 <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                   <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-slate-700">Default value</p>
-                    <p className="text-[11px] text-slate-500">
-                      Use default value mode for this field.
-                    </p>
+                    <p className="text-xs font-semibold text-slate-700">Derived value</p>
                   </div>
                   <Switch
                     checked={Boolean(isFormFieldDerived)}
@@ -403,10 +403,7 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               <>
                 <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                   <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-slate-700">Default value</p>
-                    <p className="text-[11px] text-slate-500">
-                      Use default value mode for this field.
-                    </p>
+                    <p className="text-xs font-semibold text-slate-700">Derived value</p>
                   </div>
                   <Switch
                     checked={Boolean(isPhantomFieldDerived)}

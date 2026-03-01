@@ -3,6 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import {
   Select,
@@ -23,6 +24,14 @@ import { getPresetFieldIcon } from "@/lib/preset-field-icons";
 import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
 import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
 import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
+import {
+  BiAlignLeft,
+  BiAlignMiddle,
+  BiAlignRight,
+  BiVerticalBottom,
+  BiVerticalCenter,
+  BiVerticalTop,
+} from "react-icons/bi";
 
 export interface CustomFieldModalFormValue {
   name: string;
@@ -58,6 +67,7 @@ interface CustomFieldModalFormProps {
   onChange: (updates: Partial<CustomFieldModalFormValue>) => void;
   onLabelChange?: (label: string) => void;
   tagReadOnly?: boolean;
+  hideTagField?: boolean;
   showDerivedNameHint?: boolean;
   presetTemplates?: CustomFieldPresetOption[];
   selectedPresetId?: string;
@@ -75,6 +85,7 @@ export function CustomFieldModalForm({
   onChange,
   onLabelChange,
   tagReadOnly = false,
+  hideTagField = false,
   showDerivedNameHint = false,
   presetTemplates,
   selectedPresetId = "",
@@ -259,41 +270,54 @@ export function CustomFieldModalForm({
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">Tag/Category</Label>
-                {tagReadOnly ? (
-                  <Input
-                    value={value.tag}
-                    readOnly
-                    placeholder="uncategorized"
-                    className="h-9 text-sm"
-                  />
-                ) : (
-                  <Autocomplete
-                    value={value.tag}
-                    inputClassName="h-9 text-sm"
-                    options={tagOptions.map((tag) => ({ id: tag, name: tag }))}
-                    setter={(nextTag) => onChange({ tag: String(nextTag || "") })}
-                    placeholder="uncategorized"
-                  />
-                )}
+            {!hideTagField && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Tag/Category</Label>
+                  {tagReadOnly ? (
+                    <Input
+                      value={value.tag}
+                      readOnly
+                      placeholder="uncategorized"
+                      className="h-9 text-sm"
+                    />
+                  ) : (
+                    <Autocomplete
+                      value={value.tag}
+                      inputClassName="h-9 text-sm"
+                      options={tagOptions.map((tag) => ({ id: tag, name: tag }))}
+                      setter={(nextTag) => onChange({ tag: String(nextTag || "") })}
+                      placeholder="uncategorized"
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-2 rounded-[0.33em] border border-slate-200 p-2.5">
               <Label className="text-xs font-semibold text-slate-700">Default Render Style</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-[1fr_110px] items-end gap-2">
                 <div className="space-y-1">
-                  <Label className="text-[11px] text-slate-600">Wrap text</Label>
-                  <div className="flex h-9 items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5">
-                    <span className="text-xs text-slate-600">
-                      {schemaDefaults.wrap === false ? "Off" : "On"}
-                    </span>
-                    <Switch
-                      checked={schemaDefaults.wrap !== false}
-                      onCheckedChange={(checked) => applyFieldSchemaDefaults({ wrap: checked })}
-                    />
+                  <Label className="text-[11px] text-slate-600">Text wrap</Label>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={schemaDefaults.wrap !== false ? "default" : "outline"}
+                      className="h-8 flex-1"
+                      onClick={() => applyFieldSchemaDefaults({ wrap: true })}
+                    >
+                      Wrap
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={schemaDefaults.wrap !== false ? "outline" : "default"}
+                      className="h-8 flex-1"
+                      onClick={() => applyFieldSchemaDefaults({ wrap: false })}
+                    >
+                      No wrap
+                    </Button>
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -307,53 +331,75 @@ export function CustomFieldModalForm({
                           e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
                       })
                     }
-                    placeholder="e.g. 12"
-                    className="h-9 text-sm"
+                    placeholder="12"
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-[11px] text-slate-600">Horizontal align</Label>
-                  <Select
-                    value={schemaDefaults.align_h || "__unset"}
-                    onValueChange={(next) =>
-                      applyFieldSchemaDefaults({
-                        align_h:
-                          next === "__unset" ? undefined : (next as FieldSchemaDefaults["align_h"]),
-                      })
-                    }
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] text-slate-600">Horizontal</Label>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={(schemaDefaults.align_h || "center") === "left" ? "default" : "outline"}
+                    className="h-8 flex-1"
+                    onClick={() => applyFieldSchemaDefaults({ align_h: "left" })}
                   >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Use system default" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[1100]">
-                      <SelectItem value="__unset">Use system default</SelectItem>
-                      <SelectItem value="left">Left</SelectItem>
-                      <SelectItem value="center">Center</SelectItem>
-                      <SelectItem value="right">Right</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <BiAlignLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={(schemaDefaults.align_h || "center") === "center" ? "default" : "outline"}
+                    className="h-8 flex-1"
+                    onClick={() => applyFieldSchemaDefaults({ align_h: "center" })}
+                  >
+                    <BiAlignMiddle className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={(schemaDefaults.align_h || "center") === "right" ? "default" : "outline"}
+                    className="h-8 flex-1"
+                    onClick={() => applyFieldSchemaDefaults({ align_h: "right" })}
+                  >
+                    <BiAlignRight className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-[11px] text-slate-600">Vertical align</Label>
-                  <Select
-                    value={schemaDefaults.align_v || "__unset"}
-                    onValueChange={(next) =>
-                      applyFieldSchemaDefaults({
-                        align_v:
-                          next === "__unset" ? undefined : (next as FieldSchemaDefaults["align_v"]),
-                      })
-                    }
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] text-slate-600">Vertical</Label>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={(schemaDefaults.align_v || "bottom") === "top" ? "default" : "outline"}
+                    className="h-8 flex-1"
+                    onClick={() => applyFieldSchemaDefaults({ align_v: "top" })}
                   >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Use system default" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[1100]">
-                      <SelectItem value="__unset">Use system default</SelectItem>
-                      <SelectItem value="top">Top</SelectItem>
-                      <SelectItem value="middle">Middle</SelectItem>
-                      <SelectItem value="bottom">Bottom</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <BiVerticalTop className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={(schemaDefaults.align_v || "bottom") === "middle" ? "default" : "outline"}
+                    className="h-8 flex-1"
+                    onClick={() => applyFieldSchemaDefaults({ align_v: "middle" })}
+                  >
+                    <BiVerticalCenter className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={(schemaDefaults.align_v || "bottom") === "bottom" ? "default" : "outline"}
+                    className="h-8 flex-1"
+                    onClick={() => applyFieldSchemaDefaults({ align_v: "bottom" })}
+                  >
+                    <BiVerticalBottom className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
               <div className="space-y-1">
@@ -376,10 +422,8 @@ export function CustomFieldModalForm({
             <>
               <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                 <div className="space-y-0.5">
-                  <p className="text-xs font-semibold text-slate-700">Default value</p>
-                  <p className="text-[11px] text-slate-500">
-                    Use default value mode for this field.
-                  </p>
+                  <p className="text-xs font-semibold text-slate-700">Derived value</p>
+              
                 </div>
                 <Switch
                   checked={isDerived}
@@ -420,6 +464,9 @@ export function CustomFieldModalForm({
                 </div>
               )}
               <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                </div>
                 <Switch
                   checked={isDerived}
                   onCheckedChange={(checked) =>
