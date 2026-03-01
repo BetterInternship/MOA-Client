@@ -18,6 +18,14 @@ import {
   type FieldSchemaDefaults,
 } from "@/lib/field-schema-defaults";
 import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
+import {
+  SIGNATURE_PRINTED_NAME_TEMPLATE,
+  type CompositeTemplateKey,
+} from "@/lib/composite-field-templates";
+import {
+  createSignaturePrintedNameBlocks,
+  resolveSignaturePrintedNameDimensions,
+} from "@/lib/composite-block-factory";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -53,6 +61,7 @@ type PaletteField = {
   field_schema_defaults?: FieldSchemaDefaults;
   iconKey?: string;
   paletteSource: PaletteSource;
+  composite_template?: CompositeTemplateKey;
 };
 
 type DragFieldPayload = Omit<PaletteField, "iconKey" | "paletteSource"> & {
@@ -96,7 +105,7 @@ export function BlocksPanel({
   signingParties,
 }: BlocksPanelProps) {
   const { registry } = useFieldTemplateContext();
-  const { handleBlockCreate, searchQuery, setSearchQuery } = useFormEditorTab();
+  const { handleBlockCreate, handleBlocksCreate, searchQuery, setSearchQuery } = useFormEditorTab();
   const { visiblePage } = usePdfViewer();
   const [fieldTab, setFieldTab] = useState<"default" | "custom">("default");
 
@@ -106,7 +115,8 @@ export function BlocksPanel({
 
   const defaultFields = useMemo<PaletteField[]>(() => {
     const presets = resolveSystemPresetTemplates(registry as any[]);
-    return presets.map((preset) => ({
+    const signaturePreset = presets.find((preset) => preset.name === "signature");
+    const mappedPresets = presets.map((preset) => ({
       id: preset.id,
       name: preset.name,
       label: preset.label || preset.name,
@@ -123,6 +133,27 @@ export function BlocksPanel({
       iconKey: preset.iconKey,
       paletteSource: "default" as const,
     }));
+
+    const compositeField: PaletteField = {
+      id: SIGNATURE_PRINTED_NAME_TEMPLATE.id,
+      name: SIGNATURE_PRINTED_NAME_TEMPLATE.name,
+      label: SIGNATURE_PRINTED_NAME_TEMPLATE.label,
+      type: "signature",
+      source: (signaturePreset?.source as PaletteField["source"]) || "manual",
+      shared: signaturePreset?.shared ?? true,
+      tag: "preset",
+      preset: "system",
+      prefiller: "",
+      tooltip_label: "",
+      validator: signaturePreset?.validator || "",
+      validator_ir: signaturePreset?.validator_ir || null,
+      field_schema_defaults: sanitizeFieldSchemaDefaults(signaturePreset?.field_schema_defaults),
+      iconKey: "signature",
+      paletteSource: "default",
+      composite_template: SIGNATURE_PRINTED_NAME_TEMPLATE.key,
+    };
+
+    return [...mappedPresets, compositeField];
   }, [registry]);
 
   const customFields = useMemo<PaletteField[]>(() => {
@@ -191,6 +222,7 @@ export function BlocksPanel({
       validator: field.validator,
       validator_ir: field.validator_ir,
       field_schema_defaults: field.field_schema_defaults,
+      composite_template: field.composite_template,
       __palette_source: field.paletteSource,
     };
 
@@ -202,8 +234,26 @@ export function BlocksPanel({
     const partyId = selectedPartyId || signingParties[0]?._id;
     if (!partyId) return;
 
-    const fieldWidth = 100;
-    const fieldHeight = 12;
+    const defaults = field.field_schema_defaults;
+    const isSignaturePrintedNameComposite =
+      field.composite_template === SIGNATURE_PRINTED_NAME_TEMPLATE.key;
+    const presets = isSignaturePrintedNameComposite ? resolveSystemPresetTemplates(registry as any[]) : [];
+    const signaturePreset = isSignaturePrintedNameComposite
+      ? presets.find((preset) => preset.name === "signature")
+      : undefined;
+    const shortTextPreset = isSignaturePrintedNameComposite
+      ? presets.find((preset) => preset.name === "short_text")
+      : undefined;
+    const compositeDimensions = isSignaturePrintedNameComposite
+      ? resolveSignaturePrintedNameDimensions({ signaturePreset, shortTextPreset })
+      : null;
+    const defaultFieldHeightByType = field.type === "signature" ? 25 : 12;
+    const fieldWidth = compositeDimensions?.signatureWidth ?? defaults?.w ?? 100;
+    const fieldHeight = compositeDimensions?.signatureHeight ?? defaults?.h ?? defaultFieldHeightByType;
+    const printedNameWidth = compositeDimensions?.printedNameWidth ?? fieldWidth;
+    const printedNameHeight = compositeDimensions?.printedNameHeight ?? 12;
+    const printedNameGap = compositeDimensions?.gap ?? SIGNATURE_PRINTED_NAME_TEMPLATE.printedName.gap;
+    const totalCompositeHeight = compositeDimensions?.totalHeight ?? fieldHeight;
     const page = Math.max(1, visiblePage || 1);
     const pageMaxX = 560;
     const pageMaxY = 760;
@@ -211,7 +261,7 @@ export function BlocksPanel({
     const marginY = 48;
     const gapX = 16;
     const gapY = 12;
-    const rowStep = fieldHeight + gapY;
+    const rowStep = (isSignaturePrintedNameComposite ? totalCompositeHeight : fieldHeight) + gapY;
     const colStep = fieldWidth + gapX;
 
     // Use current page occupancy to place new fields in the next open slot.
@@ -225,7 +275,7 @@ export function BlocksPanel({
         typeof block.field_schema?.h === "number"
     );
 
-    const overlapsExisting = (x: number, y: number) =>
+    const overlapsExistingRect = (x: number, y: number, width: number, height: number) =>
       pageFieldBlocks.some((block) => {
         const bx = block.field_schema!.x;
         const by = block.field_schema!.y;
@@ -233,9 +283,9 @@ export function BlocksPanel({
         const bh = block.field_schema!.h;
         const pad = 6;
         return !(
-          x + fieldWidth + pad <= bx ||
+          x + width + pad <= bx ||
           x >= bx + bw + pad ||
-          y + fieldHeight + pad <= by ||
+          y + height + pad <= by ||
           y >= by + bh + pad
         );
       });
@@ -244,9 +294,23 @@ export function BlocksPanel({
     let nextY = marginY;
     let foundSpot = false;
 
-    for (let y = marginY; y <= pageMaxY - fieldHeight; y += rowStep) {
+    for (
+      let y = marginY;
+      y <= pageMaxY - (isSignaturePrintedNameComposite ? totalCompositeHeight : fieldHeight);
+      y += rowStep
+    ) {
       for (let x = marginX; x <= pageMaxX - fieldWidth; x += colStep) {
-        if (!overlapsExisting(x, y)) {
+        const overlapsSignature = overlapsExistingRect(x, y, fieldWidth, fieldHeight);
+        const overlapsPrintedName =
+          isSignaturePrintedNameComposite &&
+          overlapsExistingRect(
+            x,
+            y + fieldHeight + printedNameGap,
+            printedNameWidth,
+            printedNameHeight
+          );
+
+        if (!overlapsSignature && !overlapsPrintedName) {
           nextX = x;
           nextY = y;
           foundSpot = true;
@@ -261,7 +325,23 @@ export function BlocksPanel({
         (a, b) => a.field_schema!.y - b.field_schema!.y || a.field_schema!.x - b.field_schema!.x
       )[pageFieldBlocks.length - 1];
       nextX = Math.min(pageMaxX - fieldWidth, Math.max(marginX, last.field_schema!.x));
-      nextY = Math.min(pageMaxY - fieldHeight, last.field_schema!.y + rowStep);
+      nextY = Math.min(
+        pageMaxY - (isSignaturePrintedNameComposite ? totalCompositeHeight : fieldHeight),
+        last.field_schema!.y + rowStep
+      );
+    }
+
+    if (isSignaturePrintedNameComposite) {
+      const pairBlocks = createSignaturePrintedNameBlocks({
+        partyId,
+        page,
+        x: nextX,
+        y: nextY,
+        signaturePreset,
+        shortTextPreset,
+      });
+      handleBlocksCreate(pairBlocks);
+      return;
     }
 
     const baseFieldKey = field.name || field.id;
@@ -281,7 +361,6 @@ export function BlocksPanel({
     );
 
     const baseSchema = existingForField?.field_schema;
-    const defaults = field.field_schema_defaults;
 
     const newBlock: IFormBlock = {
       _id: `block-${field.id}-${Date.now()}`,
@@ -294,8 +373,8 @@ export function BlocksPanel({
         page,
         x: nextX,
         y: nextY,
-        w: fieldWidth,
-        h: fieldHeight,
+        w: baseSchema?.w ?? defaults?.w ?? fieldWidth,
+        h: baseSchema?.h ?? defaults?.h ?? fieldHeight,
         align_h: baseSchema?.align_h ?? defaults?.align_h ?? "center",
         align_v: baseSchema?.align_v ?? defaults?.align_v ?? "bottom",
         label: baseSchema?.label || field.label || field.name || field.id,

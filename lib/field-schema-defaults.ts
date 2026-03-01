@@ -1,8 +1,17 @@
 import type { IFormField } from "@betterinternship/core/forms";
 
 export type FieldSchemaDefaults = Partial<
-  Pick<IFormField, "wrap" | "size" | "align_h" | "align_v" | "font">
+  Pick<IFormField, "w" | "h" | "wrap" | "size" | "align_h" | "align_v" | "font">
 >;
+
+const toFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+};
 
 export const sanitizeFieldSchemaDefaults = (value: unknown): FieldSchemaDefaults | undefined => {
   if (!value || typeof value !== "object") return undefined;
@@ -10,8 +19,17 @@ export const sanitizeFieldSchemaDefaults = (value: unknown): FieldSchemaDefaults
   const defaults: FieldSchemaDefaults = {};
 
   if (typeof candidate.wrap === "boolean") defaults.wrap = candidate.wrap;
-  if (typeof candidate.size === "number" && Number.isFinite(candidate.size)) {
-    defaults.size = candidate.size;
+  const w = toFiniteNumber(candidate.w);
+  if (w !== null && w > 0) {
+    defaults.w = w;
+  }
+  const h = toFiniteNumber(candidate.h);
+  if (h !== null && h > 0) {
+    defaults.h = h;
+  }
+  const size = toFiniteNumber(candidate.size);
+  if (size !== null) {
+    defaults.size = size;
   }
 
   if (

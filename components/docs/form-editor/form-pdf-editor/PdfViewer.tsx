@@ -16,7 +16,7 @@ import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/type
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
 import { FieldBox, type FormField } from "./FieldBox";
-import { FieldRegistryEntryDetails, FieldRegistryEntry } from "@/app/api";
+import { FieldRegistryEntry } from "@/app/api";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
@@ -25,6 +25,16 @@ import { Switch } from "@/components/ui/switch";
 import { IFormBlock, IFormField, IFormMetadata } from "@betterinternship/core/forms";
 import { FormViewBlocksPanel } from "@/components/editor/tab-panels/editor-components/FormViewBlocksPanel";
 import { sanitizeFieldSchemaDefaults, type FieldSchemaDefaults } from "@/lib/field-schema-defaults";
+import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
+import {
+  SIGNATURE_PRINTED_NAME_TEMPLATE,
+  type CompositeTemplateKey,
+} from "@/lib/composite-field-templates";
+import {
+  createSignaturePrintedNameBlocks,
+  resolveSignaturePrintedNameDimensions,
+} from "@/lib/composite-block-factory";
+import type { ValidatorIRv0 } from "@/lib/validator-ir";
 
 export type PointerLocation = {
   page: number;
@@ -39,10 +49,26 @@ export type PointerLocation = {
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const createUniqueFieldKey = (base: string) =>
   `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-type DraggedFieldPayload = FieldRegistryEntryDetails & {
+type DraggedFieldPayload = {
+  id?: string;
+  name: string;
+  label?: string;
+  type: "text" | "signature" | "image";
+  source?: "auto" | "prefill" | "derived" | "manual";
+  shared?: boolean;
+  tag?: string;
+  preset?: string;
+  prefiller?: string;
+  tooltip_label?: string;
+  validator?: string;
+  validator_ir?: ValidatorIRv0 | null;
   __palette_source?: "default" | "custom";
   field_schema_defaults?: FieldSchemaDefaults;
+  composite_template?: CompositeTemplateKey;
 };
+
+const DEFAULT_PAGE_WIDTH = 560;
+const DEFAULT_PAGE_HEIGHT = 760;
 
 const resolveDroppedFieldKey = (field: DraggedFieldPayload) => {
   const base = field.name || "field";
@@ -51,6 +77,14 @@ const resolveDroppedFieldKey = (field: DraggedFieldPayload) => {
   }
 
   return field.preset ? `${base}:${field.preset}` : base;
+};
+
+const getCompositePresets = (registryRows: unknown[]) => {
+  const presets = resolveSystemPresetTemplates(registryRows as any[]);
+  return {
+    signaturePreset: presets.find((preset) => preset.name === "signature"),
+    shortTextPreset: presets.find((preset) => preset.name === "short_text"),
+  };
 };
 
 /**
@@ -65,6 +99,7 @@ export function PdfViewer() {
     selectedPartyId,
     handleFieldSelectFromPdf,
     handleBlockCreate,
+    handleBlocksCreate,
     handleBlockUpdate,
     setPreferredPlacementPage,
     editorViewMode,
@@ -198,6 +233,30 @@ export function PdfViewer() {
           const displayX = e.clientX - rect.left;
           const displayY = e.clientY - rect.top;
 
+          if (draggedField.composite_template === SIGNATURE_PRINTED_NAME_TEMPLATE.key) {
+            const { signaturePreset, shortTextPreset } = getCompositePresets(registry as unknown[]);
+            const dimensions = resolveSignaturePrintedNameDimensions({
+              signaturePreset,
+              shortTextPreset,
+            });
+
+            const rawX = (displayX - dimensions.signatureWidth / 2) / scale;
+            const rawY = (displayY - dimensions.signatureHeight / 2) / scale;
+            const x = clamp(rawX, 0, Math.max(0, DEFAULT_PAGE_WIDTH - dimensions.signatureWidth));
+            const y = clamp(rawY, 0, Math.max(0, DEFAULT_PAGE_HEIGHT - dimensions.totalHeight));
+
+            const pairBlocks = createSignaturePrintedNameBlocks({
+              partyId: selectedPartyId || "",
+              page: visiblePage,
+              x,
+              y,
+              signaturePreset,
+              shortTextPreset,
+            });
+            handleBlocksCreate(pairBlocks);
+            return;
+          }
+
           const uniqueId = Math.random().toString(36).substr(2, 9);
           const fieldKey = resolveDroppedFieldKey(draggedField);
           const existingForField = blocks.find(
@@ -208,6 +267,9 @@ export function PdfViewer() {
           );
           const baseSchema = existingForField?.field_schema;
           const defaults = sanitizeFieldSchemaDefaults(draggedField.field_schema_defaults);
+          const defaultFieldHeightByType = draggedField.type === "signature" ? 25 : 12;
+          const fieldWidth = defaults?.w ?? 100;
+          const fieldHeight = defaults?.h ?? defaultFieldHeightByType;
           const newBlock: IFormBlock = {
             _id: uniqueId,
             block_type: "form_field",
@@ -219,10 +281,10 @@ export function PdfViewer() {
               tooltip_label: baseSchema?.tooltip_label || draggedField.tooltip_label || "",
               type: baseSchema?.type || draggedField.type,
               page: visiblePage,
-              x: Math.max(0, (displayX - 50) / scale),
-              y: Math.max(0, (displayY - 6) / scale),
-              w: 100,
-              h: 12,
+              x: Math.max(0, (displayX - fieldWidth / 2) / scale),
+              y: Math.max(0, (displayY - fieldHeight / 2) / scale),
+              w: baseSchema?.w ?? fieldWidth,
+              h: baseSchema?.h ?? fieldHeight,
               align_h: baseSchema?.align_h ?? defaults?.align_h ?? "center",
               align_v: baseSchema?.align_v ?? defaults?.align_v ?? "bottom",
               shared:
@@ -267,7 +329,16 @@ export function PdfViewer() {
       const file = Array.from(files).find((f) => f.type === "application/pdf") || files[0];
       if (file) handleFileUpload(file);
     },
-    [scale, visiblePage, selectedPartyId, handleBlockCreate, setIsDragging, handleFileUpload]
+    [
+      scale,
+      visiblePage,
+      selectedPartyId,
+      handleBlockCreate,
+      handleBlocksCreate,
+      setIsDragging,
+      handleFileUpload,
+      registry,
+    ]
   );
 
   return (
@@ -456,7 +527,8 @@ const PdfPageCanvas = memo(
     _registry,
     formMetadata,
   }: PdfPageCanvasProps) => {
-    const { handleBlockCreate, handleDeleteBlock, handleDuplicateBlock } = useFormEditorTab();
+    const { handleBlockCreate, handleBlocksCreate, handleDeleteBlock, handleDuplicateBlock } =
+      useFormEditorTab();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const viewportRef = useRef<PageViewport | null>(null);
@@ -658,8 +730,32 @@ const PdfPageCanvas = memo(
         const location = extractLocation(e);
         if (!location) return;
 
-        const fieldWidth = 100;
-        const fieldHeight = 12;
+        if (draggedField.composite_template === SIGNATURE_PRINTED_NAME_TEMPLATE.key) {
+          const { signaturePreset, shortTextPreset } = getCompositePresets(_registry as unknown[]);
+          const dimensions = resolveSignaturePrintedNameDimensions({
+            signaturePreset,
+            shortTextPreset,
+          });
+          const pageWidth = location.viewportWidth / scale;
+          const pageHeight = location.viewportHeight / scale;
+
+          const rawX = location.pdfX - dimensions.signatureWidth / 2;
+          const rawY = location.pdfY - dimensions.signatureHeight / 2;
+          const x = clamp(rawX, 0, Math.max(0, pageWidth - dimensions.signatureWidth));
+          const y = clamp(rawY, 0, Math.max(0, pageHeight - dimensions.totalHeight));
+
+          const pairBlocks = createSignaturePrintedNameBlocks({
+            partyId: selectedPartyId || "",
+            page: pageNumber,
+            x,
+            y,
+            signaturePreset,
+            shortTextPreset,
+          });
+          handleBlocksCreate(pairBlocks);
+          return;
+        }
+
         const uniqueId = Math.random().toString(36).substr(2, 9);
         const fieldKey = resolveDroppedFieldKey(draggedField);
         const existingForField = blocks.find(
@@ -670,6 +766,9 @@ const PdfPageCanvas = memo(
         );
         const baseSchema = existingForField?.field_schema;
         const defaults = sanitizeFieldSchemaDefaults(draggedField.field_schema_defaults);
+        const defaultFieldHeightByType = draggedField.type === "signature" ? 25 : 12;
+        const fieldWidth = defaults?.w ?? 100;
+        const fieldHeight = defaults?.h ?? defaultFieldHeightByType;
 
         const newBlock: IFormBlock = {
           _id: uniqueId,
@@ -684,8 +783,8 @@ const PdfPageCanvas = memo(
             page: pageNumber,
             x: location.pdfX - fieldWidth / 2,
             y: location.pdfY - fieldHeight / 2,
-            w: fieldWidth,
-            h: fieldHeight,
+            w: baseSchema?.w ?? fieldWidth,
+            h: baseSchema?.h ?? fieldHeight,
             align_h: baseSchema?.align_h ?? defaults?.align_h ?? "center",
             align_v: baseSchema?.align_v ?? defaults?.align_v ?? "bottom",
             shared:

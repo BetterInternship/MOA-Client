@@ -131,6 +131,7 @@ interface FormEditorTabContextType {
   handleParentGroupSelect: (blockId: string, group: BlockGroup | null) => void;
   handleBlockUpdate: (updatedBlock: IFormBlock) => void;
   handleBlockCreate: (block: IFormBlock) => void;
+  handleBlocksCreate: (blocks: IFormBlock[]) => void;
   handleFieldSelectFromPdf: (fieldId: string) => void;
   handleParentUpdate: (blockId: string, updates: any) => void;
 
@@ -406,6 +407,23 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
       updateBlocks([...formMetadata.schema.blocks, blockToAppend]);
       setSelectedBlockId(blockToAppend._id);
+      setSelectedBlockGroup(null);
+    },
+    [formMetadata, updateBlocks]
+  );
+
+  const handleBlocksCreate = useCallback(
+    (newBlocks: IFormBlock[]) => {
+      if (!formMetadata || !newBlocks.length) return;
+
+      const startOrder = formMetadata.schema.blocks.length;
+      const blocksToAppend = newBlocks.map((block, index) => ({
+        ...block,
+        order: startOrder + index,
+      }));
+
+      updateBlocks([...formMetadata.schema.blocks, ...blocksToAppend]);
+      setSelectedBlockId(blocksToAppend[0]?._id || null);
       setSelectedBlockGroup(null);
     },
     [formMetadata, updateBlocks]
@@ -718,6 +736,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     handleParentGroupSelect,
     handleBlockUpdate,
     handleBlockCreate,
+    handleBlocksCreate,
     handleFieldSelectFromPdf,
     handleParentUpdate,
     handleDuplicateBlock,
