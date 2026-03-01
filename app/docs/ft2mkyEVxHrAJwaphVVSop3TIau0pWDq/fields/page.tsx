@@ -1,6 +1,5 @@
 "use client";
 
-import { useModal } from "@/app/providers/modal-provider";
 import {
   formsControllerGetFieldFromRegistry,
   formsControllerRegisterField,
@@ -36,7 +35,11 @@ import {
 } from "@/lib/custom-field-mappers";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
 import { deriveFieldNameFromLabel } from "@/lib/field-name";
-import { buildFieldOptionsFromRegistry, buildTagOptionsFromRegistry } from "@/lib/field-library";
+import {
+  buildFieldOptionsFromRegistry,
+  buildTagOptionsFromRegistry,
+  isPresetRegistryField,
+} from "@/lib/field-library";
 import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
 import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 
@@ -67,6 +70,8 @@ type FieldRegistryMinimalEntry = {
   tag?: string;
 };
 
+type EditorPaneState = { mode: "none" } | { mode: "create" } | { mode: "edit"; id: string };
+
 // Stable ordering keeps grouped field lists predictable across rerenders and searches.
 const sortFields = (list: FieldRegistryMinimalEntry[]) =>
   (list ?? []).slice().sort((a, b) => {
@@ -89,7 +94,7 @@ const FieldRegistryPage = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkTargetTag, setBulkTargetTag] = useState("");
   const [bulkMoving, setBulkMoving] = useState(false);
-  const { openModal, closeModal } = useModal();
+  const [editorPane, setEditorPane] = useState<EditorPaneState>({ mode: "none" });
 
   const fields = useMemo(
     () => sortFields((fieldRegistry.data?.fields as FieldRegistryMinimalEntry[]) || []),
@@ -179,31 +184,11 @@ const FieldRegistryPage = () => {
   };
 
   const handleAdd = () => {
-    openModal(
-      "field-add",
-      <FieldLibraryProvider value={modalLibraryValue}>
-        <FieldRegistration close={closeModal} onSaved={refreshRegistry} />
-      </FieldLibraryProvider>,
-      {
-        title: "Add Custom Field",
-        showHeaderDivider: true,
-        panelClassName: "sm:max-w-3xl",
-      }
-    );
+    setEditorPane({ mode: "create" });
   };
 
   const handleEdit = (id: string) => {
-    openModal(
-      "field-editor",
-      <FieldLibraryProvider value={modalLibraryValue}>
-        <FieldEditor id={id} close={closeModal} onSaved={refreshRegistry} />
-      </FieldLibraryProvider>,
-      {
-        title: "Edit Field",
-        showHeaderDivider: true,
-        panelClassName: "sm:max-w-3xl",
-      }
-    );
+    setEditorPane({ mode: "edit", id });
   };
 
   const refreshRegistry = async () => {
@@ -231,12 +216,18 @@ const FieldRegistryPage = () => {
     setBulkMoving(true);
     try {
       const ids = Array.from(selectedIds);
+      let movedCount = 0;
+      let skippedPresetCount = 0;
       // Endpoint is single-record update, so bulk move fans out requests by selected id.
       await Promise.all(
         ids.map(async (id) => {
           const fieldRes = await formsControllerGetFieldFromRegistry({ id });
           const field = fieldRes?.field;
           if (!field) return;
+          if (isPresetRegistryField(field as any)) {
+            skippedPresetCount += 1;
+            return;
+          }
 
           await formsControllerUpdateField({
             id: field.id,
@@ -253,16 +244,24 @@ const FieldRegistryPage = () => {
             validator: field.validator ?? null,
             validator_ir: (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
             field_schema_defaults:
-              (field as { field_schema_defaults?: FieldSchemaDefaults | null }).field_schema_defaults ??
-              null,
+              (field as { field_schema_defaults?: FieldSchemaDefaults | null })
+                .field_schema_defaults ?? null,
             is_phantom: field.is_phantom ?? false,
           } as any);
+          movedCount += 1;
         })
       );
 
-      await refreshRegistry();
+      if (movedCount > 0) {
+        await refreshRegistry();
+      }
       setSelectedIds(new Set());
-      toast.success(`Moved ${ids.length} field(s) to "${targetTag}".`);
+      if (movedCount > 0) {
+        toast.success(`Moved ${movedCount} field(s) to "${targetTag}".`);
+      }
+      if (skippedPresetCount > 0) {
+        toast(`Skipped ${skippedPresetCount} preset field(s). Preset tags are locked.`);
+      }
     } catch {
       toast.error("Failed to move selected fields.");
     } finally {
@@ -271,148 +270,196 @@ const FieldRegistryPage = () => {
   };
 
   return (
-    <div className="mx-auto mt-4 max-w-5xl space-y-3 pb-12">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">Field Registry</h1>
-        <div className="flex-1" />
-        <Input
-          value={searchTerm}
-          placeholder="Search fields..."
-          className="h-9 w-[240px] rounded-[0.33em]"
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <Button size="sm" onClick={handleAdd} className="h-9 rounded-[0.33em] px-3">
-          <Plus className="mr-1 h-3.5 w-3.5" />
-          Add new field
-        </Button>
-      </div>
+    <FieldLibraryProvider value={modalLibraryValue}>
+      <div className="mx-auto mt-4 max-w-5xl space-y-3 overflow-hidden">
+        <div className="grid gap-4 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="space-y-3 lg:flex lg:min-h-0 lg:flex-col">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight">Field Registry</h1>
+              <div className="flex-1" />
+              <Input
+                value={searchTerm}
+                placeholder="Search fields..."
+                className="h-9 w-[240px] rounded-[0.33em]"
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Button size="sm" onClick={handleAdd} className="h-9 rounded-[0.33em] px-3">
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add new field
+              </Button>
+            </div>
 
-      {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-[0.33em] border border-slate-200 bg-white p-2">
-          <Badge className="p-2">{selectedIds.size} selected</Badge>
-          <Autocomplete
-            value={bulkTargetTag}
-            setter={(nextTag) => setBulkTargetTag(String(nextTag || ""))}
-            options={allAvailableTags.map((tag) => ({ id: tag, name: tag }))}
-            placeholder="Move to category/tag..."
-            className="w-[220px]"
-            inputClassName="h-8 rounded-[0.33em]"
-          />
-          <Button
-            size="sm"
-            className="h-8 rounded-[0.33em]"
-            onClick={() => void handleBulkMove()}
-            disabled={bulkMoving}
-          >
-            <MoveRight className="mr-1 h-3.5 w-3.5" />
-            {bulkMoving ? "Moving..." : "Move"}
-          </Button>
-        </div>
-      )}
-
-      {fieldRegistry.isLoading || fieldRegistry.isFetching ? (
-        <Loader>Loading fields...</Loader>
-      ) : groupedFields.length === 0 ? (
-        <div className="rounded-[0.33em] border border-slate-200 bg-white p-4 text-sm text-slate-500">
-          No fields found.
-        </div>
-      ) : (
-        groupedFields.map((group) => {
-          const groupIds = group.entries.map((f) => f.id);
-          const selectedCount = groupIds.filter((id) => selectedIds.has(id)).length;
-          const allSelected = groupIds.length > 0 && selectedCount === groupIds.length;
-          const someSelected = selectedCount > 0 && !allSelected;
-
-          return (
-            <Collapsible
-              key={group.tag}
-              open={expandedTags[group.tag]}
-              onOpenChange={() => toggleTag(group.tag)}
-              className="space-y-2"
-            >
-              <div className="rounded-[0.33em] border border-slate-200 bg-slate-50">
-                <Checkbox
-                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                  onCheckedChange={(checked) => toggleGroupSelection(groupIds, checked === true)}
-                  aria-label={`Select all in ${group.tag}`}
-                  className="sr-only"
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-[0.33em] border border-slate-200 bg-white p-2">
+                <Badge className="p-2">{selectedIds.size} selected</Badge>
+                <Autocomplete
+                  value={bulkTargetTag}
+                  setter={(nextTag) => setBulkTargetTag(String(nextTag || ""))}
+                  options={allAvailableTags.map((tag) => ({ id: tag, name: tag }))}
+                  placeholder="Move to category/tag..."
+                  className="w-[220px]"
+                  inputClassName="h-8 rounded-[0.33em]"
                 />
-                <CollapsibleTrigger asChild>
-                  <button
-                    type="button"
-                    className="group hover:bg-primary/5 flex w-full items-center justify-between rounded-[0.33em] px-3 py-2 text-left"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Checkbox
-                        checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                        onCheckedChange={(checked) =>
-                          toggleGroupSelection(groupIds, checked === true)
-                        }
-                        aria-label={`Select all in ${group.tag}`}
-                      />
-                      <p className="truncate text-sm font-semibold text-slate-800">{group.tag}</p>
-                      <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
-                        {group.entries.length}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 text-slate-500 transition-transform ${
-                        expandedTags[group.tag] ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                </CollapsibleTrigger>
+                <Button
+                  size="sm"
+                  className="h-8 rounded-[0.33em]"
+                  onClick={() => void handleBulkMove()}
+                  disabled={bulkMoving}
+                >
+                  <MoveRight className="mr-1 h-3.5 w-3.5" />
+                  {bulkMoving ? "Moving..." : "Move"}
+                </Button>
               </div>
-
-              <CollapsibleContent className="space-y-1 pl-6">
-                <div className="space-y-1 border-l border-slate-200 pl-2">
-                  {group.entries.map((field) => (
-                    <div
-                      key={field.id}
-                      className={`hover:bg-primary/5 flex w-full items-center gap-2 rounded-[0.33em] px-2 py-1.5 transition-colors ${
-                        selectedIds.has(field.id) ? "bg-primary/5" : ""
-                      }`}
-                    >
-                      <Checkbox
-                        checked={selectedIds.has(field.id)}
-                        onCheckedChange={() => toggleFieldSelection(field.id)}
-                        aria-label={`Select ${field.name}`}
-                      />
-                      <div className="min-w-0 flex-1 flex-col">
-                        <p className="truncate text-sm font-medium text-slate-800">
-                          {field.label || field.name}
-                        </p>
-                        <p className="truncate text-xs text-slate-500">
-                          {field.name}:{field.preset}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 rounded-[0.33em] px-2"
-                        onClick={() => handleEdit(field.id)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
+            )}
+            <div className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+              {fieldRegistry.isLoading || fieldRegistry.isFetching ? (
+                <Loader>Loading fields...</Loader>
+              ) : groupedFields.length === 0 ? (
+                <div className="rounded-[0.33em] border border-slate-200 bg-white p-4 text-sm text-slate-500">
+                  No fields found.
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
-          );
-        })
-      )}
-    </div>
+              ) : (
+                groupedFields.map((group) => {
+                  const groupIds = group.entries.map((f) => f.id);
+                  const selectedCount = groupIds.filter((id) => selectedIds.has(id)).length;
+                  const allSelected = groupIds.length > 0 && selectedCount === groupIds.length;
+                  const someSelected = selectedCount > 0 && !allSelected;
+
+                  return (
+                    <Collapsible
+                      key={group.tag}
+                      open={expandedTags[group.tag]}
+                      onOpenChange={() => toggleTag(group.tag)}
+                      className="space-y-2"
+                    >
+                      <div className="rounded-[0.33em] border border-slate-200 bg-slate-50">
+                        <Checkbox
+                          checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                          onCheckedChange={(checked) =>
+                            toggleGroupSelection(groupIds, checked === true)
+                          }
+                          aria-label={`Select all in ${group.tag}`}
+                          className="sr-only"
+                        />
+                        <CollapsibleTrigger asChild>
+                          <button
+                            type="button"
+                            className="group hover:bg-primary/5 flex w-full items-center justify-between rounded-[0.33em] px-3 py-2 text-left"
+                          >
+                            <div className="flex min-w-0 items-center gap-2">
+                              <Checkbox
+                                checked={
+                                  allSelected ? true : someSelected ? "indeterminate" : false
+                                }
+                                onCheckedChange={(checked) =>
+                                  toggleGroupSelection(groupIds, checked === true)
+                                }
+                                aria-label={`Select all in ${group.tag}`}
+                              />
+                              <p className="truncate text-sm font-semibold text-slate-800">
+                                {group.tag}
+                              </p>
+                              <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                                {group.entries.length}
+                              </span>
+                            </div>
+                            <ChevronDown
+                              className={`h-4 w-4 text-slate-500 transition-transform ${
+                                expandedTags[group.tag] ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                        </CollapsibleTrigger>
+                      </div>
+
+                      <CollapsibleContent className="space-y-1 pl-6">
+                        <div className="space-y-1 border-l border-slate-200 pl-2">
+                          {group.entries.map((field) => (
+                            <div
+                              key={field.id}
+                              className={`hover:bg-primary/5 flex w-full items-center gap-2 rounded-[0.33em] px-2 py-1.5 transition-colors ${
+                                selectedIds.has(field.id) ? "bg-primary/5" : ""
+                              }`}
+                            >
+                              <Checkbox
+                                checked={selectedIds.has(field.id)}
+                                onCheckedChange={() => toggleFieldSelection(field.id)}
+                                aria-label={`Select ${field.name}`}
+                              />
+                              <div className="min-w-0 flex-1 flex-col">
+                                <p className="truncate text-sm font-medium text-slate-800">
+                                  {field.label || field.name}
+                                </p>
+                                <p className="truncate text-xs text-slate-500">
+                                  {field.name}:{field.preset}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 rounded-[0.33em] px-2"
+                                onClick={() => handleEdit(field.id)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[0.33em] border border-slate-200 bg-white p-3 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden">
+            {editorPane.mode === "none" ? (
+              <div className="flex h-full min-h-[180px] items-center justify-center">
+                <p className="text-sm text-slate-500">
+                  Select a field to edit, or add a new field.
+                </p>
+              </div>
+            ) : editorPane.mode === "create" ? (
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-slate-800">Add Custom Field</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setEditorPane({ mode: "none" })}>
+                    Close
+                  </Button>
+                </div>
+                <div className="min-h-0 flex-1">
+                  <FieldRegistration
+                    close={() => setEditorPane({ mode: "none" })}
+                    onSaved={refreshRegistry}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-slate-800">Edit Field</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setEditorPane({ mode: "none" })}>
+                    Close
+                  </Button>
+                </div>
+                <div className="min-h-0 flex-1">
+                  <FieldEditor key={editorPane.id} id={editorPane.id} onSaved={refreshRegistry} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </FieldLibraryProvider>
   );
 };
 
 const FieldEditor = ({
   id,
-  close,
   onSaved,
 }: {
   id: string | null;
-  close: () => void;
   onSaved?: () => Promise<void> | void;
 }) => {
   const { fieldOptions, tagOptions } = useFieldLibrary();
@@ -449,7 +496,6 @@ const FieldEditor = ({
         is_phantom: field?.is_phantom ?? false,
       } as any);
       await onSaved?.();
-      close();
     } finally {
       setEditing(false);
     }
@@ -465,8 +511,8 @@ const FieldEditor = ({
         validator: data.field.validator ?? "",
         validator_ir: (data.field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
         field_schema_defaults:
-          (data.field as { field_schema_defaults?: FieldSchemaDefaults | null }).field_schema_defaults ??
-          null,
+          (data.field as { field_schema_defaults?: FieldSchemaDefaults | null })
+            .field_schema_defaults ?? null,
         prefiller: data.field.prefiller ?? "",
       });
     } else {
@@ -475,7 +521,7 @@ const FieldEditor = ({
   }, [data]);
 
   return (
-    <div className="h-fit w-xl flex-col">
+    <div className="flex h-full min-h-0 w-full flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {isLoading || isFetching ? (
           <Loader>Loading field...</Loader>
@@ -509,14 +555,20 @@ const FieldEditor = ({
                 )
               }
               showDerivedNameHint={true}
+              tagReadOnly={isPresetRegistryField(field as any)}
+              hideTagField={isPresetRegistryField(field as any)}
               onChange={(updates) => setField((prev) => (prev ? { ...prev, ...updates } : prev))}
             />
           </>
         ) : null}
       </div>
-      <div className="mt-3 flex flex-row justify-between gap-1 pt-3">
+      <div className="mt-3 flex shrink-0 flex-row justify-between">
         <div className="flex-1" />
-        <Button disabled={editing} onClick={() => void handleEdit()}>
+        <Button
+          disabled={editing || isLoading || isFetching || !field}
+          onClick={() => void handleEdit()}
+          className="w-full"
+        >
           {editing ? "Saving..." : "Save"}
         </Button>
       </div>
@@ -620,39 +672,46 @@ const FieldRegistration = ({
   };
 
   return (
-    <div className="w-xl space-y-4">
-      <CustomFieldModalForm
-        value={{
-          name: field.name || "",
-          label: field.label || "",
-          tag: field.tag || "",
-          tooltip_label: field.tooltip_label || "",
-          type: field.type || "text",
-          source: normalizeFieldSource(field.source),
-          shared: field.shared ?? true,
-          prefiller: field.prefiller || "",
-          validator: field.validator || "",
-          validator_ir: field.validator_ir || null,
-          field_schema_defaults: field.field_schema_defaults || null,
-        }}
-        fieldOptions={fieldOptions}
-        presetTemplates={presetTemplates}
-        selectedPresetId={selectedPresetId}
-        onPresetChange={(presetId) => void handlePresetSelect(presetId)}
-        tagOptions={tagOptions}
-        onLabelChange={(label) =>
-          setField((prev) => ({
-            ...prev,
-            label,
-            name: deriveFieldNameFromLabel(label),
-          }))
-        }
-        showDerivedNameHint={true}
-        onChange={(updates) => setField((prev) => ({ ...prev, ...updates }))}
-      />
-      <div className="flex flex-row justify-between gap-1">
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <CustomFieldModalForm
+          value={{
+            name: field.name || "",
+            label: field.label || "",
+            tag: field.tag || "",
+            tooltip_label: field.tooltip_label || "",
+            type: field.type || "text",
+            source: normalizeFieldSource(field.source),
+            shared: field.shared ?? true,
+            prefiller: field.prefiller || "",
+            validator: field.validator || "",
+            validator_ir: field.validator_ir || null,
+            field_schema_defaults: field.field_schema_defaults || null,
+          }}
+          fieldOptions={fieldOptions}
+          presetTemplates={presetTemplates}
+          selectedPresetId={selectedPresetId}
+          onPresetChange={(presetId) => void handlePresetSelect(presetId)}
+          tagOptions={tagOptions}
+          onLabelChange={(label) =>
+            setField((prev) => ({
+              ...prev,
+              label,
+              name: deriveFieldNameFromLabel(label),
+            }))
+          }
+          showDerivedNameHint={true}
+          hideTagField={isPresetRegistryField(field as any)}
+          onChange={(updates) => setField((prev) => ({ ...prev, ...updates }))}
+        />
+      </div>
+      <div className="flex shrink-0 flex-row justify-between bg-white pt-3">
         <div className="flex-1" />
-        <Button disabled={registering || !selectedPresetId} onClick={() => void handleAdd()}>
+        <Button
+          className="w-full"
+          disabled={registering || !selectedPresetId}
+          onClick={() => void handleAdd()}
+        >
           {registering ? "Registering..." : "Register"}
         </Button>
       </div>

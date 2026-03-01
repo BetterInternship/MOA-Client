@@ -13,6 +13,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const isEditorRoute = pathname?.includes("/editor") ?? false;
+  const isFieldsRoute = pathname?.endsWith("/fields") ?? false;
 
   // Close menu on route change
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <Providers>
         <body
-          className="flex h-[100svh]! w-[100vw] flex-col justify-evenly overflow-x-hidden bg-white"
+          className="flex h-[100svh]! w-[100vw] flex-col overflow-x-hidden bg-white"
           suppressHydrationWarning
         >
           {/* Mobile Backdrop */}
@@ -91,9 +92,11 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           )}
 
           <main
-            className="mx-auto w-full flex-1 overflow-auto"
+            className={`mx-auto flex min-h-0 w-full flex-1 ${
+              isFieldsRoute ? "overflow-hidden" : "overflow-auto"
+            }`}
             style={{
-              height: isEditorRoute ? "100svh" : "calc(100svh - 4rem)",
+              height: isEditorRoute ? "100svh" : "calc(100svh - 5rem)",
             }}
           >
             {children}
