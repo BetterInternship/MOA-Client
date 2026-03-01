@@ -5,8 +5,20 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { FormPhantomFieldValidatorIrVersion } from "./formPhantomFieldValidatorIrVersion";
+import type { FormPhantomFieldValidatorIrBaseType } from "./formPhantomFieldValidatorIrBaseType";
+import type { FormPhantomFieldValidatorIrRulesItem } from "./formPhantomFieldValidatorIrRulesItem";
+import type { FormPhantomFieldValidatorIrMode } from "./formPhantomFieldValidatorIrMode";
+import type { FormPhantomFieldValidatorIrImportStatus } from "./formPhantomFieldValidatorIrImportStatus";
 
 /**
  * @nullable
  */
-export type FormPhantomFieldValidatorIr = { [key: string]: unknown } | null;
+export type FormPhantomFieldValidatorIr = {
+  version: FormPhantomFieldValidatorIrVersion;
+  baseType: FormPhantomFieldValidatorIrBaseType;
+  rules: FormPhantomFieldValidatorIrRulesItem[];
+  mode?: FormPhantomFieldValidatorIrMode;
+  importStatus?: FormPhantomFieldValidatorIrImportStatus;
+  unmapped?: string[];
+} | null;

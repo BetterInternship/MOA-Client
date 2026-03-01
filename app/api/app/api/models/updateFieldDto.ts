@@ -7,6 +7,7 @@
  */
 import type { UpdateFieldDtoSource } from "./updateFieldDtoSource";
 import type { UpdateFieldDtoValidatorIr } from "./updateFieldDtoValidatorIr";
+import type { UpdateFieldDtoFieldSchemaDefaults } from "./updateFieldDtoFieldSchemaDefaults";
 
 export interface UpdateFieldDto {
   id: string;
@@ -26,5 +27,7 @@ export interface UpdateFieldDto {
   validator: string | null;
   /** @nullable */
   validator_ir?: UpdateFieldDtoValidatorIr;
+  /** @nullable */
+  field_schema_defaults: UpdateFieldDtoFieldSchemaDefaults;
   is_phantom: boolean;
 }

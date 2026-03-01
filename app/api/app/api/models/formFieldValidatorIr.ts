@@ -5,8 +5,20 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { FormFieldValidatorIrVersion } from "./formFieldValidatorIrVersion";
+import type { FormFieldValidatorIrBaseType } from "./formFieldValidatorIrBaseType";
+import type { FormFieldValidatorIrRulesItem } from "./formFieldValidatorIrRulesItem";
+import type { FormFieldValidatorIrMode } from "./formFieldValidatorIrMode";
+import type { FormFieldValidatorIrImportStatus } from "./formFieldValidatorIrImportStatus";
 
 /**
  * @nullable
  */
-export type FormFieldValidatorIr = { [key: string]: unknown } | null;
+export type FormFieldValidatorIr = {
+  version: FormFieldValidatorIrVersion;
+  baseType: FormFieldValidatorIrBaseType;
+  rules: FormFieldValidatorIrRulesItem[];
+  mode?: FormFieldValidatorIrMode;
+  importStatus?: FormFieldValidatorIrImportStatus;
+  unmapped?: string[];
+} | null;

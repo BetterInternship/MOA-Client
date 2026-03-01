@@ -2649,7 +2649,131 @@
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
           "prefiller": { "type": "string" },
           "validator": { "type": "string" },
-          "validator_ir": { "type": "object", "nullable": true }
+          "validator_ir": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "required": ["version", "baseType", "rules"],
+            "properties": {
+              "version": { "type": "number", "enum": [0] },
+              "baseType": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "number",
+                  "date",
+                  "enum",
+                  "array",
+                  "checkbox",
+                  "textarea",
+                  "time",
+                  "signature",
+                  "image"
+                ]
+              },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "required",
+                            "email",
+                            "url",
+                            "plainText",
+                            "titleCase",
+                            "trim",
+                            "dateOnOrAfterToday",
+                            "dateOnOrBeforeToday"
+                          ]
+                        },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "value"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["minLength", "maxLength", "min", "max", "minTime", "maxTime"]
+                        },
+                        "value": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "pattern"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["regex"] },
+                        "pattern": { "type": "string" },
+                        "flags": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["enum"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["array"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "minItems": { "type": "number" },
+                        "maxItems": { "type": "number" },
+                        "minMessage": { "type": "string" },
+                        "maxMessage": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "isoDate"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["minDate", "maxDate"] },
+                        "isoDate": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "field"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["dateOnOrAfterField", "dateOnOrBeforeField"]
+                        },
+                        "field": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  ]
+                }
+              },
+              "mode": { "type": "string", "enum": ["builder", "imported"] },
+              "importStatus": { "type": "string", "enum": ["exact", "partial", "custom"] },
+              "unmapped": { "type": "array", "items": { "type": "string" } }
+            }
+          }
         },
         "required": [
           "field",
@@ -2680,7 +2804,131 @@
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
           "prefiller": { "type": "string" },
           "validator": { "type": "string" },
-          "validator_ir": { "type": "object", "nullable": true }
+          "validator_ir": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "required": ["version", "baseType", "rules"],
+            "properties": {
+              "version": { "type": "number", "enum": [0] },
+              "baseType": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "number",
+                  "date",
+                  "enum",
+                  "array",
+                  "checkbox",
+                  "textarea",
+                  "time",
+                  "signature",
+                  "image"
+                ]
+              },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "required",
+                            "email",
+                            "url",
+                            "plainText",
+                            "titleCase",
+                            "trim",
+                            "dateOnOrAfterToday",
+                            "dateOnOrBeforeToday"
+                          ]
+                        },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "value"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["minLength", "maxLength", "min", "max", "minTime", "maxTime"]
+                        },
+                        "value": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "pattern"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["regex"] },
+                        "pattern": { "type": "string" },
+                        "flags": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["enum"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["array"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "minItems": { "type": "number" },
+                        "maxItems": { "type": "number" },
+                        "minMessage": { "type": "string" },
+                        "maxMessage": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "isoDate"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["minDate", "maxDate"] },
+                        "isoDate": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "field"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["dateOnOrAfterField", "dateOnOrBeforeField"]
+                        },
+                        "field": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  ]
+                }
+              },
+              "mode": { "type": "string", "enum": ["builder", "imported"] },
+              "importStatus": { "type": "string", "enum": ["exact", "partial", "custom"] },
+              "unmapped": { "type": "array", "items": { "type": "string" } }
+            }
+          }
         },
         "required": [
           "field",
@@ -2861,7 +3109,143 @@
           "prefiller": { "type": "string", "nullable": true },
           "tooltip_label": { "type": "string", "nullable": true },
           "validator": { "type": "string", "nullable": true },
-          "validator_ir": { "type": "object", "nullable": true },
+          "validator_ir": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "required": ["version", "baseType", "rules"],
+            "properties": {
+              "version": { "type": "number", "enum": [0] },
+              "baseType": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "number",
+                  "date",
+                  "enum",
+                  "array",
+                  "checkbox",
+                  "textarea",
+                  "time",
+                  "signature",
+                  "image"
+                ]
+              },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "required",
+                            "email",
+                            "url",
+                            "plainText",
+                            "titleCase",
+                            "trim",
+                            "dateOnOrAfterToday",
+                            "dateOnOrBeforeToday"
+                          ]
+                        },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "value"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["minLength", "maxLength", "min", "max", "minTime", "maxTime"]
+                        },
+                        "value": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "pattern"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["regex"] },
+                        "pattern": { "type": "string" },
+                        "flags": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["enum"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["array"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "minItems": { "type": "number" },
+                        "maxItems": { "type": "number" },
+                        "minMessage": { "type": "string" },
+                        "maxMessage": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "isoDate"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["minDate", "maxDate"] },
+                        "isoDate": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "field"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["dateOnOrAfterField", "dateOnOrBeforeField"]
+                        },
+                        "field": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  ]
+                }
+              },
+              "mode": { "type": "string", "enum": ["builder", "imported"] },
+              "importStatus": { "type": "string", "enum": ["exact", "partial", "custom"] },
+              "unmapped": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "field_schema_defaults": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "properties": {
+              "wrap": { "type": "boolean" },
+              "size": { "type": "number" },
+              "align_h": { "type": "string", "enum": ["left", "center", "right"] },
+              "align_v": { "type": "string", "enum": ["top", "middle", "bottom"] },
+              "font": { "type": "string" }
+            }
+          },
           "is_phantom": { "type": "boolean" }
         },
         "required": [
@@ -2877,6 +3261,7 @@
           "prefiller",
           "tooltip_label",
           "validator",
+          "field_schema_defaults",
           "is_phantom"
         ]
       },
@@ -2906,7 +3291,143 @@
           "preset": { "type": "string" },
           "tooltip_label": { "type": "string", "nullable": true },
           "validator": { "type": "string", "nullable": true },
-          "validator_ir": { "type": "object", "nullable": true },
+          "validator_ir": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "required": ["version", "baseType", "rules"],
+            "properties": {
+              "version": { "type": "number", "enum": [0] },
+              "baseType": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "number",
+                  "date",
+                  "enum",
+                  "array",
+                  "checkbox",
+                  "textarea",
+                  "time",
+                  "signature",
+                  "image"
+                ]
+              },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "required",
+                            "email",
+                            "url",
+                            "plainText",
+                            "titleCase",
+                            "trim",
+                            "dateOnOrAfterToday",
+                            "dateOnOrBeforeToday"
+                          ]
+                        },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "value"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["minLength", "maxLength", "min", "max", "minTime", "maxTime"]
+                        },
+                        "value": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "pattern"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["regex"] },
+                        "pattern": { "type": "string" },
+                        "flags": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["enum"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["array"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "minItems": { "type": "number" },
+                        "maxItems": { "type": "number" },
+                        "minMessage": { "type": "string" },
+                        "maxMessage": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "isoDate"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["minDate", "maxDate"] },
+                        "isoDate": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "field"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["dateOnOrAfterField", "dateOnOrBeforeField"]
+                        },
+                        "field": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  ]
+                }
+              },
+              "mode": { "type": "string", "enum": ["builder", "imported"] },
+              "importStatus": { "type": "string", "enum": ["exact", "partial", "custom"] },
+              "unmapped": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "field_schema_defaults": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "properties": {
+              "wrap": { "type": "boolean" },
+              "size": { "type": "number" },
+              "align_h": { "type": "string", "enum": ["left", "center", "right"] },
+              "align_v": { "type": "string", "enum": ["top", "middle", "bottom"] },
+              "font": { "type": "string" }
+            }
+          },
           "is_phantom": { "type": "boolean" }
         },
         "required": [
@@ -2921,6 +3442,7 @@
           "preset",
           "tooltip_label",
           "validator",
+          "field_schema_defaults",
           "is_phantom"
         ]
       },
@@ -2939,7 +3461,143 @@
           "preset": { "type": "string" },
           "tooltip_label": { "type": "string", "nullable": true },
           "validator": { "type": "string", "nullable": true },
-          "validator_ir": { "type": "object", "nullable": true },
+          "validator_ir": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "required": ["version", "baseType", "rules"],
+            "properties": {
+              "version": { "type": "number", "enum": [0] },
+              "baseType": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "number",
+                  "date",
+                  "enum",
+                  "array",
+                  "checkbox",
+                  "textarea",
+                  "time",
+                  "signature",
+                  "image"
+                ]
+              },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "required",
+                            "email",
+                            "url",
+                            "plainText",
+                            "titleCase",
+                            "trim",
+                            "dateOnOrAfterToday",
+                            "dateOnOrBeforeToday"
+                          ]
+                        },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "value"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["minLength", "maxLength", "min", "max", "minTime", "maxTime"]
+                        },
+                        "value": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "pattern"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["regex"] },
+                        "pattern": { "type": "string" },
+                        "flags": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["enum"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "options"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["array"] },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "minItems": { "type": "number" },
+                        "maxItems": { "type": "number" },
+                        "minMessage": { "type": "string" },
+                        "maxMessage": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "isoDate"],
+                      "properties": {
+                        "kind": { "type": "string", "enum": ["minDate", "maxDate"] },
+                        "isoDate": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["kind", "field"],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["dateOnOrAfterField", "dateOnOrBeforeField"]
+                        },
+                        "field": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  ]
+                }
+              },
+              "mode": { "type": "string", "enum": ["builder", "imported"] },
+              "importStatus": { "type": "string", "enum": ["exact", "partial", "custom"] },
+              "unmapped": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "field_schema_defaults": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "properties": {
+              "wrap": { "type": "boolean" },
+              "size": { "type": "number" },
+              "align_h": { "type": "string", "enum": ["left", "center", "right"] },
+              "align_v": { "type": "string", "enum": ["top", "middle", "bottom"] },
+              "font": { "type": "string" }
+            }
+          },
           "is_phantom": { "type": "boolean" }
         },
         "required": [
@@ -2955,6 +3613,7 @@
           "preset",
           "tooltip_label",
           "validator",
+          "field_schema_defaults",
           "is_phantom"
         ]
       },

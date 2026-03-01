@@ -2,10 +2,11 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
-import { IFormBlock, getFieldPresetTemplates } from "@betterinternship/core/forms";
+import { IFormBlock } from "@betterinternship/core/forms";
 import { useState, useEffect, useMemo } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
+import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 import { FormInput, FormTextarea, FormDropdown } from "@/components/docs/forms/EditForm";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -34,6 +35,7 @@ import {
   findPresetByFieldKey,
   isDefaultPresetFieldKey,
 } from "@/lib/default-field-preset-utils";
+import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
 
 function RecipientBadgeDropdown({
   value,
@@ -94,6 +96,7 @@ type FieldOption = DefaultValueFieldOption;
 
 export function RevampedBlockEditor() {
   const { formMetadata } = useFormEditor();
+  const { registry } = useFieldTemplateContext();
   const {
     selectedBlockId,
     selectedBlockGroup,
@@ -158,7 +161,7 @@ export function RevampedBlockEditor() {
   }, [parentGroup?.id]);
 
   const getSource = (schema: any) => (schema?.source as string) || "manual";
-  const presetTemplates = useMemo(() => getFieldPresetTemplates(), []);
+  const presetTemplates = useMemo(() => resolveSystemPresetTemplates(registry as any[]), [registry]);
   const presetOptions = useMemo(
     () =>
       presetTemplates.map((preset) => ({

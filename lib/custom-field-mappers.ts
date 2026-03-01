@@ -1,4 +1,5 @@
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
+import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 
 export const FIELD_SOURCES = ["auto", "prefill", "derived", "manual"] as const;
 export type FieldSource = (typeof FIELD_SOURCES)[number];
@@ -22,6 +23,7 @@ export type CustomFieldDraftModel = {
   tooltip_label?: string;
   validator?: string;
   validator_ir?: ValidatorIRv0 | null;
+  field_schema_defaults?: FieldSchemaDefaults | null;
   is_phantom?: boolean;
 };
 
@@ -30,6 +32,7 @@ type PresetLikeField = Partial<CustomFieldDraftModel> & {
   prefiller?: string | null;
   tooltip_label?: string | null;
   validator?: string | null;
+  field_schema_defaults?: FieldSchemaDefaults | null;
 };
 
 export const createCustomFieldDraftFromPreset = (
@@ -52,6 +55,7 @@ export const createCustomFieldDraftFromPreset = (
     tooltip_label: preset.tooltip_label || "",
     validator: preset.validator || "",
     validator_ir: preset.validator_ir || null,
+    field_schema_defaults: preset.field_schema_defaults || null,
     is_phantom: preset.is_phantom ?? false,
   };
 };
@@ -76,5 +80,6 @@ export const toRegisterFieldPayload = (
   tooltip_label: draft.tooltip_label?.trim() || null,
   validator: draft.validator?.trim() || null,
   validator_ir: draft.validator_ir ?? null,
+  field_schema_defaults: draft.field_schema_defaults ?? null,
   is_phantom: draft.is_phantom ?? false,
 });

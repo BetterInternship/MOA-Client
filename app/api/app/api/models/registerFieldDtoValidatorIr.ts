@@ -5,8 +5,20 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
+import type { RegisterFieldDtoValidatorIrVersion } from "./registerFieldDtoValidatorIrVersion";
+import type { RegisterFieldDtoValidatorIrBaseType } from "./registerFieldDtoValidatorIrBaseType";
+import type { RegisterFieldDtoValidatorIrRulesItem } from "./registerFieldDtoValidatorIrRulesItem";
+import type { RegisterFieldDtoValidatorIrMode } from "./registerFieldDtoValidatorIrMode";
+import type { RegisterFieldDtoValidatorIrImportStatus } from "./registerFieldDtoValidatorIrImportStatus";
 
 /**
  * @nullable
  */
-export type RegisterFieldDtoValidatorIr = { [key: string]: unknown } | null;
+export type RegisterFieldDtoValidatorIr = {
+  version: RegisterFieldDtoValidatorIrVersion;
+  baseType: RegisterFieldDtoValidatorIrBaseType;
+  rules: RegisterFieldDtoValidatorIrRulesItem[];
+  mode?: RegisterFieldDtoValidatorIrMode;
+  importStatus?: RegisterFieldDtoValidatorIrImportStatus;
+  unmapped?: string[];
+} | null;

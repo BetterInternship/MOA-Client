@@ -2,7 +2,6 @@
 
 import { useMemo, useState, type DragEvent } from "react";
 import {
-  getFieldPresetTemplates,
   IFormBlock,
   IFormField,
   IFormSigningParty,
@@ -10,11 +9,15 @@ import {
 import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
-import { normalizePresetTemplate } from "@/lib/default-field-preset-utils";
 import { isPresetRegistryField } from "@/lib/field-library";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { getPresetFieldIcon, type PresetFieldIconKey } from "@/lib/preset-field-icons";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
+import {
+  sanitizeFieldSchemaDefaults,
+  type FieldSchemaDefaults,
+} from "@/lib/field-schema-defaults";
+import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -34,10 +37,6 @@ interface BlocksPanelProps {
 
 type PaletteSource = "default" | "custom";
 
-type PresetFieldTemplate = ReturnType<typeof getFieldPresetTemplates>[number] & {
-  iconKey?: string;
-};
-
 type PaletteField = {
   id: string;
   name: string;
@@ -51,6 +50,7 @@ type PaletteField = {
   tooltip_label: string;
   validator: string;
   validator_ir: ValidatorIRv0 | null;
+  field_schema_defaults?: FieldSchemaDefaults;
   iconKey?: string;
   paletteSource: PaletteSource;
 };
@@ -65,6 +65,8 @@ const matchesSearch = (field: Pick<PaletteField, "name" | "label">, query: strin
   if (!query) return true;
   return field.name.toLowerCase().includes(query) || field.label.toLowerCase().includes(query);
 };
+const createUniqueFieldKey = (base: string) =>
+  `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 const toDisplayTag = (tag: string) =>
   tag.length > 0 ? tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase() : "Ungrouped";
@@ -84,7 +86,7 @@ const BASE_TYPE_ICON_MAP: Partial<Record<ValidatorIRv0["baseType"], PresetFieldI
 
 /**
  * Left-side field palette for the form editor.
- * - Default fields come from package presets.
+ * - Default fields are resolved DB-first from system presets, with package fallback.
  * - Custom fields come from DB registry.
  */
 export function BlocksPanel({
@@ -103,26 +105,25 @@ export function BlocksPanel({
   const selectedPartyColor = getPartyColorByIndex(Math.max(0, (selectedParty?.order || 1) - 1));
 
   const defaultFields = useMemo<PaletteField[]>(() => {
-    const presets = (getFieldPresetTemplates() as PresetFieldTemplate[]).map((preset) =>
-      normalizePresetTemplate(preset)
-    );
+    const presets = resolveSystemPresetTemplates(registry as any[]);
     return presets.map((preset) => ({
       id: preset.id,
       name: preset.name,
       label: preset.label || preset.name,
       type: preset.type || "text",
-      source: preset.source || "manual",
+      source: (preset.source as PaletteField["source"]) || "manual",
       shared: typeof preset.shared === "boolean" ? preset.shared : true,
       tag: preset.tag || "preset",
-      preset: preset.preset || "preset",
+      preset: preset.preset || "default",
       prefiller: preset.prefiller || "",
       tooltip_label: preset.tooltip_label || "",
       validator: preset.validator || "",
       validator_ir: preset.validator_ir || null,
+      field_schema_defaults: sanitizeFieldSchemaDefaults(preset.field_schema_defaults),
       iconKey: preset.iconKey,
       paletteSource: "default" as const,
     }));
-  }, []);
+  }, [registry]);
 
   const customFields = useMemo<PaletteField[]>(() => {
     return registry
@@ -140,6 +141,9 @@ export function BlocksPanel({
         tooltip_label: field.tooltip_label || "",
         validator: field.validator || "",
         validator_ir: (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
+        field_schema_defaults: sanitizeFieldSchemaDefaults(
+          (field as { field_schema_defaults?: unknown }).field_schema_defaults
+        ),
         paletteSource: "custom" as const,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -186,6 +190,7 @@ export function BlocksPanel({
       tooltip_label: field.tooltip_label,
       validator: field.validator,
       validator_ir: field.validator_ir,
+      field_schema_defaults: field.field_schema_defaults,
       __palette_source: field.paletteSource,
     };
 
@@ -261,7 +266,12 @@ export function BlocksPanel({
 
     const baseFieldKey = field.name || field.id;
     const presetTag = (field.preset || "").trim();
-    const fieldKey = presetTag ? `${baseFieldKey}:${presetTag}` : baseFieldKey;
+    const fieldKey =
+      field.paletteSource === "default"
+        ? createUniqueFieldKey(baseFieldKey)
+        : presetTag
+          ? `${baseFieldKey}:${presetTag}`
+          : baseFieldKey;
 
     const existingForField = blocks.find(
       (block) =>
@@ -271,6 +281,7 @@ export function BlocksPanel({
     );
 
     const baseSchema = existingForField?.field_schema;
+    const defaults = field.field_schema_defaults;
 
     const newBlock: IFormBlock = {
       _id: `block-${field.id}-${Date.now()}`,
@@ -285,8 +296,8 @@ export function BlocksPanel({
         y: nextY,
         w: fieldWidth,
         h: fieldHeight,
-        align_h: baseSchema?.align_h || "center",
-        align_v: baseSchema?.align_v || "bottom",
+        align_h: baseSchema?.align_h ?? defaults?.align_h ?? "center",
+        align_v: baseSchema?.align_v ?? defaults?.align_v ?? "bottom",
         label: baseSchema?.label || field.label || field.name || field.id,
         tooltip_label: baseSchema?.tooltip_label || field.tooltip_label || "",
         shared:
@@ -297,9 +308,9 @@ export function BlocksPanel({
         validator_ir:
           (baseSchema as { validator_ir?: ValidatorIRv0 | null } | undefined)?.validator_ir ??
           field.validator_ir,
-        size: baseSchema?.size,
-        wrap: baseSchema?.wrap ?? true,
-        font: baseSchema?.font,
+        size: baseSchema?.size ?? defaults?.size,
+        wrap: baseSchema?.wrap ?? defaults?.wrap ?? true,
+        font: baseSchema?.font ?? defaults?.font,
       } as IFormField,
     };
 

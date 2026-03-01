@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from "react";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
+import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 
 export type FieldLibraryFieldOption = {
   id: string;
@@ -24,6 +25,7 @@ export type FieldLibraryPresetTemplateOption = {
   tooltip_label?: string;
   validator?: string;
   validator_ir?: ValidatorIRv0 | null;
+  field_schema_defaults?: FieldSchemaDefaults;
   is_phantom?: boolean;
   party?: string;
 };

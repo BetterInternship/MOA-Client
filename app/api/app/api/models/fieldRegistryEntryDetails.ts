@@ -8,6 +8,7 @@
 import type { FieldRegistryEntryDetailsType } from "./fieldRegistryEntryDetailsType";
 import type { FieldRegistryEntryDetailsSource } from "./fieldRegistryEntryDetailsSource";
 import type { FieldRegistryEntryDetailsValidatorIr } from "./fieldRegistryEntryDetailsValidatorIr";
+import type { FieldRegistryEntryDetailsFieldSchemaDefaults } from "./fieldRegistryEntryDetailsFieldSchemaDefaults";
 
 export interface FieldRegistryEntryDetails {
   id: string;
@@ -27,5 +28,7 @@ export interface FieldRegistryEntryDetails {
   validator: string | null;
   /** @nullable */
   validator_ir?: FieldRegistryEntryDetailsValidatorIr;
+  /** @nullable */
+  field_schema_defaults: FieldRegistryEntryDetailsFieldSchemaDefaults;
   is_phantom: boolean;
 }

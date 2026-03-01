@@ -11,7 +11,17 @@ export type ValidatorIRImportResult = {
 };
 
 const BASE_RULE_MAP: Record<ValidatorBaseType, ValidatorRuleType[]> = {
-  text: ["required", "minLength", "maxLength", "email", "url", "regex", "plainText", "titleCase", "trim"],
+  text: [
+    "required",
+    "minLength",
+    "maxLength",
+    "email",
+    "url",
+    "regex",
+    "plainText",
+    "titleCase",
+    "trim",
+  ],
   number: ["required", "min", "max", "number"],
   date: ["required", "minDate", "maxDate", "customRefine", "date"],
   enum: ["required", "enum"],
@@ -47,7 +57,10 @@ export function getAllowedRules(baseType: ValidatorBaseType): ValidatorRuleType[
   return BASE_RULE_MAP[baseType] || [];
 }
 
-export function isRuleCompatible(baseType: ValidatorBaseType, ruleType: ValidatorRuleType): boolean {
+export function isRuleCompatible(
+  baseType: ValidatorBaseType,
+  ruleType: ValidatorRuleType
+): boolean {
   return getAllowedRules(baseType).includes(ruleType);
 }
 
@@ -74,9 +87,7 @@ type DatePresetRule =
   | { kind: "dateOnOrAfterField"; field: string; message?: string }
   | { kind: "dateOnOrBeforeField"; field: string; message?: string };
 
-function parseDateCustomRefine(rule: ValidatorRule):
-  | DatePresetRule
-  | null {
+function parseDateCustomRefine(rule: ValidatorRule): DatePresetRule | null {
   const code = String(rule.params?.customCode || "");
   const message = String(rule.params?.message || "Invalid date");
   if (!code) return null;
@@ -89,8 +100,10 @@ function parseDateCustomRefine(rule: ValidatorRule):
   const fieldRefMatch = code.match(/params\[\s*["']([^"']+)["']\s*\]/);
   if (fieldRefMatch) {
     const field = fieldRefMatch[1];
-    if (code.includes(">=") || code.includes(">")) return { kind: "dateOnOrAfterField", field, message };
-    if (code.includes("<=") || code.includes("<")) return { kind: "dateOnOrBeforeField", field, message };
+    if (code.includes(">=") || code.includes(">"))
+      return { kind: "dateOnOrAfterField", field, message };
+    if (code.includes("<=") || code.includes("<"))
+      return { kind: "dateOnOrBeforeField", field, message };
   }
 
   return null;
@@ -335,11 +348,23 @@ export function persistedIRToZod(ir: ValidatorIRv0): string {
   return zod;
 }
 
-export function zodToPersistedIR(zodCode: string, hintedBaseType?: ValidatorBaseType): ValidatorIRImportResult {
+export function zodToPersistedIR(
+  zodCode: string,
+  hintedBaseType?: ValidatorBaseType
+): ValidatorIRImportResult {
   const raw = zodCode || "";
   if (!raw.trim()) {
     const baseType = hintedBaseType || "text";
-    return { status: "exact", ir: { version: 0, baseType, rules: [], mode: "imported", importStatus: "exact" } as ValidatorIRv0 };
+    return {
+      status: "exact",
+      ir: {
+        version: 0,
+        baseType,
+        rules: [],
+        mode: "imported",
+        importStatus: "exact",
+      } as ValidatorIRv0,
+    };
   }
 
   const baseType = hintedBaseType || inferBaseTypeFromZod(raw);
@@ -371,7 +396,9 @@ export function zodToPersistedIR(zodCode: string, hintedBaseType?: ValidatorBase
   }
 
   // If unsupported rules were filtered out, classify as partial.
-  const compatibleRulesCount = config.rules.filter((r) => isRuleCompatible(baseType, r.type)).length;
+  const compatibleRulesCount = config.rules.filter((r) =>
+    isRuleCompatible(baseType, r.type)
+  ).length;
   if (compatibleRulesCount !== config.rules.length) {
     return {
       status: "partial",
@@ -385,7 +412,8 @@ export function zodToPersistedIR(zodCode: string, hintedBaseType?: ValidatorBase
 
 export function validateValidatorIR(ir: unknown): { ok: boolean; errors: string[] } {
   const errors: string[] = [];
-  if (!ir || typeof ir !== "object") return { ok: false, errors: ["validator_ir must be an object"] };
+  if (!ir || typeof ir !== "object")
+    return { ok: false, errors: ["validator_ir must be an object"] };
   const candidate = ir as any;
   if (candidate.version !== 0) errors.push("validator_ir.version must be 0");
   if (!candidate.baseType || !BASE_RULE_MAP[candidate.baseType as ValidatorBaseType]) {
@@ -414,7 +442,10 @@ export function validateValidatorIR(ir: unknown): { ok: boolean; errors: string[
       if (mapped && !allowed.has(mapped)) {
         errors.push(`rules[${i}] kind '${kind}' is not allowed for base '${candidate.baseType}'`);
       }
-      if ((kind === "minTime" || kind === "maxTime") && !/^\d{2}:\d{2}$/.test(String(rule.value || ""))) {
+      if (
+        (kind === "minTime" || kind === "maxTime") &&
+        !/^\d{2}:\d{2}$/.test(String(rule.value || ""))
+      ) {
         errors.push(`rules[${i}] ${kind}.value must be HH:mm`);
       }
     }
@@ -422,4 +453,3 @@ export function validateValidatorIR(ir: unknown): { ok: boolean; errors: string[
 
   return { ok: errors.length === 0, errors };
 }
-

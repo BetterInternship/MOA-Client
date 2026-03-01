@@ -6,8 +6,8 @@ import {
   type IFormField,
   type IFormPhantomField,
   BLOCK_TYPES,
-  getFieldPresetTemplates,
 } from "@betterinternship/core/forms";
+import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 import {
   FormInput,
   FormTextarea,
@@ -24,6 +24,7 @@ import {
   findPresetByFieldKey,
   isDefaultPresetFieldKey,
 } from "@/lib/default-field-preset-utils";
+import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
 
 interface BlockEditorProps {
   block: IFormBlock | null;
@@ -39,7 +40,8 @@ interface BlockEditorProps {
  */
 export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockEditorProps) => {
   const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(block);
-  const presetTemplates = useMemo(() => getFieldPresetTemplates(), []);
+  const { registry } = useFieldTemplateContext();
+  const presetTemplates = useMemo(() => resolveSystemPresetTemplates(registry as any[]), [registry]);
   const presetOptions = useMemo(
     () =>
       presetTemplates.map((preset) => ({
