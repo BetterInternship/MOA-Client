@@ -366,7 +366,7 @@ export function supportsRuleInBase(baseType: ValidatorBaseType, id: ToggleValida
     return ["required", "minLength", "maxLength", "plainText"].includes(id);
   }
   if (baseType === "textarea") {
-    return ["required", "minLength", "maxLength", "plainText", "trim"].includes(id);
+    return ["required", "minLength", "maxLength", "plainText"].includes(id);
   }
   if (baseType === "number") {
     return ["required", "min", "max"].includes(id);
@@ -384,6 +384,9 @@ export function supportsRuleInBase(baseType: ValidatorBaseType, id: ToggleValida
     return ["required", "minItems", "maxItems"].includes(id);
   }
   if (baseType === "checkbox" || baseType === "signature" || baseType === "image") {
+    return ["required"].includes(id);
+  }
+  if (baseType === "email" || baseType === "phone" || baseType === "url") {
     return ["required"].includes(id);
   }
   return false;

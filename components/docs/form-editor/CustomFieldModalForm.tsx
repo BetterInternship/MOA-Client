@@ -22,6 +22,7 @@ import { FieldSource } from "@/lib/custom-field-mappers";
 import { type ValidatorIRv0 } from "@/lib/validator-ir";
 import { getPresetFieldIcon } from "@/lib/preset-field-icons";
 import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
+import type { ValidationRuleId } from "@/components/docs/form-editor/validation/ValidatorGroups";
 import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
 import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 import {
@@ -68,6 +69,7 @@ interface CustomFieldModalFormProps {
   onLabelChange?: (label: string) => void;
   tagReadOnly?: boolean;
   hideTagField?: boolean;
+  allowedValidationRuleIds?: ValidationRuleId[];
   showDerivedNameHint?: boolean;
   presetTemplates?: CustomFieldPresetOption[];
   selectedPresetId?: string;
@@ -86,6 +88,7 @@ export function CustomFieldModalForm({
   onLabelChange,
   tagReadOnly = false,
   hideTagField = false,
+  allowedValidationRuleIds,
   showDerivedNameHint = false,
   presetTemplates,
   selectedPresetId = "",
@@ -448,6 +451,7 @@ export function CustomFieldModalForm({
                   validator={value.validator || ""}
                   validatorIr={value.validator_ir || null}
                   fieldOptions={fieldOptions}
+                  allowedRuleIds={allowedValidationRuleIds}
                   onChange={(next) => onChange(next)}
                 />
               )}
