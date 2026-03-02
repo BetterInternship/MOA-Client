@@ -7,8 +7,10 @@ export type FieldSource = (typeof FIELD_SOURCES)[number];
 export const isFieldSource = (value: unknown): value is FieldSource =>
   typeof value === "string" && FIELD_SOURCES.includes(value as FieldSource);
 
-export const normalizeFieldSource = (value: unknown, fallback: FieldSource = "manual"): FieldSource =>
-  isFieldSource(value) ? value : fallback;
+export const normalizeFieldSource = (
+  value: unknown,
+  fallback: FieldSource = "manual"
+): FieldSource => (isFieldSource(value) ? value : fallback);
 
 export type CustomFieldDraftModel = {
   name: string;
@@ -49,9 +51,9 @@ export const createCustomFieldDraftFromPreset = (
     party: preset.party || "",
     shared: preset.shared ?? true,
     source: preset.source || "manual",
-    tag: preset.tag || defaultTag,
+    tag: defaultTag,
     prefiller: preset.prefiller || "",
-    preset: preset.preset || "default",
+    preset: "default",
     tooltip_label: preset.tooltip_label || "",
     validator: preset.validator || "",
     validator_ir: preset.validator_ir || null,
@@ -60,26 +62,25 @@ export const createCustomFieldDraftFromPreset = (
   };
 };
 
-export const toRegisterFieldPayload = (
-  draft: CustomFieldDraftModel,
-  options?: {
-    defaultTag?: string;
-    preset?: string;
-  }
-) => ({
-  // API payload normalization. Empty strings become null where backend expects nullable columns.
-  name: draft.name.trim(),
-  label: draft.label.trim(),
-  type: draft.type,
-  party: (draft.party || "__deprecated").trim(),
-  shared: draft.shared ?? true,
-  source: draft.source,
-  tag: draft.tag?.trim() || options?.defaultTag || "uncategorized",
-  prefiller: draft.prefiller?.trim() || null,
-  preset: options?.preset || draft.preset || "default",
-  tooltip_label: draft.tooltip_label?.trim() || null,
-  validator: draft.validator?.trim() || null,
-  validator_ir: draft.validator_ir ?? null,
-  field_schema_defaults: draft.field_schema_defaults ?? null,
-  is_phantom: draft.is_phantom ?? false,
-});
+export const toRegisterFieldPayload = (draft: CustomFieldDraftModel) => {
+  const normalizedTag = (draft.tag || "").trim();
+  const safeTag = normalizedTag.toLowerCase() === "preset" ? "" : normalizedTag;
+
+  return {
+    // API payload normalization. Empty strings become null where backend expects nullable columns.
+    name: draft.name.trim(),
+    label: draft.label.trim(),
+    type: draft.type,
+    party: (draft.party || "__deprecated").trim(),
+    shared: draft.shared ?? true,
+    source: draft.source,
+    tag: safeTag,
+    prefiller: draft.prefiller?.trim() || null,
+    preset: "default",
+    tooltip_label: draft.tooltip_label?.trim() || null,
+    validator: draft.validator?.trim() || null,
+    validator_ir: draft.validator_ir ?? null,
+    field_schema_defaults: draft.field_schema_defaults ?? null,
+    is_phantom: draft.is_phantom ?? false,
+  };
+};
