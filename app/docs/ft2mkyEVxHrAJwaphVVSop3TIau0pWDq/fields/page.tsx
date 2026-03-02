@@ -519,7 +519,7 @@ const FieldEditor = ({
       await formsControllerUpdateField({
         ...field,
         id: fieldId,
-        tag: field.tag || "uncategorized",
+        tag: field.tag || "",
         party: field.party || "__deprecated",
         source: normalizeFieldSource(field.source),
         tooltip_label: field.tooltip_label ?? null,
@@ -627,7 +627,7 @@ const FieldRegistration = ({
     label: "",
     type: "text",
     source: "manual",
-    tag: "uncategorized",
+    tag: "",
     shared: true,
     tooltip_label: "",
     prefiller: "",
@@ -667,7 +667,7 @@ const FieldRegistration = ({
           field_schema_defaults: preset.field_schema_defaults ?? null,
         },
         deriveFieldNameFromLabel,
-        prev?.tag || "uncategorized"
+        prev?.tag || ""
       ),
     }));
   };
@@ -682,25 +682,22 @@ const FieldRegistration = ({
     setRegistering(true);
     try {
       await formsControllerRegisterField(
-        toRegisterFieldPayload(
-          {
-            name: field.name || "",
-            label: field.label || "",
-            type: (field.type as "text" | "signature" | "image") || "text",
-            source: normalizeFieldSource(field.source),
-            party: "__deprecated",
-            shared: field.shared ?? true,
-            tag: field.tag || "uncategorized",
-            tooltip_label: field.tooltip_label || "",
-            prefiller: field.prefiller || "",
-            validator: field.validator || "",
-            validator_ir: field.validator_ir || null,
-            field_schema_defaults: field.field_schema_defaults || null,
-            is_phantom: false,
-            preset: field.preset || "default",
-          },
-          { preset: field.preset || "default", defaultTag: "uncategorized" }
-        )
+        toRegisterFieldPayload({
+          name: field.name || "",
+          label: field.label || "",
+          type: (field.type as "text" | "signature" | "image") || "text",
+          source: normalizeFieldSource(field.source),
+          party: "__deprecated",
+          shared: field.shared ?? true,
+          tag: field.tag || "",
+          tooltip_label: field.tooltip_label || "",
+          prefiller: field.prefiller || "",
+          validator: field.validator || "",
+          validator_ir: field.validator_ir || null,
+          field_schema_defaults: field.field_schema_defaults || null,
+          is_phantom: false,
+          preset: "default",
+        })
       );
       await onSaved?.();
       close();
