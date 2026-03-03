@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { type IFormBlock, type IFormMetadata } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
 import { FormPreviewRenderer } from "./FormPreviewRenderer";
@@ -11,6 +11,7 @@ import { toastPresets } from "@/components/sonner-toaster";
 import { FormMetadata } from "@betterinternship/core/forms";
 import { FormFillerContextProvider, useFormFiller } from "@/components/docs/forms/form-filler.ctx";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
+import { withDerivedFormValues } from "@/lib/derived-form-values";
 
 interface FormDefaultValueCaptureProps {
   formName: string;
@@ -41,6 +42,10 @@ const FormDefaultValueCaptureContent = ({
   // Get fields from metadata for the selected party
   const formMetadata = metadata ? new FormMetadata(metadata) : null;
   const fields = formMetadata?.getFieldsForClientService(selectedPartyId) || [];
+  const previewValues = useMemo(
+    () => withDerivedFormValues(formMetadata, formFiller.getFinalValues()),
+    [formMetadata, formFiller, autofillValues]
+  );
 
   // Initialize values from metadata AND prefiller on load
   useEffect(() => {
@@ -152,7 +157,7 @@ const FormDefaultValueCaptureContent = ({
             <FormPreviewPdfDisplay
               documentUrl={documentUrl}
               blocks={fieldBlocks}
-              values={formFiller.getFinalValues()}
+              values={previewValues}
               onFieldClick={(fieldName) => setSelectedFieldId(fieldName)}
               selectedFieldId={selectedFieldId}
             />

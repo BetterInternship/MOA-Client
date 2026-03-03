@@ -16,6 +16,7 @@ import { formsControllerGenerateTestForm } from "@/app/api";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { cn } from "@/lib/utils";
+import { withDerivedFormValues } from "@/lib/derived-form-values";
 
 interface FormPreviewProps {
   metadata?: IFormMetadata;
@@ -101,6 +102,10 @@ const FormPreviewContent = ({
   const filteredBlocks = useMemo(
     () => blocks.filter((b) => b.signing_party_id === selectedPartyId || !b.signing_party_id),
     [blocks, selectedPartyId]
+  );
+  const previewValues = useMemo(
+    () => withDerivedFormValues(new FormMetadata(formMetadata), values),
+    [formMetadata, values]
   );
 
   const fieldBlocksForPdf = useMemo(
@@ -237,7 +242,7 @@ const FormPreviewContent = ({
               <FormPreviewPdfDisplay
                 documentUrl={documentUrl}
                 blocks={fieldBlocksForPdf}
-                values={values}
+                values={previewValues}
                 signingParties={signingParties}
                 currentSigningPartyId={selectedPartyId}
                 showOwnership

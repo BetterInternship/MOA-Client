@@ -18,6 +18,7 @@ import { FormActionButtons } from "@/components/docs/forms/FormActionButtons";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { formsControllerMarkFormAsFirstViewed } from "@/app/api";
+import { withDerivedFormValues } from "@/lib/derived-form-values";
 
 const Page = () => {
   return (
@@ -39,6 +40,10 @@ function PageContent() {
   const finalValues = useMemo(
     () => formFiller.getFinalValues(autofillValues),
     [formFiller, form, autofillValues]
+  );
+  const previewValues = useMemo(
+    () => withDerivedFormValues(form.formMetadata, finalValues),
+    [form.formMetadata, finalValues]
   );
 
   // Show mobile notice toast on mount
@@ -160,7 +165,7 @@ function PageContent() {
                 <FormPreviewPdfDisplay
                   documentUrl={formProcess.latest_document_url}
                   blocks={previewBlocks}
-                  values={finalValues}
+                  values={previewValues}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
                   scale={0.7}
@@ -236,7 +241,7 @@ function PageContent() {
                 <FormPreviewPdfDisplay
                   documentUrl={formProcess.latest_document_url}
                   blocks={previewBlocks}
-                  values={finalValues}
+                  values={previewValues}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
                   scale={0.7}
@@ -290,7 +295,7 @@ function PageContent() {
               <FormPreviewPdfDisplay
                 documentUrl={formProcess.latest_document_url}
                 blocks={previewBlocks}
-                values={finalValues}
+                values={previewValues}
                 onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                 selectedFieldId={form.selectedPreviewId}
                 signingParties={signingParties}
