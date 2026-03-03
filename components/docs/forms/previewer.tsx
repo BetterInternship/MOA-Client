@@ -968,11 +968,6 @@ const PdfPageOverlay = ({
 
 const AssignedOwnerTooltip = ({ ownerLabel }: { ownerLabel: string }) => (
   <div className="pointer-events-none absolute -top-8 left-0 z-20 max-w-56 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-700 shadow-lg">
-    <div className="grid grid-cols-[auto_1fr] items-start gap-1.5">
-      <span className="flex h-[1.2em] items-center">
-        <span className="h-2 w-2 rounded-full bg-slate-400" aria-hidden />
-      </span>
-      <span className="leading-[1.2] break-words">{ownerLabel}</span>
-    </div>
+    <span className="leading-[1.2] break-words">{ownerLabel}</span>
   </div>
 );
