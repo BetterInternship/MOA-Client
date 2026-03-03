@@ -12,7 +12,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
-import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Loader } from "@/components/ui/loader";
 import { ZoomIn, ZoomOut } from "lucide-react";
@@ -352,7 +351,6 @@ const PdfPageOverlay = ({
 }: PdfPageOverlayProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const viewportRef = useRef<PageViewport | null>(null);
   const [rendering, setRendering] = useState<boolean>(false);
   const [forceRender, setForceRender] = useState<number>(0);
   const [activeTouchFieldId, setActiveTouchFieldId] = useState<string | null>(null);
@@ -408,7 +406,6 @@ const PdfPageOverlay = ({
         // Account for device pixel ratio for crisp rendering on high-DPI displays
         const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
         const viewport = page.getViewport({ scale: scale * dpr });
-        viewportRef.current = viewport;
 
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -449,8 +446,7 @@ const PdfPageOverlay = ({
     pdfY: number
   ): { displayX: number; displayY: number } | null => {
     const canvas = canvasRef.current;
-    const viewport = viewportRef.current;
-    if (!canvas || !viewport) return null;
+    if (!canvas) return null;
 
     // Metadata coordinates already use top-left origin (y=0 at top)
     // Scale them directly to display coordinates
@@ -504,12 +500,6 @@ const PdfPageOverlay = ({
             return null;
           }
 
-          const rect = canvasRef.current?.getBoundingClientRect();
-          const canvas = canvasRef.current;
-          if (!rect || !canvas) return null;
-
-          // Canvas internal resolution is scaled by DPR, but CSS size compensates
-          // We only need the scale factor, not DPR-adjusted dimensions
           const widthPixels = w * scale;
           const heightPixels = h * scale;
 
@@ -531,47 +521,50 @@ const PdfPageOverlay = ({
           const fieldType: PreviewField["type"] = field.type ?? "text";
           const resolvedFont = resolvePreviewFont(fieldType, field.font);
 
-          let fontSize: number;
-          let lineHeight: number;
+          let fontSizeDoc: number;
+          let lineHeightDoc: number;
           let displayLines: string[] = [];
-          const fitSafetyPx = 2;
-          const fitMaxWidth = Math.max(0, widthPixels - fitSafetyPx);
-          const fitMaxHeight = Math.max(0, heightPixels - fitSafetyPx);
+          const safeScale = Math.max(scale, 0.001);
+          const fitSafetyUnits = 2 / safeScale;
+          const fitMaxWidthDoc = Math.max(0, w - fitSafetyUnits);
+          const fitMaxHeightDoc = Math.max(0, h - fitSafetyUnits);
 
           if (isFilled) {
             if (shouldWrap) {
-              // Use exact PDF engine algorithm for text with wrapping (no padding)
+              // Fit in document-space units so visual result stays stable across zoom levels.
               const fitted = fitWrappedText({
                 text: valueStr,
                 fontFamily: resolvedFont.canvasFamily,
-                maxWidth: fitMaxWidth,
-                maxHeight: fitMaxHeight,
+                maxWidth: fitMaxWidthDoc,
+                maxHeight: fitMaxHeightDoc,
                 startSize: field.size ?? 11,
                 lineHeightMult: 1.0,
-                zoom: scale,
               });
-              fontSize = fitted.fontSize;
-              lineHeight = fitted.lineHeight;
+              fontSizeDoc = fitted.fontSize;
+              lineHeightDoc = fitted.lineHeight;
               displayLines = fitted.lines || [];
             } else {
-              // No wrapping - find largest font size that fits on ONE line
+              // No wrapping - fit in document-space units.
               const defaultSize = fieldType === "signature" ? 25 : 11;
               const fitted = fitNoWrapText({
                 text: valueStr,
                 fontFamily: resolvedFont.canvasFamily,
-                maxWidth: fitMaxWidth,
-                maxHeight: fitMaxHeight,
+                maxWidth: fitMaxWidthDoc,
+                maxHeight: fitMaxHeightDoc,
                 startSize: field.size ?? defaultSize,
               });
 
-              fontSize = fitted.fontSize;
-              lineHeight = fontSize * 1.0;
+              fontSizeDoc = fitted.fontSize;
+              lineHeightDoc = fontSizeDoc * 1.0;
               displayLines = [fitted.line];
             }
           } else {
-            fontSize = field.size ?? (fieldType === "signature" ? 25 : 11);
-            lineHeight = fontSize * 1.0;
+            fontSizeDoc = field.size ?? (fieldType === "signature" ? 25 : 11);
+            lineHeightDoc = fontSizeDoc * 1.0;
           }
+
+          const fontSize = fontSizeDoc * scale;
+          const lineHeight = lineHeightDoc * scale;
 
           const isSelected =
             animatingFieldId === fieldName ||
@@ -642,10 +635,11 @@ const PdfPageOverlay = ({
                 top: `${displayPos.displayY}px`,
                 width: `${Math.max(widthPixels, 10)}px`,
                 height: `${Math.max(heightPixels, 10)}px`,
-                overflow: "hidden",
+                overflow: "visible",
                 display: "flex",
                 backgroundColor: ownedFillColor,
                 border: isSelected ? `2px solid ${borderColor}` : `1px solid ${borderColor}`,
+                zIndex: showNonOwnedTooltip ? 30 : isSelected ? 20 : 10,
                 alignItems:
                   align_v === "middle"
                     ? "center"
@@ -662,11 +656,12 @@ const PdfPageOverlay = ({
                   style={{
                     fontSize: `${fontSize}px`,
                     lineHeight: `${lineHeight}px`,
-                    overflow: "visible",
+                    overflow: "hidden",
                     whiteSpace: shouldWrap ? "pre-wrap" : "nowrap",
                     wordWrap: shouldWrap ? "break-word" : "normal",
                     width: "100%",
                     maxWidth: "100%",
+                    maxHeight: "100%",
                     padding: "0px",
                     margin: "0px",
                     boxSizing: "border-box",
@@ -691,7 +686,9 @@ const PdfPageOverlay = ({
 };
 
 const AssignedOwnerTooltip = ({ ownerLabel }: { ownerLabel: string }) => (
-  <div className="pointer-events-none absolute -top-8 left-0 z-20 max-w-56 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-700 shadow-lg">
-    <span className="leading-[1.2] break-words">{ownerLabel}</span>
+  <div className="pointer-events-none absolute -top-12 left-0 z-20 max-w-56 rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-lg">
+    <span className="break-words">
+      Filled by <strong className="text-slate-900">{ownerLabel}</strong>
+    </span>
   </div>
 );
