@@ -15,7 +15,7 @@ import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/type
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
 import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Loader } from "@/components/ui/loader";
-import { Info, ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import {
   groupFieldsByPage,
   isFieldRequired,
@@ -317,22 +317,6 @@ function fitNoWrap({
 
 type DefaultFieldVisibility = "all" | "mine";
 type FieldStatus = "empty" | "filled" | "signed";
-type LegendItem = {
-  key: string;
-  label: string;
-  color: string;
-  isMine: boolean;
-  sortOrder: number;
-  isBeforeMe: boolean;
-};
-
-const OWNER_GROUP_LABEL: Record<OwnerMeta["ownerGroupId"], string> = {
-  company: "Company",
-  university: "University",
-  student: "Student",
-  witness: "Witness",
-  other: "Other",
-};
 
 const getFieldStatus = (fieldType: PreviewField["type"], value: string): FieldStatus => {
   if (!value.trim()) return "empty";
@@ -348,30 +332,15 @@ interface FormPreviewPdfDisplayProps {
   scale?: number;
   onFieldClick?: (fieldName: string) => void;
   selectedFieldId?: string;
+  autoScrollToSelectedField?: boolean;
   signingParties?: IFormSigningParty[];
   currentSigningPartyId?: string;
   showOwnership?: boolean;
   defaultFieldVisibility?: DefaultFieldVisibility;
+  fieldErrors?: Record<string, string>;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-const hexToRgba = (hexColor: string, alpha: number): string => {
-  const hex = hexColor.replace("#", "");
-  const expanded =
-    hex.length === 3
-      ? hex
-          .split("")
-          .map((c) => `${c}${c}`)
-          .join("")
-      : hex;
-  if (expanded.length !== 6) return `rgba(148, 163, 184, ${alpha})`;
-
-  const r = parseInt(expanded.slice(0, 2), 16);
-  const g = parseInt(expanded.slice(2, 4), 16);
-  const b = parseInt(expanded.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
 
 /**
  * PDF display component that shows form fields as boxes overlaid on the PDF
@@ -386,10 +355,12 @@ export const FormPreviewPdfDisplay = ({
   scale: initialScale = 1.0,
   onFieldClick,
   selectedFieldId,
+  autoScrollToSelectedField = true,
   signingParties = [],
   currentSigningPartyId,
   showOwnership = false,
   defaultFieldVisibility: _defaultFieldVisibility = "mine",
+  fieldErrors = {},
 }: FormPreviewPdfDisplayProps) => {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
@@ -405,71 +376,19 @@ export const FormPreviewPdfDisplay = ({
     () => normalizePreviewFields(fields?.length ? fields : (blocks ?? [])),
     [fields, blocks]
   );
-  const useGroupColors = signingParties.length > 6;
   const ownerMetaByFieldId = useMemo(() => {
     const ownerMetaMap = new Map<string, OwnerMeta>();
     normalizedFields.forEach((field) => {
-      ownerMetaMap.set(
-        field.id,
-        resolveOwnerMeta(field, signingParties, currentSigningPartyId, useGroupColors)
-      );
+      ownerMetaMap.set(field.id, resolveOwnerMeta(field, signingParties, currentSigningPartyId));
     });
     return ownerMetaMap;
-  }, [normalizedFields, signingParties, currentSigningPartyId, useGroupColors]);
+  }, [normalizedFields, signingParties, currentSigningPartyId]);
   const ownedFields = useMemo(
     () => normalizedFields.filter((field) => ownerMetaByFieldId.get(field.id)?.isMine),
     [normalizedFields, ownerMetaByFieldId]
   );
   const visibleFields = useMemo(() => normalizedFields, [normalizedFields]);
   const fieldsByPage = useMemo(() => groupFieldsByPage(visibleFields), [visibleFields]);
-  const legendItems = useMemo<LegendItem[]>(() => {
-    const byKey = new Map<string, LegendItem>();
-    const currentPartyOrder =
-      signingParties.find((party) => party._id === currentSigningPartyId)?.order ??
-      Number.MAX_SAFE_INTEGER;
-
-    for (const field of normalizedFields) {
-      const ownerMeta = ownerMetaByFieldId.get(field.id);
-      if (!ownerMeta) continue;
-
-      const key = useGroupColors
-        ? `group:${ownerMeta.ownerGroupId}`
-        : `owner:${ownerMeta.ownerRoleId}`;
-      if (byKey.has(key)) continue;
-
-      const party = signingParties.find((candidate) => candidate._id === ownerMeta.ownerRoleId);
-      const displayLabel = ownerMeta.isMine
-        ? `You (${party?.signatory_title || "My role"})`
-        : useGroupColors
-          ? OWNER_GROUP_LABEL[ownerMeta.ownerGroupId]
-          : ownerMeta.ownerLabel;
-      const sortOrder = party?.order ?? Number.MAX_SAFE_INTEGER;
-      const isBeforeMe = !useGroupColors && sortOrder < currentPartyOrder;
-
-      if (byKey.has(key)) {
-        const existingItem = byKey.get(key);
-        if (existingItem) {
-          existingItem.sortOrder = Math.min(existingItem.sortOrder, sortOrder);
-          existingItem.isBeforeMe = existingItem.isBeforeMe || isBeforeMe;
-        }
-        continue;
-      }
-
-      byKey.set(key, {
-        key,
-        label: displayLabel,
-        color: ownerMeta.ownerColorHex,
-        isMine: ownerMeta.isMine,
-        sortOrder,
-        isBeforeMe,
-      });
-    }
-
-    return Array.from(byKey.values()).sort((a, b) => {
-      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-      return a.label.localeCompare(b.label);
-    });
-  }, [normalizedFields, ownerMetaByFieldId, useGroupColors, signingParties, currentSigningPartyId]);
 
   useEffect(() => {
     didAutoFocusOwnedTaskRef.current = false;
@@ -505,18 +424,20 @@ export const FormPreviewPdfDisplay = ({
   useEffect(() => {
     if (!selectedFieldId) return;
 
-    const selectedField = normalizedFields.find((field) => field.field === selectedFieldId);
-    if (selectedField && selectedField.page) {
-      const fieldPage = selectedField.page;
-      const pageNode = pageRefs.current.get(fieldPage);
-      pageNode?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (autoScrollToSelectedField) {
+      const selectedField = normalizedFields.find((field) => field.field === selectedFieldId);
+      if (selectedField && selectedField.page) {
+        const fieldPage = selectedField.page;
+        const pageNode = pageRefs.current.get(fieldPage);
+        pageNode?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }
 
     // Trigger bump animation
     setAnimatingFieldId(selectedFieldId);
     const timeout = setTimeout(() => setAnimatingFieldId(null), 600);
     return () => clearTimeout(timeout);
-  }, [selectedFieldId, normalizedFields]);
+  }, [selectedFieldId, normalizedFields, autoScrollToSelectedField]);
 
   // Initialize PDF.js worker
   useEffect(() => {
@@ -601,8 +522,6 @@ export const FormPreviewPdfDisplay = ({
         pageCount={pageCount}
         scale={scale}
         onZoom={handleZoom}
-        showOwnership={showOwnership}
-        legendItems={legendItems}
       />
 
       {/* Pages container */}
@@ -624,6 +543,7 @@ export const FormPreviewPdfDisplay = ({
               selectedFieldId={selectedFieldId}
               ownerMetaByFieldId={ownerMetaByFieldId}
               showOwnership={showOwnership}
+              fieldErrors={fieldErrors}
             />
           ))}
         </div>
@@ -637,40 +557,12 @@ interface PreviewToolbarProps {
   pageCount: number;
   scale: number;
   onZoom: (direction: "in" | "out") => void;
-  showOwnership: boolean;
-  legendItems: LegendItem[];
 }
 
-const PreviewToolbar = ({
-  visiblePage,
-  pageCount,
-  scale,
-  onZoom,
-  showOwnership,
-  legendItems,
-}: PreviewToolbarProps) => {
-  const [isLegendOpen, setIsLegendOpen] = useState(false);
-
-  useEffect(() => {
-    if (!showOwnership) setIsLegendOpen(false);
-  }, [showOwnership]);
-
+const PreviewToolbar = ({ visiblePage, pageCount, scale, onZoom }: PreviewToolbarProps) => {
   return (
     <div className="relative flex-shrink-0 border-b border-slate-300 bg-white px-3 py-2">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center">
-          {showOwnership ? (
-            <button
-              type="button"
-              onClick={() => setIsLegendOpen((prev) => !prev)}
-              className="rounded p-1.5 hover:bg-slate-100"
-              title="Ownership legend"
-              aria-label="Ownership legend"
-            >
-              <Info className="h-3.5 w-3.5" />
-            </button>
-          ) : null}
-        </div>
+      <div className="flex items-center justify-end gap-3">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-medium text-slate-700">
             {visiblePage}/{pageCount}
@@ -700,39 +592,6 @@ const PreviewToolbar = ({
           </span>
         </div>
       </div>
-      {showOwnership && isLegendOpen && (
-        <div className="absolute top-10 left-4 z-30 w-64 rounded-[0.33em] border border-slate-200 bg-white p-3 shadow-lg">
-          <div className="mb-2 text-xs font-semibold text-slate-700">Legend</div>
-          <div className="space-y-1.5">
-            {legendItems.map((item) => (
-              <div
-                key={item.key}
-                className={`grid grid-cols-[auto_1fr_auto] items-start gap-x-2 rounded-[0.33em] px-1.5 py-1 text-xs ${
-                  item.isMine
-                    ? "border border-blue-200 bg-blue-50 font-semibold text-blue-900"
-                    : "text-slate-700"
-                }`}
-              >
-                <span className="flex h-[1.2em] items-center">
-                  <span
-                    className="block h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                    aria-hidden
-                  />
-                </span>
-                <span className="leading-[1.2] break-words">{item.label}</span>
-                {item.isBeforeMe ? (
-                  <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] leading-none font-semibold text-emerald-700">
-                    SIGNED
-                  </span>
-                ) : (
-                  <span />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -751,6 +610,7 @@ interface PdfPageOverlayProps {
   selectedFieldId?: string;
   ownerMetaByFieldId: Map<string, OwnerMeta>;
   showOwnership: boolean;
+  fieldErrors: Record<string, string>;
 }
 
 const PdfPageOverlay = ({
@@ -767,6 +627,7 @@ const PdfPageOverlay = ({
   selectedFieldId,
   ownerMetaByFieldId,
   showOwnership,
+  fieldErrors,
 }: PdfPageOverlayProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -777,8 +638,6 @@ const PdfPageOverlay = ({
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null);
   const [isTouchInteraction, setIsTouchInteraction] = useState(false);
   const [clickedHighlightFieldId, setClickedHighlightFieldId] = useState<string | null>(null);
-  const [recentlySignedFieldIds, setRecentlySignedFieldIds] = useState<Record<string, boolean>>({});
-  const statusByFieldIdRef = useRef<Map<string, FieldStatus>>(new Map());
 
   // offscreen canvas for text measurement
 
@@ -815,45 +674,6 @@ const PdfPageOverlay = ({
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-
-  useEffect(() => {
-    const nextStatusMap = new Map<string, FieldStatus>();
-    const newlySignedIds: string[] = [];
-
-    for (const field of fields) {
-      const rawValue = values[field.field];
-      const value = Array.isArray(rawValue)
-        ? rawValue.join(", ")
-        : typeof rawValue === "string"
-          ? rawValue
-          : "";
-      const nextStatus = getFieldStatus(field.type, value);
-      const prevStatus = statusByFieldIdRef.current.get(field.id);
-      nextStatusMap.set(field.id, nextStatus);
-      if (prevStatus && prevStatus !== "signed" && nextStatus === "signed") {
-        newlySignedIds.push(field.id);
-      }
-    }
-
-    statusByFieldIdRef.current = nextStatusMap;
-    if (newlySignedIds.length === 0) return;
-
-    setRecentlySignedFieldIds((prev) => {
-      const next = { ...prev };
-      for (const id of newlySignedIds) next[id] = true;
-      return next;
-    });
-
-    const timeout = setTimeout(() => {
-      setRecentlySignedFieldIds((prev) => {
-        const next = { ...prev };
-        for (const id of newlySignedIds) delete next[id];
-        return next;
-      });
-    }, 900);
-
-    return () => clearTimeout(timeout);
-  }, [fields, values]);
 
   // Render PDF page
   useEffect(() => {
@@ -1039,20 +859,19 @@ const PdfPageOverlay = ({
             isKnownOwner: false,
           };
           const isClickable = !showOwnership || ownerMeta.isMine;
-          const status = getFieldStatus(fieldType, valueStr);
-          const accentColor = ownerMeta.ownerColorHex;
-          const neutralBorder = "#d1d5db";
+          const hasFieldError = !!fieldErrors[fieldName];
+          const isOwnedField = showOwnership && ownerMeta.isMine;
+          const isOwnedFieldValid = isOwnedField && isFilled && !hasFieldError;
+          const ownedBorderColor = isOwnedFieldValid ? "#16a34a" : "#dc2626";
           const borderColor = showOwnership
             ? ownerMeta.isMine
-              ? hexToRgba(accentColor, 0.82)
-              : "#d4d4d8"
-            : neutralBorder;
-          const accentOpacity = status === "empty" ? 0.85 : status === "signed" ? 0.62 : 0.52;
-          const showAccent = showOwnership && !ownerMeta.isMine;
-          const showOwnedFill = showOwnership && ownerMeta.isMine;
-          const fillOpacity = status === "empty" ? 0.34 : status === "signed" ? 0.22 : 0.28;
-          const ownedFillColor = showOwnedFill
-            ? hexToRgba(accentColor, fillOpacity)
+              ? ownedBorderColor
+              : "#d1d5db"
+            : "#d1d5db";
+          const ownedFillColor = isOwnedField
+            ? isOwnedFieldValid
+              ? "rgba(34, 197, 94, 0.2)"
+              : "rgba(239, 68, 68, 0.2)"
             : "transparent";
           const showNonOwnedTooltip =
             showOwnership &&
@@ -1110,16 +929,6 @@ const PdfPageOverlay = ({
                   align_h === "center" ? "center" : align_h === "right" ? "flex-end" : "flex-start",
               }}
             >
-              {showAccent && (
-                <span
-                  className="pointer-events-none absolute top-0 left-0 h-full"
-                  style={{
-                    width: "2px",
-                    backgroundColor: accentColor,
-                    opacity: accentOpacity,
-                  }}
-                />
-              )}
               {isFilled && (
                 <div
                   className={fieldType === "signature" ? "text-blue-600" : "text-black"}
@@ -1147,12 +956,7 @@ const PdfPageOverlay = ({
                 </div>
               )}
               {showNonOwnedTooltip ? (
-                <AssignedOwnerTooltip ownerLabel={ownerMeta.ownerLabel} ownerColor={accentColor} />
-              ) : null}
-              {recentlySignedFieldIds[field.id] ? (
-                <div className="pointer-events-none absolute top-1 right-1 rounded-full bg-emerald-500 px-1 text-[9px] font-semibold text-white">
-                  ✓
-                </div>
+                <AssignedOwnerTooltip ownerLabel={ownerMeta.ownerLabel} />
               ) : null}
             </div>
           );
@@ -1162,21 +966,11 @@ const PdfPageOverlay = ({
   );
 };
 
-const AssignedOwnerTooltip = ({
-  ownerLabel,
-  ownerColor,
-}: {
-  ownerLabel: string;
-  ownerColor: string;
-}) => (
+const AssignedOwnerTooltip = ({ ownerLabel }: { ownerLabel: string }) => (
   <div className="pointer-events-none absolute -top-8 left-0 z-20 max-w-56 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-700 shadow-lg">
     <div className="grid grid-cols-[auto_1fr] items-start gap-1.5">
       <span className="flex h-[1.2em] items-center">
-        <span
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: ownerColor }}
-          aria-hidden
-        />
+        <span className="h-2 w-2 rounded-full bg-slate-400" aria-hidden />
       </span>
       <span className="leading-[1.2] break-words">{ownerLabel}</span>
     </div>

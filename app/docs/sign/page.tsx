@@ -166,6 +166,7 @@ function PageContent() {
                   documentUrl={formProcess.latest_document_url}
                   blocks={previewBlocks}
                   values={previewValues}
+                  fieldErrors={formFiller.errors}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
                   scale={0.7}
@@ -242,6 +243,7 @@ function PageContent() {
                   documentUrl={formProcess.latest_document_url}
                   blocks={previewBlocks}
                   values={previewValues}
+                  fieldErrors={formFiller.errors}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
                   scale={0.7}
@@ -296,6 +298,7 @@ function PageContent() {
                 documentUrl={formProcess.latest_document_url}
                 blocks={previewBlocks}
                 values={previewValues}
+                fieldErrors={formFiller.errors}
                 onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                 selectedFieldId={form.selectedPreviewId}
                 signingParties={signingParties}

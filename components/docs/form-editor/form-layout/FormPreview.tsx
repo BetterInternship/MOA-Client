@@ -98,6 +98,8 @@ const FormPreviewContent = ({
   const [values, setValues] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<string | null>(null);
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [selectedFieldSource, setSelectedFieldSource] = useState<"form" | "pdf" | null>(null);
 
   const filteredBlocks = useMemo(
     () => blocks.filter((b) => b.signing_party_id === selectedPartyId || !b.signing_party_id),
@@ -133,6 +135,11 @@ const FormPreviewContent = ({
 
   // Hydrate preview values from configured field prefillers/defaults.
   // Keep existing values so manual edits in preview are not overwritten.
+  useEffect(() => {
+    setSelectedFieldId(null);
+    setSelectedFieldSource(null);
+  }, [selectedPartyId]);
+
   useEffect(() => {
     try {
       const metadataClient = new FormMetadata(formMetadata);
@@ -228,6 +235,12 @@ const FormPreviewContent = ({
                 values={values}
                 onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
                 metadata={formMetadata}
+                selectedFieldId={selectedFieldId}
+                autoScrollToSelectedField={selectedFieldSource === "pdf"}
+                onFieldClick={(fieldId) => {
+                  setSelectedFieldSource("form");
+                  setSelectedFieldId(fieldId);
+                }}
               />
             ) : (
               <div className="flex h-full items-center justify-center">
@@ -243,6 +256,12 @@ const FormPreviewContent = ({
                 documentUrl={documentUrl}
                 blocks={fieldBlocksForPdf}
                 values={previewValues}
+                onFieldClick={(fieldId) => {
+                  setSelectedFieldSource("pdf");
+                  setSelectedFieldId(fieldId);
+                }}
+                selectedFieldId={selectedFieldId || undefined}
+                autoScrollToSelectedField={selectedFieldSource === "form"}
                 signingParties={signingParties}
                 currentSigningPartyId={selectedPartyId}
                 showOwnership

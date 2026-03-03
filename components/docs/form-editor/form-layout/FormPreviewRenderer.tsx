@@ -15,6 +15,7 @@ interface FormPreviewRendererProps {
   metadata?: IFormMetadata;
   selectedFieldId?: string | null;
   onFieldClick?: (fieldId: string) => void;
+  autoScrollToSelectedField?: boolean;
 }
 
 /**
@@ -33,6 +34,7 @@ export const FormPreviewRenderer = ({
   metadata,
   selectedFieldId,
   onFieldClick,
+  autoScrollToSelectedField = true,
 }: FormPreviewRendererProps) => {
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -79,13 +81,21 @@ export const FormPreviewRenderer = ({
     return values;
   }, [values]);
 
-  // Scroll to selected field when it changes
+  // Scroll to selected field only when requested (e.g. selection came from PDF).
   useEffect(() => {
-    if (selectedFieldId && fieldRefs.current[selectedFieldId]) {
-      const element = fieldRefs.current[selectedFieldId];
-      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!autoScrollToSelectedField || !selectedFieldId || !scrollContainerRef.current) return;
+    const element = fieldRefs.current[selectedFieldId];
+    if (!element) return;
+
+    const containerRect = scrollContainerRef.current.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    const isVisible =
+      elementRect.top >= containerRect.top && elementRect.bottom <= containerRect.bottom;
+
+    if (!isVisible) {
+      element.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [selectedFieldId]);
+  }, [autoScrollToSelectedField, selectedFieldId]);
 
   const handleChange = (key: string, value: string) => {
     onChange(key, value);
