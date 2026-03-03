@@ -19,6 +19,7 @@ export interface PreviewField {
   wrap?: boolean;
   align_h?: "left" | "center" | "right";
   align_v?: "top" | "middle" | "bottom";
+  font?: string;
   type?: PreviewFieldType;
   signing_party_id?: string;
   validator_ir?: ValidatorIrLike;
@@ -49,6 +50,7 @@ export type PreviewFieldLike =
       wrap?: boolean;
       align_h?: "left" | "center" | "right";
       align_v?: "top" | "middle" | "bottom";
+      font?: string;
       type?: PreviewFieldType;
       signing_party_id?: string;
       validator_ir?: ValidatorIrLike;
@@ -66,6 +68,7 @@ export type PreviewFieldLike =
         wrap?: boolean;
         align_h?: "left" | "center" | "right";
         align_v?: "top" | "middle" | "bottom";
+        font?: string;
         type?: PreviewFieldType;
         validator_ir?: ValidatorIrLike;
         required?: boolean;
@@ -82,6 +85,7 @@ export type PreviewFieldLike =
         wrap?: boolean;
         align_h?: "left" | "center" | "right";
         align_v?: "top" | "middle" | "bottom";
+        font?: string;
         type?: PreviewFieldType;
         validator_ir?: ValidatorIrLike;
         required?: boolean;
@@ -102,6 +106,7 @@ function asFieldLike(input: PreviewFieldLike) {
     wrap?: boolean;
     align_h?: "left" | "center" | "right";
     align_v?: "top" | "middle" | "bottom";
+    font?: string;
     type?: PreviewFieldType;
     signing_party_id?: string;
     validator_ir?: ValidatorIrLike;
@@ -118,6 +123,7 @@ function asFieldLike(input: PreviewFieldLike) {
       wrap?: boolean;
       align_h?: "left" | "center" | "right";
       align_v?: "top" | "middle" | "bottom";
+      font?: string;
       type?: PreviewFieldType;
       validator_ir?: ValidatorIrLike;
       required?: boolean;
@@ -134,6 +140,7 @@ function asFieldLike(input: PreviewFieldLike) {
       wrap?: boolean;
       align_h?: "left" | "center" | "right";
       align_v?: "top" | "middle" | "bottom";
+      font?: string;
       type?: PreviewFieldType;
       validator_ir?: ValidatorIrLike;
       required?: boolean;
@@ -173,6 +180,7 @@ export function normalizePreviewFields(inputs: PreviewFieldLike[]): PreviewField
       wrap: schema?.wrap ?? source.wrap,
       align_h: schema?.align_h ?? source.align_h,
       align_v: schema?.align_v ?? source.align_v,
+      font: schema?.font ?? source.font,
       type,
       signing_party_id: source.signing_party_id,
       validator_ir: schema?.validator_ir ?? source.validator_ir,
