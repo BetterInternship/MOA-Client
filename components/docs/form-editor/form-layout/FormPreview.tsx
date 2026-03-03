@@ -105,7 +105,7 @@ const FormPreviewContent = ({
 
   const fieldBlocksForPdf = useMemo(
     () =>
-      filteredBlocks
+      blocks
         .filter((b) => b.field_schema?.field)
         .map((block) => ({
           field: block.field_schema?.field || "",
@@ -119,8 +119,11 @@ const FormPreviewContent = ({
           wrap: block.field_schema?.wrap ?? true,
           align_h: block.field_schema?.align_h ?? "center",
           align_v: block.field_schema?.align_v ?? "bottom",
+          type: block.field_schema?.type || "text",
+          signing_party_id: block.signing_party_id,
+          validator_ir: block.field_schema?.validator_ir ?? null,
         })),
-    [filteredBlocks]
+    [blocks]
   );
 
   // Hydrate preview values from configured field prefillers/defaults.
@@ -235,6 +238,10 @@ const FormPreviewContent = ({
                 documentUrl={documentUrl}
                 blocks={fieldBlocksForPdf}
                 values={values}
+                signingParties={signingParties}
+                currentSigningPartyId={selectedPartyId}
+                showOwnership
+                defaultFieldVisibility="mine"
               />
             ) : (
               <div className="flex h-full items-center justify-center">

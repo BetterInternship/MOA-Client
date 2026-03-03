@@ -13,10 +13,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
-import { type IFormBlock, type IFormSigningParty } from "@betterinternship/core/forms";
+import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Loader } from "@/components/ui/loader";
-import { ZoomIn, ZoomOut } from "lucide-react";
-import { getPartyColorByIndex } from "@/lib/party-colors";
+import { Info, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  groupFieldsByPage,
+  isFieldRequired,
+  normalizePreviewFields,
+  resolveOwnerMeta,
+  type OwnerMeta,
+  type PreviewField,
+  type PreviewFieldLike,
+} from "@/lib/form-previewer-model";
 
 // Load Roboto font from Google Fonts and wait for it to load
 if (typeof window !== "undefined") {
@@ -307,17 +315,63 @@ function fitNoWrap({
   return result;
 }
 
+type DefaultFieldVisibility = "all" | "mine";
+type FieldStatus = "empty" | "filled" | "signed";
+type LegendItem = {
+  key: string;
+  label: string;
+  color: string;
+  isMine: boolean;
+  sortOrder: number;
+  isBeforeMe: boolean;
+};
+
+const OWNER_GROUP_LABEL: Record<OwnerMeta["ownerGroupId"], string> = {
+  company: "Company",
+  university: "University",
+  student: "Student",
+  witness: "Witness",
+  other: "Other",
+};
+
+const getFieldStatus = (fieldType: PreviewField["type"], value: string): FieldStatus => {
+  if (!value.trim()) return "empty";
+  if (fieldType === "signature") return "signed";
+  return "filled";
+};
+
 interface FormPreviewPdfDisplayProps {
   documentUrl: string;
-  blocks: any[]; // ServerField[] with coordinates (x, y, w, h, page, field)
   values: Record<string, string>;
+  fields?: PreviewFieldLike[];
+  blocks?: PreviewFieldLike[]; // Backward-compatible alias
   scale?: number;
   onFieldClick?: (fieldName: string) => void;
   selectedFieldId?: string;
   signingParties?: IFormSigningParty[];
+  currentSigningPartyId?: string;
+  showOwnership?: boolean;
+  defaultFieldVisibility?: DefaultFieldVisibility;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const hexToRgba = (hexColor: string, alpha: number): string => {
+  const hex = hexColor.replace("#", "");
+  const expanded =
+    hex.length === 3
+      ? hex
+          .split("")
+          .map((c) => `${c}${c}`)
+          .join("")
+      : hex;
+  if (expanded.length !== 6) return `rgba(148, 163, 184, ${alpha})`;
+
+  const r = parseInt(expanded.slice(0, 2), 16);
+  const g = parseInt(expanded.slice(2, 4), 16);
+  const b = parseInt(expanded.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 
 /**
  * PDF display component that shows form fields as boxes overlaid on the PDF
@@ -326,32 +380,134 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  */
 export const FormPreviewPdfDisplay = ({
   documentUrl,
-  blocks,
   values,
+  fields,
+  blocks,
   scale: initialScale = 1.0,
   onFieldClick,
   selectedFieldId,
   signingParties = [],
+  currentSigningPartyId,
+  showOwnership = false,
+  defaultFieldVisibility: _defaultFieldVisibility = "mine",
 }: FormPreviewPdfDisplayProps) => {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
   const [scale, setScale] = useState<number>(initialScale);
   const [visiblePage, setVisiblePage] = useState<number>(1);
-  const [selectedPage, setSelectedPage] = useState<number>(1);
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [animatingFieldId, setAnimatingFieldId] = useState<string | null>(null);
 
   const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+  const didAutoFocusOwnedTaskRef = useRef(false);
+  const normalizedFields = useMemo(
+    () => normalizePreviewFields(fields?.length ? fields : (blocks ?? [])),
+    [fields, blocks]
+  );
+  const useGroupColors = signingParties.length > 6;
+  const ownerMetaByFieldId = useMemo(() => {
+    const ownerMetaMap = new Map<string, OwnerMeta>();
+    normalizedFields.forEach((field) => {
+      ownerMetaMap.set(
+        field.id,
+        resolveOwnerMeta(field, signingParties, currentSigningPartyId, useGroupColors)
+      );
+    });
+    return ownerMetaMap;
+  }, [normalizedFields, signingParties, currentSigningPartyId, useGroupColors]);
+  const ownedFields = useMemo(
+    () => normalizedFields.filter((field) => ownerMetaByFieldId.get(field.id)?.isMine),
+    [normalizedFields, ownerMetaByFieldId]
+  );
+  const visibleFields = useMemo(() => normalizedFields, [normalizedFields]);
+  const fieldsByPage = useMemo(() => groupFieldsByPage(visibleFields), [visibleFields]);
+  const legendItems = useMemo<LegendItem[]>(() => {
+    const byKey = new Map<string, LegendItem>();
+    const currentPartyOrder =
+      signingParties.find((party) => party._id === currentSigningPartyId)?.order ??
+      Number.MAX_SAFE_INTEGER;
+
+    for (const field of normalizedFields) {
+      const ownerMeta = ownerMetaByFieldId.get(field.id);
+      if (!ownerMeta) continue;
+
+      const key = useGroupColors
+        ? `group:${ownerMeta.ownerGroupId}`
+        : `owner:${ownerMeta.ownerRoleId}`;
+      if (byKey.has(key)) continue;
+
+      const party = signingParties.find((candidate) => candidate._id === ownerMeta.ownerRoleId);
+      const displayLabel = ownerMeta.isMine
+        ? `You (${party?.signatory_title || "My role"})`
+        : useGroupColors
+          ? OWNER_GROUP_LABEL[ownerMeta.ownerGroupId]
+          : ownerMeta.ownerLabel;
+      const sortOrder = party?.order ?? Number.MAX_SAFE_INTEGER;
+      const isBeforeMe = !useGroupColors && sortOrder < currentPartyOrder;
+
+      if (byKey.has(key)) {
+        const existingItem = byKey.get(key);
+        if (existingItem) {
+          existingItem.sortOrder = Math.min(existingItem.sortOrder, sortOrder);
+          existingItem.isBeforeMe = existingItem.isBeforeMe || isBeforeMe;
+        }
+        continue;
+      }
+
+      byKey.set(key, {
+        key,
+        label: displayLabel,
+        color: ownerMeta.ownerColorHex,
+        isMine: ownerMeta.isMine,
+        sortOrder,
+        isBeforeMe,
+      });
+    }
+
+    return Array.from(byKey.values()).sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+      return a.label.localeCompare(b.label);
+    });
+  }, [normalizedFields, ownerMetaByFieldId, useGroupColors, signingParties, currentSigningPartyId]);
+
+  useEffect(() => {
+    didAutoFocusOwnedTaskRef.current = false;
+  }, [documentUrl]);
+
+  useEffect(() => {
+    if (!showOwnership) return;
+    if (ownedFields.length === 0) return;
+
+    if (didAutoFocusOwnedTaskRef.current) return;
+    const firstEmptyRequiredOwnedField = ownedFields.find((field) => {
+      if (!isFieldRequired(field)) return false;
+      const rawValue = values[field.field];
+      const value = Array.isArray(rawValue)
+        ? rawValue.join(", ")
+        : typeof rawValue === "string"
+          ? rawValue
+          : "";
+      return getFieldStatus(field.type, value) === "empty";
+    });
+
+    if (firstEmptyRequiredOwnedField) {
+      const pageNode = pageRefs.current.get(firstEmptyRequiredOwnedField.page);
+      pageNode?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setAnimatingFieldId(firstEmptyRequiredOwnedField.field);
+      setTimeout(() => setAnimatingFieldId(null), 700);
+    }
+
+    didAutoFocusOwnedTaskRef.current = true;
+  }, [showOwnership, ownedFields, values]);
 
   // Jump to field's page and trigger animation when selected from form
   useEffect(() => {
     if (!selectedFieldId) return;
 
-    const selectedField = blocks.find((b) => b.field === selectedFieldId);
+    const selectedField = normalizedFields.find((field) => field.field === selectedFieldId);
     if (selectedField && selectedField.page) {
       const fieldPage = selectedField.page;
-      setSelectedPage(fieldPage);
       const pageNode = pageRefs.current.get(fieldPage);
       pageNode?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -360,7 +516,7 @@ export const FormPreviewPdfDisplay = ({
     setAnimatingFieldId(selectedFieldId);
     const timeout = setTimeout(() => setAnimatingFieldId(null), 600);
     return () => clearTimeout(timeout);
-  }, [selectedFieldId, blocks]);
+  }, [selectedFieldId, normalizedFields]);
 
   // Initialize PDF.js worker
   useEffect(() => {
@@ -387,7 +543,11 @@ export const FormPreviewPdfDisplay = ({
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message || "Failed to load PDF");
+          const message =
+            err && typeof err === "object" && "message" in err
+              ? String((err as { message?: string }).message || "Failed to load PDF")
+              : "Failed to load PDF";
+          setError(message);
           setPdfDoc(null);
         }
       })
@@ -397,7 +557,7 @@ export const FormPreviewPdfDisplay = ({
 
     return () => {
       cancelled = true;
-      loadingTask.destroy();
+      void loadingTask.destroy();
     };
   }, [documentUrl]);
 
@@ -408,13 +568,6 @@ export const FormPreviewPdfDisplay = ({
   const handleZoom = (direction: "in" | "out") => {
     const delta = direction === "in" ? 0.1 : -0.1;
     setScale((prev) => clamp(parseFloat((prev + delta).toFixed(2)), 0.5, 3));
-  };
-
-  const handleJumpToPage = (page: number) => {
-    if (!page || page < 1 || page > pageCount) return;
-    setSelectedPage(page);
-    const node = pageRefs.current.get(page);
-    node?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const pagesArray = useMemo(
@@ -443,41 +596,20 @@ export const FormPreviewPdfDisplay = ({
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden rounded-[0.33em] border border-slate-300">
-      {/* Top Controls */}
-      <div className="flex-shrink-0 border-b border-slate-300 bg-white px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-700">
-              Page {visiblePage} of {pageCount}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleZoom("out")}
-              className="rounded p-2 hover:bg-slate-100"
-              title="Zoom out"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            <span className="w-12 text-center text-sm font-medium text-slate-700">
-              {Math.round(scale * 100)}%
-            </span>
-            <button
-              onClick={() => handleZoom("in")}
-              className="rounded p-2 hover:bg-slate-100"
-              title="Zoom in"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <PreviewToolbar
+        visiblePage={visiblePage}
+        pageCount={pageCount}
+        scale={scale}
+        onZoom={handleZoom}
+        showOwnership={showOwnership}
+        legendItems={legendItems}
+      />
 
       {/* Pages container */}
       <div className="flex-1 overflow-x-auto overflow-y-auto bg-slate-100 p-4">
         <div className="mx-auto space-y-6">
           {pagesArray.map((pageNumber) => (
-            <PdfPageWithFields
+            <PdfPageOverlay
               key={pageNumber}
               pdf={pdfDoc}
               pageNumber={pageNumber}
@@ -485,16 +617,13 @@ export const FormPreviewPdfDisplay = ({
               isVisible={Math.abs(visiblePage - pageNumber) <= 1}
               onVisible={() => setVisiblePage(pageNumber)}
               registerPageRef={registerPageRef}
-              blocks={blocks.filter((b) => {
-                // Handle both IFormBlock and ServerField formats
-                const page = b.page || b.field_schema?.page;
-                return page === pageNumber;
-              })}
+              fields={fieldsByPage.get(pageNumber) || []}
               values={values}
               onFieldClick={onFieldClick}
               animatingFieldId={animatingFieldId}
               selectedFieldId={selectedFieldId}
-              signingParties={signingParties}
+              ownerMetaByFieldId={ownerMetaByFieldId}
+              showOwnership={showOwnership}
             />
           ))}
         </div>
@@ -503,40 +632,153 @@ export const FormPreviewPdfDisplay = ({
   );
 };
 
-interface PdfPageWithFieldsProps {
+interface PreviewToolbarProps {
+  visiblePage: number;
+  pageCount: number;
+  scale: number;
+  onZoom: (direction: "in" | "out") => void;
+  showOwnership: boolean;
+  legendItems: LegendItem[];
+}
+
+const PreviewToolbar = ({
+  visiblePage,
+  pageCount,
+  scale,
+  onZoom,
+  showOwnership,
+  legendItems,
+}: PreviewToolbarProps) => {
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
+
+  useEffect(() => {
+    if (!showOwnership) setIsLegendOpen(false);
+  }, [showOwnership]);
+
+  return (
+    <div className="relative flex-shrink-0 border-b border-slate-300 bg-white px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center">
+          {showOwnership ? (
+            <button
+              type="button"
+              onClick={() => setIsLegendOpen((prev) => !prev)}
+              className="rounded p-1.5 hover:bg-slate-100"
+              title="Ownership legend"
+              aria-label="Ownership legend"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-slate-700">
+            {visiblePage}/{pageCount}
+          </span>
+          <div className="ml-1 inline-flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onZoom("out")}
+              className="rounded p-1.5 hover:bg-slate-100"
+              title="Zoom out"
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onZoom("in")}
+              className="rounded p-1.5 hover:bg-slate-100"
+              title="Zoom in"
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <span className="w-10 text-center text-[11px] font-medium text-slate-700">
+            {Math.round(scale * 100)}%
+          </span>
+        </div>
+      </div>
+      {showOwnership && isLegendOpen && (
+        <div className="absolute top-10 left-4 z-30 w-64 rounded-[0.33em] border border-slate-200 bg-white p-3 shadow-lg">
+          <div className="mb-2 text-xs font-semibold text-slate-700">Legend</div>
+          <div className="space-y-1.5">
+            {legendItems.map((item) => (
+              <div
+                key={item.key}
+                className={`grid grid-cols-[auto_1fr_auto] items-start gap-x-2 rounded-[0.33em] px-1.5 py-1 text-xs ${
+                  item.isMine
+                    ? "border border-blue-200 bg-blue-50 font-semibold text-blue-900"
+                    : "text-slate-700"
+                }`}
+              >
+                <span className="flex h-[1.2em] items-center">
+                  <span
+                    className="block h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                    aria-hidden
+                  />
+                </span>
+                <span className="leading-[1.2] break-words">{item.label}</span>
+                {item.isBeforeMe ? (
+                  <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] leading-none font-semibold text-emerald-700">
+                    SIGNED
+                  </span>
+                ) : (
+                  <span />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface PdfPageOverlayProps {
   pdf: PDFDocumentProxy;
   pageNumber: number;
   scale: number;
   isVisible: boolean;
   onVisible: (page: number) => void;
   registerPageRef: (page: number, node: HTMLDivElement | null) => void;
-  blocks: IFormBlock[];
+  fields: PreviewField[];
   values: Record<string, string>;
   onFieldClick?: (fieldName: string) => void;
   animatingFieldId?: string | null;
   selectedFieldId?: string;
-  signingParties?: IFormSigningParty[];
+  ownerMetaByFieldId: Map<string, OwnerMeta>;
+  showOwnership: boolean;
 }
 
-const PdfPageWithFields = ({
+const PdfPageOverlay = ({
   pdf,
   pageNumber,
   scale,
-  isVisible,
+  isVisible: _isVisible,
   onVisible,
   registerPageRef,
-  blocks,
+  fields,
   values,
   onFieldClick,
   animatingFieldId,
   selectedFieldId,
-  signingParties = [],
-}: PdfPageWithFieldsProps) => {
+  ownerMetaByFieldId,
+  showOwnership,
+}: PdfPageOverlayProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<PageViewport | null>(null);
   const [rendering, setRendering] = useState<boolean>(false);
   const [forceRender, setForceRender] = useState<number>(0);
+  const [activeTouchFieldId, setActiveTouchFieldId] = useState<string | null>(null);
+  const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null);
+  const [isTouchInteraction, setIsTouchInteraction] = useState(false);
+  const [clickedHighlightFieldId, setClickedHighlightFieldId] = useState<string | null>(null);
+  const [recentlySignedFieldIds, setRecentlySignedFieldIds] = useState<Record<string, boolean>>({});
+  const statusByFieldIdRef = useRef<Map<string, FieldStatus>>(new Map());
 
   // offscreen canvas for text measurement
 
@@ -564,6 +806,54 @@ const PdfPageWithFields = ({
     observer.observe(element);
     return () => observer.disconnect();
   }, [onVisible, pageNumber]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia("(hover: none), (pointer: coarse)");
+    const update = () => setIsTouchInteraction(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    const nextStatusMap = new Map<string, FieldStatus>();
+    const newlySignedIds: string[] = [];
+
+    for (const field of fields) {
+      const rawValue = values[field.field];
+      const value = Array.isArray(rawValue)
+        ? rawValue.join(", ")
+        : typeof rawValue === "string"
+          ? rawValue
+          : "";
+      const nextStatus = getFieldStatus(field.type, value);
+      const prevStatus = statusByFieldIdRef.current.get(field.id);
+      nextStatusMap.set(field.id, nextStatus);
+      if (prevStatus && prevStatus !== "signed" && nextStatus === "signed") {
+        newlySignedIds.push(field.id);
+      }
+    }
+
+    statusByFieldIdRef.current = nextStatusMap;
+    if (newlySignedIds.length === 0) return;
+
+    setRecentlySignedFieldIds((prev) => {
+      const next = { ...prev };
+      for (const id of newlySignedIds) next[id] = true;
+      return next;
+    });
+
+    const timeout = setTimeout(() => {
+      setRecentlySignedFieldIds((prev) => {
+        const next = { ...prev };
+        for (const id of newlySignedIds) delete next[id];
+        return next;
+      });
+    }, 900);
+
+    return () => clearTimeout(timeout);
+  }, [fields, values]);
 
   // Render PDF page
   useEffect(() => {
@@ -650,16 +940,21 @@ const PdfPageWithFields = ({
       <canvas ref={canvasRef} className="block" />
 
       {/* Field boxes overlay */}
-      <div className="absolute inset-0" key={forceRender}>
-        {blocks.map((block) => {
-          const x = block.x || 0;
-          const y = block.y || 0;
-          const w = block.w || 0;
-          const h = block.h || 0;
-          const fieldName = block.field;
-          const label = block.label || fieldName;
+      <div
+        className="absolute inset-0"
+        key={forceRender}
+        onClick={() => {
+          if (isTouchInteraction) setActiveTouchFieldId(null);
+        }}
+      >
+        {fields.map((field) => {
+          const x = field.x;
+          const y = field.y;
+          const w = field.w;
+          const h = field.h;
+          const fieldName = field.field;
 
-          if (!x || !y || !w || !h) {
+          if (w <= 0 || h <= 0) {
             return null;
           }
 
@@ -687,13 +982,12 @@ const PdfPageWithFields = ({
           const isFilled = valueStr.trim().length > 0;
 
           // Get alignment and wrapping from field schema
-          const align_h = block.align_h ?? "left";
-          const align_v = block.align_v ?? "top";
-          const shouldWrap = block.wrap ?? true;
+          const align_h = field.align_h ?? "left";
+          const align_v = field.align_v ?? "top";
+          const shouldWrap = field.wrap ?? true;
 
           // Calculate optimal font size using PDF engine algorithm
-          const fieldType =
-            block.field_schema?.type || block.phantom_field_schema?.type || block.type;
+          const fieldType = field.type;
 
           let fontSize: number;
           let lineHeight: number;
@@ -706,7 +1000,7 @@ const PdfPageWithFields = ({
                 text: valueStr,
                 maxWidth: widthPixels,
                 maxHeight: heightPixels,
-                startSize: block.field_schema?.size ?? 11,
+                startSize: field.size ?? 11,
                 lineHeightMult: 1.0,
                 zoom: scale,
               });
@@ -720,7 +1014,7 @@ const PdfPageWithFields = ({
                 text: valueStr,
                 maxWidth: widthPixels,
                 maxHeight: heightPixels,
-                startSize: block.field_schema?.size ?? defaultSize,
+                startSize: field.size ?? defaultSize,
               });
 
               fontSize = fitted.fontSize;
@@ -728,23 +1022,75 @@ const PdfPageWithFields = ({
               displayLines = [fitted.line];
             }
           } else {
-            fontSize = block.field_schema?.size ?? 11;
+            fontSize = field.size ?? 11;
             lineHeight = fontSize * 1.0;
           }
 
-          const isSelected = animatingFieldId === fieldName || selectedFieldId === fieldName;
-
-          // Get signing party color
-          const partyId = block.signing_party_id || "unknown";
-          const party = signingParties.find((p) => p._id === partyId);
-          const partyOrder = party?.order || 0;
-          const partyColor = getPartyColorByIndex(Math.max(0, partyOrder - 1));
+          const isSelected =
+            animatingFieldId === fieldName ||
+            selectedFieldId === fieldName ||
+            clickedHighlightFieldId === field.id;
+          const ownerMeta = ownerMetaByFieldId.get(field.id) || {
+            ownerRoleId: "unknown",
+            ownerGroupId: "other",
+            ownerLabel: "Unassigned",
+            ownerColorHex: "#94a3b8",
+            isMine: false,
+            isKnownOwner: false,
+          };
+          const isClickable = !showOwnership || ownerMeta.isMine;
+          const status = getFieldStatus(fieldType, valueStr);
+          const accentColor = ownerMeta.ownerColorHex;
+          const neutralBorder = "#d1d5db";
+          const borderColor = showOwnership
+            ? ownerMeta.isMine
+              ? hexToRgba(accentColor, 0.82)
+              : "#d4d4d8"
+            : neutralBorder;
+          const accentOpacity = status === "empty" ? 0.85 : status === "signed" ? 0.62 : 0.52;
+          const showAccent = showOwnership && !ownerMeta.isMine;
+          const showOwnedFill = showOwnership && ownerMeta.isMine;
+          const fillOpacity = status === "empty" ? 0.34 : status === "signed" ? 0.22 : 0.28;
+          const ownedFillColor = showOwnedFill
+            ? hexToRgba(accentColor, fillOpacity)
+            : "transparent";
+          const showNonOwnedTooltip =
+            showOwnership &&
+            !ownerMeta.isMine &&
+            (hoveredFieldId === field.id ||
+              (isTouchInteraction && activeTouchFieldId === field.id));
 
           return (
             <div
-              key={fieldName}
-              onClick={() => onFieldClick?.(fieldName)}
-              className="absolute cursor-pointer text-black transition-all"
+              key={field.id}
+              onMouseEnter={() => {
+                if (showOwnership && !ownerMeta.isMine) setHoveredFieldId(field.id);
+              }}
+              onMouseLeave={() => {
+                if (hoveredFieldId === field.id) setHoveredFieldId(null);
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (showOwnership && isTouchInteraction) {
+                  if (activeTouchFieldId !== field.id) {
+                    setActiveTouchFieldId(field.id);
+                    return;
+                  }
+                  setActiveTouchFieldId(null);
+                }
+                if (showOwnership) {
+                  setClickedHighlightFieldId(field.id);
+                  setTimeout(
+                    () => setClickedHighlightFieldId((prev) => (prev === field.id ? null : prev)),
+                    550
+                  );
+                }
+                if (!isClickable) return;
+                onFieldClick?.(fieldName);
+              }}
+              className={`absolute text-black transition-all ${
+                isClickable ? "cursor-pointer" : "cursor-default"
+              }`}
               style={{
                 left: `${displayPos.displayX}px`,
                 top: `${displayPos.displayY}px`,
@@ -752,7 +1098,8 @@ const PdfPageWithFields = ({
                 minHeight: `${Math.max(heightPixels, 10)}px`,
                 overflow: "visible",
                 display: "flex",
-                backgroundColor: isSelected ? partyColor.hex + "50" : partyColor.hex + "20",
+                backgroundColor: ownedFillColor,
+                border: isSelected ? `2px solid ${borderColor}` : `1px solid ${borderColor}`,
                 alignItems:
                   align_v === "middle"
                     ? "center"
@@ -762,8 +1109,17 @@ const PdfPageWithFields = ({
                 justifyContent:
                   align_h === "center" ? "center" : align_h === "right" ? "flex-end" : "flex-start",
               }}
-              title={`${label}: ${valueStr}`}
             >
+              {showAccent && (
+                <span
+                  className="pointer-events-none absolute top-0 left-0 h-full"
+                  style={{
+                    width: "2px",
+                    backgroundColor: accentColor,
+                    opacity: accentOpacity,
+                  }}
+                />
+              )}
               {isFilled && (
                 <div
                   className={fieldType === "signature" ? "text-blue-600" : "text-black"}
@@ -790,6 +1146,14 @@ const PdfPageWithFields = ({
                   {displayLines.length > 0 ? displayLines.join("\n") : valueStr}
                 </div>
               )}
+              {showNonOwnedTooltip ? (
+                <AssignedOwnerTooltip ownerLabel={ownerMeta.ownerLabel} ownerColor={accentColor} />
+              ) : null}
+              {recentlySignedFieldIds[field.id] ? (
+                <div className="pointer-events-none absolute top-1 right-1 rounded-full bg-emerald-500 px-1 text-[9px] font-semibold text-white">
+                  ✓
+                </div>
+              ) : null}
             </div>
           );
         })}
@@ -797,3 +1161,24 @@ const PdfPageWithFields = ({
     </div>
   );
 };
+
+const AssignedOwnerTooltip = ({
+  ownerLabel,
+  ownerColor,
+}: {
+  ownerLabel: string;
+  ownerColor: string;
+}) => (
+  <div className="pointer-events-none absolute -top-8 left-0 z-20 max-w-56 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-700 shadow-lg">
+    <div className="grid grid-cols-[auto_1fr] items-start gap-1.5">
+      <span className="flex h-[1.2em] items-center">
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: ownerColor }}
+          aria-hidden
+        />
+      </span>
+      <span className="leading-[1.2] break-words">{ownerLabel}</span>
+    </div>
+  </div>
+);

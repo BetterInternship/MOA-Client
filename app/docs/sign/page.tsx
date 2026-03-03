@@ -9,7 +9,6 @@ import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
 import { Loader2, ChevronLeft } from "lucide-react";
 import { useFormFiller } from "@/components/docs/forms/form-filler.ctx";
 import { FormPreviewPdfDisplay } from "@/components/docs/forms/previewer";
-import { getBlockField, isBlockField } from "@/components/docs/forms/utils";
 import { Loader } from "@/components/ui/loader";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
 import { useSignContext } from "../auth/provider/sign.ctx";
@@ -87,7 +86,7 @@ function PageContent() {
         }
       };
 
-      markAsViewed();
+      void markAsViewed();
     }
   }, [formProcess.id, profile.id]);
 
@@ -117,27 +116,17 @@ function PageContent() {
     }
   }, [formProcess, form]);
 
-  // Filter blocks to only include manual source fields
-  const manualBlocks = useMemo(
-    () =>
-      form.blocks.filter(
-        (block) => isBlockField(block) && getBlockField(block)?.source === "manual"
-      ),
-    [form.blocks]
+  const previewBlocks = useMemo(() => {
+    if (!form.formMetadata) return [];
+    return form.formMetadata
+      .getBlocksForEditorService()
+      .filter((block) => block.field_schema || block.phantom_field_schema);
+  }, [form.formMetadata]);
+
+  const signingParties = useMemo(
+    () => (form.formMetadata ? form.formMetadata.getSigningParties() : []),
+    [form.formMetadata]
   );
-
-  // Get keyedFields that correspond to manual blocks (for PDF preview with coordinates)
-  const manualKeyedFields = useMemo(() => {
-    if (!form.keyedFields || form.keyedFields.length === 0) return [];
-
-    // Get field names from manual blocks
-    const manualFieldNames = new Set(
-      manualBlocks.map((block) => getBlockField(block)?.field).filter(Boolean)
-    );
-
-    // Filter keyedFields to only those in manual blocks
-    return form.keyedFields.filter((kf) => manualFieldNames.has(kf.field));
-  }, [form.keyedFields, manualBlocks]);
 
   if (formProcess.error) {
     return (
@@ -170,11 +159,15 @@ function PageContent() {
               {formProcess.latest_document_url ? (
                 <FormPreviewPdfDisplay
                   documentUrl={formProcess.latest_document_url}
-                  blocks={manualKeyedFields}
+                  blocks={previewBlocks}
                   values={finalValues}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
                   scale={0.7}
+                  signingParties={signingParties}
+                  currentSigningPartyId={formProcess.my_signing_party_id}
+                  showOwnership
+                  defaultFieldVisibility="mine"
                 />
               ) : (
                 <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -242,11 +235,15 @@ function PageContent() {
               {formProcess.latest_document_url ? (
                 <FormPreviewPdfDisplay
                   documentUrl={formProcess.latest_document_url}
-                  blocks={manualKeyedFields}
+                  blocks={previewBlocks}
                   values={finalValues}
                   onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                   selectedFieldId={form.selectedPreviewId}
                   scale={0.7}
+                  signingParties={signingParties}
+                  currentSigningPartyId={formProcess.my_signing_party_id}
+                  showOwnership
+                  defaultFieldVisibility="mine"
                 />
               ) : (
                 <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -292,10 +289,14 @@ function PageContent() {
             <div className="relative h-full w-full">
               <FormPreviewPdfDisplay
                 documentUrl={formProcess.latest_document_url}
-                blocks={manualKeyedFields}
+                blocks={previewBlocks}
                 values={finalValues}
                 onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
                 selectedFieldId={form.selectedPreviewId}
+                signingParties={signingParties}
+                currentSigningPartyId={formProcess.my_signing_party_id}
+                showOwnership
+                defaultFieldVisibility="mine"
               />
             </div>
           ) : null}
