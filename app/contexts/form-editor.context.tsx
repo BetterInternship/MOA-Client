@@ -4,7 +4,11 @@ import { createContext, useContext, useState, useCallback, useMemo, ReactNode } 
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
-import { formsControllerRegisterForm } from "@/app/api";
+import {
+  formsControllerRegisterForm,
+  getFormsControllerGetLatestFormDocumentAndMetadataQueryKey,
+  type RegisterFormSchemaDto,
+} from "@/app/api";
 import { normalizeBlocksForSave } from "@/lib/form-schema-normalizer";
 import {
   IFormMetadata,
@@ -153,7 +157,9 @@ export function FormEditorProvider({
         const fieldSchemas = normalizedMetadata.schema.blocks
           .map((block) => block.field_schema || block.phantom_field_schema)
           .filter(Boolean);
-        const withIr = fieldSchemas.filter((schema) => (schema as any)?.validator_ir != null).length;
+        const withIr = fieldSchemas.filter(
+          (schema) => (schema as any)?.validator_ir != null
+        ).length;
         const withoutIr = fieldSchemas.length - withIr;
 
         console.groupCollapsed("[ValidationSavePayload] validator_ir presence");
@@ -163,10 +169,18 @@ export function FormEditorProvider({
         console.groupEnd();
       }
 
-      await formsControllerRegisterForm(normalizedMetadata);
+      const payload: RegisterFormSchemaDto = {
+        ...(normalizedMetadata as unknown as RegisterFormSchemaDto),
+        // Persist newly uploaded PDF when saving an existing form.
+        base_document: documentFile ?? undefined,
+      };
+
+      await formsControllerRegisterForm(payload);
       queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
       queryClient.invalidateQueries({
-        queryKey: ["/api/forms/form-latest", { name: formMetadata.name }],
+        queryKey: getFormsControllerGetLatestFormDocumentAndMetadataQueryKey({
+          name: formMetadata.name,
+        }),
       });
       toast.success("Form saved successfully!", toastPresets.success);
     } catch (error) {
@@ -176,7 +190,7 @@ export function FormEditorProvider({
     } finally {
       setIsSaving(false);
     }
-  }, [formMetadata, queryClient]);
+  }, [formMetadata, documentFile, queryClient]);
 
   const value: FormEditorContextType = useMemo(() => {
     return {
@@ -230,7 +244,3 @@ export function useFormEditor() {
   }
   return context;
 }
-
-
-
-
