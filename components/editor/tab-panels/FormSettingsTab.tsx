@@ -95,7 +95,7 @@ export function FormSettingsTab() {
 
       <div
         className={cn(
-          "min-w-0 min-h-0 flex-1",
+          "min-h-0 min-w-0 flex-1",
           section === "field-registry" ? "overflow-hidden" : "overflow-auto"
         )}
       >
@@ -166,23 +166,6 @@ function FormSettingsContent() {
               placeholder="e.g., Application Form"
             />
             <p className="text-muted-foreground mt-2 text-xs">This is the display name for users</p>
-          </div>
-
-          <div>
-            <Label htmlFor="schema-version" className="text-sm font-medium">
-              Schema Version
-            </Label>
-            <Input
-              id="schema-version"
-              type="number"
-              min={1}
-              value={SCHEMA_VERSION}
-              readOnly
-              className="mt-2"
-            />
-            <p className="text-muted-foreground mt-2 text-xs">
-              Controlled by core package `SCHEMA_VERSION`.
-            </p>
           </div>
         </div>
       </div>
