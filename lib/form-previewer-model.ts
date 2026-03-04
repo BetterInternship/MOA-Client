@@ -37,174 +37,72 @@ export interface OwnerMeta {
   isKnownOwner: boolean;
 }
 
-export type PreviewFieldLike =
-  | PreviewField
-  | IFormBlock
-  | {
-      field?: string;
-      label?: string;
-      page?: number;
-      x?: number;
-      y?: number;
-      w?: number;
-      h?: number;
-      size?: number;
-      wrap?: boolean;
-      align_h?: "left" | "center" | "right";
-      align_v?: "top" | "middle" | "bottom";
-      font?: string;
-      type?: PreviewFieldType;
-      signing_party_id?: string;
-      source?: string;
-      prefiller?: unknown;
-      validator_ir?: ValidatorIrLike;
-      required?: boolean;
-      _id?: string;
-      field_schema?: {
-        field?: string;
-        label?: string;
-        page?: number;
-        x?: number;
-        y?: number;
-        w?: number;
-        h?: number;
-        size?: number;
-        wrap?: boolean;
-        align_h?: "left" | "center" | "right";
-        align_v?: "top" | "middle" | "bottom";
-        font?: string;
-        type?: PreviewFieldType;
-        signing_party_id?: string;
-        source?: string;
-        prefiller?: unknown;
-        validator_ir?: ValidatorIrLike;
-        required?: boolean;
-      };
-      phantom_field_schema?: {
-        field?: string;
-        label?: string;
-        page?: number;
-        x?: number;
-        y?: number;
-        w?: number;
-        h?: number;
-        size?: number;
-        wrap?: boolean;
-        align_h?: "left" | "center" | "right";
-        align_v?: "top" | "middle" | "bottom";
-        font?: string;
-        type?: PreviewFieldType;
-        signing_party_id?: string;
-        source?: string;
-        prefiller?: unknown;
-        validator_ir?: ValidatorIrLike;
-        required?: boolean;
-      };
-    };
+export type PreviewFieldLike = PreviewField | IFormBlock;
 
-function asFieldLike(input: PreviewFieldLike) {
-  return input as {
-    _id?: string;
-    field?: string;
-    label?: string;
-    page?: number;
-    x?: number;
-    y?: number;
-    w?: number;
-    h?: number;
-    size?: number;
-    wrap?: boolean;
-    align_h?: "left" | "center" | "right";
-    align_v?: "top" | "middle" | "bottom";
-    font?: string;
-    type?: PreviewFieldType;
-    signing_party_id?: string;
-    source?: string;
-    prefiller?: unknown;
-    validator_ir?: ValidatorIrLike;
-    required?: boolean;
-    field_schema?: {
-      field?: string;
-      label?: string;
-      page?: number;
-      x?: number;
-      y?: number;
-      w?: number;
-      h?: number;
-      size?: number;
-      wrap?: boolean;
-      align_h?: "left" | "center" | "right";
-      align_v?: "top" | "middle" | "bottom";
-      font?: string;
-      type?: PreviewFieldType;
-      signing_party_id?: string;
-      source?: string;
-      prefiller?: unknown;
-      validator_ir?: ValidatorIrLike;
-      required?: boolean;
-    };
-    phantom_field_schema?: {
-      field?: string;
-      label?: string;
-      page?: number;
-      x?: number;
-      y?: number;
-      w?: number;
-      h?: number;
-      size?: number;
-      wrap?: boolean;
-      align_h?: "left" | "center" | "right";
-      align_v?: "top" | "middle" | "bottom";
-      font?: string;
-      type?: PreviewFieldType;
-      signing_party_id?: string;
-      source?: string;
-      prefiller?: unknown;
-      validator_ir?: ValidatorIrLike;
-      required?: boolean;
-    };
-  };
-}
+const isPreviewField = (input: PreviewFieldLike): input is PreviewField => {
+  return "id" in input && "field" in input && !("block_type" in input);
+};
 
 export function normalizePreviewFields(inputs: PreviewFieldLike[]): PreviewField[] {
   const normalized: PreviewField[] = [];
 
   for (const input of inputs) {
-    const source = asFieldLike(input);
-    const schema = source.field_schema ?? source.phantom_field_schema;
+    if (isPreviewField(input)) {
+      if (input.type === "image") continue;
+      normalized.push(input);
+      continue;
+    }
 
-    const field = schema?.field ?? source.field;
-    if (!field) continue;
+    const block = input;
+    const schema = block.field_schema ?? block.phantom_field_schema;
+    if (!schema?.field) continue;
+    if (schema.type === "image") continue;
 
-    const type = schema?.type ?? source.type;
-    if (type === "image") continue;
+    const sizedSchema = schema as {
+      page?: number;
+      x?: number;
+      y?: number;
+      w?: number;
+      h?: number;
+      size?: number;
+      wrap?: boolean;
+      align_h?: "left" | "center" | "right";
+      align_v?: "top" | "middle" | "bottom";
+      font?: string;
+      type?: PreviewFieldType;
+      validator_ir?: ValidatorIrLike;
+      required?: boolean;
+      source?: string;
+      prefiller?: unknown;
+      signing_party_id?: string;
+    };
 
-    const page = schema?.page ?? source.page ?? 1;
-    const x = schema?.x ?? source.x ?? 0;
-    const y = schema?.y ?? source.y ?? 0;
-    const w = schema?.w ?? source.w ?? 0;
-    const h = schema?.h ?? source.h ?? 0;
+    const page = typeof sizedSchema.page === "number" ? sizedSchema.page : 1;
+    const x = typeof sizedSchema.x === "number" ? sizedSchema.x : 0;
+    const y = typeof sizedSchema.y === "number" ? sizedSchema.y : 0;
+    const w = typeof sizedSchema.w === "number" ? sizedSchema.w : 0;
+    const h = typeof sizedSchema.h === "number" ? sizedSchema.h : 0;
 
     normalized.push({
-      id: source._id || `${field}:${page}:${x}:${y}:${normalized.length}`,
-      field,
-      label: schema?.label ?? source.label ?? field,
+      id: block._id || `${schema.field}:${page}:${x}:${y}:${normalized.length}`,
+      field: schema.field,
+      label: schema.label || schema.field,
       page,
       x,
       y,
       w,
       h,
-      size: schema?.size ?? source.size,
-      wrap: schema?.wrap ?? source.wrap,
-      align_h: schema?.align_h ?? source.align_h,
-      align_v: schema?.align_v ?? source.align_v,
-      font: schema?.font ?? source.font,
-      type,
-      signing_party_id: schema?.signing_party_id ?? source.signing_party_id,
-      source: schema?.source ?? source.source,
-      prefiller: schema?.prefiller ?? source.prefiller,
-      validator_ir: schema?.validator_ir ?? source.validator_ir,
-      required: schema?.required ?? source.required,
+      size: sizedSchema.size,
+      wrap: sizedSchema.wrap,
+      align_h: sizedSchema.align_h,
+      align_v: sizedSchema.align_v,
+      font: sizedSchema.font,
+      type: sizedSchema.type,
+      signing_party_id: sizedSchema.signing_party_id ?? block.signing_party_id,
+      source: sizedSchema.source,
+      prefiller: sizedSchema.prefiller,
+      validator_ir: sizedSchema.validator_ir,
+      required: sizedSchema.required,
     });
   }
 

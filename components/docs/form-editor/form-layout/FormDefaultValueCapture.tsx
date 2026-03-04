@@ -99,10 +99,9 @@ const FormDefaultValueCaptureContent = ({
     (block) => block.signing_party_id === selectedPartyId || !block.signing_party_id
   );
 
-  // Extract field schemas from form field blocks for PDF rendering
-  const fieldBlocks = filteredBlocks
-    .filter((b) => b.field_schema?.field)
-    .map((b) => b.field_schema);
+  const hasRenderablePreviewField = filteredBlocks.some(
+    (block) => !!block.field_schema?.field || !!block.phantom_field_schema?.field
+  );
 
   const handleSave = async () => {
     if (!onSave) return;
@@ -154,10 +153,10 @@ const FormDefaultValueCaptureContent = ({
 
         {/* Right side - PDF Preview */}
         <div className="relative flex-1 overflow-hidden bg-slate-100">
-          {documentUrl && fieldBlocks.length > 0 ? (
+          {documentUrl && hasRenderablePreviewField ? (
             <FormPreviewPdfDisplay
               documentUrl={documentUrl}
-              blocks={fieldBlocks}
+              blocks={filteredBlocks}
               values={previewValues}
               onFieldClick={(fieldName) => setSelectedFieldId(fieldName)}
               selectedFieldId={selectedFieldId}

@@ -7,7 +7,6 @@ import {
   type IFormSigningParty,
   type IFormMetadata,
 } from "@betterinternship/core/forms";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormPreviewRenderer } from "./FormPreviewRenderer";
 import { FormPreviewPdfDisplay } from "@/components/docs/forms/previewer";
@@ -109,31 +108,6 @@ const FormPreviewContent = ({
   const previewValues = useMemo(
     () => withDerivedFormValues(new FormMetadata(formMetadata), values),
     [formMetadata, values]
-  );
-
-  const fieldBlocksForPdf = useMemo(
-    () =>
-      blocks
-        .filter((b) => b.field_schema?.field)
-        .map((block) => ({
-          field: block.field_schema?.field || "",
-          label: block.field_schema?.label || "",
-          page: block.field_schema?.page || 0,
-          x: block.field_schema?.x || 0,
-          y: block.field_schema?.y || 0,
-          w: block.field_schema?.w || 100,
-          h: block.field_schema?.h || 12,
-          size: block.field_schema?.size ?? 11,
-          wrap: block.field_schema?.wrap ?? true,
-          align_h: block.field_schema?.align_h ?? "center",
-          align_v: block.field_schema?.align_v ?? "bottom",
-          type: block.field_schema?.type || "text",
-          signing_party_id: block.signing_party_id,
-          source: block.field_schema?.source || "",
-          prefiller: block.field_schema?.prefiller || "",
-          validator_ir: block.field_schema?.validator_ir ?? null,
-        })),
-    [blocks]
   );
 
   // Hydrate preview values from configured field prefillers/defaults.
@@ -257,7 +231,7 @@ const FormPreviewContent = ({
             {documentUrl ? (
               <FormPreviewPdfDisplay
                 documentUrl={documentUrl}
-                blocks={fieldBlocksForPdf}
+                blocks={blocks}
                 values={previewValues}
                 onFieldClick={(fieldId) => {
                   setSelectedFieldSource("pdf");
