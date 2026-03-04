@@ -291,7 +291,9 @@ export function PdfViewer() {
                 typeof baseSchema?.shared === "boolean"
                   ? baseSchema.shared
                   : (draggedField.shared ?? true),
-              source: (baseSchema?.source || draggedField.source || "manual") as IFormField["source"],
+              source: (baseSchema?.source ||
+                draggedField.source ||
+                "manual") as IFormField["source"],
               ...(baseSchema?.prefiller
                 ? { prefiller: baseSchema.prefiller }
                 : draggedField.prefiller
@@ -307,13 +309,21 @@ export function PdfViewer() {
                 : draggedField.validator_ir
                   ? { validator_ir: draggedField.validator_ir as any }
                   : {}),
-              ...(baseSchema?.size ? { size: baseSchema.size } : defaults?.size ? { size: defaults.size } : {}),
+              ...(baseSchema?.size
+                ? { size: baseSchema.size }
+                : defaults?.size
+                  ? { size: defaults.size }
+                  : {}),
               ...(typeof baseSchema?.wrap === "boolean"
                 ? { wrap: baseSchema.wrap }
                 : typeof defaults?.wrap === "boolean"
                   ? { wrap: defaults.wrap }
                   : { wrap: true }),
-              ...(baseSchema?.font ? { font: baseSchema.font } : defaults?.font ? { font: defaults.font } : {}),
+              ...(baseSchema?.font
+                ? { font: baseSchema.font }
+                : defaults?.font
+                  ? { font: defaults.font }
+                  : {}),
             },
           };
 
@@ -344,8 +354,8 @@ export function PdfViewer() {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
       {/* Header */}
-      <div className="flex-shrink-0 border-b bg-white px-4 py-2">
-        <div className="flex items-center justify-between gap-2">
+      <div className="relative flex-shrink-0 border-b border-slate-300 bg-white px-3 py-2">
+        <div className="flex items-center justify-between gap-3">
           <Button
             type="button"
             size="sm"
@@ -361,40 +371,58 @@ export function PdfViewer() {
               className="pointer-events-none border border-slate-400 data-[state=checked]:border-white"
             />
           </Button>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => handleZoom("out")}
-              disabled={scale <= 0.5}
-              className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            <span className="text-muted-foreground min-w-12 text-center text-xs">
-              {Math.round(scale * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={() => handleZoom("in")}
-              disabled={scale >= 3}
-              className="rounded p-2 text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium text-slate-700">
+                {visiblePage}/{pageCount || 1}
+              </span>
+              <div className="ml-1 inline-flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleZoom("out")}
+                  disabled={scale <= 0.5}
+                  className="rounded p-1.5 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                  title="Zoom out"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleZoom("in")}
+                  disabled={scale >= 3}
+                  className="rounded p-1.5 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                  title="Zoom in"
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <span className="w-10 text-center text-[11px] font-medium text-slate-700">
+                {Math.round(scale * 100)}%
+              </span>
+            </div>
+
+            {editorViewMode === "pdf" ? (
+              <>
+                <div className="h-5 w-px border-l bg-slate-500" />
+                <label
+                  className="flex cursor-pointer items-center rounded p-1.5 text-sm transition-colors hover:bg-slate-100"
+                  title="Upload PDF"
+                  aria-label="Upload PDF"
+                >
+                  <FileUp className="h-4 w-4" />
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </>
+            ) : null}
           </div>
-          {editorViewMode === "pdf" ? (
-            <label className="flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors hover:bg-slate-100">
-              <FileUp className="h-4 w-4" />
-              <input
-                type="file"
-                accept="application/pdf"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </label>
-          ) : (
-            <div className="w-[34px]" />
-          )}
         </div>
       </div>
 
@@ -807,13 +835,21 @@ const PdfPageCanvas = memo(
               : draggedField.validator_ir
                 ? { validator_ir: draggedField.validator_ir as any }
                 : {}),
-            ...(baseSchema?.size ? { size: baseSchema.size } : defaults?.size ? { size: defaults.size } : {}),
+            ...(baseSchema?.size
+              ? { size: baseSchema.size }
+              : defaults?.size
+                ? { size: defaults.size }
+                : {}),
             ...(typeof baseSchema?.wrap === "boolean"
               ? { wrap: baseSchema.wrap }
               : typeof defaults?.wrap === "boolean"
                 ? { wrap: defaults.wrap }
                 : { wrap: true }),
-            ...(baseSchema?.font ? { font: baseSchema.font } : defaults?.font ? { font: defaults.font } : {}),
+            ...(baseSchema?.font
+              ? { font: baseSchema.font }
+              : defaults?.font
+                ? { font: defaults.font }
+                : {}),
           },
         };
 
