@@ -1028,6 +1028,11 @@ const PdfPageCanvas = memo(
       >
         <div className="text-muted-foreground flex items-center justify-between border-b px-3 py-2 text-xs">
           <span>Page {pageNumber}</span>
+          {localHover ? (
+            <span className="text-[11px]">
+              x={localHover.pdfX.toFixed(2)}, y={localHover.pdfY.toFixed(2)}
+            </span>
+          ) : null}
         </div>
         <div className="relative flex justify-center bg-slate-50">
           <canvas
@@ -1137,11 +1142,6 @@ const PdfPageCanvas = memo(
             </div>
           )}
         </div>
-        {localHover && (
-          <div className="bg-muted/30 text-muted-foreground border-t px-3 py-2 text-[11px]">
-            Page {pageNumber}: x={localHover.pdfX.toFixed(2)}, y={localHover.pdfY.toFixed(2)}
-          </div>
-        )}
       </div>
     );
   }
