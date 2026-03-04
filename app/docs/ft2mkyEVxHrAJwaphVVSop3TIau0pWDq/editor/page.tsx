@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ import { EditorContent } from "@/components/editor/tabs/EditorContent";
 
 function FormEditorLoadingFallback() {
   return (
-    <div className="bg-background flex h-screen items-center justify-center">
+    <div className="bg-background flex h-full min-h-0 w-full items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <Loader />
         <p className="text-muted-foreground text-sm">Loading editor...</p>
@@ -43,6 +43,8 @@ function FormEditorContent() {
     setLastLoadedFileName,
   } = useFormEditor();
   const [isLoading, setIsLoading] = useState(true);
+  const hasBootstrappedRef = useRef(false);
+  const activeFormNameRef = useRef<string | null>(null);
 
   const { data: fetchedData } = useFormsControllerGetLatestFormDocumentAndMetadata({
     name: formName || "",
@@ -51,9 +53,20 @@ function FormEditorContent() {
   // Bootstraps editor state from API response and optionally downloads the latest PDF blob.
   // This keeps the PDF viewer, metadata panel, and save flow working from the same context state.
   useEffect(() => {
+    const formChanged = activeFormNameRef.current !== formName;
+    if (formChanged) {
+      activeFormNameRef.current = formName;
+      hasBootstrappedRef.current = false;
+      setIsLoading(true);
+    }
+
+    // For existing forms, wait for first payload before leaving loading state.
+    if (formName && !fetchedData?.formMetadata) return;
+
     const initForm = () => {
       try {
-        setIsLoading(true);
+        const isInitialBootstrap = !hasBootstrappedRef.current;
+        if (isInitialBootstrap) setIsLoading(true);
         const response = fetchedData as
           | (typeof fetchedData & {
               documentUrl?: string;
@@ -71,8 +84,9 @@ function FormEditorContent() {
           setFormVersion(fetchedData.formVersion || null);
           setDocumentUrl(resolvedDocumentUrl);
 
-          // Fetch remote PDF and hydrate `documentFile` so editor tools can operate on a File object.
-          if (resolvedDocumentUrl) {
+          // Fetch remote PDF and hydrate `documentFile` only for initial bootstrap.
+          // On save/refetch we keep current in-memory file to avoid fullscreen loading flicker.
+          if (isInitialBootstrap && resolvedDocumentUrl) {
             fetch(resolvedDocumentUrl)
               .then((res) => {
                 if (!res.ok) {
@@ -87,14 +101,19 @@ function FormEditorContent() {
                 setLastLoadedFileName(fileName);
                 // Editor is ready only after both metadata and PDF are in context.
                 setIsLoading(false);
+                hasBootstrappedRef.current = true;
               })
               .catch((err) => {
                 console.error("Failed to fetch PDF:", err);
                 setIsLoading(false);
+                hasBootstrappedRef.current = true;
               });
           } else {
             // Metadata-only form (no base document yet).
-            setIsLoading(false);
+            if (isInitialBootstrap) {
+              setIsLoading(false);
+              hasBootstrappedRef.current = true;
+            }
           }
         } else {
           // Create-new form path: seed blank metadata.
@@ -102,7 +121,10 @@ function FormEditorContent() {
           setFormDocument(null);
           setFormVersion(null);
           setDocumentUrl(null);
-          setIsLoading(false);
+          if (isInitialBootstrap) {
+            setIsLoading(false);
+            hasBootstrappedRef.current = true;
+          }
         }
       } catch (error) {
         console.error("Error loading form:", error);
@@ -112,6 +134,7 @@ function FormEditorContent() {
         setFormVersion(null);
         setDocumentUrl(null);
         setIsLoading(false);
+        hasBootstrappedRef.current = true;
       }
     };
 
@@ -120,7 +143,7 @@ function FormEditorContent() {
 
   if (isLoading) {
     return (
-      <div className="bg-background flex h-screen items-center justify-center">
+      <div className="bg-background flex h-full min-h-0 w-full items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader />
           <p className="text-muted-foreground text-sm">Loading form...</p>

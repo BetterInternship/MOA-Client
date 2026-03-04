@@ -177,10 +177,13 @@ export function FormEditorProvider({
 
       await formsControllerRegisterForm(payload);
       queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
+      // Keep editor stable after save: mark form-latest stale without forcing active refetch.
+      // This avoids the fullscreen "Loading form..." bounce while preserving eventual freshness.
       queryClient.invalidateQueries({
         queryKey: getFormsControllerGetLatestFormDocumentAndMetadataQueryKey({
           name: formMetadata.name,
         }),
+        refetchType: "inactive",
       });
       toast.success("Form saved successfully!", toastPresets.success);
     } catch (error) {
