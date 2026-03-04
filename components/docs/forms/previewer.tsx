@@ -16,8 +16,10 @@ import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Loader } from "@/components/ui/loader";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import {
+  createPreviewDisplayValueResolver,
   groupFieldsByPage,
   isFieldRequired,
+  normalizePreviewFieldKey,
   normalizePreviewFields,
   resolveOwnerMeta,
   type OwnerMeta,
@@ -33,11 +35,19 @@ import {
 
 type DefaultFieldVisibility = "all" | "mine";
 type FieldStatus = "empty" | "filled" | "signed";
+type PreviewPrefillMode = "live" | "dummy" | "none";
 
 const getFieldStatus = (fieldType: PreviewField["type"], value: string): FieldStatus => {
   if (!value.trim()) return "empty";
   if (fieldType === "signature") return "signed";
   return "filled";
+};
+
+const getPreviewRawValue = (values: Record<string, string>, fieldKey: string): unknown => {
+  const normalizedFieldName = normalizePreviewFieldKey(fieldKey);
+  return (
+    values[fieldKey] ?? values[`${normalizedFieldName}:default`] ?? values[normalizedFieldName]
+  );
 };
 
 interface FormPreviewPdfDisplayProps {
@@ -54,6 +64,8 @@ interface FormPreviewPdfDisplayProps {
   showOwnership?: boolean;
   defaultFieldVisibility?: DefaultFieldVisibility;
   fieldErrors?: Record<string, string>;
+  prefillMode?: PreviewPrefillMode;
+  prefillUser?: Record<string, unknown> | null;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -77,6 +89,8 @@ export const FormPreviewPdfDisplay = ({
   showOwnership = false,
   defaultFieldVisibility: _defaultFieldVisibility = "mine",
   fieldErrors = {},
+  prefillMode = "live",
+  prefillUser = null,
 }: FormPreviewPdfDisplayProps) => {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
@@ -91,6 +105,14 @@ export const FormPreviewPdfDisplay = ({
   const normalizedFields = useMemo(
     () => normalizePreviewFields(fields?.length ? fields : (blocks ?? [])),
     [fields, blocks]
+  );
+  const resolveDisplayValue = useMemo(
+    () =>
+      createPreviewDisplayValueResolver({
+        user: prefillUser,
+        prefillMode,
+      }),
+    [prefillMode, prefillUser]
   );
   const ownerMetaByFieldId = useMemo(() => {
     const ownerMetaMap = new Map<string, OwnerMeta>();
@@ -117,12 +139,8 @@ export const FormPreviewPdfDisplay = ({
     if (didAutoFocusOwnedTaskRef.current) return;
     const firstEmptyRequiredOwnedField = ownedFields.find((field) => {
       if (!isFieldRequired(field)) return false;
-      const rawValue = values[field.field];
-      const value = Array.isArray(rawValue)
-        ? rawValue.join(", ")
-        : typeof rawValue === "string"
-          ? rawValue
-          : "";
+      const rawValue = getPreviewRawValue(values, field.field);
+      const value = resolveDisplayValue(field, rawValue);
       return getFieldStatus(field.type, value) === "empty";
     });
 
@@ -134,7 +152,7 @@ export const FormPreviewPdfDisplay = ({
     }
 
     didAutoFocusOwnedTaskRef.current = true;
-  }, [showOwnership, ownedFields, values]);
+  }, [showOwnership, ownedFields, resolveDisplayValue, values]);
 
   // Jump to field's page and trigger animation when selected from form
   useEffect(() => {
@@ -264,6 +282,7 @@ export const FormPreviewPdfDisplay = ({
               ownerMetaByFieldId={ownerMetaByFieldId}
               showOwnership={showOwnership}
               fieldErrors={fieldErrors}
+              resolveDisplayValue={resolveDisplayValue}
             />
           ))}
         </div>
@@ -331,6 +350,7 @@ interface PdfPageOverlayProps {
   ownerMetaByFieldId: Map<string, OwnerMeta>;
   showOwnership: boolean;
   fieldErrors: Record<string, string>;
+  resolveDisplayValue: (field: PreviewField, rawValue: unknown) => string;
 }
 
 const PdfPageOverlay = ({
@@ -348,6 +368,7 @@ const PdfPageOverlay = ({
   ownerMetaByFieldId,
   showOwnership,
   fieldErrors,
+  resolveDisplayValue,
 }: PdfPageOverlayProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -503,13 +524,8 @@ const PdfPageOverlay = ({
           const widthPixels = w * scale;
           const heightPixels = h * scale;
 
-          const rawValue = values[fieldName];
-          // Handle different value types (string, array, object, etc)
-          const valueStr = Array.isArray(rawValue)
-            ? rawValue.join(", ")
-            : typeof rawValue === "string"
-              ? rawValue
-              : "";
+          const rawValue = getPreviewRawValue(values, fieldName);
+          const valueStr = resolveDisplayValue(field, rawValue);
           const isFilled = valueStr.trim().length > 0;
 
           // Get alignment and wrapping from field schema
@@ -524,8 +540,7 @@ const PdfPageOverlay = ({
           let fontSizeDoc: number;
           let lineHeightDoc: number;
           let displayLines: string[] = [];
-          const safeScale = Math.max(scale, 0.001);
-          const fitSafetyUnits = 2 / safeScale;
+          const fitSafetyUnits = 2;
           const fitMaxWidthDoc = Math.max(0, w - fitSafetyUnits);
           const fitMaxHeightDoc = Math.max(0, h - fitSafetyUnits);
 
@@ -657,8 +672,9 @@ const PdfPageOverlay = ({
                     fontSize: `${fontSize}px`,
                     lineHeight: `${lineHeight}px`,
                     overflow: "hidden",
-                    whiteSpace: shouldWrap ? "pre-wrap" : "nowrap",
-                    wordWrap: shouldWrap ? "break-word" : "normal",
+                    whiteSpace: shouldWrap ? "pre" : "nowrap",
+                    wordWrap: "normal",
+                    overflowWrap: "normal",
                     width: "100%",
                     maxWidth: "100%",
                     maxHeight: "100%",

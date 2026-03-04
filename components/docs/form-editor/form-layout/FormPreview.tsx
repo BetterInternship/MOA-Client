@@ -17,6 +17,7 @@ import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { cn } from "@/lib/utils";
 import { withDerivedFormValues } from "@/lib/derived-form-values";
+import { DEFAULT_PREVIEW_DUMMY_STUDENT_USER } from "@/lib/form-previewer-model";
 
 interface FormPreviewProps {
   metadata?: IFormMetadata;
@@ -128,6 +129,8 @@ const FormPreviewContent = ({
           align_v: block.field_schema?.align_v ?? "bottom",
           type: block.field_schema?.type || "text",
           signing_party_id: block.signing_party_id,
+          source: block.field_schema?.source || "",
+          prefiller: block.field_schema?.prefiller || "",
           validator_ir: block.field_schema?.validator_ir ?? null,
         })),
     [blocks]
@@ -266,6 +269,8 @@ const FormPreviewContent = ({
                 currentSigningPartyId={selectedPartyId}
                 showOwnership
                 defaultFieldVisibility="mine"
+                prefillMode="dummy"
+                prefillUser={DEFAULT_PREVIEW_DUMMY_STUDENT_USER}
               />
             ) : (
               <div className="flex h-full items-center justify-center">

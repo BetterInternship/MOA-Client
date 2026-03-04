@@ -45,6 +45,13 @@ function PageContent() {
     () => withDerivedFormValues(form.formMetadata, finalValues),
     [form.formMetadata, finalValues]
   );
+  const previewPrefillUser = useMemo(
+    () => ({
+      ...(profile as unknown as Record<string, unknown>),
+      ...(autofillValues as unknown as Record<string, unknown>),
+    }),
+    [profile, autofillValues]
+  );
 
   // Show mobile notice toast on mount
   useEffect(() => {
@@ -174,6 +181,8 @@ function PageContent() {
                   currentSigningPartyId={formProcess.my_signing_party_id}
                   showOwnership
                   defaultFieldVisibility="mine"
+                  prefillMode="live"
+                  prefillUser={previewPrefillUser}
                 />
               ) : (
                 <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -251,6 +260,8 @@ function PageContent() {
                   currentSigningPartyId={formProcess.my_signing_party_id}
                   showOwnership
                   defaultFieldVisibility="mine"
+                  prefillMode="live"
+                  prefillUser={previewPrefillUser}
                 />
               ) : (
                 <div className="p-4 text-sm text-gray-500">No preview available</div>
@@ -305,6 +316,8 @@ function PageContent() {
                 currentSigningPartyId={formProcess.my_signing_party_id}
                 showOwnership
                 defaultFieldVisibility="mine"
+                prefillMode="live"
+                prefillUser={previewPrefillUser}
               />
             </div>
           ) : null}

@@ -12,6 +12,7 @@ import { FormMetadata } from "@betterinternship/core/forms";
 import { FormFillerContextProvider, useFormFiller } from "@/components/docs/forms/form-filler.ctx";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
 import { withDerivedFormValues } from "@/lib/derived-form-values";
+import { DEFAULT_PREVIEW_DUMMY_STUDENT_USER } from "@/lib/form-previewer-model";
 
 interface FormDefaultValueCaptureProps {
   formName: string;
@@ -160,6 +161,8 @@ const FormDefaultValueCaptureContent = ({
               values={previewValues}
               onFieldClick={(fieldName) => setSelectedFieldId(fieldName)}
               selectedFieldId={selectedFieldId}
+              prefillMode="dummy"
+              prefillUser={DEFAULT_PREVIEW_DUMMY_STUDENT_USER}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
