@@ -11,11 +11,7 @@ import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { useFormsControllerGetLatestFormDocumentAndMetadata } from "@/app/api";
-import {
-  SCHEMA_VERSION,
-  type IFormMetadata,
-  BLANK_FORM_METADATA,
-} from "@betterinternship/core/forms";
+import { BLANK_FORM_METADATA } from "@betterinternship/core/forms";
 import { FormEditorProvider, useFormEditor } from "@/app/contexts/form-editor.context";
 import { EditorToolbar } from "@/components/editor/toolbar/EditorToolbar";
 import { EditorContent } from "@/components/editor/tabs/EditorContent";
@@ -70,14 +66,14 @@ function FormEditorContent() {
 
         if (formName && fetchedData?.formMetadata) {
           setFormMetadata(fetchedData.formMetadata);
-          setFormDocument(fetchedData.formDocument || null);
+          setFormDocument(fetchedData.formTemplate || null);
           setFormVersion(fetchedData.formVersion || null);
-          setDocumentUrl(fetchedData.formUrl || null);
+          setDocumentUrl(fetchedData.documentUrl || null);
 
           // Fetch remote PDF and hydrate `documentFile` only for initial bootstrap.
           // On save/refetch we keep current in-memory file to avoid fullscreen loading flicker.
-          if (isInitialBootstrap && fetchedData.formUrl) {
-            fetch(fetchedData.formUrl)
+          if (isInitialBootstrap && fetchedData.documentUrl) {
+            fetch(fetchedData.documentUrl)
               .then((res) => {
                 if (!res.ok) {
                   throw new Error(`Failed to fetch PDF: ${res.status} ${res.statusText}`);

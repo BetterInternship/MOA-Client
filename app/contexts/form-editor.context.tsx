@@ -153,22 +153,6 @@ export function FormEditorProvider({
         },
       };
 
-      if (process.env.NODE_ENV !== "production") {
-        const fieldSchemas = normalizedMetadata.schema.blocks
-          .map((block) => block.field_schema || block.phantom_field_schema)
-          .filter(Boolean);
-        const withIr = fieldSchemas.filter(
-          (schema) => (schema as any)?.validator_ir != null
-        ).length;
-        const withoutIr = fieldSchemas.length - withIr;
-
-        console.groupCollapsed("[ValidationSavePayload] validator_ir presence");
-        console.log("total_fields:", fieldSchemas.length);
-        console.log("with_validator_ir:", withIr);
-        console.log("without_validator_ir:", withoutIr);
-        console.groupEnd();
-      }
-
       const payload: RegisterFormSchemaDto = {
         ...(normalizedMetadata as unknown as RegisterFormSchemaDto),
         // Persist newly uploaded PDF when saving an existing form.
@@ -177,8 +161,6 @@ export function FormEditorProvider({
 
       await formsControllerRegisterForm(payload);
       queryClient.invalidateQueries({ queryKey: ["docs-forms-names"] });
-      // Keep editor stable after save: mark form-latest stale without forcing active refetch.
-      // This avoids the fullscreen "Loading form..." bounce while preserving eventual freshness.
       queryClient.invalidateQueries({
         queryKey: getFormsControllerGetLatestFormDocumentAndMetadataQueryKey({
           name: formMetadata.name,
