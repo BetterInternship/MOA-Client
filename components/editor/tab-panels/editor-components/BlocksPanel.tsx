@@ -1,22 +1,16 @@
 "use client";
 
 import { useMemo, useState, type DragEvent } from "react";
-import {
-  IFormBlock,
-  IFormField,
-  IFormSigningParty,
-} from "@betterinternship/core/forms";
+import { IFormBlock, IFormField } from "@betterinternship/core/forms";
 import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
+import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { isPresetRegistryField } from "@/lib/field-library";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { getPresetFieldIcon, type PresetFieldIconKey } from "@/lib/preset-field-icons";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
-import {
-  sanitizeFieldSchemaDefaults,
-  type FieldSchemaDefaults,
-} from "@/lib/field-schema-defaults";
+import { sanitizeFieldSchemaDefaults, type FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
 import {
   SIGNATURE_PRINTED_NAME_TEMPLATE,
@@ -35,13 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface BlocksPanelProps {
-  blocks: IFormBlock[];
-  selectedPartyId: string | null;
-  onPartyChange: (partyId: string | null) => void;
-  signingParties: IFormSigningParty[];
-}
 
 type PaletteSource = "default" | "custom";
 
@@ -98,16 +85,21 @@ const BASE_TYPE_ICON_MAP: Partial<Record<ValidatorIRv0["baseType"], PresetFieldI
  * - Default fields are resolved DB-first from system presets, with package fallback.
  * - Custom fields come from DB registry.
  */
-export function BlocksPanel({
-  blocks,
-  selectedPartyId,
-  onPartyChange,
-  signingParties,
-}: BlocksPanelProps) {
+export function BlocksPanel() {
+  const { formMetadata } = useFormEditor();
   const { registry } = useFieldTemplateContext();
-  const { handleBlockCreate, handleBlocksCreate, searchQuery, setSearchQuery } = useFormEditorTab();
+  const {
+    blocks,
+    selectedPartyId,
+    setSelectedPartyId,
+    handleBlockCreate,
+    handleBlocksCreate,
+    searchQuery,
+    setSearchQuery,
+  } = useFormEditorTab();
   const { visiblePage } = usePdfViewer();
   const [fieldTab, setFieldTab] = useState<"default" | "custom">("default");
+  const signingParties = formMetadata?.signing_parties || [];
 
   const selectedParty =
     signingParties.find((party) => party._id === selectedPartyId) || signingParties[0];
@@ -237,7 +229,9 @@ export function BlocksPanel({
     const defaults = field.field_schema_defaults;
     const isSignaturePrintedNameComposite =
       field.composite_template === SIGNATURE_PRINTED_NAME_TEMPLATE.key;
-    const presets = isSignaturePrintedNameComposite ? resolveSystemPresetTemplates(registry as any[]) : [];
+    const presets = isSignaturePrintedNameComposite
+      ? resolveSystemPresetTemplates(registry as any[])
+      : [];
     const signaturePreset = isSignaturePrintedNameComposite
       ? presets.find((preset) => preset.name === "signature")
       : undefined;
@@ -249,10 +243,12 @@ export function BlocksPanel({
       : null;
     const defaultFieldHeightByType = field.type === "signature" ? 25 : 12;
     const fieldWidth = compositeDimensions?.signatureWidth ?? defaults?.w ?? 100;
-    const fieldHeight = compositeDimensions?.signatureHeight ?? defaults?.h ?? defaultFieldHeightByType;
+    const fieldHeight =
+      compositeDimensions?.signatureHeight ?? defaults?.h ?? defaultFieldHeightByType;
     const printedNameWidth = compositeDimensions?.printedNameWidth ?? fieldWidth;
     const printedNameHeight = compositeDimensions?.printedNameHeight ?? 12;
-    const printedNameGap = compositeDimensions?.gap ?? SIGNATURE_PRINTED_NAME_TEMPLATE.printedName.gap;
+    const printedNameGap =
+      compositeDimensions?.gap ?? SIGNATURE_PRINTED_NAME_TEMPLATE.printedName.gap;
     const totalCompositeHeight = compositeDimensions?.totalHeight ?? fieldHeight;
     const page = Math.max(1, visiblePage || 1);
     const pageMaxX = 560;
@@ -430,7 +426,7 @@ export function BlocksPanel({
                 return (
                   <DropdownMenuItem
                     key={party._id}
-                    onClick={() => onPartyChange(party._id)}
+                    onClick={() => setSelectedPartyId(party._id)}
                     className="py-1.5"
                   >
                     <span

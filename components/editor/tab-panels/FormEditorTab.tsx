@@ -14,7 +14,7 @@ import { FormViewCanvas } from "./editor-components/FormViewCanvas";
  */
 function FormEditorTabContent() {
   const { formMetadata } = useFormEditor();
-  const { selectedPartyId, setSelectedPartyId, editorViewMode } = useFormEditorTab();
+  const { editorViewMode } = useFormEditorTab();
 
   if (!formMetadata) {
     return (
@@ -28,16 +28,7 @@ function FormEditorTabContent() {
     <div className="bg-background flex h-full w-full">
       {/* Left Panel - Responsive */}
       <div className="bg-card flex flex-shrink-0 basis-72 flex-col overflow-hidden border-r lg:basis-[320px] xl:basis-[360px]">
-        {editorViewMode === "pdf" ? (
-          <BlocksPanel
-            blocks={formMetadata.schema.blocks}
-            selectedPartyId={selectedPartyId}
-            onPartyChange={setSelectedPartyId}
-            signingParties={formMetadata.signing_parties || []}
-          />
-        ) : (
-          <FormViewCanvas />
-        )}
+        {editorViewMode === "pdf" ? <BlocksPanel /> : <FormViewCanvas />}
       </div>
 
       {/* Center - PDF Viewer */}
