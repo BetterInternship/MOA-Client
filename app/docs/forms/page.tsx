@@ -159,7 +159,7 @@ export default function DocsFormsPage() {
       <div className="h-[80dvh] w-full">
         <FormDefaultValueCapture
           formName={openFormName!}
-          documentUrl={formData.formUrl || ""}
+          documentUrl={formData.documentUrl || ""}
           metadata={formData.formMetadata as IFormMetadata}
           onSave={onSave}
           selectedPartyId={openPartyId}
