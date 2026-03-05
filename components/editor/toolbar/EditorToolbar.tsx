@@ -7,27 +7,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Save, Eye, Settings, ArrowLeft, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-function formatTimestamp(timestamp: string): string {
-  try {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return timestamp;
-  }
-}
+import { formatWhen } from "@/lib/format";
 
 /**
  * Header toolbar for editor page:
@@ -36,7 +20,7 @@ function formatTimestamp(timestamp: string): string {
  * - save action bound to FormEditor context
  */
 export function EditorToolbar() {
-  const { formMetadata, formDocument, isSaving, saveForm, activeTab, setActiveTab } =
+  const { formMetadata, formDocument, formVersion, isSaving, saveForm, activeTab, setActiveTab } =
     useFormEditor();
   const isPreviewMode = activeTab === "preview";
 
@@ -65,12 +49,21 @@ export function EditorToolbar() {
         <div className="flex flex-col gap-0.5">
           <h1 className="text-sm font-semibold">{formMetadata?.label || "New Form"}</h1>
           <div className="flex items-center gap-2">
-            <p className="text-muted-foreground text-xs">v{formDocument?.version || 0}</p>
+            <p className="text-muted-foreground text-xs">
+              v{formVersion ?? formDocument?.version ?? 0}
+            </p>
+
             {formDocument?.time_generated && (
               <>
                 <span className="text-muted-foreground/40 text-xs">|</span>
                 <p className="text-muted-foreground text-xs">
-                  {formatTimestamp(formDocument.time_generated)}
+                  {formatWhen(formDocument.time_generated, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               </>
             )}
