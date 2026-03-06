@@ -1,6 +1,5 @@
 "use client";
-
-import { Button } from "@betterinternship/package.components";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   function redirectToSubdomain(subdomain: string) {
@@ -27,15 +26,10 @@ export default function HomePage() {
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
-        <Button size="lg" className="w-64" onClick={() => redirectToSubdomain("moa")}>
+        <Button className="w-64" onClick={() => redirectToSubdomain("moa")}>
           I'm a Company
         </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className="w-64"
-          onClick={() => redirectToSubdomain("univ")}
-        >
+        <Button variant="outline" className="w-64" onClick={() => redirectToSubdomain("univ")}>
           I'm from the University
         </Button>
       </div>
