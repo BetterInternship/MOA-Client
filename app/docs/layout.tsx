@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
-  const { isMobile } = useIsMobile();
+  const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const isEditorRoute = pathname?.includes("/editor") ?? false;
@@ -30,6 +30,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/BetterInternshipLogo.ico" sizes="any" />
+      </head>
       <Providers>
         <body
           className="flex h-[100svh]! w-[100vw] flex-col overflow-x-hidden bg-white"
