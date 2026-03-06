@@ -524,8 +524,10 @@ const PdfPageOverlay = ({
           const widthPixels = w * scale;
           const heightPixels = h * scale;
 
-          const rawValue = getPreviewRawValue(values, fieldName);
-          const valueStr = resolveDisplayValue(field, rawValue);
+          const ownerMeta = ownerMetaByFieldId.get(field.id);
+          const canRevealValue = !showOwnership || ownerMeta?.isMine;
+          const rawValue = canRevealValue ? getPreviewRawValue(values, fieldName) : "";
+          const valueStr = canRevealValue ? resolveDisplayValue(field, rawValue) : "";
           const isFilled = valueStr.trim().length > 0;
 
           // Get alignment and wrapping from field schema
@@ -585,14 +587,6 @@ const PdfPageOverlay = ({
             animatingFieldId === fieldName ||
             selectedFieldId === fieldName ||
             clickedHighlightFieldId === field.id;
-          const ownerMeta = ownerMetaByFieldId.get(field.id) || {
-            ownerRoleId: "unknown",
-            ownerGroupId: "other",
-            ownerLabel: "Unassigned",
-            ownerColorHex: "#94a3b8",
-            isMine: false,
-            isKnownOwner: false,
-          };
           const isClickable = !showOwnership || ownerMeta.isMine;
           const hasFieldError = !!fieldErrors[fieldName];
           const isOwnedField = showOwnership && ownerMeta.isMine;
