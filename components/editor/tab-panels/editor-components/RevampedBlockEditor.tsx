@@ -6,6 +6,7 @@ import { IFormBlock } from "@betterinternship/core/forms";
 import { useState, useEffect, useMemo } from "react";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
+import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 import { FormInput, FormTextarea, FormDropdown } from "@/components/docs/forms/EditForm";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,7 @@ type FieldOption = DefaultValueFieldOption;
 
 export function RevampedBlockEditor() {
   const { formMetadata } = useFormEditor();
+  const { pageCount } = usePdfViewer();
   const { registry } = useFieldTemplateContext();
   const {
     selectedBlockId,
@@ -117,7 +119,7 @@ export function RevampedBlockEditor() {
   // Local state for immediate typing feedback - will sync back to formMetadata through handler
   // This allows responsive typing while formMetadata remains the authoritative source
   const [editingValues, setEditingValues] = useState<Record<string, any>>({});
-  type IntegerFieldKey = "x" | "y" | "w" | "h" | "size";
+  type IntegerFieldKey = "x" | "y" | "w" | "h" | "size" | "page";
   const [integerDrafts, setIntegerDrafts] = useState<Partial<Record<IntegerFieldKey, string>>>({});
   const INTEGER_FIELD_CONFIG: Record<IntegerFieldKey, { allowNegative: boolean; min?: number }> = {
     x: { allowNegative: true },
@@ -125,6 +127,7 @@ export function RevampedBlockEditor() {
     w: { allowNegative: false, min: 0 },
     h: { allowNegative: false, min: 0 },
     size: { allowNegative: false, min: 0 },
+    page: { allowNegative: false, min: 1 },
   };
 
   useEffect(() => {
@@ -227,6 +230,7 @@ export function RevampedBlockEditor() {
       key === "y" ||
       key === "w" ||
       key === "h" ||
+      key === "page" ||
       key === "size" ||
       key === "wrap" ||
       key === "align_h" ||
@@ -298,7 +302,11 @@ export function RevampedBlockEditor() {
     if (!Number.isFinite(parsed)) return;
 
     const { min } = INTEGER_FIELD_CONFIG[key];
-    handleFieldChange(key, min !== undefined ? Math.max(min, parsed) : parsed);
+    let nextValue = min !== undefined ? Math.max(min, parsed) : parsed;
+    if (key === "page" && pageCount > 0) {
+      nextValue = Math.min(nextValue, pageCount);
+    }
+    handleFieldChange(key, nextValue);
   };
 
   const getIntegerInputValue = (key: IntegerFieldKey, value: unknown, fallback: number) => {
@@ -649,6 +657,7 @@ export function RevampedBlockEditor() {
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="X"
+              required={false}
               type="number"
               inputMode="numeric"
               pattern="-?[0-9]*"
@@ -658,6 +667,7 @@ export function RevampedBlockEditor() {
             />
             <FormInput
               label="Y"
+              required={false}
               type="number"
               inputMode="numeric"
               pattern="-?[0-9]*"
@@ -669,6 +679,7 @@ export function RevampedBlockEditor() {
           <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="Width"
+              required={false}
               type="number"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -678,6 +689,7 @@ export function RevampedBlockEditor() {
             />
             <FormInput
               label="Height"
+              required={false}
               type="number"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -686,32 +698,20 @@ export function RevampedBlockEditor() {
               onBlur={() => handleIntegerInputBlur("h")}
             />
           </div>
-          <div className="grid grid-cols-[1fr_110px] items-end gap-2">
-            <div className="space-y-1">
-              <p className="text-xs text-slate-600">Text wrap</p>
-              <div className="flex gap-1">
-                <Button
-                  size="sm"
-                  variant={(schema?.wrap ?? true) ? "default" : "outline"}
-                  onClick={() => handleFieldChange("wrap", true)}
-                  title="Wrap"
-                  className="h-8 flex-1"
-                >
-                  Wrap
-                </Button>
-                <Button
-                  size="sm"
-                  variant={(schema?.wrap ?? true) ? "outline" : "default"}
-                  onClick={() => handleFieldChange("wrap", false)}
-                  title="No wrap"
-                  className="h-8 flex-1"
-                >
-                  No wrap
-                </Button>
-              </div>
-            </div>
+          <div className="grid grid-cols-2 gap-2">
+            <FormInput
+              label="Page"
+              required={false}
+              type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={getIntegerInputValue("page", schema?.page, 1)}
+              setter={(value) => handleIntegerInputChange("page", value)}
+              onBlur={() => handleIntegerInputBlur("page")}
+            />
             <FormInput
               label="Font size"
+              required={false}
               type="number"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -719,6 +719,29 @@ export function RevampedBlockEditor() {
               setter={(value) => handleIntegerInputChange("size", value)}
               onBlur={() => handleIntegerInputBlur("size")}
             />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-slate-600">Text wrap</p>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant={(schema?.wrap ?? true) ? "default" : "outline"}
+                onClick={() => handleFieldChange("wrap", true)}
+                title="Wrap"
+                className="h-8 flex-1"
+              >
+                Wrap
+              </Button>
+              <Button
+                size="sm"
+                variant={(schema?.wrap ?? true) ? "outline" : "default"}
+                onClick={() => handleFieldChange("wrap", false)}
+                title="No wrap"
+                className="h-8 flex-1"
+              >
+                No wrap
+              </Button>
+            </div>
           </div>
         </Card>
 
