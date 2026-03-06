@@ -55,7 +55,7 @@ export function LinkLogin() {
   }, [search, router]);
 
   return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center">
+    <div className="flex min-h-[50vh] w-full flex-col items-center justify-center gap-4 p-6 text-center">
       <div className="space-y-2">
         <h1 className="text-xl font-semibold">Secure Document Access</h1>
         <p className="text-muted-foreground text-sm">{message}</p>
