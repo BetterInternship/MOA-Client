@@ -54,16 +54,26 @@ function FormEditorContent() {
     const initForm = () => {
       try {
         setIsLoading(true);
+        const response = fetchedData as
+          | (typeof fetchedData & {
+              documentUrl?: string;
+              formUrl?: string;
+              formTemplate?: unknown;
+              formDocument?: unknown;
+            })
+          | undefined;
+        const resolvedDocumentUrl = response?.documentUrl ?? response?.formUrl ?? null;
+        const resolvedFormDocument = response?.formTemplate ?? response?.formDocument ?? null;
 
         if (formName && fetchedData?.formMetadata) {
           setFormMetadata(fetchedData.formMetadata);
-          setFormDocument(fetchedData.formDocument || null);
+          setFormDocument((resolvedFormDocument as any) || null);
           setFormVersion(fetchedData.formVersion || null);
-          setDocumentUrl(fetchedData.formUrl || null);
+          setDocumentUrl(resolvedDocumentUrl);
 
           // Fetch remote PDF and hydrate `documentFile` so editor tools can operate on a File object.
-          if (fetchedData.formUrl) {
-            fetch(fetchedData.formUrl)
+          if (resolvedDocumentUrl) {
+            fetch(resolvedDocumentUrl)
               .then((res) => {
                 if (!res.ok) {
                   throw new Error(`Failed to fetch PDF: ${res.status} ${res.statusText}`);
