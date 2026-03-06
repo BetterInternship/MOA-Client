@@ -9,7 +9,6 @@ import { FormActionButtons } from "./FormActionButtons";
 import { getBlockField, isBlockField } from "./utils";
 import { useFormFiller } from "./form-filler.ctx";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
-import { formatTimestampDateWithoutTime } from "@/lib/utils";
 
 export function FormFillerRenderer() {
   const form = useFormRendererContext();
@@ -60,9 +59,6 @@ export function FormFillerRenderer() {
   return (
     <div className="relative flex h-full flex-col">
       <div ref={scrollContainerRef} className="relative flex flex-1 flex-col overflow-auto">
-        <div className="px-7 py-5">
-          <h2 className="text-primary text-2xl font-bold">{form.formLabel}</h2>
-        </div>
         <div className="mb-5 flex-1 space-y-3 px-7">
           <BlocksRenderer
             formKey={form.formName}

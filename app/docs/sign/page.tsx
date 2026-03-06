@@ -2,23 +2,25 @@
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
 import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
-import { Button } from "@/components/ui/button";
 import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
-import { Loader2, ChevronLeft } from "lucide-react";
 import { useFormFiller } from "@/components/docs/forms/form-filler.ctx";
 import { FormPreviewPdfDisplay } from "@/components/docs/forms/previewer";
 import { Loader } from "@/components/ui/loader";
+import { Button } from "@/components/ui/button";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
 import { useSignContext } from "../auth/provider/sign.ctx";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { Badge } from "@/components/ui/badge";
-import { FormActionButtons } from "@/components/docs/forms/FormActionButtons";
 import { toast } from "sonner";
-import { toastPresets } from "@/components/sonner-toaster";
+import { ArrowLeft } from "lucide-react";
 import { formsControllerMarkFormAsFirstViewed } from "@/app/api";
 import { withDerivedFormValues } from "@/lib/derived-form-values";
+import { cn } from "@/lib/utils";
+import { DelegateEmailScreen } from "./components/DelegateEmailScreen";
+import { SignIntentGate } from "./components/SignIntentGate";
 
 const Page = () => {
   return (
@@ -29,6 +31,8 @@ const Page = () => {
 };
 
 function PageContent() {
+  const [view, setView] = useState<"choice" | "form" | "delegate">("choice");
+  const [delegateEmail, setDelegateEmail] = useState("");
   const params = useSearchParams();
   const profile = useSignatoryProfile();
   const form = useFormRendererContext();
@@ -36,7 +40,6 @@ function PageContent() {
   const formFiller = useFormFiller();
   const autofillValues = useMyAutofill();
   const signContext = useSignContext();
-  const [mobileStage, setMobileStage] = useState<"preview" | "form" | "sign">("preview");
   const finalValues = useMemo(
     () => formFiller.getFinalValues(autofillValues),
     [formFiller, form, autofillValues]
@@ -53,9 +56,8 @@ function PageContent() {
     [profile, autofillValues]
   );
 
-  // Show mobile notice toast on mount
   useEffect(() => {
-    const isMobile = window.innerWidth < 640; // sm breakpoint
+    const isMobile = window.innerWidth < 640;
     if (isMobile) {
       toast(
         "Our desktop experience might currently be preferable, so let us know if you have insights about how we can make mobile better! Chat us on Facebook or email us at hello@betterinternship.com if you go through any issues.",
@@ -67,7 +69,6 @@ function PageContent() {
     }
   }, []);
 
-  // Update the form process stuff
   useEffect(() => {
     const formProcessId = (params.get("form-process-id") || "").trim();
     const supposedSigningPartyId = (params.get("signing-party-id") || "").trim();
@@ -75,19 +76,16 @@ function PageContent() {
     formProcess.setSupposedSigningPartyId(supposedSigningPartyId);
   }, [params]);
 
-  // Update form data after loading form process
   useEffect(() => {
     const formName = formProcess.form_name;
     const signingPartyId = formProcess.my_signing_party_id;
 
-    // If somehting needs to change
     if (formName && signingPartyId) {
       form.updateFormName(formName);
       form.updateSigningPartyId(signingPartyId);
     }
   }, [formProcess]);
 
-  // Mark form as first viewed when page loads
   useEffect(() => {
     if (formProcess.id && profile.id) {
       const markAsViewed = async () => {
@@ -102,7 +100,6 @@ function PageContent() {
     }
   }, [formProcess.id, profile.id]);
 
-  // Update sign context
   useEffect(() => {
     if (!formProcess.my_signing_party_id || !form.formName) return;
 
@@ -160,168 +157,131 @@ function PageContent() {
 
   if (!form.formMetadata || form.loading) return <Loader>Loading form...</Loader>;
 
+  const choiceExitTransition = {
+    duration: 0.3,
+    ease: [0.22, 1, 0.36, 1] as const,
+  };
+  const nextScreenEnterTransition = {
+    duration: 0.35,
+    ease: [0.22, 1, 0.36, 1] as const,
+  };
+
   return (
-    <div className="bg-opacity-25 relative mx-auto flex h-full w-full max-w-7xl flex-col items-center overflow-hidden rounded-[0.33em] border border-gray-200 bg-white">
-      {/* ============ MOBILE LAYOUT ============ */}
-      <div className="flex h-full w-full flex-col overflow-hidden sm:hidden">
-        {/* Mobile: Preview Stage - Show PDF */}
-        {mobileStage === "preview" && (
-          <div className="flex h-full w-full flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto">
-              {formProcess.latest_document_url ? (
-                <FormPreviewPdfDisplay
-                  documentUrl={formProcess.latest_document_url}
-                  blocks={previewBlocks}
-                  values={previewValues}
-                  fieldErrors={formFiller.errors}
-                  onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
-                  selectedFieldId={form.selectedPreviewId}
-                  scale={0.7}
-                  signingParties={signingParties}
-                  currentSigningPartyId={formProcess.my_signing_party_id}
-                  showOwnership
-                  defaultFieldVisibility="mine"
-                  prefillMode="live"
-                  prefillUser={previewPrefillUser}
-                />
-              ) : (
-                <div className="p-4 text-sm text-gray-500">No preview available</div>
-              )}
-            </div>
+    <div className="flex h-full min-h-0 w-full flex-col items-center overflow-y-scroll [scrollbar-gutter:stable]">
+      <div className="w-full flex-shrink-0 border-b border-gray-200 bg-white shadow-sm">
+        <div className="mx-auto max-w-7xl px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="truncate text-xl font-semibold whitespace-nowrap text-gray-900 sm:text-2xl">
+              {form.formLabel}
+            </h3>
 
-            <div className="border-t bg-white p-4">
+            {view !== "choice" && (
               <Button
-                className="h-10 w-full"
-                onClick={() => setMobileStage("form")}
-                disabled={form.loading}
-              >
-                Start Filling
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Mobile: Form Stage - Show Form Only */}
-        {mobileStage === "form" && (
-          <div className="flex h-full w-full flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto">
-              {form.loading ? (
-                <div className="flex h-full items-center justify-center">
-                  <span className="inline-flex items-center gap-2 text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading form…
-                  </span>
-                </div>
-              ) : (
-                <FormFillerRenderer />
-              )}
-            </div>
-
-            <div className="flex gap-2 border-t bg-white p-4">
-              <Button
+                type="button"
                 variant="ghost"
-                className="h-10 flex-1"
-                onClick={() => setMobileStage("preview")}
+                onClick={() => setView("choice")}
+                className="px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
               >
+                <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
-              <Button
-                className="h-10 flex-1"
-                onClick={() => {
-                  // Validate fields before proceeding
-                  const errors = formFiller.validate(form.fields, autofillValues);
-                  if (Object.keys(errors).length > 0) {
-                    toast.error("There are missing fields", toastPresets.destructive);
-                    return;
-                  }
-                  setMobileStage("sign");
-                }}
-              >
-                Review
-              </Button>
-            </div>
+            )}
           </div>
-        )}
-
-        {/* Mobile: Sign Stage - Show PDF with Signing Options */}
-        {mobileStage === "sign" && (
-          <div className="flex h-full w-full flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto">
-              {formProcess.latest_document_url ? (
-                <FormPreviewPdfDisplay
-                  documentUrl={formProcess.latest_document_url}
-                  blocks={previewBlocks}
-                  values={previewValues}
-                  fieldErrors={formFiller.errors}
-                  onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
-                  selectedFieldId={form.selectedPreviewId}
-                  scale={0.7}
-                  signingParties={signingParties}
-                  currentSigningPartyId={formProcess.my_signing_party_id}
-                  showOwnership
-                  defaultFieldVisibility="mine"
-                  prefillMode="live"
-                  prefillUser={previewPrefillUser}
-                />
-              ) : (
-                <div className="p-4 text-sm text-gray-500">No preview available</div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 border-t bg-white p-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 flex-shrink-0"
-                onClick={() => setMobileStage("form")}
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex-1">
-                <FormActionButtons />
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* ============ DESKTOP LAYOUT ============ */}
-      <div className="relative hidden h-full w-full flex-row gap-0 overflow-hidden sm:flex">
-        {/* Desktop: Form on Left */}
-        <div className="relative flex-1 overflow-auto">
-          {form.loading ? (
-            <div className="flex h-full items-center justify-center">
-              <span className="inline-flex items-center gap-2 text-sm">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading form…
-              </span>
-            </div>
-          ) : (
-            <FormFillerRenderer />
-          )}
-        </div>
-
-        {/* Desktop: PDF Preview on Right */}
-        <div className="relative max-w-[600px] min-w-[600px] overflow-auto border-l">
-          {!form.loading && formProcess.latest_document_url ? (
-            <div className="relative h-full w-full">
-              <FormPreviewPdfDisplay
-                documentUrl={formProcess.latest_document_url}
-                blocks={previewBlocks}
-                values={previewValues}
-                fieldErrors={formFiller.errors}
-                onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
-                selectedFieldId={form.selectedPreviewId}
-                signingParties={signingParties}
-                currentSigningPartyId={formProcess.my_signing_party_id}
-                showOwnership
-                defaultFieldVisibility="mine"
-                prefillMode="live"
-                prefillUser={previewPrefillUser}
+      <div
+        className={cn(
+          "mx-auto min-h-0 w-full flex-1 px-4 py-0 transition-[max-width] duration-500 ease-in-out sm:px-6 sm:py-4",
+          "max-w-7xl"
+        )}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {view === "choice" ? (
+            <motion.div
+              key="choice"
+              className="h-full"
+              initial={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -32, transition: choiceExitTransition }}
+            >
+              <SignIntentGate
+                onSignSelf={() => setView("form")}
+                onDelegate={() => setView("delegate")}
               />
-            </div>
-          ) : null}
-        </div>
+            </motion.div>
+          ) : view === "delegate" ? (
+            <motion.div
+              key="delegate"
+              className="h-full"
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0, transition: nextScreenEnterTransition }}
+              exit={{ opacity: 0, y: -16, transition: choiceExitTransition }}
+            >
+              <DelegateEmailScreen email={delegateEmail} onEmailChange={setDelegateEmail} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              className="h-full"
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0, transition: nextScreenEnterTransition }}
+              exit={{ opacity: 0, y: -16, transition: choiceExitTransition }}
+            >
+              <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-[0.33em] border border-gray-300 bg-white">
+                <div
+                  className={cn(
+                    "grid min-h-0 flex-1 grid-cols-1 transition-[grid-template-columns] duration-500 ease-in-out xl:[grid-template-columns:minmax(0,1fr)_var(--right-pane-width)]",
+                    "relative overflow-hidden"
+                  )}
+                  style={
+                    {
+                      "--right-pane-width": "600px",
+                    } as React.CSSProperties
+                  }
+                >
+                  <div className="min-h-0 rounded-r-none bg-white transition-[transform] duration-500 ease-in-out xl:scale-100">
+                    {formProcess.latest_document_url ? (
+                      <FormPreviewPdfDisplay
+                        documentUrl={formProcess.latest_document_url}
+                        blocks={previewBlocks}
+                        values={previewValues}
+                        fieldErrors={formFiller.errors}
+                        onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
+                        selectedFieldId={form.selectedPreviewId}
+                        scale={0.7}
+                        signingParties={signingParties}
+                        currentSigningPartyId={formProcess.my_signing_party_id}
+                        showOwnership
+                        defaultFieldVisibility="mine"
+                        prefillMode="live"
+                        prefillUser={previewPrefillUser}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center p-4 text-sm text-gray-500">
+                        No preview available
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white transition-[opacity,transform] duration-500 ease-in-out">
+                    <div className="hidden h-[58px] items-center border-b border-gray-300 px-6 sm:flex">
+                      <span className="text-sm font-medium text-gray-700">
+                        Fill Required Fields
+                      </span>
+                    </div>
+
+                    <div className="flex h-full min-h-0 flex-1 flex-col pt-4 sm:pt-8">
+                      <div className="min-h-0 flex-1">
+                        <FormFillerRenderer />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
