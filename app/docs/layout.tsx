@@ -56,7 +56,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                       height={25}
                       className="flex-none"
                     />
-                    <h1 className="mb-0.5 hidden items-center gap-2 text-lg font-semibold tracking-tighter sm:flex sm:text-xl">
+                    <h1 className="font-display flex flex-row items-center space-x-2 text-lg font-bold text-gray-900">
                       BetterInternship
                     </h1>
                   </div>
