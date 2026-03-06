@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { Form } from "./form";
+import type { FormSigningParty } from "./formSigningParty";
 import type { FormSubscriber } from "./formSubscriber";
 
 export interface FormMetadata {
@@ -14,5 +15,6 @@ export interface FormMetadata {
   label: string;
   version: number;
   schema: Form;
+  signing_parties: FormSigningParty[];
   subscribers?: FormSubscriber[];
 }

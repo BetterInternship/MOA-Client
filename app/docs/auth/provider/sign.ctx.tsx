@@ -32,8 +32,10 @@ export const SignContextProvider = ({ children }: { children: React.ReactNode })
   // Should be called to init this context
   const setRequiredSignatures = (requiredSignatureFieldIds: string[]) => {
     const requiredSignatures: ISignatureAgreementDict = {};
-    for (const requiredSignature of requiredSignatureFieldIds)
-      requiredSignatures[requiredSignature] = {};
+    for (const requiredSignature of requiredSignatureFieldIds) {
+      // Preserve existing agreement data if it exists
+      requiredSignatures[requiredSignature] = signatureAgreementDict[requiredSignature] || {};
+    }
     setSignatureAgreementDict(requiredSignatures);
   };
 

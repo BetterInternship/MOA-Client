@@ -5,14 +5,14 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { FormSigningPartySignatoryAccount } from "./formSigningPartySignatoryAccount";
+import type { FormSignatory } from "./formSignatory";
 import type { SignatorySource } from "./signatorySource";
 
 export interface FormSigningParty {
   _id: string;
   order: number;
   signatory_title: string;
-  signatory_account: FormSigningPartySignatoryAccount;
+  signatory_account: FormSignatory;
   signatory_source: SignatorySource;
   signed?: boolean;
 }

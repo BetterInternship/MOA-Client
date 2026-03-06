@@ -11,4 +11,5 @@ export interface FormDocument {
   label: string;
   version: number;
   base_document_id: string;
+  time_generated: string;
 }
