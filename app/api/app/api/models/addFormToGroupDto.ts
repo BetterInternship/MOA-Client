@@ -7,8 +7,6 @@
  */
 
 export interface AddFormToGroupDto {
-  /** The name of the form to add */
   formName: string;
-  /** The ID of the form group */
   groupId: string;
 }

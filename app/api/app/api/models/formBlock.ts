@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 import type { FormBlockBlockType } from "./formBlockBlockType";
-import type { FormBlockTextContent } from "./formBlockTextContent";
 import type { FormField } from "./formField";
 import type { FormPhantomField } from "./formPhantomField";
 
@@ -15,7 +14,7 @@ export interface FormBlock {
   block_type: FormBlockBlockType;
   order: number;
   signing_party_id: string;
-  text_content: FormBlockTextContent;
+  text_content?: string;
   field_schema: FormField;
   phantom_field_schema: FormPhantomField;
 }

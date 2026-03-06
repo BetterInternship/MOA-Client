@@ -17,6 +17,14 @@
         "tags": ["App"]
       }
     },
+    "/api/health": {
+      "get": {
+        "operationId": "AppController_getHealth",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "tags": ["App"]
+      }
+    },
     "/api/auth/self": {
       "post": {
         "operationId": "AuthController_entitySelf",
@@ -1905,6 +1913,12 @@
       "post": {
         "operationId": "FormGroupsController_addFormToGroup",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/AddFormToGroupDto" } }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -2599,7 +2613,7 @@
           },
           "order": { "type": "number" },
           "signing_party_id": { "type": "string" },
-          "text_content": { "type": "object" },
+          "text_content": { "type": "string" },
           "field_schema": { "$ref": "#/components/schemas/FormField" },
           "phantom_field_schema": { "$ref": "#/components/schemas/FormPhantomField" }
         },
@@ -2608,7 +2622,6 @@
           "block_type",
           "order",
           "signing_party_id",
-          "text_content",
           "field_schema",
           "phantom_field_schema"
         ]
@@ -2619,6 +2632,37 @@
           "blocks": { "type": "array", "items": { "$ref": "#/components/schemas/FormBlock" } }
         },
         "required": ["blocks"]
+      },
+      "FormSignatory": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "title": { "type": "string" },
+          "honorific": { "type": "string" }
+        },
+        "required": ["email"]
+      },
+      "SignatorySource": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "label": { "type": "string" },
+          "tooltip_label": { "type": "string" }
+        },
+        "required": ["_id", "label", "tooltip_label"]
+      },
+      "FormSigningParty": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "order": { "type": "number" },
+          "signatory_title": { "type": "string" },
+          "signatory_account": { "$ref": "#/components/schemas/FormSignatory" },
+          "signatory_source": { "$ref": "#/components/schemas/SignatorySource" },
+          "signed": { "type": "boolean" }
+        },
+        "required": ["_id", "order", "signatory_title", "signatory_account", "signatory_source"]
       },
       "FormSubscriber": {
         "type": "object",
@@ -2633,12 +2677,16 @@
           "label": { "type": "string" },
           "version": { "type": "number" },
           "schema": { "$ref": "#/components/schemas/Form" },
+          "signing_parties": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FormSigningParty" }
+          },
           "subscribers": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/FormSubscriber" }
           }
         },
-        "required": ["schema_version", "name", "label", "version", "schema"]
+        "required": ["schema_version", "name", "label", "version", "schema", "signing_parties"]
       },
       "FormMetadataResponse": {
         "type": "object",
@@ -2664,9 +2712,10 @@
           "name": { "type": "string" },
           "label": { "type": "string" },
           "version": { "type": "number" },
-          "base_document_id": { "type": "string" }
+          "base_document_id": { "type": "string" },
+          "time_generated": { "type": "string" }
         },
-        "required": ["name", "label", "version", "base_document_id"]
+        "required": ["name", "label", "version", "base_document_id", "time_generated"]
       },
       "FormLatestResponse": {
         "type": "object",
@@ -2687,27 +2736,6 @@
           "documentUrl"
         ]
       },
-      "SignatorySource": {
-        "type": "object",
-        "properties": {
-          "_id": { "type": "string" },
-          "label": { "type": "string" },
-          "tooltip_label": { "type": "string" }
-        },
-        "required": ["_id", "label", "tooltip_label"]
-      },
-      "FormSigningParty": {
-        "type": "object",
-        "properties": {
-          "_id": { "type": "string" },
-          "order": { "type": "number" },
-          "signatory_title": { "type": "string" },
-          "signatory_account": { "type": "object" },
-          "signatory_source": { "$ref": "#/components/schemas/SignatorySource" },
-          "signed": { "type": "boolean" }
-        },
-        "required": ["_id", "order", "signatory_title", "signatory_account", "signatory_source"]
-      },
       "RegisterFormSchemaDto": {
         "type": "object",
         "properties": {
@@ -2727,17 +2755,38 @@
         },
         "required": ["name", "label", "schema_version", "schema", "signing_parties"]
       },
-      "FieldRegistryEntry": {
+      "FieldRegistryEntryDetails": {
         "type": "object",
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
-          "preset": { "type": "string" },
-          "is_phantom": { "type": "boolean" },
           "label": { "type": "string" },
-          "type": { "type": "string", "enum": ["text", "signature"] }
+          "type": { "type": "string", "enum": ["text", "signature"] },
+          "party": { "type": "string" },
+          "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
+          "tag": { "type": "string" },
+          "shared": { "type": "boolean" },
+          "preset": { "type": "string" },
+          "prefiller": { "type": "string", "nullable": true },
+          "tooltip_label": { "type": "string", "nullable": true },
+          "validator": { "type": "string", "nullable": true },
+          "is_phantom": { "type": "boolean" }
         },
-        "required": ["id", "name", "preset", "is_phantom", "label", "type"]
+        "required": [
+          "id",
+          "name",
+          "label",
+          "type",
+          "party",
+          "source",
+          "tag",
+          "shared",
+          "preset",
+          "prefiller",
+          "tooltip_label",
+          "validator",
+          "is_phantom"
+        ]
       },
       "FieldRegistryResponse": {
         "type": "object",
@@ -2746,7 +2795,7 @@
           "message": { "type": "string" },
           "fields": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/FieldRegistryEntry" }
+            "items": { "$ref": "#/components/schemas/FieldRegistryEntryDetails" }
           }
         },
         "required": ["success", "message", "fields"]
@@ -2760,6 +2809,7 @@
           "party": { "type": "string" },
           "shared": { "type": "boolean" },
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
+          "tag": { "type": "string" },
           "prefiller": { "type": "string", "nullable": true },
           "preset": { "type": "string" },
           "tooltip_label": { "type": "string", "nullable": true },
@@ -2773,6 +2823,7 @@
           "party",
           "shared",
           "source",
+          "tag",
           "prefiller",
           "preset",
           "tooltip_label",
@@ -2790,6 +2841,7 @@
           "shared": { "type": "boolean" },
           "party": { "type": "string" },
           "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
+          "tag": { "type": "string" },
           "prefiller": { "type": "string", "nullable": true },
           "preset": { "type": "string" },
           "tooltip_label": { "type": "string", "nullable": true },
@@ -2804,39 +2856,9 @@
           "shared",
           "party",
           "source",
+          "tag",
           "prefiller",
           "preset",
-          "tooltip_label",
-          "validator",
-          "is_phantom"
-        ]
-      },
-      "FieldRegistryEntryDetails": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "label": { "type": "string" },
-          "type": { "type": "string", "enum": ["text", "signature"] },
-          "party": { "type": "string" },
-          "source": { "type": "string", "enum": ["auto", "prefill", "derived", "manual"] },
-          "shared": { "type": "boolean" },
-          "preset": { "type": "string" },
-          "prefiller": { "type": "string", "nullable": true },
-          "tooltip_label": { "type": "string", "nullable": true },
-          "validator": { "type": "string", "nullable": true },
-          "is_phantom": { "type": "boolean" }
-        },
-        "required": [
-          "id",
-          "name",
-          "label",
-          "type",
-          "party",
-          "source",
-          "shared",
-          "preset",
-          "prefiller",
           "tooltip_label",
           "validator",
           "is_phantom"
@@ -2959,15 +2981,11 @@
         },
         "required": ["success", "message", "processes"]
       },
-      "CreateFormGroupDto": {
+      "CreateFormGroupDto": { "type": "object", "properties": { "name": { "type": "string" } } },
+      "AddFormToGroupDto": {
         "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "The name of the form group",
-            "example": "Student Forms"
-          }
-        }
+        "properties": { "formName": { "type": "string" }, "groupId": { "type": "string" } },
+        "required": ["formName", "groupId"]
       },
       "CreateSignatoryResponse": {
         "type": "object",
@@ -2993,16 +3011,6 @@
         "type": "object",
         "properties": { "profile": { "$ref": "#/components/schemas/SignatoryProfile" } },
         "required": ["profile"]
-      },
-      "FormSignatory": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "email": { "type": "string" },
-          "title": { "type": "string" },
-          "honorific": { "type": "string" }
-        },
-        "required": ["name", "email", "title", "honorific"]
       },
       "SigningParty": {
         "type": "object",
