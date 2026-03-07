@@ -46,7 +46,10 @@ export const FormProcessContextProvider = ({ children }: { children: React.React
       value={{
         ..._formProcess?.formProcess,
         id: formProcessId,
-        display_information: _formProcess?.formProcess as unknown as Record<string, string>,
+        display_information: _formProcess?.formProcess?.display_information as unknown as Record<
+          string,
+          string
+        >,
 
         setFormProcessId,
         setSupposedSigningPartyId,
