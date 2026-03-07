@@ -12,6 +12,8 @@ import type { FieldRegistryEntryDetailsFieldSchemaDefaultsAlignV } from "./field
  * @nullable
  */
 export type FieldRegistryEntryDetailsFieldSchemaDefaults = {
+  w?: number;
+  h?: number;
   wrap?: boolean;
   size?: number;
   align_h?: FieldRegistryEntryDetailsFieldSchemaDefaultsAlignH;

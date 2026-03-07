@@ -24,6 +24,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AlterRecipientEmailDto,
   BaseResponse,
   CancelFormDto,
   ContinueFormDto,
@@ -3357,6 +3358,80 @@ export const useFormsControllerMarkFormAsFirstViewed = <TError = ErrorResponse, 
   TContext
 > => {
   const mutationOptions = getFormsControllerMarkFormAsFirstViewedMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerAlterRecipient = (
+  alterRecipientEmailDto: AlterRecipientEmailDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/alter-recipient`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: alterRecipientEmailDto,
+    signal,
+  });
+};
+
+export const getFormsControllerAlterRecipientMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+    TError,
+    { data: AlterRecipientEmailDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+  TError,
+  { data: AlterRecipientEmailDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerAlterRecipient"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+    { data: AlterRecipientEmailDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerAlterRecipient(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerAlterRecipientMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerAlterRecipient>>
+>;
+export type FormsControllerAlterRecipientMutationBody = AlterRecipientEmailDto;
+export type FormsControllerAlterRecipientMutationError = ErrorResponse;
+
+export const useFormsControllerAlterRecipient = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+      TError,
+      { data: AlterRecipientEmailDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+  TError,
+  { data: AlterRecipientEmailDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerAlterRecipientMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

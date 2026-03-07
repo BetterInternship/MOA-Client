@@ -12,6 +12,8 @@ import type { UpdateFieldDtoFieldSchemaDefaultsAlignV } from "./updateFieldDtoFi
  * @nullable
  */
 export type UpdateFieldDtoFieldSchemaDefaults = {
+  w?: number;
+  h?: number;
   wrap?: boolean;
   size?: number;
   align_h?: UpdateFieldDtoFieldSchemaDefaultsAlignH;

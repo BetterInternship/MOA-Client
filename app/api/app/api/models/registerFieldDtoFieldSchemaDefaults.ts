@@ -12,6 +12,8 @@ import type { RegisterFieldDtoFieldSchemaDefaultsAlignV } from "./registerFieldD
  * @nullable
  */
 export type RegisterFieldDtoFieldSchemaDefaults = {
+  w?: number;
+  h?: number;
   wrap?: boolean;
   size?: number;
   align_h?: RegisterFieldDtoFieldSchemaDefaultsAlignH;
