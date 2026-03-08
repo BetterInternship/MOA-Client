@@ -9,6 +9,7 @@
 export * from "./_signatoryForm";
 export * from "./_signatoryJWTPayload";
 export * from "./addFormToGroupDto";
+export * from "./alterRecipientEmailDto";
 export * from "./approveSignatoryDto";
 export * from "./approveSignatoryDtoValues";
 export * from "./baseResponse";
@@ -277,4 +278,3 @@ export * from "./updateFieldDtoValidatorIrRulesItemOneOfThreeKind";
 export * from "./updateFieldDtoValidatorIrRulesItemOneOfThreeValue";
 export * from "./updateFieldDtoValidatorIrVersion";
 export * from "./updateSignatoryDto";
-export * from "./alterRecipientEmailDto";

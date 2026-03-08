@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
+import { useCallback, useState } from "react";
 import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,13 +15,18 @@ type DelegateEmailScreenProps = {
 export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScreenProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formProcess = useFormProcess();
-  const profile = useSignatoryProfile();
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     const recipientEmail = email.trim();
+    const mySigningPartyId = formProcess.my_signing_party_id;
 
     if (!recipientEmail) {
       toast.error("Enter an email address first.");
+      return;
+    }
+
+    if (!mySigningPartyId) {
+      toast.error("Broken URL. Check that you used the correct link.");
       return;
     }
 
@@ -30,7 +34,7 @@ export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScree
       setIsSubmitting(true);
       await formsControllerAlterRecipient({
         formProcessId: formProcess.id,
-        signatoryId: profile.id,
+        supposedSigningPartyId: mySigningPartyId,
         recipientEmail,
       });
       toast.success("Delegation request sent.");
@@ -41,7 +45,7 @@ export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScree
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formProcess]);
 
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl items-center justify-center px-4 py-6 sm:px-6 sm:py-10">

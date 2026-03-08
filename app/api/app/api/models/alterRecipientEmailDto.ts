@@ -8,6 +8,6 @@
 
 export interface AlterRecipientEmailDto {
   formProcessId: string;
-  signatoryId: string;
+  supposedSigningPartyId: string;
   recipientEmail: string;
 }
