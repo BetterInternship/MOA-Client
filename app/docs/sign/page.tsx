@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
+import { FormActionButtons } from "@/components/docs/forms/FormActionButtons";
 import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
 import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
 import { useFormFiller } from "@/components/docs/forms/form-filler.ctx";
@@ -21,6 +22,7 @@ import { withDerivedFormValues } from "@/lib/derived-form-values";
 import { cn } from "@/lib/utils";
 import { DelegateEmailScreen } from "./components/DelegateEmailScreen";
 import { SignIntentGate } from "./components/SignIntentGate";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Page = () => {
   return (
@@ -32,8 +34,10 @@ const Page = () => {
 
 function PageContent() {
   const [view, setView] = useState<"choice" | "form" | "delegate">("choice");
+  const [mobileTab, setMobileTab] = useState<"step" | "preview">("step");
   const [delegateEmail, setDelegateEmail] = useState("");
   const params = useSearchParams();
+  const isMobile = useIsMobile();
   const profile = useSignatoryProfile();
   const form = useFormRendererContext();
   const formProcess = useFormProcess();
@@ -122,6 +126,12 @@ function PageContent() {
       }
     }
   }, [formProcess, form]);
+
+  useEffect(() => {
+    if (view !== "form") {
+      setMobileTab("step");
+    }
+  }, [view]);
 
   const previewBlocks = useMemo(() => {
     if (!form.formMetadata) return [];
@@ -227,9 +237,37 @@ function PageContent() {
               exit={{ opacity: 0, y: -16, transition: choiceExitTransition }}
             >
               <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-[0.33em] border border-gray-300 bg-white">
+                {isMobile && (
+                  <div className="grid grid-cols-2 border-b border-gray-300 bg-white">
+                    <button
+                      type="button"
+                      className={cn(
+                        "px-3 py-2 text-sm font-medium transition-colors",
+                        mobileTab === "step" ? "bg-primary/10 text-primary" : "text-gray-600"
+                      )}
+                      onClick={() => setMobileTab("step")}
+                    >
+                      Form
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        "px-3 py-2 text-sm font-medium transition-colors",
+                        mobileTab === "preview" ? "bg-primary/10 text-primary" : "text-gray-600"
+                      )}
+                      onClick={() => setMobileTab("preview")}
+                    >
+                      Preview PDF
+                    </button>
+                  </div>
+                )}
+
                 <div
                   className={cn(
-                    "grid min-h-0 flex-1 grid-cols-1 transition-[grid-template-columns] duration-500 ease-in-out xl:[grid-template-columns:minmax(0,1fr)_var(--right-pane-width)]",
+                    "grid min-h-0 flex-1 grid-cols-1 transition-[grid-template-columns] duration-500 ease-in-out",
+                    isMobile
+                      ? "grid-cols-1"
+                      : "xl:[grid-template-columns:minmax(0,1fr)_var(--right-pane-width)]",
                     "relative overflow-hidden"
                   )}
                   style={
@@ -238,16 +276,27 @@ function PageContent() {
                     } as React.CSSProperties
                   }
                 >
-                  <div className="min-h-0 rounded-r-none bg-white transition-[transform] duration-500 ease-in-out xl:scale-100">
+                  <div
+                    className={cn(
+                      "min-h-0 rounded-r-none bg-white transition-[transform] duration-500 ease-in-out xl:scale-100",
+                      isMobile && mobileTab !== "preview" && "hidden",
+                      !isMobile && "block"
+                    )}
+                  >
                     {formProcess.latest_document_url ? (
                       <FormPreviewPdfDisplay
                         documentUrl={formProcess.latest_document_url}
                         blocks={previewBlocks}
                         values={previewValues}
                         fieldErrors={formFiller.errors}
-                        onFieldClick={(fieldName) => form.setSelectedPreviewId(fieldName)}
+                        onFieldClick={(fieldName) => {
+                          form.setSelectedPreviewId(fieldName);
+                          if (isMobile) {
+                            setMobileTab("step");
+                          }
+                        }}
                         selectedFieldId={form.selectedPreviewId}
-                        scale={0.7}
+                        scale={isMobile ? 0.5 : 0.7}
                         signingParties={signingParties}
                         currentSigningPartyId={formProcess.my_signing_party_id}
                         showOwnership
@@ -262,7 +311,13 @@ function PageContent() {
                     )}
                   </div>
 
-                  <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white transition-[opacity,transform] duration-500 ease-in-out">
+                  <div
+                    className={cn(
+                      "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white transition-[opacity,transform] duration-500 ease-in-out",
+                      isMobile && mobileTab !== "step" && "hidden",
+                      !isMobile && "flex"
+                    )}
+                  >
                     <div className="hidden h-[58px] items-center border-b border-gray-300 px-6 sm:flex">
                       <span className="text-sm font-medium text-gray-700">
                         Fill Required Fields
@@ -273,6 +328,11 @@ function PageContent() {
                       <div className="min-h-0 flex-1">
                         <FormFillerRenderer />
                       </div>
+                      {isMobile && (
+                        <div className="border-t border-gray-300 bg-gray-50 p-3">
+                          <FormActionButtons />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
