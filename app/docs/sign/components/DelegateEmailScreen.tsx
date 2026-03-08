@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useModal } from "@/app/providers/modal-provider";
 import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
+import { FormContinuationSuccessModal } from "@/components/modals/FormContinuationSuccessModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -15,6 +17,7 @@ type DelegateEmailScreenProps = {
 
 export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScreenProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { openModal, closeModal } = useModal();
   const form = useFormRendererContext();
   const formProcess = useFormProcess();
   const signingParties = form.formMetadata.getSigningParties();
@@ -42,7 +45,20 @@ export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScree
         supposedSigningPartyId: mySigningPartyId,
         recipientEmail,
       });
-      toast.success("Delegation request sent.");
+      openModal(
+        "delegate-recipient-success",
+        <FormContinuationSuccessModal
+          title="Request sent successfully"
+          description="The new recipient has been notified. You can head back to your forms now."
+          buttonLabel="View my forms"
+          redirectPath="/docs/dashboard"
+          onClose={() => closeModal("delegate-recipient-success")}
+        />,
+        {
+          hasClose: false,
+          allowBackdropClick: false,
+        }
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message.replace("Error: ", "") : "Failed to send request.";
@@ -50,7 +66,7 @@ export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScree
     } finally {
       setIsSubmitting(false);
     }
-  }, [formProcess]);
+  }, [closeModal, email, formProcess, openModal]);
 
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl items-center justify-center px-4 py-6 sm:px-6 sm:py-10">

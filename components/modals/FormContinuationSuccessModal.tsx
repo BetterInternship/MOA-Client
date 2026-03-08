@@ -25,7 +25,21 @@ function AnimatedCheck() {
   );
 }
 
-export const FormContinuationSuccessModal = () => {
+type FormContinuationSuccessModalProps = {
+  title?: string;
+  description?: string;
+  buttonLabel?: string;
+  redirectPath?: string;
+  onClose?: () => void;
+};
+
+export const FormContinuationSuccessModal = ({
+  title = "Form sent successfully",
+  description = "You can now view and manage it in your forms.",
+  buttonLabel = "View my forms",
+  redirectPath = "/dashboard",
+  onClose,
+}: FormContinuationSuccessModalProps = {}) => {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const modalRegistry = useModalRegistry();
@@ -38,8 +52,11 @@ export const FormContinuationSuccessModal = () => {
 
   const handleNavigateToForms = () => {
     setLoading(true);
-    router.push("/dashboard");
-    setTimeout(() => modalRegistry.formContinuationSuccess.close(), 1000);
+    router.push(redirectPath);
+    setTimeout(() => {
+      onClose?.();
+      modalRegistry.formContinuationSuccess.close();
+    }, 1000);
   };
 
   return (
@@ -78,12 +95,8 @@ export const FormContinuationSuccessModal = () => {
       </div>
 
       <div className="">
-        <h2 className="text-2xl font-semibold text-foreground">
-          Form sent successfully
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          You can now view and manage it in your forms.
-        </p>
+        <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </div>
 
       <Button
@@ -92,7 +105,7 @@ export const FormContinuationSuccessModal = () => {
         disabled={loading}
         onClick={handleNavigateToForms}
       >
-        {loading ? "Redirecting..." : "View my forms"}
+        {loading ? "Redirecting..." : buttonLabel}
       </Button>
     </div>
   );
