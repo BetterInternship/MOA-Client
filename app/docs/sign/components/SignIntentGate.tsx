@@ -24,8 +24,10 @@ export function SignIntentGate({ onSignSelf, onDelegate }: SignIntentGateProps) 
     <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-center px-4 py-6 sm:px-6 sm:py-10">
       <div className="w-full">
         <p className="mx-auto max-w-prose text-left text-lg font-medium text-gray-700">
-          <span className="text-primary font-bold">{studentName}</span> has requested you to fill
-          out their <span className="text-primary font-bold">{documentName}</span> as{" "}
+          <span className="text-primary font-bold">{studentName}</span>{" "}
+          <span className="font-thin">has requested you to fill out their</span>{" "}
+          <span className="text-primary font-bold">{documentName}</span>{" "}
+          <span className="font-thin">as</span>{" "}
           <span className="text-primary font-bold">{signingParty?.signatory_title}</span>.
         </p>
 
@@ -49,7 +51,7 @@ export function SignIntentGate({ onSignSelf, onDelegate }: SignIntentGateProps) 
               </div>
             </div>
             <div className="flex w-full flex-col justify-center border-t px-6 py-5 text-left">
-              <span>I am the</span>
+              <span className="font-thin">I am the</span>
               <span className="font-semibold">{signingParty?.signatory_title}</span>
             </div>
           </Button>
@@ -73,7 +75,7 @@ export function SignIntentGate({ onSignSelf, onDelegate }: SignIntentGateProps) 
               </div>
             </div>
             <div className="flex w-full flex-col justify-center border-t px-6 py-5 text-left">
-              <span>Forward this to the actual</span>
+              <span className="font-thin">Forward this to the actual</span>
               <span className="font-semibold">{signingParty?.signatory_title}</span>
             </div>
           </Button>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { formsControllerAlterRecipient } from "../../../api/app/api/endpoints/forms/forms";
+import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
 
 type DelegateEmailScreenProps = {
   email: string;
@@ -14,7 +15,11 @@ type DelegateEmailScreenProps = {
 
 export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScreenProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useFormRendererContext();
   const formProcess = useFormProcess();
+  const signingParties = form.formMetadata.getSigningParties();
+  const signingPartyId = formProcess.my_signing_party_id;
+  const signingParty = signingParties.find((signingParty) => signingParty._id === signingPartyId);
 
   const handleSubmit = useCallback(async () => {
     const recipientEmail = email.trim();
@@ -49,16 +54,18 @@ export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScree
 
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl items-center justify-center px-4 py-6 sm:px-6 sm:py-10">
-      <div className="w-full max-w-xl space-y-4">
-        <p className="text-center text-base font-medium text-gray-700 sm:text-lg">
-          Enter the email address of the person who should sign this document.
+      <div className="w-full max-w-xl space-y-4 rounded-[0.33em] border border-gray-300 p-8">
+        <p className="flex flex-col text-left text-base font-medium text-gray-700 sm:text-lg">
+          <p className="font-thin">Enter the email address of the actual</p>
+          <span className="text-primary font-bold">{signingParty?.signatory_title}</span>
+          <p className="font-thin">who should sign this document.</p>
         </p>
         <Input
           type="email"
           value={email}
           onChange={(event) => onEmailChange(event.target.value)}
           placeholder="name@example.com"
-          className="h-12 text-base"
+          className="h-12 border-gray-300 text-base"
         />
         <Button
           type="button"
@@ -66,7 +73,7 @@ export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScree
           disabled={isSubmitting}
           onClick={() => void handleSubmit()}
         >
-          {isSubmitting ? "Submitting..." : "Submit"}
+          {isSubmitting ? "Forwarding..." : "Forward"}
         </Button>
       </div>
     </div>
