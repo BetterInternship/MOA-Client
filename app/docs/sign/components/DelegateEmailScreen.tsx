@@ -26,11 +26,6 @@ export function DelegateEmailScreen({ email, onEmailChange }: DelegateEmailScree
       return;
     }
 
-    if (!formProcess.id || !profile.id) {
-      toast.error("Missing form context. Refresh and try again.");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       await formsControllerAlterRecipient({

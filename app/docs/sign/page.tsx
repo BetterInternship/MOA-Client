@@ -86,18 +86,16 @@ function PageContent() {
     }
   }, [formProcess]);
 
-  useEffect(() => {
-    if (formProcess.id && profile.id) {
-      const markAsViewed = async () => {
-        try {
-          await formsControllerMarkFormAsFirstViewed({ formProcessId: formProcess.id });
-        } catch (error) {
-          console.warn("Failed to mark form as first viewed:", error);
-        }
-      };
-
-      void markAsViewed();
+  const markAsViewed = async (formProcessId: string) => {
+    try {
+      await formsControllerMarkFormAsFirstViewed({ formProcessId });
+    } catch (error) {
+      console.warn("Failed to mark form as first viewed:", error);
     }
+  };
+
+  useEffect(() => {
+    if (formProcess.id && profile.id) void markAsViewed(formProcess.id);
   }, [formProcess.id, profile.id]);
 
   useEffect(() => {
