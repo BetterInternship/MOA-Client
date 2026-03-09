@@ -335,7 +335,8 @@ const toDisplayValue = (fieldName: string, rawValue: unknown): string => {
   const normalizedFieldName = fieldName.replace(/:[^:]+$/, "");
   const isAutoCurrentDate =
     normalizedFieldName === "auto.current-date" ||
-    normalizedFieldName === "auto.current-date:default";
+    normalizedFieldName === "auto.current-date:default" ||
+    normalizedFieldName.startsWith("date");
 
   if (Array.isArray(rawValue)) {
     return rawValue.join(", ");
