@@ -90,8 +90,7 @@ export function PdfViewerPanel({
             documentUrl={viewUrl}
             blocks={[]}
             values={{}}
-            scale={isMobile ? 0.45 : 0.9}
-            fitToWidth={isMobile}
+            scale={isMobile ? 0.5 : 0.9}
             showToolbar={true}
           />
         </div>

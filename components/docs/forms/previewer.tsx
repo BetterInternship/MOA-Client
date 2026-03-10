@@ -57,7 +57,6 @@ interface FormPreviewPdfDisplayProps {
   blocks?: PreviewFieldLike[]; // Backward-compatible alias
   scale?: number;
   showToolbar?: boolean;
-  fitToWidth?: boolean;
   onFieldClick?: (fieldName: string) => void;
   selectedFieldId?: string;
   autoScrollToSelectedField?: boolean;
@@ -84,7 +83,6 @@ export const FormPreviewPdfDisplay = ({
   blocks,
   scale: initialScale = 1.0,
   showToolbar = true,
-  fitToWidth = false,
   onFieldClick,
   selectedFieldId,
   autoScrollToSelectedField = true,
@@ -269,10 +267,7 @@ export const FormPreviewPdfDisplay = ({
       )}
 
       {/* Pages container */}
-      <div
-        data-preview-pages="true"
-        className="webkit-overflow-scrolling-touch touch-pan-y flex-1 overflow-x-auto overflow-y-auto bg-slate-100 p-2 sm:p-4"
-      >
+      <div className="webkit-overflow-scrolling-touch touch-pan-y flex-1 overflow-x-auto overflow-y-auto bg-slate-100 p-2 sm:p-4">
         <div className="mx-auto space-y-6">
           {pagesArray.map((pageNumber) => (
             <PdfPageOverlay
@@ -280,7 +275,6 @@ export const FormPreviewPdfDisplay = ({
               pdf={pdfDoc}
               pageNumber={pageNumber}
               scale={scale}
-              fitToWidth={fitToWidth}
               isVisible={Math.abs(visiblePage - pageNumber) <= 1}
               onVisible={() => setVisiblePage(pageNumber)}
               registerPageRef={registerPageRef}
@@ -349,7 +343,6 @@ interface PdfPageOverlayProps {
   pdf: PDFDocumentProxy;
   pageNumber: number;
   scale: number;
-  fitToWidth: boolean;
   isVisible: boolean;
   onVisible: (page: number) => void;
   registerPageRef: (page: number, node: HTMLDivElement | null) => void;
@@ -368,7 +361,6 @@ const PdfPageOverlay = ({
   pdf,
   pageNumber,
   scale,
-  fitToWidth,
   isVisible: _isVisible,
   onVisible,
   registerPageRef,
@@ -386,7 +378,6 @@ const PdfPageOverlay = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [rendering, setRendering] = useState<boolean>(false);
   const [forceRender, setForceRender] = useState<number>(0);
-  const [renderScale, setRenderScale] = useState<number>(scale);
   const [activeTouchFieldId, setActiveTouchFieldId] = useState<string | null>(null);
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null);
   const [isTouchInteraction, setIsTouchInteraction] = useState(false);
@@ -399,7 +390,7 @@ const PdfPageOverlay = ({
   // Force re-render of field positions when scale changes
   useEffect(() => {
     setForceRender((prev) => prev + 1);
-  }, [scale, renderScale]);
+  }, [scale]);
 
   // Setup intersection observer for visibility
   useEffect(() => {
@@ -437,21 +428,9 @@ const PdfPageOverlay = ({
     pdf
       .getPage(pageNumber)
       .then((page: PDFPageProxy) => {
-        const baseViewport = page.getViewport({ scale: 1 });
-        const pagesContainer = containerRef.current?.closest(
-          "[data-preview-pages='true']"
-        ) as HTMLDivElement | null;
-        const availableWidth = Math.max(0, (pagesContainer?.clientWidth ?? 0) - 16);
-        const fitScale = availableWidth > 0 ? availableWidth / baseViewport.width : scale;
-        const fittedScale =
-          fitToWidth && availableWidth > 0
-            ? Math.max(scale, fitScale) // fit minimum width, but still allow zoom-in
-            : scale;
-        setRenderScale(fittedScale);
-
         // Account for device pixel ratio for crisp rendering on high-DPI displays
         const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-        const viewport = page.getViewport({ scale: fittedScale * dpr });
+        const viewport = page.getViewport({ scale: scale * dpr });
 
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -484,7 +463,7 @@ const PdfPageOverlay = ({
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [fitToWidth, pdf, pageNumber, scale]);
+  }, [pdf, pageNumber, scale]);
 
   // Convert PDF coordinates to display coordinates, accounting for zoom-aware rendering
   const pdfToDisplay = (
@@ -496,8 +475,8 @@ const PdfPageOverlay = ({
 
     // Metadata coordinates already use top-left origin (y=0 at top)
     // Scale them directly to display coordinates
-    const displayX = pdfX * renderScale;
-    const displayY = pdfY * renderScale;
+    const displayX = pdfX * scale;
+    const displayY = pdfY * scale;
 
     return {
       displayX,
@@ -546,8 +525,8 @@ const PdfPageOverlay = ({
             return null;
           }
 
-          const widthPixels = w * renderScale;
-          const heightPixels = h * renderScale;
+          const widthPixels = w * scale;
+          const heightPixels = h * scale;
 
           const ownerMeta = ownerMetaByFieldId.get(field.id);
           const canRevealValue = !showOwnership || ownerMeta?.isMine;
@@ -605,8 +584,8 @@ const PdfPageOverlay = ({
             lineHeightDoc = fontSizeDoc * 1.0;
           }
 
-          const fontSize = fontSizeDoc * renderScale;
-          const lineHeight = lineHeightDoc * renderScale;
+          const fontSize = fontSizeDoc * scale;
+          const lineHeight = lineHeightDoc * scale;
 
           const isSelected =
             animatingFieldId === fieldName ||
