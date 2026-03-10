@@ -1,9 +1,13 @@
 // components/docs/PdfViewerPanel.tsx
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { File as FileIcon, Loader2 } from "lucide-react";
 import { Download } from "lucide-react";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { FormPreviewPdfDisplay } from "@/components/docs/forms/previewer";
 
 export function PdfViewerPanel({
   title,
@@ -14,7 +18,9 @@ export function PdfViewerPanel({
   viewUrl: string;
   downloadUrl?: string;
 }) {
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
+
   async function downloadPdf(url: string, filename: string = "document.pdf") {
     setLoading(true);
     try {
@@ -79,13 +85,14 @@ export function PdfViewerPanel({
             </Button>
           </div>
         )}
-        <div className="h-[60vh] w-full overflow-auto rounded border sm:h-[80vh]">
-          <iframe
-            src={viewUrl}
-            title={title}
-            className="h-full w-full"
-            scrolling="yes"
-            style={{ WebkitOverflowScrolling: "touch" }}
+        <div className="h-[68vh] w-full overflow-hidden rounded border bg-slate-100 sm:h-[80vh]">
+          <FormPreviewPdfDisplay
+            documentUrl={viewUrl}
+            blocks={[]}
+            values={{}}
+            scale={isMobile ? 0.45 : 0.9}
+            fitToWidth={isMobile}
+            showToolbar={true}
           />
         </div>
       </CardContent>

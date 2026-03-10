@@ -60,7 +60,7 @@ function VerifyDocsPageContent() {
   }
 
   return (
-    <div className="w-full bg-slate-50/60">
+    <div className="w-full overflow-x-hidden bg-slate-50/60">
       <section className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 lg:px-8">
         <div className="rounded-xl py-5 sm:px-6 sm:py-6">
           {/* FORM: centered on first load; pinned to top after search */}
