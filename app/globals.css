@@ -244,28 +244,13 @@ html {
   }
 }
 
-.input-wrap {
-  height: 40px; /* lock height so font-size change won't jump */
-  display: flex;
-  align-items: center;
-}
-
-.input-wrap input {
-  font-size: 14px; /* your preferred size */
-}
-
-.input-wrap input:focus {
-  font-size: 16px; /* prevents iOS zoom */
-}
-
-/* --- unified input sizing: 1rem on focus only on mobile --- */
+/* iOS zoom fix: keep form controls at >=16px on mobile so Safari won't auto-zoom on focus */
 @layer base {
-  /* Mobile: bump to 1rem (16px) on focus to avoid iOS zoom */
   @media (max-width: 639.98px) {
-    input:focus,
-    textarea:focus,
-    select:focus {
-      font-size: 1rem; /* 16px on focus ONLY on mobile */
+    input,
+    textarea,
+    select {
+      font-size: 1rem;
     }
   }
 }
