@@ -271,7 +271,7 @@ export const FormPreviewPdfDisplay = ({
       {/* Pages container */}
       <div
         data-preview-pages="true"
-        className="webkit-overflow-scrolling-touch touch-pan-y flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-2 sm:overflow-x-auto sm:p-4"
+        className="webkit-overflow-scrolling-touch touch-pan-y flex-1 overflow-x-auto overflow-y-auto bg-slate-100 p-2 sm:p-4"
       >
         <div className="mx-auto space-y-6">
           {pagesArray.map((pageNumber) => (
@@ -442,9 +442,11 @@ const PdfPageOverlay = ({
           "[data-preview-pages='true']"
         ) as HTMLDivElement | null;
         const availableWidth = Math.max(0, (pagesContainer?.clientWidth ?? 0) - 16);
-        const fittedScale = fitToWidth && availableWidth > 0
-          ? Math.min(scale, availableWidth / baseViewport.width)
-          : scale;
+        const fitScale = availableWidth > 0 ? availableWidth / baseViewport.width : scale;
+        const fittedScale =
+          fitToWidth && availableWidth > 0
+            ? Math.max(scale, fitScale) // fit minimum width, but still allow zoom-in
+            : scale;
         setRenderScale(fittedScale);
 
         // Account for device pixel ratio for crisp rendering on high-DPI displays
