@@ -60,15 +60,52 @@ function VerifyDocsPageContent() {
   }
 
   return (
-    <div className="mx-auto flex max-w-screen-xl flex-col gap-6 p-6">
-      <section className="mx-auto w-full max-w-screen-2xl px-4 py-6">
-        {/* FORM: centered on first load; pinned to top after search */}
-        {!result ? (
-          <div className="flex min-h-[70vh] items-center justify-center">
-            <div className="w-full">
-              {/* Header on the form */}
-              <div className="mb-6 space-y-2 text-center">
-                <h1 className="text-2xl font-semibold tracking-tight">
+    <div className="w-full bg-slate-50/60">
+      <section className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 lg:px-8">
+        <div className="rounded-xl py-5 sm:px-6 sm:py-6">
+          {/* FORM: centered on first load; pinned to top after search */}
+          {!result ? (
+            <div className="flex min-h-[62vh] items-center justify-center">
+              <div className="w-full max-w-3xl">
+                {/* Header on the form */}
+                <div className="mb-6 space-y-2 text-center">
+                  <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    BetterInternship Document Verifier
+                  </h1>
+                  <p className="text-muted-foreground text-sm">
+                    Enter the <strong>Serial Number</strong> printed on the document to check its
+                    authenticity.
+                  </p>
+                </div>
+
+                <form
+                  onSubmit={handleVerify}
+                  className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:flex-row"
+                >
+                  <Input
+                    value={serial}
+                    placeholder="0123456789-0123abcd-4567defa"
+                    onChange={(v) => (setSerial(v.target.value), setResult(null))}
+                    aria-invalid={!!error}
+                    className="h-12 flex-1 font-mono"
+                  />
+                  <Button type="submit" className="h-12 sm:w-40" disabled={loading}>
+                    <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying..." : "Verify"}
+                  </Button>
+                </form>
+
+                {error && (
+                  <p className="mt-2 text-center text-sm text-red-600" role="alert">
+                    {error}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-5">
+              {/* Header stays above the form when pinned */}
+              <div className="mb-3 text-center sm:mb-4">
+                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                   BetterInternship Document Verifier
                 </h1>
                 <p className="text-muted-foreground text-sm">
@@ -79,79 +116,44 @@ function VerifyDocsPageContent() {
 
               <form
                 onSubmit={handleVerify}
-                className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row"
+                className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:flex-row"
               >
                 <Input
                   value={serial}
-                  placeholder="0123456789-0123abcd-4567defa"
-                  onChange={(v) => (setSerial(v.target.value), setResult(null))}
+                  onChange={(v) => setSerial(v.target.value)}
                   aria-invalid={!!error}
-                  className="h-12 flex-1 font-mono"
+                  className="h-12 flex-1"
                 />
-                <Button type="submit" className="h-11 sm:w-40" disabled={loading}>
-                  <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying…" : "Verify"}
+                <Button type="submit" className="h-12 sm:w-40" disabled={loading}>
+                  <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying..." : "Verify"}
                 </Button>
               </form>
-
               {error && (
                 <p className="mt-2 text-center text-sm text-red-600" role="alert">
                   {error}
                 </p>
               )}
             </div>
-          </div>
-        ) : (
-          <div className="mb-6">
-            {/* Header stays above the form when pinned */}
-            <div className="mb-3 text-center">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                BetterInternship Document Verifier
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Enter the <strong>Serial Number</strong> printed on the document to check its
-                authenticity.
-              </p>
-            </div>
+          )}
 
-            <form
-              onSubmit={handleVerify}
-              className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row"
-            >
-              <Input
-                value={serial}
-                onChange={(v) => setSerial(v.target.value)}
-                aria-invalid={!!error}
-                className="flex-1"
-              />
-              <Button type="submit" className="h-11 sm:w-40" disabled={loading}>
-                <Search className="mr-2 h-4 w-4" /> {loading ? "Verifying…" : "Verify"}
-              </Button>
-            </form>
-            {error && (
-              <p className="mt-2 text-center text-sm text-red-600" role="alert">
-                {error}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* RESULTS */}
-        {result ? (
-          <div className="grid gap-6 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
-            {/* Left: document data */}
-            <div>
-              <VerificationDetailsCard document={result} />
+          {/* RESULTS */}
+          {result ? (
+            <div className="grid gap-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
+              {/* Left: document data */}
+              <div>
+                <VerificationDetailsCard document={result} />
+              </div>
+              {/* Right: PDF viewer */}
+              <div className="xl:sticky xl:top-24 xl:self-start">
+                <PdfViewerPanel
+                  title={result.form_label ?? "Signed Document"}
+                  viewUrl={result.url}
+                  downloadUrl={result.url}
+                />
+              </div>
             </div>
-            {/* Right: PDF viewer */}
-            <div className="sticky top-24 self-start">
-              <PdfViewerPanel
-                title={result.form_label ?? "Signed Document"}
-                viewUrl={result.url}
-                downloadUrl={result.url}
-              />
-            </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </section>
     </div>
   );
