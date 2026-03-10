@@ -138,18 +138,20 @@ function VerifyDocsPageContent() {
 
           {/* RESULTS */}
           {result ? (
-            <div className="grid gap-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
+            <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
               {/* Left: document data */}
-              <div>
+              <div className="min-w-0">
                 <VerificationDetailsCard document={result} />
               </div>
               {/* Right: PDF viewer */}
-              <div className="xl:sticky xl:top-24 xl:self-start">
-                <PdfViewerPanel
-                  title={result.form_label ?? "Signed Document"}
-                  viewUrl={result.url}
-                  downloadUrl={result.url}
-                />
+              <div className="w-full max-w-full min-w-0 xl:sticky xl:top-24 xl:self-start">
+                <div className="w-full max-w-full">
+                  <PdfViewerPanel
+                    title={result.form_label ?? "Signed Document"}
+                    viewUrl={result.url}
+                    downloadUrl={result.url}
+                  />
+                </div>
               </div>
             </div>
           ) : null}
