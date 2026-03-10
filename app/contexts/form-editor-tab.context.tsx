@@ -33,6 +33,20 @@ export interface FormViewUnit {
 
 type ParentPatch = Record<string, any>;
 
+const rewriteAutoCurrentDateFieldKeyForParty = (
+  fieldKey: string,
+  previousPartyId?: string | null,
+  nextPartyId?: string | null
+) => {
+  if (!fieldKey.startsWith("auto.current-date:")) return fieldKey;
+  if (fieldKey === "auto.current-date:default") return fieldKey;
+
+  const suffix = fieldKey.slice("auto.current-date:".length);
+  if (previousPartyId && suffix !== previousPartyId) return fieldKey;
+
+  return `auto.current-date:${nextPartyId || "default"}`;
+};
+
 const normalizeParentPatch = (updates: ParentPatch): ParentPatch => {
   const labelUpdate = updates.fieldLabel !== undefined ? updates.fieldLabel : updates.label;
   return {
@@ -353,19 +367,36 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   const handleBlockUpdate = useCallback(
     (updatedBlock: IFormBlock) => {
       if (!formMetadata) return;
+      const existingBlock = formMetadata.schema.blocks.find((block) => block._id === updatedBlock._id);
+      const normalizedUpdatedBlock =
+        existingBlock &&
+        existingBlock.signing_party_id !== updatedBlock.signing_party_id &&
+        updatedBlock.field_schema?.field
+          ? {
+              ...updatedBlock,
+              field_schema: {
+                ...updatedBlock.field_schema,
+                field: rewriteAutoCurrentDateFieldKeyForParty(
+                  updatedBlock.field_schema.field,
+                  existingBlock.signing_party_id,
+                  updatedBlock.signing_party_id
+                ),
+              },
+            }
+          : updatedBlock;
 
       const layoutKeys = new Set(["x", "y", "w", "h", "page", "align_h", "align_v", "size"]);
       const updatedSchema =
-        updatedBlock.field_schema || updatedBlock.phantom_field_schema || undefined;
+        normalizedUpdatedBlock.field_schema || normalizedUpdatedBlock.phantom_field_schema || undefined;
       const updatedFieldName = updatedSchema?.field;
-      const updatedParty = updatedBlock.signing_party_id;
+      const updatedParty = normalizedUpdatedBlock.signing_party_id;
 
       const updatedBlocks = formMetadata.schema.blocks.map((block) => {
-        if (block._id === updatedBlock._id) return updatedBlock;
+        if (block._id === normalizedUpdatedBlock._id) return normalizedUpdatedBlock;
 
         const targetSchema = block.field_schema || block.phantom_field_schema || undefined;
         const sameGroup =
-          block.block_type === updatedBlock.block_type &&
+          block.block_type === normalizedUpdatedBlock.block_type &&
           block.signing_party_id === updatedParty &&
           targetSchema?.field &&
           updatedFieldName &&
@@ -374,9 +405,9 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
         if (!sameGroup) return block;
 
         // Sync non-layout keys across same-field instances; keep PDF placement keys per block.
-        if (block.field_schema && updatedBlock.field_schema) {
+        if (block.field_schema && normalizedUpdatedBlock.field_schema) {
           const merged = { ...block.field_schema };
-          Object.entries(updatedBlock.field_schema).forEach(([key, value]) => {
+          Object.entries(normalizedUpdatedBlock.field_schema).forEach(([key, value]) => {
             if (!layoutKeys.has(key)) {
               (merged as any)[key] = value;
             }
@@ -384,8 +415,8 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
           return { ...block, field_schema: merged };
         }
 
-        if (block.phantom_field_schema && updatedBlock.phantom_field_schema) {
-          return { ...block, phantom_field_schema: { ...updatedBlock.phantom_field_schema } };
+        if (block.phantom_field_schema && normalizedUpdatedBlock.phantom_field_schema) {
+          return { ...block, phantom_field_schema: { ...normalizedUpdatedBlock.phantom_field_schema } };
         }
 
         return block;
@@ -453,9 +484,16 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
         if (!blockMatchesGroup(block, group)) return block;
 
         const updated: IFormBlock = { ...block };
+        const nextPartyId =
+          patch.signing_party_id !== undefined ? patch.signing_party_id : block.signing_party_id;
 
         if (block.field_schema) {
           updated.field_schema = applyPatchToFieldSchema(block.field_schema, patch);
+          updated.field_schema.field = rewriteAutoCurrentDateFieldKeyForParty(
+            updated.field_schema.field,
+            block.signing_party_id,
+            nextPartyId
+          );
         }
 
         if (block.phantom_field_schema) {

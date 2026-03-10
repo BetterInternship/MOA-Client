@@ -65,13 +65,19 @@ type DraggedFieldPayload = {
   __palette_source?: "default" | "custom";
   field_schema_defaults?: FieldSchemaDefaults;
   composite_template?: CompositeTemplateKey;
+  auto_date_mode?: "default" | "party";
 };
 
 const DEFAULT_PAGE_WIDTH = 560;
 const DEFAULT_PAGE_HEIGHT = 760;
 
-const resolveDroppedFieldKey = (field: DraggedFieldPayload) => {
+const resolveDroppedFieldKey = (field: DraggedFieldPayload, selectedPartyId?: string | null) => {
   const base = field.name || "field";
+  if (base === "auto.current-date") {
+    return field.auto_date_mode === "party" && selectedPartyId
+      ? `auto.current-date:${selectedPartyId}`
+      : "auto.current-date:default";
+  }
   if (field.__palette_source === "default") {
     return createUniqueFieldKey(base);
   }
@@ -258,7 +264,7 @@ export function PdfViewer() {
           }
 
           const uniqueId = Math.random().toString(36).substr(2, 9);
-          const fieldKey = resolveDroppedFieldKey(draggedField);
+          const fieldKey = resolveDroppedFieldKey(draggedField, selectedPartyId);
           const existingForField = blocks.find(
             (block) =>
               block.block_type === "form_field" &&
@@ -785,7 +791,7 @@ const PdfPageCanvas = memo(
         }
 
         const uniqueId = Math.random().toString(36).substr(2, 9);
-        const fieldKey = resolveDroppedFieldKey(draggedField);
+        const fieldKey = resolveDroppedFieldKey(draggedField, selectedPartyId);
         const existingForField = blocks.find(
           (block) =>
             block.block_type === "form_field" &&

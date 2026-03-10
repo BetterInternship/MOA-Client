@@ -49,6 +49,7 @@ type PaletteField = {
   iconKey?: string;
   paletteSource: PaletteSource;
   composite_template?: CompositeTemplateKey;
+  auto_date_mode?: "default" | "party";
 };
 
 type DragFieldPayload = Omit<PaletteField, "iconKey" | "paletteSource"> & {
@@ -125,6 +126,28 @@ export function BlocksPanel() {
       iconKey: preset.iconKey,
       paletteSource: "default" as const,
     }));
+    const autoCurrentDatePreset = mappedPresets.find(
+      (preset) => preset.name === "auto.current-date"
+    );
+    const mappedPresetsWithoutAutoCurrentDate = mappedPresets.filter(
+      (preset) => preset.name !== "auto.current-date"
+    );
+    const autoCurrentDateVariants = autoCurrentDatePreset
+      ? [
+          {
+            ...autoCurrentDatePreset,
+            id: `${autoCurrentDatePreset.id}-default`,
+            label: `${autoCurrentDatePreset.label} (Default)`,
+            auto_date_mode: "default" as const,
+          },
+          {
+            ...autoCurrentDatePreset,
+            id: `${autoCurrentDatePreset.id}-party`,
+            label: `${autoCurrentDatePreset.label} (Recipient)`,
+            auto_date_mode: "party" as const,
+          },
+        ]
+      : [];
 
     const compositeField: PaletteField = {
       id: SIGNATURE_PRINTED_NAME_TEMPLATE.id,
@@ -145,30 +168,51 @@ export function BlocksPanel() {
       composite_template: SIGNATURE_PRINTED_NAME_TEMPLATE.key,
     };
 
-    return [...mappedPresets, compositeField];
+    return [...mappedPresetsWithoutAutoCurrentDate, ...autoCurrentDateVariants, compositeField];
   }, [registry]);
 
   const customFields = useMemo<PaletteField[]>(() => {
     return registry
       .filter((field) => !isPresetRegistryField(field))
-      .map((field) => ({
-        id: field.id,
-        name: field.name || field.id,
-        label: field.label || field.name || field.id,
-        type: (field.type as PaletteField["type"]) || "text",
-        source: (field.source as PaletteField["source"]) || "manual",
-        shared: typeof field.shared === "boolean" ? field.shared : true,
-        tag: field.tag || "Ungrouped",
-        preset: field.preset || "default",
-        prefiller: field.prefiller || "",
-        tooltip_label: field.tooltip_label || "",
-        validator: field.validator || "",
-        validator_ir: (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
-        field_schema_defaults: sanitizeFieldSchemaDefaults(
-          (field as { field_schema_defaults?: unknown }).field_schema_defaults
-        ),
-        paletteSource: "custom" as const,
-      }))
+      .flatMap((field) => {
+        const mapped: PaletteField = {
+          id: field.id,
+          name: field.name || field.id,
+          label: field.label || field.name || field.id,
+          type: (field.type as PaletteField["type"]) || "text",
+          source: (field.source as PaletteField["source"]) || "manual",
+          shared: typeof field.shared === "boolean" ? field.shared : true,
+          tag: field.tag || "Ungrouped",
+          preset: field.preset || "default",
+          prefiller: field.prefiller || "",
+          tooltip_label: field.tooltip_label || "",
+          validator: field.validator || "",
+          validator_ir: (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
+          field_schema_defaults: sanitizeFieldSchemaDefaults(
+            (field as { field_schema_defaults?: unknown }).field_schema_defaults
+          ),
+          paletteSource: "custom" as const,
+        };
+
+        if (mapped.name === "auto.current-date") {
+          return [
+            {
+              ...mapped,
+              id: `${mapped.id}-default`,
+              label: `${mapped.label} (Default)`,
+              auto_date_mode: "default" as const,
+            },
+            {
+              ...mapped,
+              id: `${mapped.id}-party`,
+              label: `${mapped.label} (Recipient)`,
+              auto_date_mode: "party" as const,
+            },
+          ];
+        }
+
+        return [mapped];
+      })
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [registry]);
 
@@ -215,6 +259,7 @@ export function BlocksPanel() {
       validator_ir: field.validator_ir,
       field_schema_defaults: field.field_schema_defaults,
       composite_template: field.composite_template,
+      auto_date_mode: field.auto_date_mode,
       __palette_source: field.paletteSource,
     };
 
@@ -343,11 +388,15 @@ export function BlocksPanel() {
     const baseFieldKey = field.name || field.id;
     const presetTag = (field.preset || "").trim();
     const fieldKey =
-      field.paletteSource === "default"
-        ? createUniqueFieldKey(baseFieldKey)
-        : presetTag
-          ? `${baseFieldKey}:${presetTag}`
-          : baseFieldKey;
+      baseFieldKey === "auto.current-date"
+        ? field.auto_date_mode === "party" && partyId
+          ? `auto.current-date:${partyId}`
+          : "auto.current-date:default"
+        : field.paletteSource === "default"
+          ? createUniqueFieldKey(baseFieldKey)
+          : presetTag
+            ? `${baseFieldKey}:${presetTag}`
+            : baseFieldKey;
 
     const existingForField = blocks.find(
       (block) =>

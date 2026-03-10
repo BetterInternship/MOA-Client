@@ -121,11 +121,15 @@ export function groupFieldsByPage(fields: PreviewField[]) {
   return byPage;
 }
 
-export const normalizePreviewFieldKey = (fieldKey: string): string =>
-  String(fieldKey ?? "")
-    .trim()
-    .replace(/:default$/i, "")
-    .replace(/:auto$/i, "");
+export const normalizePreviewFieldKey = (fieldKey: string): string => {
+  const normalized = String(fieldKey ?? "").trim();
+
+  if (/^auto\.current-/i.test(normalized)) {
+    return normalized.replace(/:[^:]+$/i, "");
+  }
+
+  return normalized.replace(/:default$/i, "").replace(/:auto$/i, "");
+};
 
 export const resolveAutoPreviewValue = (fieldKey: string, now = new Date()): string => {
   const normalized = normalizePreviewFieldKey(fieldKey).toLowerCase();
