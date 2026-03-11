@@ -239,7 +239,7 @@ function PageContent() {
 
       <div
         className={cn(
-          "mx-auto min-h-0 w-full flex-1 px-4 py-0 transition-[max-width] duration-500 ease-in-out sm:px-6 sm:py-4",
+          "mx-auto min-h-0 w-full flex-1 px-0 py-0 transition-[max-width] duration-500 ease-in-out sm:px-6 sm:py-4",
           "max-w-7xl"
         )}
       >
@@ -376,11 +376,6 @@ function PageContent() {
                           : getMobileStepHiddenClass("preview-review")
                       }`}
                     >
-                      <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
-                        <div className="text-sm font-semibold text-gray-900">
-                          Please review your inputs
-                        </div>
-                      </div>
                       <div className="min-h-0 flex-1">
                         {formProcess.latest_document_url ? (
                           <FormPreviewPdfDisplay
