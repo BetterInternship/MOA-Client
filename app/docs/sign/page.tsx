@@ -61,19 +61,6 @@ function PageContent() {
   );
 
   useEffect(() => {
-    const isMobile = window.innerWidth < 640;
-    if (isMobile) {
-      toast(
-        "Our desktop experience might currently be preferable, so let us know if you have insights about how we can make mobile better! Chat us on Facebook or email us at hello@betterinternship.com if you go through any issues.",
-        {
-          duration: 6000,
-          className: "text-justify",
-        }
-      );
-    }
-  }, []);
-
-  useEffect(() => {
     const formProcessId = (params.get("form-process-id") || "").trim();
     const supposedSigningPartyId = (params.get("signing-party-id") || "").trim();
     formProcess.setFormProcessId(formProcessId);
