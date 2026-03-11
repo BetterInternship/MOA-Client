@@ -130,6 +130,11 @@ export const FormPreviewPdfDisplay = ({
   const visibleFields = useMemo(() => normalizedFields, [normalizedFields]);
   const fieldsByPage = useMemo(() => groupFieldsByPage(visibleFields), [visibleFields]);
 
+  // Keep internal zoom in sync with prop updates (e.g. mobile breakpoint after hydration).
+  useEffect(() => {
+    setScale(initialScale);
+  }, [initialScale]);
+
   useEffect(() => {
     didAutoFocusOwnedTaskRef.current = false;
   }, [documentUrl]);
