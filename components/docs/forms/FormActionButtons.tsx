@@ -17,7 +17,11 @@ import { useSignContext } from "@/app/docs/auth/provider/sign.ctx";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 
-export function FormActionButtons() {
+interface FormActionButtonsProps {
+  submitDisabled?: boolean;
+}
+
+export function FormActionButtons({ submitDisabled = false }: FormActionButtonsProps) {
   const form = useFormRendererContext();
   const formFiller = useFormFiller();
   const formProcess = useFormProcess();
@@ -33,11 +37,6 @@ export function FormActionButtons() {
   const signingPartyBlocks = form.formMetadata.getSigningPartyBlocks(
     formProcess.my_signing_party_id ?? ""
   );
-
-  // Signatures
-  const needsToSign =
-    formProcess.my_signing_party_id &&
-    form.formMetadata.getSignatureFieldsForClientService(formProcess.my_signing_party_id).length;
 
   /**
    * This submits the form to the server
@@ -115,6 +114,7 @@ export function FormActionButtons() {
     <div className="flex items-center justify-end gap-2">
       <Button
         onClick={() => void handleReject()}
+        size="lg"
         variant="outline"
         scheme="destructive"
         className="w-full sm:w-auto"
@@ -127,9 +127,10 @@ export function FormActionButtons() {
       </Button>
       <Button
         onClick={() => void handleSubmit()}
+        size="lg"
         variant="default"
         className="w-full sm:w-auto"
-        disabled={busy || !signContext.hasAgreed}
+        disabled={busy || !signContext.hasAgreed || submitDisabled}
       >
         <TextLoader loading={busy}>
           <span className="sm:hidden">Submit</span>

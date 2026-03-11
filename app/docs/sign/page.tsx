@@ -15,14 +15,17 @@ import { useMyAutofill } from "@/hooks/use-my-autofill";
 import { useSignContext } from "../auth/provider/sign.ctx";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LucideClipboardCheck } from "lucide-react";
 import { formsControllerMarkFormAsFirstViewed } from "@/app/api";
 import { withDerivedFormValues } from "@/lib/derived-form-values";
 import { cn } from "@/lib/utils";
 import { DelegateEmailScreen } from "./components/DelegateEmailScreen";
 import { SignIntentGate } from "./components/SignIntentGate";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+type MobileSigningStep = "preview-start" | "fields" | "preview-review" | "confirm";
 
 const Page = () => {
   return (
@@ -34,7 +37,8 @@ const Page = () => {
 
 function PageContent() {
   const [view, setView] = useState<"choice" | "form" | "delegate">("choice");
-  const [mobileTab, setMobileTab] = useState<"step" | "preview">("step");
+  const [mobileStep, setMobileStep] = useState<MobileSigningStep>("preview-start");
+  const [hasConfirmedDetails, setHasConfirmedDetails] = useState(false);
   const [delegateEmail, setDelegateEmail] = useState("");
   const params = useSearchParams();
   const isMobile = useIsMobile();
@@ -116,9 +120,23 @@ function PageContent() {
 
   useEffect(() => {
     if (view !== "form") {
-      setMobileTab("step");
+      setMobileStep("preview-start");
+      setHasConfirmedDetails(false);
     }
   }, [view]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileStep("preview-start");
+      setHasConfirmedDetails(false);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (mobileStep === "confirm") {
+      setHasConfirmedDetails(false);
+    }
+  }, [mobileStep]);
 
   const previewBlocks = useMemo(() => {
     if (!form.formMetadata) return [];
@@ -131,6 +149,40 @@ function PageContent() {
     () => (form.formMetadata ? form.formMetadata.getSigningParties() : []),
     [form.formMetadata]
   );
+  const mobileSteps: MobileSigningStep[] = ["preview-start", "fields", "preview-review", "confirm"];
+  const mobileStepNumber = mobileSteps.indexOf(mobileStep) + 1;
+  const mobileStepIndexByStep = useMemo(
+    () => new Map(mobileSteps.map((step, index) => [step, index])),
+    [mobileSteps]
+  );
+  const mobileStepTitles: Record<MobileSigningStep, string> = {
+    "preview-start": "Preview the blank document",
+    fields: "Fill required fields",
+    "preview-review": "Review the completed PDF",
+    confirm: "Confirm before submitting",
+  };
+  const getMobileStepHiddenClass = (step: MobileSigningStep) => {
+    const currentIndex = mobileStepIndexByStep.get(mobileStep) ?? 0;
+    const stepIndex = mobileStepIndexByStep.get(step) ?? 0;
+
+    return stepIndex < currentIndex
+      ? "-translate-x-6 opacity-0 pointer-events-none"
+      : "translate-x-6 opacity-0 pointer-events-none";
+  };
+
+  const goToMobileStep = (nextStep: MobileSigningStep) => {
+    setMobileStep(nextStep);
+  };
+
+  const handleMobileFieldsNext = () => {
+    const errors = formFiller.validate(form.fields, autofillValues);
+    if (Object.keys(errors).length) {
+      toast.error("Some information is missing or incorrect");
+      return;
+    }
+
+    goToMobileStep("preview-review");
+  };
 
   if (formProcess.error) {
     return (
@@ -178,7 +230,7 @@ function PageContent() {
                 className="px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back
+                Go Back
               </Button>
             )}
           </div>
@@ -225,104 +277,259 @@ function PageContent() {
             >
               <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-[0.33em] border border-gray-300 bg-white">
                 {isMobile && (
-                  <div className="grid grid-cols-2 border-b border-gray-300 bg-white">
-                    <button
-                      type="button"
-                      className={cn(
-                        "px-3 py-2 text-sm font-medium transition-colors",
-                        mobileTab === "step" ? "bg-primary/10 text-primary" : "text-gray-600"
-                      )}
-                      onClick={() => setMobileTab("step")}
-                    >
-                      Form
-                    </button>
-                    <button
-                      type="button"
-                      className={cn(
-                        "px-3 py-2 text-sm font-medium transition-colors",
-                        mobileTab === "preview" ? "bg-primary/10 text-primary" : "text-gray-600"
-                      )}
-                      onClick={() => setMobileTab("preview")}
-                    >
-                      Preview PDF
-                    </button>
+                  <div className="border-b border-gray-300 bg-gray-100 px-4 py-3">
+                    <div className="text-xs font-medium text-gray-700">
+                      Step {mobileStepNumber} of {mobileSteps.length}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-gray-900">
+                      {mobileStepTitles[mobileStep]}
+                    </div>
                   </div>
                 )}
 
-                <div
-                  className={cn(
-                    "grid min-h-0 flex-1 grid-cols-1 transition-[grid-template-columns] duration-500 ease-in-out",
-                    isMobile
-                      ? "grid-cols-1"
-                      : "xl:[grid-template-columns:minmax(0,1fr)_var(--right-pane-width)]",
-                    "relative overflow-hidden"
-                  )}
-                  style={
-                    {
-                      "--right-pane-width": "600px",
-                    } as React.CSSProperties
-                  }
-                >
-                  <div
-                    className={cn(
-                      "min-h-0 rounded-r-none bg-white transition-[transform] duration-500 ease-in-out xl:scale-100",
-                      isMobile && mobileTab !== "preview" && "hidden",
-                      !isMobile && "block"
-                    )}
-                  >
-                    {formProcess.latest_document_url ? (
-                      <FormPreviewPdfDisplay
-                        documentUrl={formProcess.latest_document_url}
-                        blocks={previewBlocks}
-                        values={previewValues}
-                        fieldErrors={formFiller.errors}
-                        onFieldClick={(fieldName) => {
-                          form.setSelectedPreviewId(fieldName);
-                          if (isMobile) {
-                            setMobileTab("step");
-                          }
-                        }}
-                        selectedFieldId={form.selectedPreviewId}
-                        scale={isMobile ? 0.5 : 0.7}
-                        signingParties={signingParties}
-                        currentSigningPartyId={formProcess.my_signing_party_id}
-                        showOwnership
-                        defaultFieldVisibility="mine"
-                        prefillMode="live"
-                        prefillUser={previewPrefillUser}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center p-4 text-sm text-gray-500">
-                        No preview available
+                {isMobile ? (
+                  <div className="relative min-h-0 flex-1 overflow-hidden">
+                    <div
+                      className={`absolute inset-0 flex min-h-0 flex-col bg-white transition-all duration-500 ease-in-out ${
+                        mobileStep === "preview-start"
+                          ? "pointer-events-auto translate-x-0 opacity-100"
+                          : getMobileStepHiddenClass("preview-start")
+                      }`}
+                    >
+                      <div className="min-h-0 flex-1">
+                        {formProcess.latest_document_url ? (
+                          <FormPreviewPdfDisplay
+                            key="mobile-preview-start"
+                            documentUrl={formProcess.latest_document_url}
+                            blocks={previewBlocks}
+                            values={{}}
+                            fieldErrors={formFiller.errors}
+                            onFieldClick={(fieldName) => {
+                              form.setSelectedPreviewId(fieldName);
+                              goToMobileStep("fields");
+                            }}
+                            selectedFieldId={form.selectedPreviewId}
+                            scale={0.5}
+                            signingParties={signingParties}
+                            currentSigningPartyId={formProcess.my_signing_party_id}
+                            showOwnership
+                            defaultFieldVisibility="mine"
+                            prefillMode="none"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center p-4 text-sm text-gray-500">
+                            No preview available
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-
-                  <div
-                    className={cn(
-                      "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white transition-[opacity,transform] duration-500 ease-in-out",
-                      isMobile && mobileTab !== "step" && "hidden",
-                      !isMobile && "flex"
-                    )}
-                  >
-                    <div className="hidden h-[58px] items-center border-b border-gray-300 px-6 sm:flex">
-                      <span className="text-sm font-medium text-gray-700">
-                        Fill Required Fields
-                      </span>
+                      <div className="shrink-0 border-t border-gray-200 bg-white p-3">
+                        <Button
+                          size="lg"
+                          className="w-full whitespace-nowrap"
+                          onClick={() => goToMobileStep("fields")}
+                        >
+                          Next
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="flex h-full min-h-0 flex-1 flex-col pt-4 sm:pt-8">
-                      <div className="min-h-0 flex-1">
-                        <FormFillerRenderer />
+                    <div
+                      className={`absolute inset-0 min-h-0 bg-white transition-all duration-500 ease-in-out ${
+                        mobileStep === "fields"
+                          ? "pointer-events-auto translate-x-0 opacity-100"
+                          : getMobileStepHiddenClass("fields")
+                      }`}
+                    >
+                      <div className="flex h-full min-h-0 flex-col">
+                        <div className="min-h-0 flex-1">
+                          <FormFillerRenderer />
+                        </div>
+                        <div className="shrink-0 border-t border-gray-300 bg-gray-50 p-3">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-11 w-11 shrink-0"
+                              onClick={() => goToMobileStep("preview-start")}
+                              aria-label="Back to blank PDF preview"
+                            >
+                              <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="lg"
+                              className="flex-1 whitespace-nowrap"
+                              onClick={() => {
+                                handleMobileFieldsNext();
+                              }}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      {isMobile && (
-                        <div className="border-t border-gray-300 bg-gray-50 p-3">
-                          <FormActionButtons />
+                    </div>
+
+                    <div
+                      className={`absolute inset-0 flex min-h-0 flex-col bg-white transition-all duration-500 ease-in-out ${
+                        mobileStep === "preview-review"
+                          ? "pointer-events-auto translate-x-0 opacity-100"
+                          : getMobileStepHiddenClass("preview-review")
+                      }`}
+                    >
+                      <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
+                        <div className="text-sm font-semibold text-gray-900">
+                          Please review your inputs
+                        </div>
+                      </div>
+                      <div className="min-h-0 flex-1">
+                        {formProcess.latest_document_url ? (
+                          <FormPreviewPdfDisplay
+                            key="mobile-preview-review"
+                            documentUrl={formProcess.latest_document_url}
+                            blocks={previewBlocks}
+                            values={previewValues}
+                            fieldErrors={formFiller.errors}
+                            onFieldClick={(fieldName) => {
+                              form.setSelectedPreviewId(fieldName);
+                              goToMobileStep("fields");
+                            }}
+                            selectedFieldId={form.selectedPreviewId}
+                            scale={0.5}
+                            signingParties={signingParties}
+                            currentSigningPartyId={formProcess.my_signing_party_id}
+                            showOwnership
+                            defaultFieldVisibility="mine"
+                            prefillMode="live"
+                            prefillUser={previewPrefillUser}
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center p-4 text-sm text-gray-500">
+                            No preview available
+                          </div>
+                        )}
+                      </div>
+                      <div className="shrink-0 border-t border-gray-200 bg-white p-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-11 w-11 shrink-0"
+                            onClick={() => goToMobileStep("fields")}
+                            aria-label="Back to form fields"
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="lg"
+                            className="flex-1 whitespace-nowrap"
+                            onClick={() => goToMobileStep("confirm")}
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`absolute inset-0 min-h-0 bg-white transition-all duration-500 ease-in-out ${
+                        mobileStep === "confirm"
+                          ? "pointer-events-auto translate-x-0 opacity-100"
+                          : getMobileStepHiddenClass("confirm")
+                      }`}
+                    >
+                      <div className="flex h-full min-h-0 flex-col">
+                        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+                          <div className="flex flex-col items-start gap-4">
+                            <LucideClipboardCheck className="-ml-2 h-16 min-h-16 w-16 opacity-30" />
+                            <span className="font-semibold text-gray-700">
+                              Please check if all your inputs are correct
+                            </span>
+                            <label className="flex cursor-pointer items-center gap-3 rounded-[0.33em] border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                              <Checkbox
+                                checked={hasConfirmedDetails}
+                                className={cn(
+                                  "h-5 w-5 rounded-[0.33em] border",
+                                  hasConfirmedDetails
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-gray-300 bg-white"
+                                )}
+                                onCheckedChange={(checked) =>
+                                  setHasConfirmedDetails(checked === true)
+                                }
+                              />
+                              <span>I confirm all the details are correct</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div className="shrink-0 border-t border-gray-300 bg-gray-50 p-3">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-11 w-11 shrink-0"
+                              onClick={() => goToMobileStep("preview-review")}
+                              aria-label="Back to PDF review"
+                            >
+                              <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <div className="flex-1">
+                              <FormActionButtons submitDisabled={!hasConfirmedDetails} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="grid min-h-0 flex-1 grid-cols-1 transition-[grid-template-columns] duration-500 ease-in-out xl:[grid-template-columns:minmax(0,1fr)_var(--right-pane-width)]"
+                    style={
+                      {
+                        "--right-pane-width": "600px",
+                      } as React.CSSProperties
+                    }
+                  >
+                    <div className="min-h-0 rounded-r-none bg-white transition-[transform] duration-500 ease-in-out xl:scale-100">
+                      {formProcess.latest_document_url ? (
+                        <FormPreviewPdfDisplay
+                          documentUrl={formProcess.latest_document_url}
+                          blocks={previewBlocks}
+                          values={previewValues}
+                          fieldErrors={formFiller.errors}
+                          onFieldClick={(fieldName) => {
+                            form.setSelectedPreviewId(fieldName);
+                          }}
+                          selectedFieldId={form.selectedPreviewId}
+                          scale={0.7}
+                          signingParties={signingParties}
+                          currentSigningPartyId={formProcess.my_signing_party_id}
+                          showOwnership
+                          defaultFieldVisibility="mine"
+                          prefillMode="live"
+                          prefillUser={previewPrefillUser}
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center p-4 text-sm text-gray-500">
+                          No preview available
                         </div>
                       )}
                     </div>
+
+                    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white transition-[opacity,transform] duration-500 ease-in-out">
+                      <div className="hidden h-[58px] items-center border-b border-gray-300 px-6 sm:flex">
+                        <span className="text-sm font-medium text-gray-700">
+                          Fill Required Fields
+                        </span>
+                      </div>
+
+                      <div className="flex h-full min-h-0 flex-1 flex-col pt-4 sm:pt-8">
+                        <div className="min-h-0 flex-1">
+                          <FormFillerRenderer />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </motion.div>
           )}
