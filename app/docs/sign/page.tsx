@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { FormFillerRenderer } from "@/components/docs/forms/FormFillerRenderer";
-import { FormActionButtons } from "@/components/docs/forms/FormActionButtons";
+import { RejectFormButton, SubmitFormButton } from "@/components/docs/forms/FormActionButtons";
 import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
 import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
 import { useFormFiller } from "@/components/docs/forms/form-filler.ctx";
@@ -157,7 +157,7 @@ function PageContent() {
   );
   const mobileStepTitles: Record<MobileSigningStep, string> = {
     "preview-start": "Preview the blank document",
-    fields: "Fill required fields",
+    fields: "Fill required fields or reject this form",
     "preview-review": "Review the completed PDF",
     confirm: "Confirm before submitting",
   };
@@ -355,6 +355,7 @@ function PageContent() {
                             >
                               <ArrowLeft className="h-4 w-4" />
                             </Button>
+                            <RejectFormButton />
                             <Button
                               size="lg"
                               className="flex-1 whitespace-nowrap"
@@ -467,9 +468,7 @@ function PageContent() {
                             >
                               <ArrowLeft className="h-4 w-4" />
                             </Button>
-                            <div className="flex-1">
-                              <FormActionButtons submitDisabled={!hasConfirmedDetails} />
-                            </div>
+                            <SubmitFormButton submitDisabled={!hasConfirmedDetails} />
                           </div>
                         </div>
                       </div>
