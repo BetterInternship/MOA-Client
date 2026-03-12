@@ -9,6 +9,8 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isEditorRoute = pathname?.includes("/editor") ?? false;
   const isFieldsRoute = pathname?.endsWith("/fields") ?? false;
+  const isSignRoute = pathname === "/sign" || pathname === "/docs/sign";
+  const showHeader = !isEditorRoute && !isSignRoute;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -20,7 +22,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           className="flex h-[100svh]! w-[100vw] flex-col overflow-x-hidden bg-white"
           suppressHydrationWarning
         >
-          {!isEditorRoute && (
+          {showHeader && (
             <header className="bg-background/70 sticky top-0 z-50 border-b backdrop-blur">
               <div className="mx-auto flex h-16 items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
                 {/* Logo */}
@@ -54,7 +56,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
               isFieldsRoute ? "overflow-hidden" : "overflow-auto"
             }`}
             style={{
-              height: isEditorRoute ? "100svh" : "calc(100svh - 5rem)",
+              height: showHeader ? "calc(100svh - 5rem)" : "100svh",
             }}
           >
             {children}
