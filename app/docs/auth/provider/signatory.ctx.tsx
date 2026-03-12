@@ -27,9 +27,9 @@ const SignatoryProfileContext = createContext({} as ISignatoryProfile);
 export const useSignatoryProfile = () => useContext(SignatoryProfileContext);
 
 export const SignatoryProfileContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [signatoryContext, setSignatoryContext] = useState<ISignatoryProfile>(
-    {} as ISignatoryProfile
-  );
+  const [signatoryContext, setSignatoryContext] = useState<ISignatoryProfile>({
+    loading: true,
+  } as ISignatoryProfile);
 
   const signatoryProfile = useQuery({
     queryKey: ["my-profile"],
@@ -48,18 +48,28 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
   useEffect(() => {
     const profile = signatoryProfile.data?.profile;
 
+    if (signatoryProfile.isLoading) {
+      setSignatoryContext({ loading: true } as ISignatoryProfile);
+      return;
+    }
+
     // Clear context if there's an error (like 401 after logout) OR no profile
     if (signatoryProfile.status === "error" || !profile) {
-      setSignatoryContext({} as ISignatoryProfile);
+      setSignatoryContext({ loading: false } as ISignatoryProfile);
     } else if (profile) {
       setSignatoryContext({
         ...profile,
         autofill: profile.autofill as Record<string, Record<string, string>>,
         autoFormPermissions: profile.autoFormPermissions as Record<string, string>,
-        loading: signatoryProfile.isLoading,
+        loading: false,
       });
     }
-  }, [signatoryProfile.data, signatoryProfile.status, signatoryProfile.error]);
+  }, [
+    signatoryProfile.data,
+    signatoryProfile.status,
+    signatoryProfile.error,
+    signatoryProfile.isLoading,
+  ]);
 
   return (
     <SignatoryProfileContext.Provider value={signatoryContext}>

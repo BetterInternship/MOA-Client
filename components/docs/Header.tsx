@@ -25,6 +25,7 @@ export default function DocsTopbarUser() {
   const router = useRouter();
   const pathname = usePathname();
   const profile = useSignatoryProfile();
+  const isLoggedIn = Boolean(profile?.email);
   const isMobile = useIsMobile();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -73,7 +74,7 @@ export default function DocsTopbarUser() {
     return <div className="bg-muted h-9 w-24 animate-pulse rounded" />;
   }
 
-  if (!profile) {
+  if (!isLoggedIn) {
     return (
       <Link href="/login">
         <Button variant="outline">Login</Button>

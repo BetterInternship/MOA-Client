@@ -37,6 +37,7 @@ export default function DocsFormsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const profile = useSignatoryProfile();
+  const isLoggedIn = Boolean(profile?.email);
   const isCoordinator = !!profile.coordinatorId;
   const updateAutofill = useMyAutofillUpdate();
   const autofillValues = useMyAutofill();
@@ -80,7 +81,14 @@ export default function DocsFormsPage() {
       return formItems;
     },
     staleTime: 60_000,
+    enabled: isLoggedIn,
   });
+
+  React.useEffect(() => {
+    if (!profile.loading && !isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [profile.loading, isLoggedIn, router]);
 
   // Load form data when modal opens
   React.useEffect(() => {
@@ -375,6 +383,10 @@ export default function DocsFormsPage() {
       throw error;
     }
   };
+
+  if (profile.loading || !isLoggedIn) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
