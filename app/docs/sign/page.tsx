@@ -152,6 +152,10 @@ function PageContent() {
   const mySigningParty = signingParties.find(
     (signingParty) => signingParty._id === formProcess.my_signing_party_id
   );
+  const shouldShowSignIntentGate =
+    typeof mySigningParty?.signatory_source?._id === "string" &&
+    mySigningParty.signatory_source._id.trim().length > 0;
+  const currentView = shouldShowSignIntentGate ? view : "form";
   const mobileSteps: MobileSigningStep[] = ["preview-start", "fields", "preview-review", "confirm"];
   const mobileStepNumber = mobileSteps.indexOf(mobileStep) + 1;
   const mobileStepIndexByStep = useMemo(
@@ -225,7 +229,7 @@ function PageContent() {
               {form.formLabel}
             </h3>
 
-            {view !== "choice" && (
+            {shouldShowSignIntentGate && currentView !== "choice" && (
               <Button
                 type="button"
                 variant="ghost"
@@ -247,7 +251,7 @@ function PageContent() {
         )}
       >
         <AnimatePresence mode="wait" initial={false}>
-          {view === "choice" ? (
+          {currentView === "choice" ? (
             <motion.div
               key="choice"
               className="h-full"
@@ -260,7 +264,7 @@ function PageContent() {
                 onDelegate={() => setView("delegate")}
               />
             </motion.div>
-          ) : view === "delegate" ? (
+          ) : currentView === "delegate" ? (
             <motion.div
               key="delegate"
               className="h-full"
