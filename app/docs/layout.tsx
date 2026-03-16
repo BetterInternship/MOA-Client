@@ -4,15 +4,13 @@ import Header from "@/components/docs/Header";
 import { Providers } from "./providers";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isMobile = useIsMobile();
   const isEditorRoute = pathname?.includes("/editor") ?? false;
   const isFieldsRoute = pathname?.endsWith("/fields") ?? false;
   const isSignRoute = pathname === "/sign" || pathname === "/docs/sign";
-  const showHeader = !isEditorRoute && !(isMobile && isSignRoute);
+  const showHeader = !isEditorRoute && !isSignRoute;
 
   return (
     <html lang="en" suppressHydrationWarning>
