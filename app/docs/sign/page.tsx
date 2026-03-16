@@ -149,6 +149,9 @@ function PageContent() {
     () => (form.formMetadata ? form.formMetadata.getSigningParties() : []),
     [form.formMetadata]
   );
+  const mySigningParty = signingParties.find(
+    (signingParty) => signingParty._id === formProcess.my_signing_party_id
+  );
   const mobileSteps: MobileSigningStep[] = ["preview-start", "fields", "preview-review", "confirm"];
   const mobileStepNumber = mobileSteps.indexOf(mobileStep) + 1;
   const mobileStepIndexByStep = useMemo(

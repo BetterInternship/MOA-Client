@@ -2,6 +2,6 @@
 	"git": {
 		"deploymentEnabled": false
 	},
-	"installCommand": "npm i --legacy-peer-deps",
+	"installCommand": "npm ci --legacy-peer-deps",
 	"buildCommand": "npm run build"
 }
