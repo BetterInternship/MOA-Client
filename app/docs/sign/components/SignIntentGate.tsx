@@ -51,8 +51,8 @@ export function SignIntentGate({ onSignSelf, onDelegate }: SignIntentGateProps) 
               </div>
             </div>
             <div className="flex w-full flex-col justify-center border-t px-6 py-5 text-left">
-              <span className="font-thin">I am the</span>
-              <span className="font-semibold">{signingParty?.signatory_title}</span>
+              <span className="font-semibold">I am the</span>
+              <span className="font-thin italic">{signingParty?.signatory_title}</span>
             </div>
           </Button>
 
@@ -75,8 +75,8 @@ export function SignIntentGate({ onSignSelf, onDelegate }: SignIntentGateProps) 
               </div>
             </div>
             <div className="flex w-full flex-col justify-center border-t px-6 py-5 text-left">
-              <span className="font-thin">Forward this to the actual</span>
-              <span className="font-semibold">{signingParty?.signatory_title}</span>
+              <span className="font-semibold">Forward this to the actual</span>
+              <span className="font-thin italic">{signingParty?.signatory_title}</span>
             </div>
           </Button>
         </div>
