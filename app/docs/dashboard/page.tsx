@@ -8,6 +8,7 @@ import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export default function DocsDashboardPage() {
   const router = useRouter();
