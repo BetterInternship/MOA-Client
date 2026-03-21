@@ -138,7 +138,7 @@
 .markdown h4,
 .markdown h5,
 .markdown h6 {
-  @apply font-sans font-semibold tracking-tight text-gray-900 mb-4;
+  @apply mb-4 font-sans font-semibold tracking-tight text-gray-900;
 }
 
 @layer base {
@@ -156,40 +156,40 @@
   /* Enhanced typography scale */
   h1,
   .text-h1 {
-    @apply text-4xl md:text-5xl font-bold tracking-tight text-gray-900;
-    @apply leading-tight font-sans font-semibold tracking-tight;
+    @apply text-4xl font-bold tracking-tight text-gray-900 md:text-5xl;
+    @apply font-sans leading-tight font-semibold tracking-tight;
     line-height: var(--line-height-tight);
   }
 
   h2,
   .text-h2 {
-    @apply text-3xl md:text-4xl font-bold tracking-tight text-gray-900;
-    @apply leading-tight font-sans font-semibold tracking-tight;
+    @apply text-3xl font-bold tracking-tight text-gray-900 md:text-4xl;
+    @apply font-sans leading-tight font-semibold tracking-tight;
     line-height: var(--line-height-tight);
   }
 
   h3,
   .text-h3 {
-    @apply text-2xl md:text-3xl font-semibold tracking-tight text-gray-900;
-    @apply leading-snug font-sans font-semibold tracking-tight;
+    @apply text-2xl font-semibold tracking-tight text-gray-900 md:text-3xl;
+    @apply font-sans leading-snug font-semibold tracking-tight;
     line-height: var(--line-height-normal);
   }
 
   h4,
   .text-h4 {
-    @apply text-xl md:text-2xl font-semibold tracking-tight text-gray-900;
+    @apply text-xl font-semibold tracking-tight text-gray-900 md:text-2xl;
     @apply leading-snug;
   }
 
   h5,
   .text-h5 {
-    @apply text-lg md:text-xl font-semibold text-gray-900;
+    @apply text-lg font-semibold text-gray-900 md:text-xl;
     @apply leading-normal;
   }
 
   h6,
   .text-h6 {
-    @apply text-base md:text-lg font-semibold text-gray-900;
+    @apply text-base font-semibold text-gray-900 md:text-lg;
     @apply leading-normal;
   }
 }
@@ -221,6 +221,46 @@ html {
   box-sizing: border-box;
 }
 
+@keyframes tab-attention-jitter {
+  0%,
+  72%,
+  100% {
+    transform: translateX(0);
+  }
+  76% {
+    transform: translateX(4px);
+  }
+  82% {
+    transform: translateX(-3px);
+  }
+  88% {
+    transform: translateX(4px);
+  }
+  94% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes tab-attention-dot-jitter {
+  0%,
+  72%,
+  100% {
+    transform: translateX(0) scale(1);
+  }
+  76% {
+    transform: translateX(4px) scale(1.16);
+  }
+  82% {
+    transform: translateX(-3px) scale(0.92);
+  }
+  88% {
+    transform: translateX(4px) scale(1.16);
+  }
+  94% {
+    transform: translateX(-2px) scale(0.96);
+  }
+}
+
 /* Mobile-specific utilities */
 @layer utilities {
   .pb-safe {
@@ -242,6 +282,14 @@ html {
   .webkit-overflow-scrolling-touch {
     -webkit-overflow-scrolling: touch;
   }
+
+  .tab-attention-jitter {
+    animation: tab-attention-jitter 1.8s ease-in-out infinite;
+  }
+
+  .tab-attention-dot-jitter {
+    animation: tab-attention-dot-jitter 1.8s ease-in-out infinite;
+  }
 }
 
 /* iOS zoom fix: keep form controls at >=16px on mobile so Safari won't auto-zoom on focus */
@@ -254,7 +302,6 @@ html {
     }
   }
 }
-
 
 .shiny-text {
   color: #b5b5b5a4; /* Adjust this color to change intensity/style */
@@ -298,6 +345,11 @@ html {
 
 @media (prefers-reduced-motion: reduce) {
   .shiny-text {
+    animation: none;
+  }
+
+  .tab-attention-jitter,
+  .tab-attention-dot-jitter {
     animation: none;
   }
 }
