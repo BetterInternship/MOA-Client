@@ -21,9 +21,9 @@ export function SignIntentGate({ onSignSelf, onDelegate }: SignIntentGateProps) 
   const signingParty = signingParties.find((signingParty) => signingParty._id === signingPartyId);
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-center px-4 py-6 sm:px-6 sm:py-10">
+    <div className="mx-auto flex min-h-full w-full max-w-6xl items-start justify-center px-4 pt-4 pb-6 sm:h-full sm:items-center sm:px-6 sm:py-10">
       <div className="w-full">
-        <p className="mx-auto max-w-prose text-left text-lg font-medium text-gray-700">
+        <p className="mx-auto max-w-prose text-left text-base leading-relaxed font-medium break-words text-gray-700 sm:text-lg">
           <span className="text-primary font-bold">{studentName}</span>{" "}
           <span className="font-thin">has requested you to fill out their</span>{" "}
           <span className="text-primary font-bold">{documentName}</span>{" "}
