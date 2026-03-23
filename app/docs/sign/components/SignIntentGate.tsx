@@ -36,23 +36,25 @@ export function SignIntentGate({ onSignSelf, onDelegate }: SignIntentGateProps) 
             type="button"
             variant="outline"
             size="lg"
-            className="group h-auto min-h-48 w-full flex-col items-stretch gap-0 overflow-hidden p-0 text-base whitespace-normal sm:min-h-56"
+            className="group h-auto min-h-28 w-full flex-row items-stretch gap-0 overflow-hidden p-0 text-base whitespace-normal sm:min-h-56 sm:flex-col"
             onClick={onSignSelf}
           >
-            <div className="flex min-h-32 w-full flex-1 items-center justify-center bg-gray-100 px-6 py-8 transition-colors group-hover:bg-gray-200 sm:min-h-36">
-              <div className="bg-primary rounded-full p-6 opacity-85">
+            <div className="flex w-28 shrink-0 items-center justify-center bg-gray-100 px-4 py-4 transition-colors group-hover:bg-gray-200 sm:min-h-36 sm:w-full sm:flex-1 sm:px-6 sm:py-8">
+              <div className="bg-primary rounded-full p-4 opacity-85 sm:p-6">
                 <Image
                   src="/assets/sign-document.png"
                   alt=""
                   width={96}
                   height={96}
-                  className="h-16 w-16 translate-y-[-1px] object-contain opacity-80 invert sm:h-20 sm:w-20"
+                  className="h-10 w-10 translate-y-[-1px] object-contain opacity-80 invert sm:h-20 sm:w-20"
                 />
               </div>
             </div>
-            <div className="flex w-full flex-col justify-center border-t px-6 py-5 text-left">
-              <span className="font-semibold">I am the</span>
-              <span className="font-thin italic">{signingParty?.signatory_title}</span>
+            <div className="flex min-h-0 w-full flex-col justify-center px-4 py-3 text-left sm:border-t sm:px-6 sm:py-5">
+              <span className="text-sm font-semibold sm:text-base">I am the</span>
+              <span className="text-sm font-thin italic sm:text-base">
+                {signingParty?.signatory_title}
+              </span>
             </div>
           </Button>
 
@@ -60,23 +62,25 @@ export function SignIntentGate({ onSignSelf, onDelegate }: SignIntentGateProps) 
             type="button"
             variant="outline"
             size="lg"
-            className="group h-auto min-h-48 w-full flex-col items-stretch gap-0 overflow-hidden p-0 text-base whitespace-normal sm:min-h-56"
+            className="group h-auto min-h-28 w-full flex-row items-stretch gap-0 overflow-hidden p-0 text-base whitespace-normal sm:min-h-56 sm:flex-col"
             onClick={onDelegate}
           >
-            <div className="flex min-h-32 w-full flex-1 items-center justify-center bg-gray-100 px-6 py-8 transition-colors group-hover:bg-gray-200 sm:min-h-36">
-              <div className="bg-primary rounded-full p-6 opacity-85">
+            <div className="flex w-28 shrink-0 items-center justify-center bg-gray-100 px-4 py-4 transition-colors group-hover:bg-gray-200 sm:min-h-36 sm:w-full sm:flex-1 sm:px-6 sm:py-8">
+              <div className="bg-primary rounded-full p-4 opacity-85 sm:p-6">
                 <Image
                   src="/assets/forward-document.png"
                   alt=""
                   width={96}
                   height={96}
-                  className="h-16 w-16 translate-x-1.5 translate-y-1 object-contain opacity-80 invert sm:h-20 sm:w-20"
+                  className="h-10 w-10 translate-x-1 translate-y-0.5 object-contain opacity-80 invert sm:h-20 sm:w-20"
                 />
               </div>
             </div>
-            <div className="flex w-full flex-col justify-center border-t px-6 py-5 text-left">
-              <span className="font-semibold">Forward this to the actual</span>
-              <span className="font-thin italic">{signingParty?.signatory_title}</span>
+            <div className="flex min-h-0 w-full flex-col justify-center px-4 py-3 text-left sm:border-t sm:px-6 sm:py-5">
+              <span className="text-sm font-semibold sm:text-base">Forward this to the actual</span>
+              <span className="text-sm font-thin italic sm:text-base">
+                {signingParty?.signatory_title}
+              </span>
             </div>
           </Button>
         </div>
