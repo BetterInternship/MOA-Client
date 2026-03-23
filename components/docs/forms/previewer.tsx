@@ -668,8 +668,8 @@ const PdfPageOverlay = ({
               style={{
                 left: `${displayPos.displayX}px`,
                 top: `${displayPos.displayY}px`,
-                width: `${Math.max(widthPixels, 10)}px`,
-                height: `${Math.max(heightPixels, 10)}px`,
+                width: `${Math.max(widthPixels, 4)}px`,
+                height: `${Math.max(heightPixels, 4)}px`,
                 overflow: "visible",
                 display: "flex",
                 backgroundColor: ownedFillColor,
