@@ -10,6 +10,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import { type IFormSigningParty } from "@betterinternship/core/forms";
@@ -55,10 +56,12 @@ interface FormPreviewPdfDisplayProps {
   values: Record<string, string>;
   fields?: PreviewFieldLike[];
   blocks?: PreviewFieldLike[]; // Backward-compatible alias
+  headerLeft?: ReactNode;
   scale?: number;
   showToolbar?: boolean;
   onFieldClick?: (fieldName: string) => void;
   selectedFieldId?: string;
+  selectionTick?: number;
   autoScrollToSelectedField?: boolean;
   signingParties?: IFormSigningParty[];
   currentSigningPartyId?: string;
@@ -81,10 +84,12 @@ export const FormPreviewPdfDisplay = ({
   values,
   fields,
   blocks,
+  headerLeft,
   scale: initialScale = 1.0,
   showToolbar = true,
   onFieldClick,
   selectedFieldId,
+  selectionTick = 0,
   autoScrollToSelectedField = true,
   signingParties = [],
   currentSigningPartyId,
@@ -178,7 +183,7 @@ export const FormPreviewPdfDisplay = ({
     setAnimatingFieldId(selectedFieldId);
     const timeout = setTimeout(() => setAnimatingFieldId(null), 600);
     return () => clearTimeout(timeout);
-  }, [selectedFieldId, normalizedFields, autoScrollToSelectedField]);
+  }, [selectedFieldId, selectionTick, normalizedFields, autoScrollToSelectedField]);
 
   // Initialize PDF.js worker
   useEffect(() => {
@@ -264,6 +269,7 @@ export const FormPreviewPdfDisplay = ({
     <div className="flex h-full w-full flex-col overflow-hidden rounded-[0.33em] border border-slate-300">
       {showToolbar && (
         <PreviewToolbar
+          headerLeft={headerLeft}
           visiblePage={visiblePage}
           pageCount={pageCount}
           scale={scale}
@@ -272,7 +278,10 @@ export const FormPreviewPdfDisplay = ({
       )}
 
       {/* Pages container */}
-      <div className="webkit-overflow-scrolling-touch touch-pan-y flex-1 overflow-x-auto overflow-y-auto bg-slate-100 p-2 sm:p-4">
+      <div
+        className="min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain bg-slate-100 p-2 sm:p-4"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         <div className="mx-auto space-y-6">
           {pagesArray.map((pageNumber) => (
             <PdfPageOverlay
@@ -301,17 +310,25 @@ export const FormPreviewPdfDisplay = ({
 };
 
 interface PreviewToolbarProps {
+  headerLeft?: ReactNode;
   visiblePage: number;
   pageCount: number;
   scale: number;
   onZoom: (direction: "in" | "out") => void;
 }
 
-const PreviewToolbar = ({ visiblePage, pageCount, scale, onZoom }: PreviewToolbarProps) => {
+const PreviewToolbar = ({
+  headerLeft,
+  visiblePage,
+  pageCount,
+  scale,
+  onZoom,
+}: PreviewToolbarProps) => {
   return (
     <div className="relative flex-shrink-0 border-b border-slate-300 bg-white px-3 py-2">
-      <div className="flex items-center justify-end gap-3">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-3">
+        {headerLeft ? <div className="min-w-0">{headerLeft}</div> : null}
+        <div className="ml-auto flex items-center gap-1.5">
           <span className="text-xs font-medium text-slate-700">
             {visiblePage}/{pageCount}
           </span>
