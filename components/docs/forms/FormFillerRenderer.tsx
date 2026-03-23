@@ -10,7 +10,11 @@ import { getBlockField, isBlockField } from "./utils";
 import { useFormFiller } from "./form-filler.ctx";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
 
-export function FormFillerRenderer() {
+interface FormFillerRendererProps {
+  hideActions?: boolean;
+}
+
+export function FormFillerRenderer({ hideActions = false }: FormFillerRendererProps) {
   const form = useFormRendererContext();
   const formFiller = useFormFiller();
   const autofillValues = useMyAutofill();
@@ -75,9 +79,11 @@ export function FormFillerRenderer() {
           />
         </div>
       </div>
-      <div className="hidden border-t border-r border-gray-300 bg-gray-100 p-2 sm:block">
-        <FormActionButtons />
-      </div>
+      {!hideActions && (
+        <div className="hidden border-t border-r border-gray-300 bg-gray-100 p-2 sm:block">
+          <FormActionButtons />
+        </div>
+      )}
     </div>
   );
 }

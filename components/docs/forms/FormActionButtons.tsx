@@ -19,6 +19,7 @@ import { toastPresets } from "@/components/sonner-toaster";
 
 interface SubmitFormButtonProps {
   submitDisabled?: boolean;
+  requireSignAgreement?: boolean;
 }
 
 function useFormActionController() {
@@ -122,7 +123,10 @@ export function RejectFormButton() {
   );
 }
 
-export function SubmitFormButton({ submitDisabled = false }: SubmitFormButtonProps) {
+export function SubmitFormButton({
+  submitDisabled = false,
+  requireSignAgreement = true,
+}: SubmitFormButtonProps) {
   const { busy, canSubmit, handleSubmit } = useFormActionController();
 
   return (
@@ -131,7 +135,7 @@ export function SubmitFormButton({ submitDisabled = false }: SubmitFormButtonPro
       size="lg"
       variant="default"
       className="flex-1 whitespace-nowrap sm:w-auto"
-      disabled={busy || !canSubmit || submitDisabled}
+      disabled={busy || (requireSignAgreement && !canSubmit) || submitDisabled}
     >
       <TextLoader loading={busy}>
         <span className="sm:hidden">Submit</span>

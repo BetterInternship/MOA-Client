@@ -49,6 +49,7 @@ const Page = () => {
 function PageContent() {
   const [view, setView] = useState<"choice" | "form" | "delegate">("choice");
   const [mobileStep, setMobileStep] = useState<MobileSigningStep>("fields");
+  const [desktopStep, setDesktopStep] = useState<MobileSigningStep>("fields");
   const [mobileFieldsTab, setMobileFieldsTab] = useState<"form" | "preview">("form");
   const [mobileConfirmTab, setMobileConfirmTab] = useState<"confirm" | "preview">("confirm");
   const [mobilePreviewNeedsAttention, setMobilePreviewNeedsAttention] = useState(false);
@@ -140,6 +141,7 @@ function PageContent() {
 
   useEffect(() => {
     if (view !== "form") {
+      setDesktopStep("fields");
       setMobileStep("fields");
       setMobileFieldsTab("form");
       setMobileConfirmTab("confirm");
@@ -151,6 +153,8 @@ function PageContent() {
   }, [view]);
 
   useEffect(() => {
+    setDesktopStep("fields");
+
     if (!isMobile) {
       setMobileStep("fields");
       setMobileFieldsTab("form");
@@ -168,6 +172,12 @@ function PageContent() {
       setMobileConfirmTab("confirm");
     }
   }, [mobileStep]);
+
+  useEffect(() => {
+    if (desktopStep === "confirm") {
+      setHasConfirmedDetails(false);
+    }
+  }, [desktopStep]);
 
   const previewBlocks = useMemo(() => {
     if (!form.formMetadata) return [];
@@ -191,15 +201,14 @@ function PageContent() {
   const desktopHeaderTaskTitle =
     currentView === "delegate"
       ? "Forward this form to the actual signer"
-      : hasConfirmedDetails
-      ? "Confirm before submitting"
-      : "Fill required fields or reject this form";
-  const desktopHeaderStepNumber = currentView === "delegate" ? 1 : hasConfirmedDetails ? 2 : 1;
+      : desktopStep === "confirm"
+        ? "Confirm before submitting"
+        : "Fill required fields or reject this form";
+  const desktopHeaderStepNumber =
+    currentView === "delegate" ? 1 : desktopStep === "confirm" ? 2 : 1;
   const desktopHeaderTotalSteps = currentView === "delegate" ? 1 : 2;
   const desktopHeaderProgressPercent =
-    desktopHeaderTotalSteps <= 1
-      ? 100
-      : (desktopHeaderStepNumber / desktopHeaderTotalSteps) * 100;
+    desktopHeaderTotalSteps <= 1 ? 100 : (desktopHeaderStepNumber / desktopHeaderTotalSteps) * 100;
 
   useEffect(() => {
     const didValuesChange = !areFormValuesEqual(latestPreviewValuesRef.current, previewValues);
@@ -239,6 +248,7 @@ function PageContent() {
     { id: "confirm", label: "Confirm details" },
     { id: "preview", label: "PDF Preview" },
   ];
+  const canAdvanceFromFields = !!signContext.hasAgreed;
   const isMobilePreviewTabActive =
     isMobile && currentView === "form" && mobileStep === "fields" && mobileFieldsTab === "preview";
   const isMobileConfirmPreviewTabActive =
@@ -268,12 +278,18 @@ function PageContent() {
     }
   }, []);
 
-  const handleMobileFieldsNext = () => {
+  const validateFields = () => {
     const errors = formFiller.validate(form.fields, autofillValues);
     if (Object.keys(errors).length) {
       toast.error("Some information is missing or incorrect");
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const handleMobileFieldsNext = () => {
+    if (!validateFields()) return;
 
     goToMobileStep("confirm");
   };
@@ -350,7 +366,7 @@ function PageContent() {
                 </h3>
               </div>
 
-              <div className="hidden md:flex min-w-[210px] flex-col items-end gap-1">
+              <div className="hidden min-w-[210px] flex-col items-end gap-1 md:flex">
                 <span className="text-[11px] font-medium text-gray-500">
                   {desktopHeaderTaskTitle}
                   <span className="px-1.5 text-gray-300">•</span>
@@ -358,7 +374,7 @@ function PageContent() {
                 </span>
                 <Progress
                   value={desktopHeaderProgressPercent}
-                  className="h-[3px] w-[210px] bg-gray-200 [&>div]:bg-primary/75"
+                  className="[&>div]:bg-primary/75 h-[3px] w-[210px] bg-gray-200"
                 />
               </div>
             </div>
@@ -474,7 +490,7 @@ function PageContent() {
                           <div className="flex h-full min-h-0 flex-col">
                             {renderMobileFieldsTabs()}
                             <div className="min-h-0 flex-1">
-                              <FormFillerRenderer />
+                              <FormFillerRenderer hideActions />
                             </div>
                             <div
                               className={cn(
@@ -489,6 +505,7 @@ function PageContent() {
                                 <Button
                                   size="lg"
                                   className="flex-1 whitespace-nowrap"
+                                  disabled={!canAdvanceFromFields}
                                   onClick={() => {
                                     handleMobileFieldsNext();
                                   }}
@@ -593,7 +610,10 @@ function PageContent() {
                             >
                               <ArrowLeft className="h-4 w-4" />
                             </Button>
-                            <SubmitFormButton submitDisabled={!hasConfirmedDetails} />
+                            <SubmitFormButton
+                              submitDisabled={!hasConfirmedDetails}
+                              requireSignAgreement={false}
+                            />
                           </div>
                         </div>
                       </div>
@@ -635,9 +655,87 @@ function PageContent() {
                     </div>
 
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white transition-[opacity,transform] duration-500 ease-in-out">
-                      <div className="flex h-full min-h-0 flex-1 flex-col pt-4 sm:pt-8">
-                        <div className="min-h-0 flex-1">
-                          <FormFillerRenderer />
+                      <div
+                        className={cn(
+                          "absolute inset-0 min-h-0 bg-white transition-all duration-500 ease-in-out",
+                          desktopStep === "fields"
+                            ? "pointer-events-auto translate-x-0 opacity-100"
+                            : "pointer-events-none -translate-x-6 opacity-0"
+                        )}
+                      >
+                        <div className="flex h-full min-h-0 flex-1 flex-col pt-4 sm:pt-8">
+                          <div className="min-h-0 flex-1">
+                            <FormFillerRenderer hideActions />
+                          </div>
+                          <div className="shrink-0 border-t border-gray-300 bg-gray-50 p-3">
+                            <div className="flex items-center gap-2">
+                              <RejectFormButton />
+                              <Button
+                                size="lg"
+                                className="flex-1 whitespace-nowrap"
+                                disabled={!canAdvanceFromFields}
+                                onClick={() => {
+                                  if (!validateFields()) return;
+
+                                  setDesktopStep("confirm");
+                                }}
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        className={cn(
+                          "absolute inset-0 min-h-0 bg-white transition-all duration-500 ease-in-out",
+                          desktopStep === "confirm"
+                            ? "pointer-events-auto translate-x-0 opacity-100"
+                            : "pointer-events-none translate-x-6 opacity-0"
+                        )}
+                      >
+                        <div className="flex h-full min-h-0 flex-col">
+                          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+                            <div className="flex flex-col items-start gap-4">
+                              <LucideClipboardCheck className="-ml-2 h-16 min-h-16 w-16 opacity-30" />
+                              <span className="font-semibold text-gray-700">
+                                Please check if all your inputs are correct
+                              </span>
+                              <label className="flex cursor-pointer items-center gap-3 rounded-[0.33em] border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                                <Checkbox
+                                  checked={hasConfirmedDetails}
+                                  className={cn(
+                                    "h-5 w-5 rounded-[0.33em] border",
+                                    hasConfirmedDetails
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-gray-300 bg-white"
+                                  )}
+                                  onCheckedChange={(checked) =>
+                                    setHasConfirmedDetails(checked === true)
+                                  }
+                                />
+                                <span>I confirm all the details are correct</span>
+                              </label>
+                            </div>
+                          </div>
+                          <div className="shrink-0 border-t border-gray-300 bg-gray-50 p-3">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                className="h-11 w-11 shrink-0"
+                                onClick={() => setDesktopStep("fields")}
+                                aria-label="Back to form fields"
+                              >
+                                <ArrowLeft className="h-4 w-4" />
+                              </Button>
+                              <SubmitFormButton
+                                submitDisabled={!hasConfirmedDetails}
+                                requireSignAgreement={false}
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
