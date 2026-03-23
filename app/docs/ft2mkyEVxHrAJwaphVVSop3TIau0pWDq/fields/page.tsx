@@ -1,226 +1,552 @@
 "use client";
 
-import { useModal } from "@/app/providers/modal-provider";
-import { Table, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  useFormsControllerGetFieldRegistry,
-  useFormsControllerGetFieldFromRegistry,
+  formsControllerGetFieldFromRegistry,
   formsControllerRegisterField,
+  formsControllerUpdateField,
+  getFormsControllerGetFieldFromRegistryQueryKey,
+  getFormsControllerGetFieldRegistryQueryKey,
+  useFormsControllerGetFieldFromRegistry,
+  useFormsControllerGetFieldRegistry,
 } from "../../../api/app/api/endpoints/forms/forms";
 import { Badge } from "@/components/ui/badge";
-import { Divider } from "@/components/ui/divider";
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { formsControllerUpdateField } from "../../../api/app/api/endpoints/forms/forms";
-import { Loader } from "@/components/ui/loader";
-import { Plus } from "lucide-react";
 import { Autocomplete } from "@/components/ui/autocomplete";
-import { SOURCES } from "@betterinternship/core/forms";
+import { Loader } from "@/components/ui/loader";
+import { Plus, ChevronDown, Pencil, MoveRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FormDropdown } from "@/components/docs/forms/EditForm";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { CustomFieldModalForm } from "@/components/docs/form-editor/CustomFieldModalForm";
+import {
+  FieldLibraryFieldOption,
+  FieldLibraryPresetTemplateOption,
+  FieldLibraryProvider,
+  useFieldLibrary,
+} from "@/app/contexts/field-library.context";
+import {
+  createCustomFieldDraftFromPreset,
+  FieldSource,
+  normalizeFieldSource,
+  toRegisterFieldPayload,
+} from "@/lib/custom-field-mappers";
+import type { ValidatorIRv0 } from "@/lib/validator-ir";
+import { deriveFieldNameFromLabel } from "@/lib/field-name";
+import {
+  buildFieldOptionsFromRegistry,
+  buildTagOptionsFromRegistry,
+  isPresetRegistryField,
+} from "@/lib/field-library";
+import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
+import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
+import { cn } from "@/lib/utils";
 
-// ! Store this elsewhere soon
 interface FieldRegistryEntry {
+  id?: string;
   name: string;
-  preset: string;
-  type: "" | "text" | "signature" | "email" | "param";
   label: string;
-  source: "auto" | "prefill" | "derived" | "manual";
+  preset: string;
+  type: string;
+  source: FieldSource;
   shared: boolean;
   tooltip_label: string;
   validator: string;
+  validator_ir?: ValidatorIRv0 | null;
+  field_schema_defaults?: FieldSchemaDefaults | null;
   prefiller: string;
   is_phantom?: boolean;
+  party?: string;
+  tag?: string;
 }
 
-/**
- * Displays all the forms we have, and their latest versions.
- *
- * @component
- */
-const FieldRegistryPage = () => {
-  const fieldRegistry = useFormsControllerGetFieldRegistry();
+type FieldRegistryMinimalEntry = {
+  id: string;
+  name: string;
+  preset: string;
+  label?: string;
+  type?: string;
+  tag?: string;
+};
 
-  type FieldRegistryMinimalEntry = {
-    id: string;
-    name: string;
-    preset: string;
-    type: "text" | "signature";
-  };
-  const sortFields = (list: FieldRegistryMinimalEntry[]) =>
-    (list ?? []).slice().sort((a, b) => {
-      const nameA = (a?.name ?? "").toLowerCase();
-      const nameB = (b?.name ?? "").toLowerCase();
-      if (nameA === nameB) {
-        const presetA = (a?.preset ?? "").toLowerCase();
-        const presetB = (b?.preset ?? "").toLowerCase();
-        return presetA.localeCompare(presetB);
-      }
-      return nameA.localeCompare(nameB);
-    });
+type EditorPaneState = { mode: "none" } | { mode: "create" } | { mode: "edit"; id: string };
 
-  const [fields, setFields] = useState(() =>
-    sortFields(fieldRegistry.data?.fields as FieldRegistryMinimalEntry[])
-  );
+// Stable ordering keeps grouped field lists predictable across rerenders and searches.
+const sortFields = (list: FieldRegistryMinimalEntry[]) =>
+  (list ?? []).slice().sort((a, b) => {
+    const labelA = (a.label || a.name || "").toLowerCase();
+    const labelB = (b.label || b.name || "").toLowerCase();
+    if (labelA === labelB) {
+      const presetA = (a?.preset ?? "").toLowerCase();
+      const presetB = (b?.preset ?? "").toLowerCase();
+      return presetA.localeCompare(presetB);
+    }
+    return labelA.localeCompare(labelB);
+  });
+
+const FieldRegistryPage = ({ embedded = false }: { embedded?: boolean }) => {
+  const queryClient = useQueryClient();
+  const fieldRegistry = useFormsControllerGetFieldRegistry({});
+
   const [searchTerm, setSearchTerm] = useState("");
-  const { openModal, closeModal } = useModal();
+  const [expandedTags, setExpandedTags] = useState<Record<string, boolean>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkTargetTag, setBulkTargetTag] = useState("");
+  const [bulkMoving, setBulkMoving] = useState(false);
+  const [editorPane, setEditorPane] = useState<EditorPaneState>({ mode: "none" });
 
-  // Handles opening the add field modal
-  const handleAdd = () => {
-    openModal("field-add", <FieldRegistration close={closeModal} />, {
-      title: (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row items-center gap-2">
-            <span className="font-semibold tracking-tight">Add New Field</span>
-          </div>
-          <Divider />
-        </div>
+  const fields = useMemo(
+    () => sortFields((fieldRegistry.data?.fields as FieldRegistryMinimalEntry[]) || []),
+    [fieldRegistry.data?.fields]
+  );
+
+  const filteredFields = useMemo(() => {
+    if (!searchTerm.trim()) return fields;
+    const terms = searchTerm
+      .toLowerCase()
+      .split(" ")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    return fields.filter((field) => {
+      const haystack = `${field.label || ""} ${field.name} ${field.preset}`.toLowerCase();
+      return terms.every((term) => haystack.includes(term));
+    });
+  }, [fields, searchTerm]);
+
+  const groupedFields = useMemo(() => {
+    const groups: Record<string, FieldRegistryMinimalEntry[]> = {};
+    filteredFields.forEach((field) => {
+      const tag = field.tag?.trim() || "uncategorized";
+      if (!groups[tag]) groups[tag] = [];
+      groups[tag].push(field);
+    });
+    return Object.entries(groups)
+      .map(([tag, entries]) => ({
+        tag,
+        entries: sortFields(entries),
+      }))
+      .sort((a, b) => a.tag.localeCompare(b.tag));
+  }, [filteredFields]);
+
+  useEffect(() => {
+    const next: Record<string, boolean> = {};
+    groupedFields.forEach((group) => {
+      next[group.tag] = expandedTags[group.tag] ?? true;
+    });
+    setExpandedTags(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupedFields.map((g) => g.tag).join("|")]);
+
+  const allAvailableTags = useMemo(
+    () =>
+      buildTagOptionsFromRegistry(
+        (fieldRegistry.data?.fields as FieldRegistryMinimalEntry[]) || []
       ),
+    [fieldRegistry.data?.fields]
+  );
+
+  const modalLibraryValue = useMemo(
+    () => ({
+      // Pre-compute modal data contracts so add/edit modals stay presentation-focused.
+      fieldOptions: buildFieldOptionsFromRegistry(fields) as FieldLibraryFieldOption[],
+      presetTemplates: resolveSystemPresetTemplates(
+        (fieldRegistry.data?.fields as FieldRegistryEntry[]) || []
+      ) as FieldLibraryPresetTemplateOption[],
+      tagOptions: allAvailableTags,
+    }),
+    [fields, allAvailableTags, fieldRegistry.data?.fields]
+  );
+
+  const toggleTag = (tag: string) => {
+    setExpandedTags((prev) => ({ ...prev, [tag]: !prev[tag] }));
+  };
+
+  const toggleFieldSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   };
 
-  // Filter fields here
-  useEffect(() => {
-    const filtered =
-      fieldRegistry.data?.fields?.filter((field) => {
-        const name = `${field.name}:${field.preset}`;
-        const terms = searchTerm.split(" ").map((s) => s.trim());
-        return terms.every((term) => name.includes(term));
-      }) ?? [];
+  const toggleGroupSelection = (ids: string[], checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => {
+        if (checked) next.add(id);
+        else next.delete(id);
+      });
+      return next;
+    });
+  };
 
-    setFields(sortFields(filtered));
-  }, [fieldRegistry.data?.fields, searchTerm]);
+  const handleAdd = () => {
+    setEditorPane({ mode: "create" });
+  };
+
+  const handleEdit = (id: string) => {
+    setEditorPane({ mode: "edit", id });
+  };
+
+  const refreshRegistry = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getFormsControllerGetFieldRegistryQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getFormsControllerGetFieldFromRegistryQueryKey() }),
+    ]);
+    await queryClient.refetchQueries({
+      queryKey: getFormsControllerGetFieldRegistryQueryKey(),
+      type: "active",
+    });
+    queryClient.removeQueries({
+      queryKey: getFormsControllerGetFieldFromRegistryQueryKey(),
+      type: "inactive",
+    });
+  };
+
+  const handleBulkMove = async () => {
+    const targetTag = bulkTargetTag.trim();
+    if (!targetTag) {
+      toast.error("Pick a target category/tag.");
+      return;
+    }
+    if (selectedIds.size === 0) {
+      toast.error("Select at least one field.");
+      return;
+    }
+
+    setBulkMoving(true);
+    try {
+      const ids = Array.from(selectedIds);
+      let movedCount = 0;
+      let skippedPresetCount = 0;
+      // Endpoint is single-record update, so bulk move fans out requests by selected id.
+      await Promise.all(
+        ids.map(async (id) => {
+          const fieldRes = await formsControllerGetFieldFromRegistry({ id });
+          const field = fieldRes?.field;
+          if (!field) return;
+          if (isPresetRegistryField(field as any)) {
+            skippedPresetCount += 1;
+            return;
+          }
+
+          await formsControllerUpdateField({
+            id: field.id,
+            name: field.name,
+            label: field.label,
+            type: field.type,
+            shared: field.shared,
+            party: field.party ?? "__deprecated",
+            source: normalizeFieldSource(field.source),
+            tag: targetTag,
+            prefiller: field.prefiller ?? null,
+            preset: field.preset,
+            tooltip_label: field.tooltip_label ?? null,
+            validator: field.validator ?? null,
+            validator_ir: (field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
+            field_schema_defaults:
+              (field as { field_schema_defaults?: FieldSchemaDefaults | null })
+                .field_schema_defaults ?? null,
+            is_phantom: field.is_phantom ?? false,
+          } as any);
+          movedCount += 1;
+        })
+      );
+
+      if (movedCount > 0) {
+        await refreshRegistry();
+      }
+      setSelectedIds(new Set());
+      if (movedCount > 0) {
+        toast.success(`Moved ${movedCount} field(s) to "${targetTag}".`);
+      }
+      if (skippedPresetCount > 0) {
+        toast(`Skipped ${skippedPresetCount} preset field(s). Preset tags are locked.`);
+      }
+    } catch {
+      toast.error("Failed to move selected fields.");
+    } finally {
+      setBulkMoving(false);
+    }
+  };
 
   return (
-    <div className="mx-auto mt-4 max-w-5xl">
-      <div className="flex flex-row items-center">
-        <h1 className="m-2 text-2xl font-bold tracking-tight">Field Registry</h1>
-        <div className="flex-1"></div>
-        <div className="flex h-7 flex-row items-center gap-2">
-          <Input
-            value={searchTerm}
-            placeholder="Enter search term..."
-            className="h-7 w-[200px]"
-            onChange={(e) => setSearchTerm(e.target.value)}
-          ></Input>
-          <Button size="sm" onClick={handleAdd}>
-            <Plus />
-            New Field
-          </Button>
+    <FieldLibraryProvider value={modalLibraryValue}>
+      <div
+        className={cn(
+          embedded ? "h-full w-full overflow-hidden" : "mx-auto mt-4 max-w-5xl space-y-3"
+        )}
+      >
+        <div
+          className={cn(
+            "grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]",
+            embedded ? "h-full min-h-0" : "lg:h-full lg:min-h-0"
+          )}
+        >
+          <div
+            className={cn(
+              "space-y-3",
+              embedded ? "flex min-h-0 flex-col" : "lg:flex lg:min-h-0 lg:flex-col"
+            )}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight">Field Registry</h1>
+              <div className="flex-1" />
+              <Input
+                value={searchTerm}
+                placeholder="Search fields..."
+                className="h-9 w-[240px] rounded-[0.33em]"
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Button size="sm" onClick={handleAdd} className="h-9 rounded-[0.33em] px-3">
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add new field
+              </Button>
+            </div>
+
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-[0.33em] border border-slate-200 bg-white p-2">
+                <Badge className="p-2">{selectedIds.size} selected</Badge>
+                <Autocomplete
+                  value={bulkTargetTag}
+                  setter={(nextTag) => setBulkTargetTag(String(nextTag || ""))}
+                  options={allAvailableTags.map((tag) => ({ id: tag, name: tag }))}
+                  placeholder="Move to category/tag..."
+                  className="w-[220px]"
+                  inputClassName="h-8 rounded-[0.33em]"
+                />
+                <Button
+                  size="sm"
+                  className="h-8 rounded-[0.33em]"
+                  onClick={() => void handleBulkMove()}
+                  disabled={bulkMoving}
+                >
+                  <MoveRight className="mr-1 h-3.5 w-3.5" />
+                  {bulkMoving ? "Moving..." : "Move"}
+                </Button>
+              </div>
+            )}
+            <div
+              className={cn(
+                "space-y-2",
+                embedded
+                  ? "min-h-0 flex-1 overflow-y-auto pr-1"
+                  : "lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
+              )}
+            >
+              {fieldRegistry.isLoading || fieldRegistry.isFetching ? (
+                <Loader>Loading fields...</Loader>
+              ) : groupedFields.length === 0 ? (
+                <div className="rounded-[0.33em] border border-slate-200 bg-white p-4 text-sm text-slate-500">
+                  No fields found.
+                </div>
+              ) : (
+                groupedFields.map((group) => {
+                  const groupIds = group.entries.map((f) => f.id);
+                  const selectedCount = groupIds.filter((id) => selectedIds.has(id)).length;
+                  const allSelected = groupIds.length > 0 && selectedCount === groupIds.length;
+                  const someSelected = selectedCount > 0 && !allSelected;
+
+                  return (
+                    <Collapsible
+                      key={group.tag}
+                      open={expandedTags[group.tag]}
+                      onOpenChange={() => toggleTag(group.tag)}
+                      className="space-y-2"
+                    >
+                      <div className="rounded-[0.33em] border border-slate-200 bg-slate-50">
+                        <Checkbox
+                          checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                          onCheckedChange={(checked) =>
+                            toggleGroupSelection(groupIds, checked === true)
+                          }
+                          aria-label={`Select all in ${group.tag}`}
+                          className="sr-only"
+                        />
+                        <CollapsibleTrigger asChild>
+                          <button
+                            type="button"
+                            className="group hover:bg-primary/5 flex w-full items-center justify-between rounded-[0.33em] px-3 py-2 text-left"
+                          >
+                            <div className="flex min-w-0 items-center gap-2">
+                              <Checkbox
+                                checked={
+                                  allSelected ? true : someSelected ? "indeterminate" : false
+                                }
+                                onCheckedChange={(checked) =>
+                                  toggleGroupSelection(groupIds, checked === true)
+                                }
+                                aria-label={`Select all in ${group.tag}`}
+                              />
+                              <p className="truncate text-sm font-semibold text-slate-800">
+                                {group.tag}
+                              </p>
+                              <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                                {group.entries.length}
+                              </span>
+                            </div>
+                            <ChevronDown
+                              className={`h-4 w-4 text-slate-500 transition-transform ${
+                                expandedTags[group.tag] ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                        </CollapsibleTrigger>
+                      </div>
+
+                      <CollapsibleContent className="space-y-1 pl-6">
+                        <div className="space-y-1 border-l border-slate-200 pl-2">
+                          {group.entries.map((field) => (
+                            <div
+                              key={field.id}
+                              className={`hover:bg-primary/5 flex w-full items-center gap-2 rounded-[0.33em] px-2 py-1.5 transition-colors ${
+                                selectedIds.has(field.id) ? "bg-primary/5" : ""
+                              }`}
+                            >
+                              <Checkbox
+                                checked={selectedIds.has(field.id)}
+                                onCheckedChange={() => toggleFieldSelection(field.id)}
+                                aria-label={`Select ${field.name}`}
+                              />
+                              <div className="min-w-0 flex-1 flex-col">
+                                <p className="truncate text-sm font-medium text-slate-800">
+                                  {field.label || field.name}
+                                </p>
+                                <p className="truncate text-xs text-slate-500">
+                                  {field.name}:{field.preset}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 rounded-[0.33em] px-2"
+                                onClick={() => handleEdit(field.id)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              "rounded-[0.33em] border border-slate-200 bg-white p-3",
+              embedded
+                ? "flex h-full min-h-0 flex-col overflow-hidden"
+                : "lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden"
+            )}
+          >
+            {editorPane.mode === "none" ? (
+              <div className="flex h-full min-h-[180px] items-center justify-center">
+                <p className="text-sm text-slate-500">
+                  Select a field to edit, or add a new field.
+                </p>
+              </div>
+            ) : editorPane.mode === "create" ? (
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-slate-800">Add Custom Field</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setEditorPane({ mode: "none" })}>
+                    Close
+                  </Button>
+                </div>
+                <div className="min-h-0 flex-1">
+                  <FieldRegistration
+                    close={() => setEditorPane({ mode: "none" })}
+                    onSaved={refreshRegistry}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-slate-800">Edit Field</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setEditorPane({ mode: "none" })}>
+                    Close
+                  </Button>
+                </div>
+                <div className="min-h-0 flex-1">
+                  <FieldEditor key={editorPane.id} id={editorPane.id} onSaved={refreshRegistry} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableHead>Field Name</TableHead>
-          <TableHead>Field Preset</TableHead>
-        </TableHeader>
-        {fields.map((field) => (
-          <FieldRegistryEntry
-            key={field.id}
-            id={field.id}
-            name={field.name}
-            preset={field.preset}
-          />
-        ))}
-      </Table>
-    </div>
+    </FieldLibraryProvider>
   );
 };
 
-/**
- * A form in our registry.
- *
- * @component
- */
-const FieldRegistryEntry = ({ id, name, preset }: { id: string; name: string; preset: string }) => {
-  const { openModal, closeModal } = useModal();
-
-  // Opens the document in the editor page
-  const handleEdit = () => {
-    openModal("field-editor", <FieldEditor id={id} close={closeModal} />, {
-      title: (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row items-center gap-2">
-            <Badge>
-              <pre className="inline-block">{name}</pre>
-            </Badge>
-            <Badge>
-              <pre className="inline-block">{preset}</pre>
-            </Badge>
-            <span className="font-semibold tracking-tight">Field Data</span>
-          </div>
-          <Divider />
-        </div>
-      ),
-    });
-  };
-
-  return (
-    <TableRow>
-      <TableCell>{name}</TableCell>
-      <TableCell>{preset}</TableCell>
-      <TableCell>
-        <div className="flex flex-row gap-2">
-          <Button variant="outline" scheme="primary" size="xs" onClick={handleEdit}>
-            Edit
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-};
-
-/**
- * Shows a preview of the field to edit.
- *
- * @component
- */
-const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) => {
+const FieldEditor = ({
+  id,
+  onSaved,
+}: {
+  id: string | null;
+  onSaved?: () => Promise<void> | void;
+}) => {
+  const { fieldOptions, tagOptions } = useFieldLibrary();
   const { data, isLoading, isFetching } = useFormsControllerGetFieldFromRegistry(
     { id: id ?? "" },
-    { query: { enabled: !!id } }
+    {
+      query: {
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
+      },
+    }
   );
   const [fieldId, setFieldId] = useState<string | null>(null);
   const [field, setField] = useState<FieldRegistryEntry>();
   const [editing, setEditing] = useState(false);
 
-  // Handles editing the field
+  // Update API expects a full field payload, so we normalize optional values before submit.
   const handleEdit = async () => {
-    if (!fieldId) return;
-    if (!field || !field?.name || !field?.preset) return;
+    if (!fieldId || !field || !field.name || !field.preset) return;
 
     setEditing(true);
-    await formsControllerUpdateField({
-      ...field,
-      tooltip_label: field?.tooltip_label ?? null,
-      validator: field?.validator ?? null,
-      prefiller: field?.prefiller ?? null,
-      id: fieldId,
-      // ! todo: remove
-      party: "__deprecated",
-      is_phantom: field?.is_phantom ?? false,
-    });
-    setEditing(false);
-    close();
+    try {
+      await formsControllerUpdateField({
+        ...field,
+        id: fieldId,
+        tag: field.tag || "",
+        party: field.party || "__deprecated",
+        source: normalizeFieldSource(field.source),
+        tooltip_label: field.tooltip_label ?? null,
+        validator: field.validator ?? null,
+        prefiller: field.prefiller ?? null,
+        field_schema_defaults: field.field_schema_defaults ?? null,
+        is_phantom: field?.is_phantom ?? false,
+      } as any);
+      await onSaved?.();
+    } finally {
+      setEditing(false);
+    }
   };
 
-  // Creates handlers for each field prop
-  const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement> | string) => {
-    if (!field) return;
-    setField({ ...field, [property]: typeof e === "string" ? e : e.target.value });
-  };
-
-  // Update inputs if ever
   useEffect(() => {
     if (data?.field) {
       setFieldId(data.field.id);
       setField({
         ...data.field,
-        shared: data.field.shared.toString() === "true" ? true : false,
+        shared: data.field.shared.toString() === "true",
         tooltip_label: data.field.tooltip_label ?? "",
         validator: data.field.validator ?? "",
+        validator_ir: (data.field as { validator_ir?: ValidatorIRv0 | null }).validator_ir ?? null,
+        field_schema_defaults:
+          (data.field as { field_schema_defaults?: FieldSchemaDefaults | null })
+            .field_schema_defaults ?? null,
         prefiller: data.field.prefiller ?? "",
-        is_phantom: data.field.is_phantom,
       });
     } else {
       setFieldId(null);
@@ -228,268 +554,201 @@ const FieldEditor = ({ id, close }: { id: string | null; close: () => void }) =>
   }, [data]);
 
   return (
-    <div className="max-h-[720px] min-h-[600px] overflow-y-auto">
-      <div className="flex min-w-xl flex-col gap-2">
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {isLoading || isFetching ? (
           <Loader>Loading field...</Loader>
-        ) : (
-          <div className="grid grid-cols-2 gap-2 font-mono">
-            <Badge>Name</Badge>
-            <Input
-              className="h-7 py-1 text-xs"
-              placeholder="category.fieldname"
-              value={field?.name}
-              onChange={handleChangeFactory("name")}
-            />
-            <Badge>Preset Name (optional)</Badge>
-            <Input
-              className="h-7 py-1 text-xs"
-              placeholder="default"
-              value={field?.preset}
-              onChange={handleChangeFactory("preset")}
-            />
-            <Badge>Field Label</Badge>
-            <Input
-              className="h-7 py-1 text-xs"
-              placeholder="Field Label"
-              value={field?.label}
-              onChange={handleChangeFactory("label")}
-            />
-            <Badge>Field Type</Badge>
-            <Autocomplete
-              value={field?.type}
-              inputClassName="h-7 py-1 text-xs"
-              placeholder={field?.is_phantom ? "email, param" : "text, signature"}
-              options={
-                !field?.is_phantom || field?.is_phantom.toString() === "false"
-                  ? [
-                      { id: "text", name: "text" },
-                      { id: "signature", name: "signature" },
-                    ]
-                  : [
-                      { id: "email", name: "email" },
-                      { id: "param", name: "param" },
-                    ]
+        ) : field ? (
+          <>
+            <CustomFieldModalForm
+              value={{
+                name: field.name,
+                label: field.label,
+                tag: field.tag || "",
+                tooltip_label: field.tooltip_label || "",
+                type: field.type,
+                source: field.source,
+                shared: field.shared,
+                prefiller: field.prefiller || "",
+                validator: field.validator || "",
+                validator_ir: field.validator_ir || null,
+                field_schema_defaults: field.field_schema_defaults || null,
+              }}
+              fieldOptions={fieldOptions}
+              tagOptions={tagOptions}
+              onLabelChange={(label) =>
+                setField((prev) =>
+                  prev
+                    ? isPresetRegistryField(prev as any)
+                      ? {
+                          ...prev,
+                          label,
+                        }
+                      : {
+                          ...prev,
+                          label,
+                          name: deriveFieldNameFromLabel(label),
+                        }
+                    : prev
+                )
               }
-              setter={(id) => id && handleChangeFactory("type")(id)}
+              showDerivedNameHint={!isPresetRegistryField(field as any)}
+              tagReadOnly={isPresetRegistryField(field as any)}
+              hideTagField={isPresetRegistryField(field as any)}
+              onChange={(updates) => setField((prev) => (prev ? { ...prev, ...updates } : prev))}
             />
-            <Badge>Field Source</Badge>
-            <Autocomplete
-              value={field?.source}
-              inputClassName="h-7 py-1 text-xs"
-              placeholder={SOURCES.join(", ")}
-              options={SOURCES.map((s) => ({ id: s, name: s }))}
-              setter={(id) => id && handleChangeFactory("source")(id)}
-            />
-            <Badge>Shared Field?</Badge>
-            <FormDropdown
-              value={field?.shared?.toString() ?? "true"}
-              options={[
-                { id: "true", name: "true" },
-                { id: "false", name: "false" },
-              ]}
-              setter={(e) => handleChangeFactory("shared")(e.toString())}
-            />
-            <Badge>Tooltip Label (optional)</Badge>
-            <Input
-              className="h-7 py-1 text-xs"
-              placeholder={"none"}
-              value={field?.tooltip_label}
-              onChange={handleChangeFactory("tooltip_label")}
-            />
-            <Badge>Validator (optional)</Badge>
-            <Input
-              className="h-7 py-1 text-xs"
-              placeholder={"none"}
-              value={field?.validator}
-              onChange={handleChangeFactory("validator")}
-            />
-            <Badge>Prefiller (optional)</Badge>
-            <Input
-              className="h-7 py-1 text-xs"
-              placeholder={"none"}
-              value={field?.prefiller}
-              onChange={handleChangeFactory("prefiller")}
-            />
-            <Badge>Phantom field? (Doesn't show up on form)</Badge>
-            <FormDropdown
-              value={field?.is_phantom?.toString() ?? "true"}
-              options={[
-                { id: "true", name: "true" },
-                { id: "false", name: "false" },
-              ]}
-              setter={(e) =>
-                setField({
-                  ...(field as FieldRegistryEntry),
-                  type: "",
-                  is_phantom: JSON.parse(e.toString()) as boolean,
-                })
-              }
-            />
-          </div>
-        )}
-        <div className="flex flex-row justify-between gap-1">
-          <div className="flex-1" />
-          <Button disabled={editing} onClick={() => void handleEdit()}>
-            {editing ? "Editing..." : "Edit"}
-          </Button>
-          <Button disabled={editing} scheme="destructive" variant="outline" onClick={() => close()}>
-            Cancel
-          </Button>
-        </div>
+          </>
+        ) : null}
+      </div>
+      <div className="mt-3 flex shrink-0 flex-row justify-between">
+        <div className="flex-1" />
+        <Button
+          disabled={editing || isLoading || isFetching || !field}
+          onClick={() => void handleEdit()}
+          className="w-full"
+        >
+          {editing ? "Saving..." : "Save"}
+        </Button>
       </div>
     </div>
   );
 };
 
-/**
- * Shows a preview of the field to add.
- *
- * @component
- */
-const FieldRegistration = ({ close }: { close: () => void }) => {
+const FieldRegistration = ({
+  close,
+  onSaved,
+}: {
+  close: () => void;
+  onSaved?: () => Promise<void> | void;
+}) => {
+  const { fieldOptions, presetTemplates, tagOptions } = useFieldLibrary();
   const [field, setField] = useState<Partial<FieldRegistryEntry>>({
     name: "",
     label: "",
     type: "text",
     source: "manual",
+    tag: "",
+    shared: true,
+    tooltip_label: "",
+    prefiller: "",
+    validator: "",
+    validator_ir: null,
+    field_schema_defaults: null,
   });
+  const [selectedPresetId, setSelectedPresetId] = useState("");
   const [registering, setRegistering] = useState(false);
 
-  // Handles editing the field
-  const handleAdd = async () => {
-    if (!field || !field?.name) return alert("Missing field name.");
-    if (!field.label) return alert("Missing field label");
-    if (!field.type) return alert("Missing field type");
-    if (!field.source) return alert("Missing field source");
+  // Selecting a package preset hydrates a full editable draft in one step.
+  const handlePresetSelect = (presetId: string) => {
+    setSelectedPresetId(presetId);
+    if (!presetId) return;
 
-    setRegistering(true);
-    await formsControllerRegisterField({
-      name: field.name || "",
-      label: field.label || "",
-      preset: field.preset || "default",
-      tooltip_label: field.tooltip_label ?? null,
-      validator: field.validator ?? null,
-      prefiller: field.prefiller ?? null,
-      type: field.type,
-      source: field.source,
-      // ! todo: remove
-      party: "__deprecated",
-      shared: field.shared ?? true,
-      is_phantom: false,
-    });
-    setRegistering(false);
-    close();
+    const preset = presetTemplates.find((entry) => entry.id === presetId);
+    if (!preset) {
+      toast.error("Preset template not found.");
+      return;
+    }
+    if (preset.disabled) return;
+
+    const label = preset.label || "";
+    setField((prev) => ({
+      ...prev,
+      ...createCustomFieldDraftFromPreset(
+        {
+          ...preset,
+          label,
+          type: (preset.type as "text" | "signature" | "image") || "text",
+          source: normalizeFieldSource(preset.source),
+          shared: preset.shared ?? true,
+          prefiller: preset.prefiller ?? "",
+          tooltip_label: preset.tooltip_label ?? "",
+          validator: preset.validator ?? "",
+          validator_ir: preset.validator_ir ?? null,
+          field_schema_defaults: preset.field_schema_defaults ?? null,
+        },
+        deriveFieldNameFromLabel,
+        prev?.tag || ""
+      ),
+    }));
   };
 
-  // Creates handlers for each field prop
-  const handleChangeFactory = (property: string) => (e: ChangeEvent<HTMLInputElement> | string) => {
-    if (!field) return;
-    setField({ ...field, [property]: typeof e === "string" ? e : e.target.value });
+  const handleAdd = async () => {
+    if (!selectedPresetId) return alert("Missing preset template.");
+    if (!field?.name) return alert("Missing field name.");
+    if (!field.label) return alert("Missing field label.");
+    if (!field.type) return alert("Missing field type.");
+    if (!field.source) return alert("Missing field source.");
+
+    setRegistering(true);
+    try {
+      await formsControllerRegisterField(
+        toRegisterFieldPayload({
+          name: field.name || "",
+          label: field.label || "",
+          type: (field.type as "text" | "signature" | "image") || "text",
+          source: normalizeFieldSource(field.source),
+          party: "__deprecated",
+          shared: field.shared ?? true,
+          tag: field.tag || "",
+          tooltip_label: field.tooltip_label || "",
+          prefiller: field.prefiller || "",
+          validator: field.validator || "",
+          validator_ir: field.validator_ir || null,
+          field_schema_defaults: field.field_schema_defaults || null,
+          is_phantom: false,
+          preset: "default",
+        })
+      );
+      await onSaved?.();
+      close();
+    } finally {
+      setRegistering(false);
+    }
   };
 
   return (
-    <div className="max-h-[600px] overflow-y-auto">
-      <div className="flex min-w-xl flex-col gap-2">
-        <div className="grid grid-cols-2 gap-2 font-mono">
-          <Badge>Name</Badge>
-          <Input
-            className="h-7 py-1 text-xs"
-            placeholder="category.fieldname"
-            value={field?.name}
-            onChange={handleChangeFactory("name")}
-          />
-          <Badge>Preset Name (optional)</Badge>
-          <Input
-            className="h-7 py-1 text-xs"
-            placeholder="default"
-            value={field?.preset}
-            onChange={handleChangeFactory("preset")}
-          />
-          <Badge>Field Label</Badge>
-          <Input
-            className="h-7 py-1 text-xs"
-            placeholder="Field Label"
-            value={field?.label}
-            onChange={handleChangeFactory("label")}
-          />
-          <Badge>Field Type</Badge>
-          <Autocomplete
-            value={field.type}
-            inputClassName="h-7 py-1 text-xs"
-            placeholder={field.is_phantom ? "email, param" : "text, signature"}
-            options={
-              !field.is_phantom || field.is_phantom.toString() === "false"
-                ? [
-                    { id: "text", name: "text" },
-                    { id: "signature", name: "signature" },
-                  ]
-                : [
-                    { id: "email", name: "email" },
-                    { id: "param", name: "param" },
-                  ]
-            }
-            setter={(id) => id && handleChangeFactory("type")(id)}
-          />
-          <Badge>Field Source</Badge>
-          <Autocomplete
-            value={field?.source}
-            inputClassName="h-7 py-1 text-xs"
-            placeholder={SOURCES.join(", ")}
-            options={SOURCES.map((s) => ({ id: s, name: s }))}
-            setter={(id) => id && handleChangeFactory("source")(id)}
-          />
-          <Badge>Tooltip Label (optional)</Badge>
-          <Input
-            className="h-7 py-1 text-xs"
-            placeholder={"none"}
-            value={field?.tooltip_label}
-            onChange={handleChangeFactory("tooltip_label")}
-          />
-          <Badge>Validator (optional)</Badge>
-          <Input
-            className="h-7 py-1 text-xs"
-            placeholder={"none"}
-            value={field?.validator}
-            onChange={handleChangeFactory("validator")}
-          />
-          <Badge>Prefiller (optional)</Badge>
-          <Input
-            className="h-7 py-1 text-xs"
-            placeholder={"none"}
-            value={field?.prefiller}
-            onChange={handleChangeFactory("prefiller")}
-          />
-          <Badge>Phantom field? (Doesn't show up on form)</Badge>
-          <FormDropdown
-            value={field?.is_phantom?.toString() ?? "true"}
-            options={[
-              { id: "true", name: "true" },
-              { id: "false", name: "false" },
-            ]}
-            setter={(e) =>
-              setField({
-                ...(field as FieldRegistryEntry),
-                type: "",
-                is_phantom: JSON.parse(e.toString()) as boolean,
-              })
-            }
-          />
-        </div>
-        <div className="flex flex-row justify-between gap-1">
-          <div className="flex-1" />
-          <Button disabled={registering} onClick={() => void handleAdd()}>
-            {registering ? "Registering..." : "Register"}
-          </Button>
-          <Button
-            disabled={registering}
-            scheme="destructive"
-            variant="outline"
-            onClick={() => close()}
-          >
-            Cancel
-          </Button>
-        </div>
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <CustomFieldModalForm
+          value={{
+            name: field.name || "",
+            label: field.label || "",
+            tag: field.tag || "",
+            tooltip_label: field.tooltip_label || "",
+            type: field.type || "text",
+            source: normalizeFieldSource(field.source),
+            shared: field.shared ?? true,
+            prefiller: field.prefiller || "",
+            validator: field.validator || "",
+            validator_ir: field.validator_ir || null,
+            field_schema_defaults: field.field_schema_defaults || null,
+          }}
+          fieldOptions={fieldOptions}
+          presetTemplates={presetTemplates}
+          selectedPresetId={selectedPresetId}
+          onPresetChange={(presetId) => void handlePresetSelect(presetId)}
+          tagOptions={tagOptions}
+          onLabelChange={(label) =>
+            setField((prev) => ({
+              ...prev,
+              label,
+              name: deriveFieldNameFromLabel(label),
+            }))
+          }
+          showDerivedNameHint={true}
+          hideTagField={isPresetRegistryField(field as any)}
+          onChange={(updates) => setField((prev) => ({ ...prev, ...updates }))}
+        />
+      </div>
+      <div className="flex shrink-0 flex-row justify-between bg-white pt-3">
+        <div className="flex-1" />
+        <Button
+          className="w-full"
+          disabled={registering || !selectedPresetId}
+          onClick={() => void handleAdd()}
+        >
+          {registering ? "Registering..." : "Register"}
+        </Button>
       </div>
     </div>
   );

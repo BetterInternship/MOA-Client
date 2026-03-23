@@ -1,20 +1,21 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export default function DocsDashboardPage() {
+  const router = useRouter();
   const { forms, loading, error } = useMyForms();
   const profile = useSignatoryProfile();
+  const isLoggedIn = Boolean(profile?.email);
   const isCoordinator = Boolean(profile.coordinatorId);
-  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("all");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +39,17 @@ export default function DocsDashboardPage() {
       });
     }
   };
+
+  useEffect(() => {
+    if (!profile.loading && !isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [profile.loading, isLoggedIn, router]);
+
+  if (profile.loading || !isLoggedIn) {
+    return null;
+  }
+
   return (
     <div className="max-w-8xl container mx-auto space-y-6 px-4 pt-6 sm:px-10 sm:pt-16">
       {/* Header */}

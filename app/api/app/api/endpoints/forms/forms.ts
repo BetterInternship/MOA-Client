@@ -24,6 +24,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AlterRecipientEmailDto,
   BaseResponse,
   CancelFormDto,
   ContinueFormDto,
@@ -43,8 +44,10 @@ import type {
   FormsControllerGetLatestFormDocumentAndMetadataParams,
   FormsControllerGetRegistryFormDocumentParams,
   FormsControllerGetRegistryFormMetadataParams,
+  FormsControllerMarkFormAsFirstViewedParams,
   GetExportForSignatoryDto,
   InitiateFormDto,
+  ProcessResponse,
   RegisterFieldDto,
   RegisterFormSchemaDto,
   RejectFormDto,
@@ -2997,7 +3000,7 @@ export const formsControllerFilloutFormProcess = (
   initiateFormDto: InitiateFormDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<ProcessResponse>({
     url: `/api/forms/fillout`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -3282,6 +3285,153 @@ export const useFormsControllerGetBulkFormProcesses = <TError = ErrorResponse, T
   TContext
 > => {
   const mutationOptions = getFormsControllerGetBulkFormProcessesMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerMarkFormAsFirstViewed = (
+  params?: FormsControllerMarkFormAsFirstViewedParams,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/mark-first-viewed`,
+    method: "POST",
+    params,
+    signal,
+  });
+};
+
+export const getFormsControllerMarkFormAsFirstViewedMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerMarkFormAsFirstViewed>>,
+    TError,
+    { params?: FormsControllerMarkFormAsFirstViewedParams },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerMarkFormAsFirstViewed>>,
+  TError,
+  { params?: FormsControllerMarkFormAsFirstViewedParams },
+  TContext
+> => {
+  const mutationKey = ["formsControllerMarkFormAsFirstViewed"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerMarkFormAsFirstViewed>>,
+    { params?: FormsControllerMarkFormAsFirstViewedParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return formsControllerMarkFormAsFirstViewed(params);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerMarkFormAsFirstViewedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerMarkFormAsFirstViewed>>
+>;
+
+export type FormsControllerMarkFormAsFirstViewedMutationError = ErrorResponse;
+
+export const useFormsControllerMarkFormAsFirstViewed = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerMarkFormAsFirstViewed>>,
+      TError,
+      { params?: FormsControllerMarkFormAsFirstViewedParams },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerMarkFormAsFirstViewed>>,
+  TError,
+  { params?: FormsControllerMarkFormAsFirstViewedParams },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerMarkFormAsFirstViewedMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const formsControllerAlterRecipient = (
+  alterRecipientEmailDto: AlterRecipientEmailDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/forms/alter-recipient`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: alterRecipientEmailDto,
+    signal,
+  });
+};
+
+export const getFormsControllerAlterRecipientMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+    TError,
+    { data: AlterRecipientEmailDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+  TError,
+  { data: AlterRecipientEmailDto },
+  TContext
+> => {
+  const mutationKey = ["formsControllerAlterRecipient"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+    { data: AlterRecipientEmailDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return formsControllerAlterRecipient(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerAlterRecipientMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerAlterRecipient>>
+>;
+export type FormsControllerAlterRecipientMutationBody = AlterRecipientEmailDto;
+export type FormsControllerAlterRecipientMutationError = ErrorResponse;
+
+export const useFormsControllerAlterRecipient = <TError = ErrorResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+      TError,
+      { data: AlterRecipientEmailDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerAlterRecipient>>,
+  TError,
+  { data: AlterRecipientEmailDto },
+  TContext
+> => {
+  const mutationOptions = getFormsControllerAlterRecipientMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

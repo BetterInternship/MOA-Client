@@ -9,9 +9,12 @@ import { FormActionButtons } from "./FormActionButtons";
 import { getBlockField, isBlockField } from "./utils";
 import { useFormFiller } from "./form-filler.ctx";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
-import { formatTimestampDateWithoutTime } from "@/lib/utils";
 
-export function FormFillerRenderer() {
+interface FormFillerRendererProps {
+  hideActions?: boolean;
+}
+
+export function FormFillerRenderer({ hideActions = false }: FormFillerRendererProps) {
   const form = useFormRendererContext();
   const formFiller = useFormFiller();
   const autofillValues = useMyAutofill();
@@ -60,9 +63,6 @@ export function FormFillerRenderer() {
   return (
     <div className="relative flex h-full flex-col">
       <div ref={scrollContainerRef} className="relative flex flex-1 flex-col overflow-auto">
-        <div className="px-7 py-5">
-          <h2 className="text-primary text-2xl font-bold">{form.formLabel}</h2>
-        </div>
         <div className="mb-5 flex-1 space-y-3 px-7">
           <BlocksRenderer
             formKey={form.formName}
@@ -79,14 +79,16 @@ export function FormFillerRenderer() {
           />
         </div>
       </div>
-      <div className="hidden border-t border-r border-gray-300 bg-gray-100 p-2 sm:block">
-        <FormActionButtons />
-      </div>
+      {!hideActions && (
+        <div className="hidden border-t border-r border-gray-300 bg-gray-100 p-2 sm:block">
+          <FormActionButtons />
+        </div>
+      )}
     </div>
   );
 }
 
-const BlocksRenderer = <T extends any[]>({
+export const BlocksRenderer = <T extends any[]>({
   formKey,
   blocks,
   values,

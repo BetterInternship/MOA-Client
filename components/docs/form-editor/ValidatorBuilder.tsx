@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import {
   ValidatorRule,
   ValidatorConfig,
+  ValidatorRuleType,
   getAvailableRules,
   getRuleDefinition,
   createValidatorRule,
@@ -28,6 +29,12 @@ interface ValidatorBuilderProps {
   onConfigChange: (config: ValidatorConfig) => void;
   rawZodCode?: string;
   onRawZodChange?: (code: string) => void;
+  emitRawOnChange?: boolean;
+  allowRawMode?: boolean;
+  compact?: boolean;
+  hideGeneratedPreview?: boolean;
+  allowedRuleTypes?: ValidatorRuleType[];
+  readOnly?: boolean;
 }
 
 /**
@@ -48,6 +55,12 @@ export function ValidatorBuilder({
   onConfigChange,
   rawZodCode,
   onRawZodChange,
+  emitRawOnChange = false,
+  allowRawMode = true,
+  compact = false,
+  hideGeneratedPreview = false,
+  allowedRuleTypes,
+  readOnly = false,
 }: ValidatorBuilderProps) {
   const [mode, setMode] = useState<"ui" | "raw">("ui");
   const [showRuleMenu, setShowRuleMenu] = useState(false);
@@ -59,11 +72,18 @@ export function ValidatorBuilder({
     setLocalRawCode(rawZodCode || "");
   }, [rawZodCode]);
 
+  useEffect(() => {
+    if (!allowRawMode && mode === "raw") {
+      setMode("ui");
+    }
+  }, [allowRawMode, mode]);
+
   // ============================================================================
   // UI STATE MANAGEMENT - DRY helpers
   // ============================================================================
 
   const addRule = (ruleType: ValidatorRule["type"]) => {
+    if (readOnly) return;
     const newRule = createValidatorRule(ruleType);
 
     // Remove conflicting rules
@@ -83,6 +103,7 @@ export function ValidatorBuilder({
   };
 
   const removeRule = (ruleId: string) => {
+    if (readOnly) return;
     onConfigChange({
       ...config,
       rules: config.rules.filter((r) => r.id !== ruleId),
@@ -90,6 +111,7 @@ export function ValidatorBuilder({
   };
 
   const updateRule = (ruleId: string, updates: Partial<ValidatorRule>) => {
+    if (readOnly) return;
     onConfigChange({
       ...config,
       rules: config.rules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r)),
@@ -131,7 +153,7 @@ export function ValidatorBuilder({
   // RENDER: RAW CODE MODE
   // ============================================================================
 
-  if (mode === "raw") {
+  if (mode === "raw" && allowRawMode) {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
@@ -149,7 +171,13 @@ export function ValidatorBuilder({
         <textarea
           ref={rawCodeRef}
           value={localRawCode}
-          onChange={(e) => setLocalRawCode(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setLocalRawCode(next);
+            if (emitRawOnChange) {
+              onRawZodChange?.(next);
+            }
+          }}
           onBlur={handleRawZodBlur}
           placeholder={`z.string().min(8)\nz.array(z.enum(["A", "B"])).min(1)`}
           className="w-full rounded border border-gray-300 bg-white p-2 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
@@ -167,30 +195,35 @@ export function ValidatorBuilder({
   // ============================================================================
 
   const availableRules = getAvailableRules();
+  const filteredAvailableRules = allowedRuleTypes
+    ? availableRules.filter((ruleDef) => allowedRuleTypes.includes(ruleDef.type))
+    : availableRules;
   const zodCode = validatorConfigToZodCode(config);
 
   return (
-    <div className="space-y-2">
+    <div className={compact ? "space-y-1.5" : "space-y-2"}>
       <div className="flex items-center justify-between gap-2">
-        <label className="text-xs font-semibold text-gray-700">Validation Rules</label>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setMode("raw")}
-          className="h-6 px-2 text-xs"
-          title="Switch to raw code"
-        >
-          <Code className="h-3 w-3" />
-        </Button>
+        {allowRawMode && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setMode("raw")}
+            className="h-6 px-2 text-xs"
+            title="Switch to raw code"
+          >
+            <Code className="h-3 w-3" />
+          </Button>
+        )}
       </div>
 
       {/* Add Rule Button */}
       <div className="relative">
         <Button
           size="sm"
-          onClick={() => setShowRuleMenu(!showRuleMenu)}
+          onClick={() => !readOnly && setShowRuleMenu(!showRuleMenu)}
           variant="outline"
-          className="h-7 w-full text-xs"
+          disabled={readOnly}
+          className={compact ? "h-7 w-full rounded-[0.33em] text-xs" : "h-7 w-full text-xs"}
         >
           <Plus className="mr-1 h-3 w-3" />
           Add Rule
@@ -198,15 +231,15 @@ export function ValidatorBuilder({
 
         {/* Rule Menu Dropdown */}
         {showRuleMenu && (
-          <div className="absolute top-full right-0 left-0 z-10 mt-1 max-h-48 overflow-y-auto rounded border border-gray-200 bg-white shadow-lg">
-            {availableRules.map((ruleDef) => (
+          <div className="absolute top-full right-0 left-0 z-10 mt-1 max-h-48 overflow-y-auto rounded-[0.33em] border border-gray-200 bg-white shadow-lg">
+            {filteredAvailableRules.map((ruleDef) => (
               <button
                 key={ruleDef.type}
                 onClick={() => addRule(ruleDef.type)}
                 className="w-full border-b border-gray-100 px-2 py-1.5 text-left last:border-0 hover:bg-blue-50"
               >
                 <div className="text-xs font-medium text-gray-900">{ruleDef.label}</div>
-                <div className="text-xs text-gray-600">{ruleDef.description}</div>
+                {!compact && <div className="text-xs text-gray-600">{ruleDef.description}</div>}
               </button>
             ))}
           </div>
@@ -224,14 +257,16 @@ export function ValidatorBuilder({
               rule={rule}
               onUpdate={(updates) => updateRule(rule.id, updates)}
               onRemove={() => removeRule(rule.id)}
+              compact={compact}
+              readOnly={readOnly}
             />
           ))}
         </div>
       )}
 
       {/* Generated Code Preview */}
-      {config.rules.length > 0 && (
-        <div className="rounded border border-gray-200 bg-gray-50 p-2">
+      {config.rules.length > 0 && !hideGeneratedPreview && (
+        <div className="rounded-[0.33em] border border-gray-200 bg-gray-50 p-2">
           <p className="mb-1 text-xs text-gray-600">Generated:</p>
           <code className="block overflow-x-auto rounded bg-white p-1.5 font-mono text-xs break-words whitespace-pre-wrap text-gray-700">
             {zodCode}
@@ -249,10 +284,14 @@ function RuleCard({
   rule,
   onUpdate,
   onRemove,
+  compact = false,
+  readOnly = false,
 }: {
   rule: ValidatorRule;
   onUpdate: (updates: Partial<ValidatorRule>) => void;
   onRemove: () => void;
+  compact?: boolean;
+  readOnly?: boolean;
 }) {
   const definition = getRuleDefinition(rule.type);
 
@@ -292,6 +331,7 @@ function RuleCard({
       const processedValue =
         definition.valueType === "number" ? parseInt(localValue as string) || 0 : localValue;
 
+      if (readOnly) return;
       onUpdate({
         params: {
           ...rule.params,
@@ -331,23 +371,25 @@ function RuleCard({
     };
 
     return (
-      <div className="rounded border border-gray-200 bg-white p-2">
-        <div className="mb-1.5 flex items-start justify-between">
+      <div className="rounded-[0.33em] border border-gray-200 bg-white p-2">
+        <div className={`${compact ? "mb-1" : "mb-1.5"} flex items-start justify-between`}>
           <div className="text-xs font-medium text-gray-800">{definition.label}</div>
           <button
             onClick={onRemove}
+            disabled={readOnly}
             className="rounded p-0.5 text-gray-400 hover:bg-red-100 hover:text-red-600"
           >
             <X className="h-3 w-3" />
           </button>
         </div>
 
-        <div className="space-y-1.5">
+        <div className={compact ? "space-y-1" : "space-y-1.5"}>
           <textarea
             value={optionsText}
             onChange={(e) => handleOptionsChange(e.target.value)}
+            disabled={readOnly}
             placeholder="Option 1&#10;Option 2&#10;Option 3"
-            className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-[0.33em] border border-gray-300 bg-white p-1.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             rows={Math.min(Math.max(3, optionsArray.length + 1), 6)}
           />
 
@@ -364,8 +406,9 @@ function RuleCard({
                 },
               });
             }}
+            disabled={readOnly}
             placeholder="Error message (optional)"
-            className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-[0.33em] border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           />
 
           {rule.type === "array" && (
@@ -376,6 +419,7 @@ function RuleCard({
                   <input
                     type="number"
                     value={rule.params?.minItems || ""}
+                    disabled={readOnly}
                     onChange={(e) => {
                       const val = e.target.value ? parseInt(e.target.value) : undefined;
                       onUpdate({
@@ -394,6 +438,7 @@ function RuleCard({
                   <input
                     type="number"
                     value={rule.params?.maxItems || ""}
+                    disabled={readOnly}
                     onChange={(e) => {
                       const val = e.target.value ? parseInt(e.target.value) : undefined;
                       onUpdate({
@@ -417,18 +462,19 @@ function RuleCard({
 
   // Regular rules (minLength, maxLength, email, required, etc.)
   return (
-    <div className="rounded border border-gray-200 bg-white p-2">
-      <div className="mb-1.5 flex items-start justify-between">
+    <div className="rounded-[0.33em] border border-gray-200 bg-white p-2">
+      <div className={`${compact ? "mb-1" : "mb-1.5"} flex items-start justify-between`}>
         <div className="text-xs font-medium text-gray-800">{definition.label}</div>
         <button
           onClick={onRemove}
+          disabled={readOnly}
           className="rounded p-0.5 text-gray-400 hover:bg-red-100 hover:text-red-600"
         >
           <X className="h-3 w-3" />
         </button>
       </div>
 
-      <div className="space-y-1.5">
+      <div className={compact ? "space-y-1" : "space-y-1.5"}>
         {definition.needsValue && (rule.type === "minDate" || rule.type === "maxDate") ? (
           <>
             <input
@@ -436,7 +482,8 @@ function RuleCard({
               value={localValue as string}
               onChange={(e) => setLocalValue(e.target.value)}
               onBlur={handleBlur}
-              className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              disabled={readOnly}
+              className="w-full rounded-[0.33em] border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             />
           </>
         ) : definition.needsValue ? (
@@ -445,8 +492,9 @@ function RuleCard({
             value={localValue}
             onChange={(e) => setLocalValue(e.target.value)}
             onBlur={handleBlur}
+            disabled={readOnly}
             placeholder={definition.valueType === "number" ? "e.g., 8" : "Value"}
-            className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-[0.33em] border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           />
         ) : null}
 
@@ -456,8 +504,9 @@ function RuleCard({
             value={localMessage}
             onChange={(e) => setLocalMessage(e.target.value)}
             onBlur={handleBlur}
+            disabled={readOnly}
             placeholder="Error message (optional)"
-            className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-[0.33em] border border-gray-300 bg-white px-1.5 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           />
         )}
 

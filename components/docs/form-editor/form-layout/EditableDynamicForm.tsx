@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
 import { Plus, Copy, Trash2, ArrowUp, ArrowDown, CheckSquare, Square } from "lucide-react";
-import { renderBlocks } from "@/lib/block-renderer";
 import { BlockEditor } from "./BlockEditor";
 
 interface EditableDynamicFormProps {

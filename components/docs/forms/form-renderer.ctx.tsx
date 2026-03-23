@@ -138,14 +138,14 @@ export const FormRendererContextProvider = ({ children }: { children: React.Reac
       .then((form) => {
         const fm = new FormMetadata(form.formMetadata as unknown as IFormMetadata);
         const newFormName = form.formMetadata.name;
-        const newFormVersion = form.formDocument.version;
+        const newFormVersion = form.formTemplate.version
 
         // Only update form if it's new
         setFormMetadata(fm);
         setFormName(newFormName);
         setFormLabel(form.formMetadata.label);
         setFormVersion(newFormVersion);
-        setDocumentName(form.formDocument.name);
+        setDocumentName(form.formTemplate.name);
         setDocumentUrl(form.documentUrl);
         setFields(fm.getFieldsForClientService(signingPartyId));
         setBlocks(fm.getBlocksForClientService(signingPartyId));

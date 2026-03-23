@@ -156,8 +156,7 @@ export default function SyncPage() {
       cell: ({ row }) => (
         <Button
           onClick={() => row.original.onSync(row.original.name)}
-          // disabled={row.original.syncing}
-          disabled={true}
+          disabled={row.original.syncing}
           size="sm"
           className="ml-auto gap-2"
         >
@@ -167,8 +166,7 @@ export default function SyncPage() {
               Syncing...
             </>
           ) : (
-            // "Sync Form"
-            "Disabled"
+            "Sync Form"
           )}
         </Button>
       ),
@@ -185,7 +183,7 @@ export default function SyncPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+    <div className="w-full p-8">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8">
@@ -202,8 +200,8 @@ export default function SyncPage() {
 
         {/* Warning Card */}
         <div className="mb-8 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-6 w-6 flex-shrink-0 text-amber-600" />
+          <div className="gap-3">
+            <AlertCircle className="mt-0.5 h-12 w-12 flex-shrink-0 text-amber-600" />
             <div>
               <h2 className="mb-1 font-semibold text-amber-900">
                 Caution: This Operation Will Update System Data

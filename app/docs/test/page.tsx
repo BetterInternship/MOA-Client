@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
 
 interface Response {
@@ -50,174 +50,114 @@ export default function EmailTestPage() {
   }
 
   const Strategy = ({ title, body }: { title: string; body: React.ReactNode }) => (
-    <div
-      className="rounded-[0.33em]"
-      style={{
-        border: "1px solid #e0e0e0",
-        padding: 14,
-        background: "#fff",
-      }}
-    >
-      <div style={{ fontWeight: 600, marginBottom: 6, color: "#202124" }}>{title}</div>
-      <div style={{ fontSize: 14, lineHeight: 1.65, color: "#3c4043" }}>{body}</div>
+    <div className="rounded-[0.33em] border border-[#e0e0e0] bg-white p-[14px]">
+      <div className="mb-[6px] font-semibold text-[#202124]">{title}</div>
+      <div className="text-[14px] leading-[1.65] text-[#3c4043]">{body}</div>
     </div>
   );
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial',
-        background: "#fff",
-        color: "#202124",
-      }}
-    >
-      {/* Logo title */}
-      <div
-        style={{
-          fontSize: 44,
-          fontWeight: 700,
-          letterSpacing: -0.5,
-          marginBottom: 30,
-          lineHeight: 1,
-          userSelect: "none",
-        }}
-      >
-        <span className="text-primary">BetterInternship</span>
-      </div>
-
-      {/* Search-like send bar */}
-      <form className="mx-auto w-full max-w-[680px]" onSubmit={(e) => void sendTestEmail(e)}>
-        {token ? (
-          <div
-            className="w-[100%] rounded-[0.33em]"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              border: "1px solid #dfe1e5",
-              padding: "6px 6px 6px 16px",
-              boxShadow: "0 1px 4px rgba(32,33,36,0.16)",
-            }}
-          >
-            <input
-              type="email"
-              placeholder="Enter your email to receive a test message"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                flex: 1,
-                border: "none",
-                outline: "none",
-                fontSize: 18,
-                background: "transparent",
-              }}
-            />
-
-            <Button disabled={loading} className="bg-primary rounded-[0.33em]" size="md">
-              {loading ? "Sending…" : "Send email"}
-            </Button>
-          </div>
-        ) : (
-          <div className="relative flex w-full flex-col items-center">
-            <Loader>Validating browser...</Loader>
-            <Turnstile
-              siteKey={process.env.NEXT_PUBLIC_MOA_SERVER_API_KEY_TURNSTILE!}
-              onSuccess={(t) => setToken(t)}
-              onError={() => setToken("")}
-            />
-          </div>
-        )}
-      </form>
-
-      {/* Status only after response */}
-      {response && (
-        <div className="text-primary" style={{ marginTop: 18, fontSize: 15 }}>
-          {response.message}
+    <main className="flex min-h-full w-full flex-1 bg-white font-sans text-[#202124]">
+      <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-6 py-16">
+        <div className="mb-[30px] w-full text-center text-[44px] leading-none font-bold tracking-[-0.5px] select-none">
+          <span className="text-primary">BetterInternship</span>
         </div>
-      )}
 
-      {/* Collapsible help */}
-      {token && (
-        <div style={{ width: "100%", maxWidth: 680, marginTop: 42 }}>
-          <details
-            className="rounded-[0.33em]"
-            style={{
-              border: "1px solid #e0e0e0",
-              padding: 14,
-              background: "#fafafa",
-            }}
-          >
-            <summary
-              style={{
-                cursor: "pointer",
-                userSelect: "none",
-                fontWeight: 600,
-                fontSize: 15,
-                color: "#202124",
-                listStyle: "none",
-                outline: "none",
-              }}
-            >
-              Not receiving the email?
-              <span style={{ color: "#5f6368", fontWeight: 500 }}> (click to expand)</span>
-            </summary>
+        <form className="w-full max-w-3xl" onSubmit={(e) => void sendTestEmail(e)}>
+          {token ? (
+            <div className="flex w-full items-center gap-3 rounded-[0.33em] border border-[#dfe1e5] px-4 py-[6px] pr-[6px] shadow-[0_1px_4px_rgba(32,33,36,0.16)]">
+              <input
+                type="email"
+                placeholder="Enter your email to receive a test message"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="min-w-0 flex-1 border-none bg-transparent text-[18px] outline-none"
+              />
 
-            <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
-              <Strategy
-                title="Check Spam Folder"
-                body={
-                  <>
-                    Look in <strong>Spam</strong> / <strong>Junk</strong>. If you find it, mark it
-                    as <strong>Not spam</strong>.
-                  </>
-                }
-              />
-              <Strategy
-                title="Allow-list Our Sender"
-                body={
-                  <>
-                    Add <strong>hello@betterinternship.com</strong> to your contacts or allow list
-                    (safe senders).
-                  </>
-                }
-              />
-              <Strategy
-                title="Search Everywhere"
-                body={
-                  <>
-                    Search your inbox for “BetterInternship” and check “All Mail” / “Archive” /
-                    “Other” depending on your email client.
-                  </>
-                }
-              />
-              <Strategy
-                title="Corporate Email Filters"
-                body={
-                  <>
-                    If you’re using a work email, your company may block unknown senders. Ask IT to
-                    check quarantine and allow our sender / domain.
-                  </>
-                }
-              />
-              <Strategy
-                title="Try a Different Email Address"
-                body={
-                  <>
-                    Test with a personal email (like Gmail) to confirm whether it’s specific to
-                    corporate filtering.
-                  </>
-                }
+              <Button
+                disabled={loading}
+                className="bg-primary shrink-0 rounded-[0.33em] px-6"
+                size="md"
+              >
+                {loading ? "Sending..." : "Send email"}
+              </Button>
+            </div>
+          ) : (
+            <div className="relative flex w-full flex-col items-center">
+              <Loader>Validating browser...</Loader>
+              <Turnstile
+                siteKey={process.env.NEXT_PUBLIC_MOA_SERVER_API_KEY_TURNSTILE!}
+                onSuccess={(t) => setToken(t)}
+                onError={() => setToken("")}
               />
             </div>
-          </details>
-        </div>
-      )}
+          )}
+        </form>
+
+        {response && (
+          <div className="text-primary mt-[18px] text-center text-[15px]">{response.message}</div>
+        )}
+
+        {token && (
+          <div className="mt-[42px] w-full max-w-3xl">
+            <details className="rounded-[0.33em] border border-[#e0e0e0] bg-[#fafafa] p-[14px]">
+              <summary className="cursor-pointer list-none text-[15px] font-semibold text-[#202124] outline-none select-none">
+                Not receiving the email?
+                <span className="font-medium text-[#5f6368]"> (click to expand)</span>
+              </summary>
+
+              <div className="mt-3 grid gap-3">
+                <Strategy
+                  title="Check Spam Folder"
+                  body={
+                    <>
+                      Look in <strong>Spam</strong> / <strong>Junk</strong>. If you find it, mark it
+                      as <strong>Not spam</strong>.
+                    </>
+                  }
+                />
+                <Strategy
+                  title="Allow-list Our Sender"
+                  body={
+                    <>
+                      Add <strong>hello@betterinternship.com</strong> to your contacts or allow list
+                      (safe senders).
+                    </>
+                  }
+                />
+                <Strategy
+                  title="Search Everywhere"
+                  body={
+                    <>
+                      Search your inbox for "BetterInternship" and check "All Mail" / "Archive" /
+                      "Other" depending on your email client.
+                    </>
+                  }
+                />
+                <Strategy
+                  title="Corporate Email Filters"
+                  body={
+                    <>
+                      If you're using a work email, your company may block unknown senders. Ask IT
+                      to check quarantine and allow our sender / domain.
+                    </>
+                  }
+                />
+                <Strategy
+                  title="Try a Different Email Address"
+                  body={
+                    <>
+                      Test with a personal email (like Gmail) to confirm whether it's specific to
+                      corporate filtering.
+                    </>
+                  }
+                />
+              </div>
+            </details>
+          </div>
+        )}
+      </section>
     </main>
   );
 }

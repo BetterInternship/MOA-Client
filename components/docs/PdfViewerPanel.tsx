@@ -1,10 +1,13 @@
 // components/docs/PdfViewerPanel.tsx
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { File as FileIcon, Loader2 } from "lucide-react";
-import { ExternalLink, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { FormPreviewPdfDisplay } from "@/components/docs/forms/previewer";
 
 export function PdfViewerPanel({
   title,
@@ -15,7 +18,9 @@ export function PdfViewerPanel({
   viewUrl: string;
   downloadUrl?: string;
 }) {
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
+
   async function downloadPdf(url: string, filename: string = "document.pdf") {
     setLoading(true);
     try {
@@ -40,16 +45,16 @@ export function PdfViewerPanel({
   }
 
   return (
-    <Card className="overflow-hidden rounded-md border bg-white shadow">
-      <CardHeader className="">
-        <CardTitle className="flex justify-between">
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <FileIcon className="h-5 w-5" />
             <span>Official Copy Preview</span>
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2 text-sm">
+          <div className="hidden flex-wrap gap-2 text-sm sm:flex">
             {downloadUrl && (
               <Button disabled={loading} onClick={() => void downloadPdf(viewUrl, `${title}.pdf`)}>
                 {loading ? (
@@ -64,8 +69,30 @@ export function PdfViewerPanel({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="h-[80vh] w-full overflow-hidden rounded border">
-          <iframe src={viewUrl} title={title} className="h-full w-full" />
+        {downloadUrl && (
+          <div className="sm:hidden">
+            <Button
+              className="w-full"
+              disabled={loading}
+              onClick={() => void downloadPdf(viewUrl, `${title}.pdf`)}
+            >
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              Download PDF
+            </Button>
+          </div>
+        )}
+        <div className="h-[68vh] w-full overflow-hidden rounded border bg-slate-100 sm:h-[80vh]">
+          <FormPreviewPdfDisplay
+            documentUrl={viewUrl}
+            blocks={[]}
+            values={{}}
+            scale={isMobile ? 0.5 : 0.9}
+            showToolbar={true}
+          />
         </div>
       </CardContent>
     </Card>

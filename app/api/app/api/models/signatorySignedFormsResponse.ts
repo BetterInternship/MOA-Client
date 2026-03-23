@@ -5,10 +5,10 @@
  * The official API of the BetterInternship MOA platform.
  * OpenAPI spec version: 1.0
  */
-import type { SignatoryForm } from "./signatoryForm";
+import type { _SignatoryForm } from "./_signatoryForm";
 
 export interface SignatorySignedFormsResponse {
   success: boolean;
   message: string;
-  forms: SignatoryForm[];
+  forms: _SignatoryForm[];
 }

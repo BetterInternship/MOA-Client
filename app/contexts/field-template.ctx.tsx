@@ -1,0 +1,69 @@
+/**
+ * @ Author: BetterInternship
+ * @ Create Time: 2025-11-09 03:23:23
+ * @ Modified by: Your name
+ * @ Modified time: 2025-12-24 22:14:40
+ *
+ * Allows us to access field information.
+ * Seems like we'll be using this a lot in the editor.
+ */
+
+import { FieldRegistryEntryDetails, useFormsControllerGetFieldRegistry } from "@/app/api";
+import { createContext, useContext } from "react";
+
+// Shared registry access for editor surfaces that need field metadata (label/name lookup).
+export interface IFieldTemplateContext {
+  registry: FieldRegistryEntryDetails[];
+  getFieldLabel: (fieldId: string) => string;
+}
+
+// Context defs
+const FieldTemplateContext = createContext<IFieldTemplateContext>({} as IFieldTemplateContext);
+export const useFieldTemplateContext = () => useContext(FieldTemplateContext);
+
+/**
+ * Utility function to get field label by ID
+ */
+export const getFieldLabel = (fieldId: string, registry: FieldRegistryEntryDetails[]): string => {
+  const entry = registry.find((r) => r.id === fieldId);
+  return entry?.label ?? fieldId;
+};
+
+/**
+ * Utility function to get field name by ID
+ */
+export const getFieldName = (fieldId: string, registry: FieldRegistryEntryDetails[]): string => {
+  const entry = registry.find((r) => r.id === fieldId);
+  return entry?.name ?? fieldId;
+};
+
+/**
+ * Utility function to get field label by name
+ */
+export const getFieldLabelByName = (
+  fieldName: string,
+  registry: FieldRegistryEntryDetails[]
+): string => {
+  const entry = registry.find((r) => r.name === fieldName);
+  return entry?.label ?? fieldName;
+};
+
+/**
+ * Loads the field registry once and exposes helper accessors.
+ * Consumers should prefer these helpers over duplicating lookup logic.
+ */
+export const FieldTemplateContextProvider = ({ children }: { children: React.ReactNode }) => {
+  const { data: registry } = useFormsControllerGetFieldRegistry({});
+  const registryArray = registry?.fields ?? [];
+
+  const fieldTemplateContext: IFieldTemplateContext = {
+    registry: registryArray,
+    getFieldLabel: (fieldId: string) => getFieldLabel(fieldId, registryArray),
+  };
+
+  return (
+    <FieldTemplateContext.Provider value={fieldTemplateContext}>
+      {children}
+    </FieldTemplateContext.Provider>
+  );
+};

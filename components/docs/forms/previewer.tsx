@@ -10,357 +10,66 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
-import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
-import { type IFormBlock } from "@betterinternship/core/forms";
+import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Loader } from "@/components/ui/loader";
 import { ZoomIn, ZoomOut } from "lucide-react";
+import {
+  createPreviewDisplayValueResolver,
+  groupFieldsByPage,
+  isFieldRequired,
+  normalizePreviewFieldKey,
+  normalizePreviewFields,
+  resolveOwnerMeta,
+  type OwnerMeta,
+  type PreviewField,
+  type PreviewFieldLike,
+} from "@/lib/form-previewer-model";
+import {
+  ensurePreviewFontsLoaded,
+  fitNoWrapText,
+  fitWrappedText,
+  resolvePreviewFont,
+} from "@/lib/form-previewer-rendering";
 
-// Load Roboto font from Google Fonts and wait for it to load
-if (typeof window !== "undefined") {
-  const link = document.createElement("link");
-  link.href =
-    "https://fonts.googleapis.com/css2?family=Roboto:wght@400&family=Italianno&display=block";
-  link.rel = "stylesheet";
-  document.head.appendChild(link);
+type DefaultFieldVisibility = "all" | "mine";
+type FieldStatus = "empty" | "filled" | "signed";
+type PreviewPrefillMode = "live" | "dummy" | "none";
 
-  // Ensure fonts are loaded before using them
-  if ("fonts" in document) {
-    document.fonts.ready.catch(() => {
-      // Font loading failed, but continue anyway
-    });
-  }
-}
-
-// Text wrapping and fitting utilities (matches PDF engine exactly)
-
-// Shared canvas for text measurements (optimization to avoid creating new canvases)
-let sharedCanvas: HTMLCanvasElement | null = null;
-let sharedCtx: CanvasRenderingContext2D | null = null;
-
-// Cache for fitNoWrap results to avoid recalculating (optimization for signatures/repeated fields)
-const fitNoWrapCache = new Map<
-  string,
-  {
-    fontSize: number;
-    line: string;
-    ascent: number;
-    descent: number;
-    height: number;
-  }
->();
-
-function getSharedContext(): CanvasRenderingContext2D | null {
-  if (!sharedCanvas) {
-    sharedCanvas = document.createElement("canvas");
-    sharedCtx = sharedCanvas.getContext("2d");
-  }
-  return sharedCtx;
-}
-
-// Measure text width using Canvas (used by wrapText)
-function measureTextWidth(text: string, fontSize: number): number {
-  const ctx = getSharedContext();
-  if (!ctx) return 0;
-  ctx.font = `${fontSize}px Roboto`;
-  return ctx.measureText(text).width;
-}
-
-// Get font metrics (approximated for browser, matching PDF engine approach)
-function getFontMetricsAtSize(fontSize: number) {
-  const ascent = fontSize * 0.8;
-  const descent = -fontSize * 0.26;
-  return {
-    ascent,
-    descent,
-    height: ascent - descent,
-  };
-}
-
-// Wrap text into lines that fit maxWidth (matches PDF engine)
-function wrapText({
-  text,
-  fontSize,
-  maxWidth,
-  zoom = 1,
-}: {
-  text: string;
-  fontSize: number;
-  maxWidth: number;
-  zoom?: number;
-}): string[] {
-  const paragraphs = String(text ?? "").split(/\r?\n/);
-  const lines: string[] = [];
-  const measure = (s: string) => measureTextWidth(s, fontSize) * zoom;
-
-  const breakLongWord = (word: string): string[] => {
-    const parts: string[] = [];
-    let cur = "";
-    for (const ch of word) {
-      const next = cur + ch;
-      if (cur && measure(next) > maxWidth) {
-        parts.push(cur);
-        cur = ch;
-      } else {
-        cur = next;
-      }
-    }
-    if (cur) parts.push(cur);
-    return parts;
-  };
-
-  for (const para of paragraphs) {
-    const trimmed = para.trim();
-    if (!trimmed) {
-      lines.push("");
-      continue;
-    }
-
-    const words = trimmed.split(/\s+/);
-    let current = "";
-
-    for (const w of words) {
-      const candidate = current ? `${current} ${w}` : w;
-
-      if (measure(candidate) <= maxWidth) {
-        current = candidate;
-        continue;
-      }
-
-      if (current) {
-        lines.push(current);
-        current = "";
-      }
-
-      if (measure(w) <= maxWidth) {
-        current = w;
-      } else {
-        const broken = breakLongWord(w);
-        for (let i = 0; i < broken.length; i++) {
-          if (i === broken.length - 1) current = broken[i];
-          else lines.push(broken[i]);
-        }
-      }
-    }
-
-    if (current) lines.push(current);
-  }
-
-  return lines;
-}
-
-function layoutWrappedBlock({
-  text,
-  fontSize,
-  lineHeight,
-  maxWidth,
-  zoom = 1,
-}: {
-  text: string;
-  fontSize: number;
-  lineHeight: number;
-  maxWidth: number;
-  zoom?: number;
-}) {
-  const { ascent, descent } = getFontMetricsAtSize(fontSize);
-  const lines = wrapText({ text, fontSize, maxWidth, zoom });
-  const n = lines.length;
-  const blockHeight = (n > 0 ? (n - 1) * lineHeight : 0) + (ascent - descent);
-  return { lines, ascent, descent, blockHeight };
-}
-
-function fitWrapped({
-  text,
-  maxWidth,
-  maxHeight,
-  startSize,
-  lineHeightMult = 1.2,
-  zoom = 1,
-}: {
-  text: string;
-  maxWidth: number;
-  maxHeight: number;
-  startSize: number;
-  lineHeightMult?: number;
-  zoom?: number;
-}) {
-  const fits = (size: number): boolean => {
-    const lh = size * lineHeightMult;
-    const { blockHeight } = layoutWrappedBlock({
-      text,
-      fontSize: size,
-      lineHeight: lh,
-      maxWidth,
-      zoom,
-    });
-    return blockHeight <= maxHeight + 1e-6;
-  };
-
-  if (fits(startSize)) {
-    const lh = startSize * lineHeightMult;
-    const laid = layoutWrappedBlock({
-      text,
-      fontSize: startSize,
-      lineHeight: lh,
-      maxWidth,
-      zoom,
-    });
-    return { fontSize: startSize, lineHeight: lh, ...laid };
-  }
-
-  let hi = startSize;
-  let lo = startSize;
-  while (!fits(lo)) {
-    lo /= 2;
-    if (lo < 0.1) break;
-  }
-
-  for (let i = 0; i < 22; i++) {
-    const mid = (lo + hi) / 2;
-    if (fits(mid)) lo = mid;
-    else hi = mid;
-  }
-
-  const bestSize = lo;
-  const bestLineHeight = bestSize * lineHeightMult;
-  const laid = layoutWrappedBlock({
-    text,
-    fontSize: bestSize,
-    lineHeight: bestLineHeight,
-    maxWidth,
-    zoom,
-  });
-  return { fontSize: bestSize, lineHeight: bestLineHeight, ...laid };
-}
-
-// For non-wrapping fields: find the largest font size that fits text on ONE line
-function fitNoWrap({
-  text,
-  maxWidth,
-  maxHeight,
-  startSize,
-}: {
-  text: string;
-  maxWidth: number;
-  maxHeight: number;
-  startSize: number;
-}) {
-  const line = String(text ?? "").replace(/\r?\n/g, " ");
-
-  // Create cache key from inputs - cache results to avoid recalculating
-  const cacheKey = `${line}|${maxWidth}|${maxHeight}|${startSize}`;
-  if (fitNoWrapCache.has(cacheKey)) {
-    return fitNoWrapCache.get(cacheKey)!;
-  }
-
-  // TWEAK THIS VALUE: Higher = more aggressive shrinking (more safety margin)
-  // Try: 2 (minimal), 4 (conservative), 8 (moderate), 12 (aggressive)
-  const SAFETY_MARGIN = 0;
-
-  // Use shared canvas context (optimization to avoid creating new canvases)
-  const ctx = getSharedContext();
-
-  const fits = (size: number): boolean => {
-    if (!ctx) return false;
-    ctx.font = `${size}px Roboto`;
-    // Measure text width with a small correction factor for safety
-    const w = ctx.measureText(line).width * 0.7;
-    const { height } = getFontMetricsAtSize(size);
-    return w <= maxWidth - SAFETY_MARGIN && height <= maxHeight - SAFETY_MARGIN;
-  };
-
-  // If startSize already fits, return it
-  if (fits(startSize)) {
-    const { ascent, descent, height } = getFontMetricsAtSize(startSize);
-    const result = { fontSize: startSize, line, ascent, descent, height };
-    fitNoWrapCache.set(cacheKey, result);
-    return result;
-  }
-
-  // Binary search down to find a size that fits
-  let lo = startSize;
-  while (!fits(lo)) {
-    lo /= 2;
-    if (lo < 0.1) break;
-  }
-
-  // Binary search up to find the largest size that fits
-  let hi = startSize;
-  for (let i = 0; i < 22; i++) {
-    const mid = (lo + hi) / 2;
-    if (fits(mid)) {
-      lo = mid;
-    } else {
-      hi = mid;
-    }
-  }
-
-  const bestSize = lo;
-  const { ascent, descent, height } = getFontMetricsAtSize(bestSize);
-  const result = { fontSize: bestSize, line, ascent, descent, height };
-
-  // Store in cache for future calls
-  fitNoWrapCache.set(cacheKey, result);
-
-  return result;
-}
-
-const toDateMs = (value: unknown): number | undefined => {
-  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-    return value;
-  }
-
-  if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-
-  if (/^\d{6,}$/.test(trimmed)) {
-    const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-  }
-
-  const parsed = Date.parse(trimmed);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+const getFieldStatus = (fieldType: PreviewField["type"], value: string): FieldStatus => {
+  if (!value.trim()) return "empty";
+  if (fieldType === "signature") return "signed";
+  return "filled";
 };
 
-const formatDateOnly = (dateMs: number): string =>
-  new Date(dateMs).toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-const toDisplayValue = (fieldName: string, rawValue: unknown): string => {
-  const normalizedFieldName = fieldName.replace(/:[^:]+$/, "");
-  const isAutoCurrentDate =
-    normalizedFieldName === "auto.current-date" ||
-    normalizedFieldName === "auto.current-date:default" ||
-    normalizedFieldName.startsWith("date");
-
-  if (Array.isArray(rawValue)) {
-    return rawValue.join(", ");
-  }
-
-  if (isAutoCurrentDate) {
-    const dateMs = toDateMs(rawValue);
-    if (dateMs) return formatDateOnly(dateMs);
-  }
-
-  if (typeof rawValue === "string") return rawValue;
-  if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
-    return String(rawValue);
-  }
-
-  return "";
+const getPreviewRawValue = (values: Record<string, string>, fieldKey: string): unknown => {
+  const normalizedFieldName = normalizePreviewFieldKey(fieldKey);
+  return (
+    values[fieldKey] ?? values[`${normalizedFieldName}:default`] ?? values[normalizedFieldName]
+  );
 };
+
 interface FormPreviewPdfDisplayProps {
   documentUrl: string;
-  blocks: any[]; // ServerField[] with coordinates (x, y, w, h, page, field)
   values: Record<string, string>;
+  fields?: PreviewFieldLike[];
+  blocks?: PreviewFieldLike[]; // Backward-compatible alias
+  headerLeft?: ReactNode;
   scale?: number;
+  showToolbar?: boolean;
   onFieldClick?: (fieldName: string) => void;
   selectedFieldId?: string;
+  selectionTick?: number;
+  autoScrollToSelectedField?: boolean;
+  signingParties?: IFormSigningParty[];
+  currentSigningPartyId?: string;
+  showOwnership?: boolean;
+  defaultFieldVisibility?: DefaultFieldVisibility;
+  fieldErrors?: Record<string, string>;
+  prefillMode?: PreviewPrefillMode;
+  prefillUser?: Record<string, unknown> | null;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -372,46 +81,119 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  */
 export const FormPreviewPdfDisplay = ({
   documentUrl,
-  blocks,
   values,
+  fields,
+  blocks,
+  headerLeft,
   scale: initialScale = 1.0,
+  showToolbar = true,
   onFieldClick,
   selectedFieldId,
+  selectionTick = 0,
+  autoScrollToSelectedField = true,
+  signingParties = [],
+  currentSigningPartyId,
+  showOwnership = false,
+  defaultFieldVisibility: _defaultFieldVisibility = "mine",
+  fieldErrors = {},
+  prefillMode = "live",
+  prefillUser = null,
 }: FormPreviewPdfDisplayProps) => {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
   const [scale, setScale] = useState<number>(initialScale);
   const [visiblePage, setVisiblePage] = useState<number>(1);
-  const [selectedPage, setSelectedPage] = useState<number>(1);
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [animatingFieldId, setAnimatingFieldId] = useState<string | null>(null);
 
   const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+  const didAutoFocusOwnedTaskRef = useRef(false);
+  const normalizedFields = useMemo(
+    () => normalizePreviewFields(fields?.length ? fields : (blocks ?? [])),
+    [fields, blocks]
+  );
+  const resolveDisplayValue = useMemo(
+    () =>
+      createPreviewDisplayValueResolver({
+        user: prefillUser,
+        prefillMode,
+      }),
+    [prefillMode, prefillUser]
+  );
+  const ownerMetaByFieldId = useMemo(() => {
+    const ownerMetaMap = new Map<string, OwnerMeta>();
+    normalizedFields.forEach((field) => {
+      ownerMetaMap.set(field.id, resolveOwnerMeta(field, signingParties, currentSigningPartyId));
+    });
+    return ownerMetaMap;
+  }, [normalizedFields, signingParties, currentSigningPartyId]);
+  const ownedFields = useMemo(
+    () => normalizedFields.filter((field) => ownerMetaByFieldId.get(field.id)?.isMine),
+    [normalizedFields, ownerMetaByFieldId]
+  );
+  const visibleFields = useMemo(() => normalizedFields, [normalizedFields]);
+  const fieldsByPage = useMemo(() => groupFieldsByPage(visibleFields), [visibleFields]);
+
+  // Keep internal zoom in sync with prop updates (e.g. mobile breakpoint after hydration).
+  useEffect(() => {
+    setScale(initialScale);
+  }, [initialScale]);
+
+  useEffect(() => {
+    didAutoFocusOwnedTaskRef.current = false;
+  }, [documentUrl]);
+
+  useEffect(() => {
+    if (!showOwnership) return;
+    if (ownedFields.length === 0) return;
+
+    if (didAutoFocusOwnedTaskRef.current) return;
+    const firstEmptyRequiredOwnedField = ownedFields.find((field) => {
+      if (!isFieldRequired(field)) return false;
+      const rawValue = getPreviewRawValue(values, field.field);
+      const value = resolveDisplayValue(field, rawValue);
+      return getFieldStatus(field.type, value) === "empty";
+    });
+
+    if (firstEmptyRequiredOwnedField) {
+      const pageNode = pageRefs.current.get(firstEmptyRequiredOwnedField.page);
+      pageNode?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setAnimatingFieldId(firstEmptyRequiredOwnedField.field);
+      setTimeout(() => setAnimatingFieldId(null), 700);
+    }
+
+    didAutoFocusOwnedTaskRef.current = true;
+  }, [showOwnership, ownedFields, resolveDisplayValue, values]);
 
   // Jump to field's page and trigger animation when selected from form
   useEffect(() => {
     if (!selectedFieldId) return;
 
-    const selectedField = blocks.find((b) => b.field === selectedFieldId);
-    if (selectedField && selectedField.page) {
-      const fieldPage = selectedField.page;
-      setSelectedPage(fieldPage);
-      const pageNode = pageRefs.current.get(fieldPage);
-      pageNode?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (autoScrollToSelectedField) {
+      const selectedField = normalizedFields.find((field) => field.field === selectedFieldId);
+      if (selectedField && selectedField.page) {
+        const fieldPage = selectedField.page;
+        const pageNode = pageRefs.current.get(fieldPage);
+        pageNode?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }
 
     // Trigger bump animation
     setAnimatingFieldId(selectedFieldId);
     const timeout = setTimeout(() => setAnimatingFieldId(null), 600);
     return () => clearTimeout(timeout);
-  }, [selectedFieldId, blocks]);
+  }, [selectedFieldId, selectionTick, normalizedFields, autoScrollToSelectedField]);
 
   // Initialize PDF.js worker
   useEffect(() => {
     if (typeof window === "undefined") return;
     const workerFile = pdfjsVersion.startsWith("4") ? "pdf.worker.min.mjs" : "pdf.worker.min.js";
     GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/${workerFile}`;
+  }, []);
+
+  useEffect(() => {
+    ensurePreviewFontsLoaded();
   }, []);
 
   // Load PDF document
@@ -432,7 +214,11 @@ export const FormPreviewPdfDisplay = ({
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message || "Failed to load PDF");
+          const message =
+            err && typeof err === "object" && "message" in err
+              ? String((err as { message?: string }).message || "Failed to load PDF")
+              : "Failed to load PDF";
+          setError(message);
           setPdfDoc(null);
         }
       })
@@ -442,7 +228,7 @@ export const FormPreviewPdfDisplay = ({
 
     return () => {
       cancelled = true;
-      loadingTask.destroy();
+      void loadingTask.destroy();
     };
   }, [documentUrl]);
 
@@ -453,13 +239,6 @@ export const FormPreviewPdfDisplay = ({
   const handleZoom = (direction: "in" | "out") => {
     const delta = direction === "in" ? 0.1 : -0.1;
     setScale((prev) => clamp(parseFloat((prev + delta).toFixed(2)), 0.5, 3));
-  };
-
-  const handleJumpToPage = (page: number) => {
-    if (!page || page < 1 || page > pageCount) return;
-    setSelectedPage(page);
-    const node = pageRefs.current.get(page);
-    node?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const pagesArray = useMemo(
@@ -488,41 +267,24 @@ export const FormPreviewPdfDisplay = ({
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden rounded-[0.33em] border border-slate-300">
-      {/* Top Controls */}
-      <div className="flex-shrink-0 border-b border-slate-300 bg-white px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-700">
-              Page {visiblePage} of {pageCount}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleZoom("out")}
-              className="rounded p-2 hover:bg-slate-100"
-              title="Zoom out"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            <span className="w-12 text-center text-sm font-medium text-slate-700">
-              {Math.round(scale * 100)}%
-            </span>
-            <button
-              onClick={() => handleZoom("in")}
-              className="rounded p-2 hover:bg-slate-100"
-              title="Zoom in"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+      {showToolbar && (
+        <PreviewToolbar
+          headerLeft={headerLeft}
+          visiblePage={visiblePage}
+          pageCount={pageCount}
+          scale={scale}
+          onZoom={handleZoom}
+        />
+      )}
 
       {/* Pages container */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto bg-slate-100 p-4">
+      <div
+        className="min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain bg-slate-100 p-2 sm:p-4"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         <div className="mx-auto space-y-6">
           {pagesArray.map((pageNumber) => (
-            <PdfPageWithFields
+            <PdfPageOverlay
               key={pageNumber}
               pdf={pdfDoc}
               pageNumber={pageNumber}
@@ -530,15 +292,15 @@ export const FormPreviewPdfDisplay = ({
               isVisible={Math.abs(visiblePage - pageNumber) <= 1}
               onVisible={() => setVisiblePage(pageNumber)}
               registerPageRef={registerPageRef}
-              blocks={blocks.filter((b) => {
-                // Handle both IFormBlock and ServerField formats
-                const page = b.page || b.field_schema?.page;
-                return page === pageNumber;
-              })}
+              fields={fieldsByPage.get(pageNumber) || []}
               values={values}
               onFieldClick={onFieldClick}
               animatingFieldId={animatingFieldId}
               selectedFieldId={selectedFieldId}
+              ownerMetaByFieldId={ownerMetaByFieldId}
+              showOwnership={showOwnership}
+              fieldErrors={fieldErrors}
+              resolveDisplayValue={resolveDisplayValue}
             />
           ))}
         </div>
@@ -547,38 +309,101 @@ export const FormPreviewPdfDisplay = ({
   );
 };
 
-interface PdfPageWithFieldsProps {
+interface PreviewToolbarProps {
+  headerLeft?: ReactNode;
+  visiblePage: number;
+  pageCount: number;
+  scale: number;
+  onZoom: (direction: "in" | "out") => void;
+}
+
+const PreviewToolbar = ({
+  headerLeft,
+  visiblePage,
+  pageCount,
+  scale,
+  onZoom,
+}: PreviewToolbarProps) => {
+  return (
+    <div className="relative flex-shrink-0 border-b border-slate-300 bg-white px-3 py-2">
+      <div className="flex items-center gap-3">
+        {headerLeft ? <div className="min-w-0">{headerLeft}</div> : null}
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="text-xs font-medium text-slate-700">
+            {visiblePage}/{pageCount}
+          </span>
+          <div className="ml-1 inline-flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onZoom("out")}
+              className="rounded p-1.5 hover:bg-slate-100"
+              title="Zoom out"
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onZoom("in")}
+              className="rounded p-1.5 hover:bg-slate-100"
+              title="Zoom in"
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <span className="w-10 text-center text-[11px] font-medium text-slate-700">
+            {Math.round(scale * 100)}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface PdfPageOverlayProps {
   pdf: PDFDocumentProxy;
   pageNumber: number;
   scale: number;
   isVisible: boolean;
   onVisible: (page: number) => void;
   registerPageRef: (page: number, node: HTMLDivElement | null) => void;
-  blocks: IFormBlock[];
+  fields: PreviewField[];
   values: Record<string, string>;
   onFieldClick?: (fieldName: string) => void;
   animatingFieldId?: string | null;
   selectedFieldId?: string;
+  ownerMetaByFieldId: Map<string, OwnerMeta>;
+  showOwnership: boolean;
+  fieldErrors: Record<string, string>;
+  resolveDisplayValue: (field: PreviewField, rawValue: unknown) => string;
 }
 
-const PdfPageWithFields = ({
+const PdfPageOverlay = ({
   pdf,
   pageNumber,
   scale,
-  isVisible,
+  isVisible: _isVisible,
   onVisible,
   registerPageRef,
-  blocks,
+  fields,
   values,
   onFieldClick,
   animatingFieldId,
   selectedFieldId,
-}: PdfPageWithFieldsProps) => {
+  ownerMetaByFieldId,
+  showOwnership,
+  fieldErrors,
+  resolveDisplayValue,
+}: PdfPageOverlayProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const viewportRef = useRef<PageViewport | null>(null);
   const [rendering, setRendering] = useState<boolean>(false);
   const [forceRender, setForceRender] = useState<number>(0);
+  const [activeTouchFieldId, setActiveTouchFieldId] = useState<string | null>(null);
+  const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null);
+  const [isTouchInteraction, setIsTouchInteraction] = useState(false);
+  const [clickedHighlightFieldId, setClickedHighlightFieldId] = useState<string | null>(null);
 
   // offscreen canvas for text measurement
 
@@ -607,6 +432,15 @@ const PdfPageWithFields = ({
     return () => observer.disconnect();
   }, [onVisible, pageNumber]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia("(hover: none), (pointer: coarse)");
+    const update = () => setIsTouchInteraction(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
   // Render PDF page
   useEffect(() => {
     let renderTask: RenderTask | null = null;
@@ -619,7 +453,6 @@ const PdfPageWithFields = ({
         // Account for device pixel ratio for crisp rendering on high-DPI displays
         const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
         const viewport = page.getViewport({ scale: scale * dpr });
-        viewportRef.current = viewport;
 
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -660,8 +493,7 @@ const PdfPageWithFields = ({
     pdfY: number
   ): { displayX: number; displayY: number } | null => {
     const canvas = canvasRef.current;
-    const viewport = viewportRef.current;
-    if (!canvas || !viewport) return null;
+    if (!canvas) return null;
 
     // Metadata coordinates already use top-left origin (y=0 at top)
     // Scale them directly to display coordinates
@@ -692,16 +524,21 @@ const PdfPageWithFields = ({
       <canvas ref={canvasRef} className="block" />
 
       {/* Field boxes overlay */}
-      <div className="absolute inset-0" key={forceRender}>
-        {blocks.map((block) => {
-          const x = block.x || 0;
-          const y = block.y || 0;
-          const w = block.w || 0;
-          const h = block.h || 0;
-          const fieldName = block.field;
-          const label = block.label || fieldName;
+      <div
+        className="absolute inset-0"
+        key={forceRender}
+        onClick={() => {
+          if (isTouchInteraction) setActiveTouchFieldId(null);
+        }}
+      >
+        {fields.map((field) => {
+          const x = field.x;
+          const y = field.y;
+          const w = field.w;
+          const h = field.h;
+          const fieldName = field.field;
 
-          if (!x || !y || !w || !h) {
+          if (w <= 0 || h <= 0) {
             return null;
           }
 
@@ -710,79 +547,134 @@ const PdfPageWithFields = ({
             return null;
           }
 
-          const rect = canvasRef.current?.getBoundingClientRect();
-          const canvas = canvasRef.current;
-          if (!rect || !canvas) return null;
-
-          // Canvas internal resolution is scaled by DPR, but CSS size compensates
-          // We only need the scale factor, not DPR-adjusted dimensions
           const widthPixels = w * scale;
           const heightPixels = h * scale;
 
-          const rawValue = values[fieldName];
-          const valueStr = toDisplayValue(fieldName, rawValue);
+          const ownerMeta = ownerMetaByFieldId.get(field.id);
+          const canRevealValue = !showOwnership || ownerMeta?.isMine;
+          const rawValue = canRevealValue ? getPreviewRawValue(values, fieldName) : "";
+          const valueStr = canRevealValue ? resolveDisplayValue(field, rawValue) : "";
           const isFilled = valueStr.trim().length > 0;
 
           // Get alignment and wrapping from field schema
-          const align_h = block.align_h ?? "left";
-          const align_v = block.align_v ?? "top";
-          const shouldWrap = block.wrap ?? true;
+          const align_h = field.align_h ?? "left";
+          const align_v = field.align_v ?? "top";
+          const shouldWrap = field.wrap ?? true;
 
           // Calculate optimal font size using PDF engine algorithm
-          const fieldType =
-            block.field_schema?.type || block.phantom_field_schema?.type || block.type;
+          const fieldType: PreviewField["type"] = field.type ?? "text";
+          const resolvedFont = resolvePreviewFont(fieldType, field.font);
 
-          let fontSize: number;
-          let lineHeight: number;
+          let fontSizeDoc: number;
+          let lineHeightDoc: number;
           let displayLines: string[] = [];
+          const fitSafetyUnits = 2;
+          const fitMaxWidthDoc = Math.max(0, w - fitSafetyUnits);
+          const fitMaxHeightDoc = Math.max(0, h - fitSafetyUnits);
 
           if (isFilled) {
             if (shouldWrap) {
-              // Use exact PDF engine algorithm for text with wrapping (no padding)
-              const fitted = fitWrapped({
+              // Fit in document-space units so visual result stays stable across zoom levels.
+              const fitted = fitWrappedText({
                 text: valueStr,
-                maxWidth: widthPixels,
-                maxHeight: heightPixels,
-                startSize: block.field_schema?.size ?? 11,
+                fontFamily: resolvedFont.canvasFamily,
+                maxWidth: fitMaxWidthDoc,
+                maxHeight: fitMaxHeightDoc,
+                startSize: field.size ?? 11,
                 lineHeightMult: 1.0,
-                zoom: scale,
               });
-              fontSize = fitted.fontSize;
-              lineHeight = fitted.lineHeight;
+              fontSizeDoc = fitted.fontSize;
+              lineHeightDoc = fitted.lineHeight;
               displayLines = fitted.lines || [];
             } else {
-              // No wrapping - find largest font size that fits on ONE line
+              // No wrapping - fit in document-space units.
               const defaultSize = fieldType === "signature" ? 25 : 11;
-              const fitted = fitNoWrap({
+              const fitted = fitNoWrapText({
                 text: valueStr,
-                maxWidth: widthPixels,
-                maxHeight: heightPixels,
-                startSize: block.field_schema?.size ?? defaultSize,
+                fontFamily: resolvedFont.canvasFamily,
+                maxWidth: fitMaxWidthDoc,
+                maxHeight: fitMaxHeightDoc,
+                startSize: field.size ?? defaultSize,
               });
 
-              fontSize = fitted.fontSize;
-              lineHeight = fontSize * 1.0;
+              fontSizeDoc = fitted.fontSize;
+              lineHeightDoc = fontSizeDoc * 1.0;
               displayLines = [fitted.line];
             }
           } else {
-            fontSize = block.field_schema?.size ?? 11;
-            lineHeight = fontSize * 1.0;
+            fontSizeDoc = field.size ?? (fieldType === "signature" ? 25 : 11);
+            lineHeightDoc = fontSizeDoc * 1.0;
           }
 
-          const isSelected = animatingFieldId === fieldName || selectedFieldId === fieldName;
+          const fontSize = fontSizeDoc * scale;
+          const lineHeight = lineHeightDoc * scale;
+
+          const isSelected =
+            animatingFieldId === fieldName ||
+            selectedFieldId === fieldName ||
+            clickedHighlightFieldId === field.id;
+          const isClickable = !showOwnership || ownerMeta.isMine;
+          const hasFieldError = !!fieldErrors[fieldName];
+          const isOwnedField = showOwnership && ownerMeta.isMine;
+          const isOwnedFieldValid = isOwnedField && isFilled && !hasFieldError;
+          const ownedBorderColor = isOwnedFieldValid ? "#16a34a" : "#dc2626";
+          const borderColor = showOwnership
+            ? ownerMeta.isMine
+              ? ownedBorderColor
+              : "#d1d5db"
+            : "#d1d5db";
+          const ownedFillColor = isOwnedField
+            ? isOwnedFieldValid
+              ? "rgba(34, 197, 94, 0.2)"
+              : "rgba(239, 68, 68, 0.2)"
+            : "transparent";
+          const showNonOwnedTooltip =
+            showOwnership &&
+            !ownerMeta.isMine &&
+            (hoveredFieldId === field.id ||
+              (isTouchInteraction && activeTouchFieldId === field.id));
 
           return (
             <div
-              key={fieldName}
-              onClick={() => onFieldClick?.(fieldName)}
-              className={`absolute cursor-pointer text-black transition-all ${isSelected ? "bg-green-300" : "bg-blue-200"} `}
+              key={field.id}
+              onMouseEnter={() => {
+                if (showOwnership && !ownerMeta.isMine) setHoveredFieldId(field.id);
+              }}
+              onMouseLeave={() => {
+                if (hoveredFieldId === field.id) setHoveredFieldId(null);
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (showOwnership && isTouchInteraction) {
+                  if (activeTouchFieldId !== field.id) {
+                    setActiveTouchFieldId(field.id);
+                    return;
+                  }
+                  setActiveTouchFieldId(null);
+                }
+                if (showOwnership) {
+                  setClickedHighlightFieldId(field.id);
+                  setTimeout(
+                    () => setClickedHighlightFieldId((prev) => (prev === field.id ? null : prev)),
+                    550
+                  );
+                }
+                if (!isClickable) return;
+                onFieldClick?.(fieldName);
+              }}
+              className={`absolute text-black transition-all ${
+                isClickable ? "cursor-pointer" : "cursor-default"
+              }`}
               style={{
                 left: `${displayPos.displayX}px`,
                 top: `${displayPos.displayY}px`,
-                width: `${Math.max(widthPixels, 10)}px`,
-                minHeight: `${Math.max(heightPixels, 10)}px`,
+                width: `${Math.max(widthPixels, 4)}px`,
+                height: `${Math.max(heightPixels, 4)}px`,
                 overflow: "visible",
                 display: "flex",
+                backgroundColor: ownedFillColor,
+                border: isSelected ? `2px solid ${borderColor}` : `1px solid ${borderColor}`,
+                zIndex: showNonOwnedTooltip ? 30 : isSelected ? 20 : 10,
                 alignItems:
                   align_v === "middle"
                     ? "center"
@@ -792,34 +684,35 @@ const PdfPageWithFields = ({
                 justifyContent:
                   align_h === "center" ? "center" : align_h === "right" ? "flex-end" : "flex-start",
               }}
-              title={`${label}: ${valueStr}`}
             >
               {isFilled && (
                 <div
-                  className={fieldType === "signature" ? "text-blue-600" : "text-black"}
+                  className="text-black"
                   style={{
                     fontSize: `${fontSize}px`,
                     lineHeight: `${lineHeight}px`,
-                    overflow: "visible",
-                    whiteSpace: shouldWrap ? "pre-wrap" : "nowrap",
-                    wordWrap: shouldWrap ? "break-word" : "normal",
+                    overflow: "hidden",
+                    whiteSpace: shouldWrap ? "pre" : "nowrap",
+                    wordWrap: "normal",
+                    overflowWrap: "normal",
                     width: "100%",
+                    maxWidth: "100%",
+                    maxHeight: "100%",
                     padding: "0px",
                     margin: "0px",
                     boxSizing: "border-box",
-                    display: "flex",
-                    alignItems: "inherit",
-                    justifyContent: "inherit",
                     textAlign: align_h === "center" ? "center" : align_h,
-                    fontFamily:
-                      fieldType === "signature" ? "Italianno, cursive" : "Roboto, sans-serif",
-                    fontWeight: fieldType === "signature" ? "normal" : "600",
-                    color: fieldType === "signature" ? "#0000FF" : "#000000",
+                    fontFamily: resolvedFont.cssFamily,
+                    fontWeight: resolvedFont.fontWeight,
+                    color: "#000000",
                   }}
                 >
                   {displayLines.length > 0 ? displayLines.join("\n") : valueStr}
                 </div>
               )}
+              {showNonOwnedTooltip ? (
+                <AssignedOwnerTooltip ownerLabel={ownerMeta.ownerLabel} />
+              ) : null}
             </div>
           );
         })}
@@ -827,3 +720,11 @@ const PdfPageWithFields = ({
     </div>
   );
 };
+
+const AssignedOwnerTooltip = ({ ownerLabel }: { ownerLabel: string }) => (
+  <div className="pointer-events-none absolute -top-12 left-0 z-20 max-w-56 rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-lg">
+    <span className="break-words">
+      Filled by <strong className="text-slate-900">{ownerLabel}</strong>
+    </span>
+  </div>
+);

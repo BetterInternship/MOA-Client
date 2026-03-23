@@ -2,35 +2,35 @@
 
 import { FormRendererContextProvider } from "@/components/docs/forms/form-renderer.ctx";
 import { ModalProvider } from "../providers/modal-provider";
-import { FieldTemplateContextProvider } from "./ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/field-template.ctx";
-import { FormEditorContextProvider } from "./ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/editor/form-editor.ctx";
+import { FieldTemplateContextProvider } from "../contexts/field-template.ctx";
 import { SignatoryProfileContextProvider } from "./auth/provider/signatory.ctx";
 import { FormFillerContextProvider } from "@/components/docs/forms/form-filler.ctx";
 import { FormProcessContextProvider } from "@/components/docs/forms/form-process.ctx";
 import { SignContextProvider } from "./auth/provider/sign.ctx";
 import { MyFormsContextProvider } from "@/components/docs/forms/myforms.ctx";
 import { FormSettingsProvider } from "./auth/provider/form-settings.ctx";
+import { AppContextProvider } from "@/lib/ctx-app";
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <FieldTemplateContextProvider>
-      <FormEditorContextProvider>
-        <FormRendererContextProvider>
-          <FormProcessContextProvider>
-            <FormFillerContextProvider>
-              <FormSettingsProvider>
-                <SignatoryProfileContextProvider>
-                  <SignContextProvider>
-                    <MyFormsContextProvider>
+      <FormRendererContextProvider>
+        <FormProcessContextProvider>
+          <FormFillerContextProvider>
+            <FormSettingsProvider>
+              <SignatoryProfileContextProvider>
+                <SignContextProvider>
+                  <MyFormsContextProvider>
+                    <AppContextProvider>
                       <ModalProvider>{children}</ModalProvider>
-                    </MyFormsContextProvider>
-                  </SignContextProvider>
-                </SignatoryProfileContextProvider>
-              </FormSettingsProvider>
-            </FormFillerContextProvider>
-          </FormProcessContextProvider>
-        </FormRendererContextProvider>
-      </FormEditorContextProvider>
+                    </AppContextProvider>
+                  </MyFormsContextProvider>
+                </SignContextProvider>
+              </SignatoryProfileContextProvider>
+            </FormSettingsProvider>
+          </FormFillerContextProvider>
+        </FormProcessContextProvider>
+      </FormRendererContextProvider>
     </FieldTemplateContextProvider>
   );
 };

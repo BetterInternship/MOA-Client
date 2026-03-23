@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { type IFormBlock, type IFormMetadata } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
 import { FormPreviewRenderer } from "./FormPreviewRenderer";
@@ -11,6 +11,8 @@ import { toastPresets } from "@/components/sonner-toaster";
 import { FormMetadata } from "@betterinternship/core/forms";
 import { FormFillerContextProvider, useFormFiller } from "@/components/docs/forms/form-filler.ctx";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
+import { withDerivedFormValues } from "@/lib/derived-form-values";
+import { DEFAULT_PREVIEW_DUMMY_STUDENT_USER } from "@/lib/form-previewer-model";
 
 interface FormDefaultValueCaptureProps {
   formName: string;
@@ -41,6 +43,10 @@ const FormDefaultValueCaptureContent = ({
   // Get fields from metadata for the selected party
   const formMetadata = metadata ? new FormMetadata(metadata) : null;
   const fields = formMetadata?.getFieldsForClientService(selectedPartyId) || [];
+  const previewValues = useMemo(
+    () => withDerivedFormValues(formMetadata, formFiller.getFinalValues()),
+    [formMetadata, formFiller, autofillValues]
+  );
 
   // Initialize values from metadata AND prefiller on load
   useEffect(() => {
@@ -93,10 +99,9 @@ const FormDefaultValueCaptureContent = ({
     (block) => block.signing_party_id === selectedPartyId || !block.signing_party_id
   );
 
-  // Extract field schemas from form field blocks for PDF rendering
-  const fieldBlocks = filteredBlocks
-    .filter((b) => b.field_schema?.field)
-    .map((b) => b.field_schema);
+  const hasRenderablePreviewField = filteredBlocks.some(
+    (block) => !!block.field_schema?.field || !!block.phantom_field_schema?.field
+  );
 
   const handleSave = async () => {
     if (!onSave) return;
@@ -148,13 +153,15 @@ const FormDefaultValueCaptureContent = ({
 
         {/* Right side - PDF Preview */}
         <div className="relative flex-1 overflow-hidden bg-slate-100">
-          {documentUrl && fieldBlocks.length > 0 ? (
+          {documentUrl && hasRenderablePreviewField ? (
             <FormPreviewPdfDisplay
               documentUrl={documentUrl}
-              blocks={fieldBlocks}
-              values={formFiller.getFinalValues()}
+              blocks={filteredBlocks}
+              values={previewValues}
               onFieldClick={(fieldName) => setSelectedFieldId(fieldName)}
               selectedFieldId={selectedFieldId}
+              prefillMode="dummy"
+              prefillUser={DEFAULT_PREVIEW_DUMMY_STUDENT_USER}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">

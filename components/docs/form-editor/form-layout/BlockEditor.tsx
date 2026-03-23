@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   type IFormBlock,
   type IFormField,
   type IFormPhantomField,
   BLOCK_TYPES,
-  SOURCES,
 } from "@betterinternship/core/forms";
-import { X } from "lucide-react";
+import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 import {
   FormInput,
   FormTextarea,
@@ -16,9 +15,16 @@ import {
   FormCheckbox,
 } from "@/components/docs/forms/EditForm";
 import { Button } from "@/components/ui/button";
-import { ValidatorBuilder } from "@/components/docs/form-editor/ValidatorBuilder";
-import { zodCodeToValidatorConfig, validatorConfigToZodCode } from "@/lib/validator-engine";
-import { capitalize, capitalizeWords } from "@/lib/string-utils";
+import { capitalizeWords } from "@/lib/string-utils";
+import { DefaultValueSection } from "@/components/docs/form-editor/default-value.bundle";
+import { ValidationSection } from "@/components/docs/form-editor/validation.bundle";
+import { Switch } from "@/components/ui/switch";
+import {
+  applyPresetToSchema,
+  findPresetByFieldKey,
+  isDefaultPresetFieldKey,
+} from "@/lib/default-field-preset-utils";
+import { resolveSystemPresetTemplates } from "@/lib/system-preset-resolver";
 
 interface BlockEditorProps {
   block: IFormBlock | null;
@@ -34,6 +40,22 @@ interface BlockEditorProps {
  */
 export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockEditorProps) => {
   const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(block);
+  const { registry } = useFieldTemplateContext();
+  const presetTemplates = useMemo(
+    () => resolveSystemPresetTemplates(registry as any[]),
+    [registry]
+  );
+  const presetOptions = useMemo(
+    () =>
+      presetTemplates.map((preset) => ({
+        id: preset.id,
+        name:
+          (preset.group || "core") === "format"
+            ? `Format: ${preset.label || preset.name}`
+            : preset.label || preset.name,
+      })),
+    [presetTemplates]
+  );
 
   useEffect(() => {
     setEditedBlock(block);
@@ -65,6 +87,9 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
             source: currentSchema.source || "manual",
             signing_party_id:
               "signing_party_id" in currentSchema ? currentSchema.signing_party_id : "",
+            prefiller: currentSchema.prefiller || "",
+            validator: currentSchema.validator || "",
+            validator_ir: (currentSchema as any).validator_ir || null,
           }
         : null;
 
@@ -84,6 +109,9 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
             w: editedBlock.field_schema?.w || 100,
             h: editedBlock.field_schema?.h || 20,
             page: editedBlock.field_schema?.page || 0,
+            prefiller: commonProps?.prefiller || "",
+            validator: commonProps?.validator || "",
+            validator_ir: commonProps?.validator_ir || null,
           },
           phantom_field_schema: undefined,
         };
@@ -98,6 +126,9 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
             shared: commonProps?.shared || false,
             source: commonProps?.source || "manual",
             signing_party_id: commonProps?.signing_party_id || "",
+            prefiller: commonProps?.prefiller || "",
+            validator: commonProps?.validator || "",
+            validator_ir: commonProps?.validator_ir || null,
           },
           field_schema: undefined,
         };
@@ -124,6 +155,14 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
     onUpdate(newBlock);
   };
 
+  const handleFieldSchemaPatch = (updates: Partial<IFormField>) => {
+    if (editedBlock.block_type !== "form_field" || !editedBlock.field_schema) return;
+    const updatedField = { ...editedBlock.field_schema, ...updates };
+    const newBlock = { ...editedBlock, field_schema: updatedField };
+    setEditedBlock(newBlock);
+    onUpdate(newBlock);
+  };
+
   const handlePhantomFieldSchemaChange = (key: keyof IFormPhantomField, value: any) => {
     if (editedBlock.block_type !== "form_phantom_field" || !editedBlock.phantom_field_schema)
       return;
@@ -132,6 +171,41 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
     setEditedBlock(newBlock);
     onUpdate(newBlock);
   };
+
+  const handlePhantomFieldSchemaPatch = (updates: Partial<IFormPhantomField>) => {
+    if (editedBlock.block_type !== "form_phantom_field" || !editedBlock.phantom_field_schema)
+      return;
+    const updatedField = { ...editedBlock.phantom_field_schema, ...updates };
+    const newBlock = { ...editedBlock, phantom_field_schema: updatedField };
+    setEditedBlock(newBlock);
+    onUpdate(newBlock);
+  };
+
+  const formFieldSchema = editedBlock.field_schema;
+  const phantomFieldSchema = editedBlock.phantom_field_schema;
+  const isFormFieldDerived = formFieldSchema?.source === "derived";
+  const isFormFieldPrefill = formFieldSchema?.source === "prefill";
+  const isFormFieldAuto = formFieldSchema?.source === "auto";
+  const showFormValidation = !isFormFieldDerived && !isFormFieldPrefill && !isFormFieldAuto;
+  const showFormPlaceholder = !isFormFieldDerived && !isFormFieldAuto;
+  const isPhantomFieldDerived = phantomFieldSchema?.source === "derived";
+  const isPhantomFieldPrefill = phantomFieldSchema?.source === "prefill";
+  const isPhantomFieldAuto = phantomFieldSchema?.source === "auto";
+  const showPhantomValidation =
+    !isPhantomFieldDerived && !isPhantomFieldPrefill && !isPhantomFieldAuto;
+  const showPhantomPlaceholder = !isPhantomFieldDerived && !isPhantomFieldAuto;
+  const matchedFormFieldPreset = formFieldSchema
+    ? findPresetByFieldKey(formFieldSchema.field, presetTemplates)
+    : null;
+  const matchedPhantomFieldPreset = phantomFieldSchema
+    ? findPresetByFieldKey(phantomFieldSchema.field, presetTemplates)
+    : null;
+  const isDefaultFormField = formFieldSchema
+    ? isDefaultPresetFieldKey(formFieldSchema.field, presetTemplates)
+    : false;
+  const isDefaultPhantomField = phantomFieldSchema
+    ? isDefaultPresetFieldKey(phantomFieldSchema.field, presetTemplates)
+    : false;
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-white">
@@ -186,16 +260,20 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               required={false}
             />
 
-            <FormDropdown
-              label="Source"
-              value={editedBlock.field_schema.source}
-              setter={(val) => handleFieldSchemaChange("source", val as any)}
-              options={SOURCES.map((source) => ({
-                id: source,
-                name: capitalizeWords(source),
-              }))}
-              required={false}
-            />
+            {isDefaultFormField && (
+              <FormDropdown
+                label="Field Type"
+                value={matchedFormFieldPreset?.id || ""}
+                options={presetOptions}
+                setter={(value) => {
+                  const nextPreset = presetTemplates.find((preset) => preset.id === value);
+                  if (!nextPreset) return;
+                  const presetPatch = applyPresetToSchema(editedBlock.field_schema, nextPreset);
+                  handleFieldSchemaPatch(presetPatch as Partial<IFormField>);
+                }}
+                required={false}
+              />
+            )}
 
             <FormInput
               label="Tooltip Label"
@@ -210,30 +288,64 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               setter={(val) => handleFieldSchemaChange("shared", val)}
             />
 
-            {/* Validator Builder - New UI-based validator */}
-            <ValidatorBuilder
-              config={
-                editedBlock.field_schema?.validator
-                  ? zodCodeToValidatorConfig(editedBlock.field_schema.validator)
-                  : { rules: [] }
-              }
-              rawZodCode={editedBlock.field_schema?.validator || ""}
-              onConfigChange={(newConfig) => {
-                // Convert config to Zod code and save immediately
-                const zodCode = validatorConfigToZodCode(newConfig);
-                handleFieldSchemaChange("validator", zodCode);
-              }}
-              onRawZodChange={(zodCode) => {
-                handleFieldSchemaChange("validator", zodCode);
-              }}
-            />
-
-            <FormTextarea
-              label="Prefiller (JS Function)"
-              value={editedBlock.field_schema.prefiller || ""}
-              setter={(val) => handleFieldSchemaChange("prefiller", val)}
-              required={false}
-            />
+            {isFormFieldDerived ? (
+              <>
+                <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                  </div>
+                  <Switch
+                    checked={Boolean(isFormFieldDerived)}
+                    onCheckedChange={(checked) =>
+                      handleFieldSchemaChange("source", checked ? "derived" : "manual")
+                    }
+                  />
+                </div>
+                <DefaultValueSection
+                  title="Default Values"
+                  source={editedBlock.field_schema.source}
+                  value={editedBlock.field_schema.prefiller || ""}
+                  fieldOptions={[]}
+                  onChange={(val) => handleFieldSchemaChange("prefiller", val)}
+                />
+              </>
+            ) : (
+              <>
+                {showFormValidation && (
+                  <ValidationSection
+                    schemaType={editedBlock.field_schema.type}
+                    validator={editedBlock.field_schema.validator || ""}
+                    validatorIr={(editedBlock.field_schema as any).validator_ir || null}
+                    onChange={(next) => {
+                      handleFieldSchemaPatch({
+                        validator: next.validator,
+                        validator_ir: next.validator_ir,
+                      } as any);
+                    }}
+                  />
+                )}
+                {showFormPlaceholder && (
+                  <div className="mt-4">
+                    <DefaultValueSection
+                      title="Placeholder"
+                      source={editedBlock.field_schema.source}
+                      value={editedBlock.field_schema.prefiller || ""}
+                      fieldOptions={[]}
+                      simpleMode="manual-only"
+                      onChange={(val) => handleFieldSchemaChange("prefiller", val)}
+                    />
+                  </div>
+                )}
+                <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                  <Switch
+                    checked={Boolean(isFormFieldDerived)}
+                    onCheckedChange={(checked) =>
+                      handleFieldSchemaChange("source", checked ? "derived" : "manual")
+                    }
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -256,16 +368,23 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               required={false}
             />
 
-            <FormDropdown
-              label="Source"
-              value={editedBlock.phantom_field_schema.source}
-              setter={(val) => handlePhantomFieldSchemaChange("source", val as any)}
-              options={SOURCES.map((source) => ({
-                id: source,
-                name: capitalizeWords(source),
-              }))}
-              required={false}
-            />
+            {isDefaultPhantomField && (
+              <FormDropdown
+                label="Field Type"
+                value={matchedPhantomFieldPreset?.id || ""}
+                options={presetOptions}
+                setter={(value) => {
+                  const nextPreset = presetTemplates.find((preset) => preset.id === value);
+                  if (!nextPreset) return;
+                  const presetPatch = applyPresetToSchema(
+                    editedBlock.phantom_field_schema,
+                    nextPreset
+                  );
+                  handlePhantomFieldSchemaPatch(presetPatch as Partial<IFormPhantomField>);
+                }}
+                required={false}
+              />
+            )}
 
             <FormInput
               label="Tooltip Label"
@@ -280,42 +399,67 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
               setter={(val) => handlePhantomFieldSchemaChange("shared", val)}
             />
 
-            {/* Validator Builder - New UI-based validator */}
-            <ValidatorBuilder
-              config={
-                editedBlock.phantom_field_schema?.validator
-                  ? zodCodeToValidatorConfig(editedBlock.phantom_field_schema.validator)
-                  : { rules: [] }
-              }
-              rawZodCode={editedBlock.phantom_field_schema?.validator || ""}
-              onConfigChange={(newConfig) => {
-                // Only regenerate if in UI mode (no raw code)
-                // If raw code exists, just update config for display without regenerating
-                const hasRawCode = editedBlock.phantom_field_schema?.validator;
-
-                if (hasRawCode) {
-                  // In raw mode: just update config for UI, don't regenerate code
-                  // The raw code is already saved via onRawZodChange
-                  // This allows min/max/describe to show in the UI even if not fully parsed
-                } else {
-                  // In UI mode: always regenerate from config
-                  // Array/enum rules start with placeholder options, so they're safe to generate
-                  const zodCode = validatorConfigToZodCode(newConfig);
-                  handlePhantomFieldSchemaChange("validator", zodCode);
-                }
-              }}
-              onRawZodChange={(zodCode) => {
-                // Save raw code directly - this takes priority over config regeneration
-                handlePhantomFieldSchemaChange("validator", zodCode);
-              }}
-            />
-
-            <FormTextarea
-              label="Prefiller (JS Function)"
-              value={editedBlock.phantom_field_schema.prefiller || ""}
-              setter={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
-              required={false}
-            />
+            {isPhantomFieldDerived ? (
+              <>
+                <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                  </div>
+                  <Switch
+                    checked={Boolean(isPhantomFieldDerived)}
+                    onCheckedChange={(checked) =>
+                      handlePhantomFieldSchemaChange("source", checked ? "derived" : "manual")
+                    }
+                  />
+                </div>
+                <DefaultValueSection
+                  title="Default Values"
+                  source={editedBlock.phantom_field_schema.source}
+                  value={editedBlock.phantom_field_schema.prefiller || ""}
+                  fieldOptions={[]}
+                  onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+                />
+              </>
+            ) : (
+              <>
+                {showPhantomValidation && (
+                  <ValidationSection
+                    schemaType={editedBlock.phantom_field_schema.type}
+                    validator={editedBlock.phantom_field_schema.validator || ""}
+                    validatorIr={(editedBlock.phantom_field_schema as any).validator_ir || null}
+                    onChange={(next) => {
+                      handlePhantomFieldSchemaPatch({
+                        validator: next.validator,
+                        validator_ir: next.validator_ir,
+                      } as any);
+                    }}
+                  />
+                )}
+                {showPhantomPlaceholder && (
+                  <div className="mt-4">
+                    <DefaultValueSection
+                      title="Placeholder"
+                      source={editedBlock.phantom_field_schema.source}
+                      value={editedBlock.phantom_field_schema.prefiller || ""}
+                      fieldOptions={[]}
+                      simpleMode="manual-only"
+                      onChange={(val) => handlePhantomFieldSchemaChange("prefiller", val)}
+                    />
+                  </div>
+                )}
+                <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-slate-700">Derived value</p>
+                  </div>
+                  <Switch
+                    checked={Boolean(isPhantomFieldDerived)}
+                    onCheckedChange={(checked) =>
+                      handlePhantomFieldSchemaChange("source", checked ? "derived" : "manual")
+                    }
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
