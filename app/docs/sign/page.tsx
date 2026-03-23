@@ -314,23 +314,24 @@ function PageContent() {
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center overflow-y-scroll [scrollbar-gutter:stable]">
       <div className="w-full flex-shrink-0 border-b border-gray-200 bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="truncate text-xl font-semibold whitespace-nowrap text-gray-900 sm:text-2xl">
-              {form.formLabel}
-            </h3>
-
+        <div className="mx-auto max-w-7xl px-2 py-3 sm:px-6">
+          <div className="flex items-start gap-2 sm:gap-3">
             {shouldShowSignIntentGate && currentView !== "choice" && (
               <Button
                 type="button"
                 variant="ghost"
+                size="icon"
                 onClick={() => setView("choice")}
-                className="px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                className="mt-0.5 h-8 w-8 shrink-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                aria-label="Back"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Go Back
               </Button>
             )}
+
+            <h3 className="min-w-0 flex-1 text-sm leading-snug font-semibold tracking-tight break-words whitespace-normal">
+              {form.formLabel}
+            </h3>
           </div>
         </div>
       </div>
@@ -375,11 +376,10 @@ function PageContent() {
             >
               <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-[0.33em] border border-gray-300 bg-white">
                 {isMobile && (
-                  <div className="border-b border-gray-300 bg-gray-100 px-4 py-3">
-                    <div className="text-xs font-medium text-gray-700">
+                  <div className="border-b border-gray-300 bg-gray-100 px-4 py-2">
+                    <div className="truncate whitespace-nowrap text-xs font-medium text-gray-700">
                       Step {mobileStepNumber} of {mobileSteps.length}
-                    </div>
-                    <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <span className="px-1 text-gray-400">•</span>
                       {mobileStepTitles[mobileStep]}
                     </div>
                   </div>
