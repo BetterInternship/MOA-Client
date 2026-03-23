@@ -16,6 +16,7 @@ import { useSignContext } from "../auth/provider/sign.ctx";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { ArrowLeft, LucideClipboardCheck } from "lucide-react";
 import { formsControllerMarkFormAsFirstViewed } from "@/app/api";
@@ -186,6 +187,19 @@ function PageContent() {
     typeof mySigningParty?.signatory_source?._id === "string" &&
     mySigningParty.signatory_source._id.trim().length > 0;
   const currentView = shouldShowSignIntentGate ? view : "form";
+  const hideHeaderForIntentGate = shouldShowSignIntentGate && currentView === "choice";
+  const desktopHeaderTaskTitle =
+    currentView === "delegate"
+      ? "Forward this form to the actual signer"
+      : hasConfirmedDetails
+      ? "Confirm before submitting"
+      : "Fill required fields or reject this form";
+  const desktopHeaderStepNumber = currentView === "delegate" ? 1 : hasConfirmedDetails ? 2 : 1;
+  const desktopHeaderTotalSteps = currentView === "delegate" ? 1 : 2;
+  const desktopHeaderProgressPercent =
+    desktopHeaderTotalSteps <= 1
+      ? 100
+      : (desktopHeaderStepNumber / desktopHeaderTotalSteps) * 100;
 
   useEffect(() => {
     const didValuesChange = !areFormValuesEqual(latestPreviewValuesRef.current, previewValues);
@@ -313,28 +327,44 @@ function PageContent() {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center overflow-y-scroll [scrollbar-gutter:stable]">
-      <div className="w-full flex-shrink-0 border-b border-gray-200 bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-2 py-3 sm:px-6">
-          <div className="flex items-start gap-2 sm:gap-3">
-            {shouldShowSignIntentGate && currentView !== "choice" && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setView("choice")}
-                className="mt-0.5 h-8 w-8 shrink-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
-                aria-label="Back"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
+      {!hideHeaderForIntentGate && (
+        <div className="w-full flex-shrink-0 border-b border-gray-200 bg-white shadow-sm">
+          <div className="mx-auto max-w-7xl px-2 py-3 sm:px-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-start gap-2 sm:gap-3">
+                {shouldShowSignIntentGate && currentView !== "choice" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setView("choice")}
+                    className="mt-0.5 h-8 w-8 shrink-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                    aria-label="Back"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
 
-            <h3 className="min-w-0 flex-1 text-sm leading-snug font-semibold tracking-tight break-words whitespace-normal">
-              {form.formLabel}
-            </h3>
+                <h3 className="min-w-0 flex-1 text-sm leading-snug font-semibold tracking-tight break-words whitespace-normal sm:text-2xl sm:tracking-normal sm:text-gray-900">
+                  {form.formLabel}
+                </h3>
+              </div>
+
+              <div className="hidden md:flex min-w-[210px] flex-col items-end gap-1">
+                <span className="text-[11px] font-medium text-gray-500">
+                  {desktopHeaderTaskTitle}
+                  <span className="px-1.5 text-gray-300">•</span>
+                  Step {desktopHeaderStepNumber} of {desktopHeaderTotalSteps}
+                </span>
+                <Progress
+                  value={desktopHeaderProgressPercent}
+                  className="h-[3px] w-[210px] bg-gray-200 [&>div]:bg-primary/75"
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div
         className={cn(
@@ -377,7 +407,7 @@ function PageContent() {
               <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-[0.33em] border border-gray-300 bg-white">
                 {isMobile && (
                   <div className="border-b border-gray-300 bg-gray-100 px-4 py-2">
-                    <div className="truncate whitespace-nowrap text-xs font-medium text-gray-700">
+                    <div className="truncate text-xs font-medium whitespace-nowrap text-gray-700">
                       Step {mobileStepNumber} of {mobileSteps.length}
                       <span className="px-1 text-gray-400">•</span>
                       {mobileStepTitles[mobileStep]}
@@ -605,12 +635,6 @@ function PageContent() {
                     </div>
 
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white transition-[opacity,transform] duration-500 ease-in-out">
-                      <div className="hidden h-[58px] items-center border-b border-gray-300 px-6 sm:flex">
-                        <span className="text-sm font-medium text-gray-700">
-                          Fill Required Fields
-                        </span>
-                      </div>
-
                       <div className="flex h-full min-h-0 flex-1 flex-col pt-4 sm:pt-8">
                         <div className="min-h-0 flex-1">
                           <FormFillerRenderer />
