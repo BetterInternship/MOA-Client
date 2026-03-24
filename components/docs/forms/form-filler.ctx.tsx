@@ -1,5 +1,5 @@
 import z from "zod";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 
 import {
   ClientField,
@@ -15,7 +15,8 @@ export interface IFormFiller {
   validateField: (
     fieldKey: string,
     field: ClientField<any> | ClientPhantomField<any>,
-    autofillValues?: FormValues
+    autofillValues?: FormValues,
+    nextValue?: unknown
   ) => void;
 
   errors: FormErrors;
@@ -30,17 +31,20 @@ const FormFillerContext = createContext({} as IFormFiller);
 export const useFormFiller = () => useContext(FormFillerContext);
 
 export const FormFillerContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [values, _setValues] = useState({});
+  const [, _setValues] = useState({});
   const [errors, _setErrors] = useState({});
+  const valuesRef = useRef<FormValues>({});
 
   const getFinalValues = (additionalValues?: FormValues) => {
-    return { ...additionalValues, ...values };
+    return { ...additionalValues, ...valuesRef.current };
   };
 
   const setValue = (field: string, value: any) => {
     // Convert all values to strings for consistency
     const stringValue = value === null || value === undefined ? "" : String(value);
-    _setValues({ ...values, [field]: stringValue });
+    const next = { ...valuesRef.current, [field]: stringValue };
+    valuesRef.current = next;
+    _setValues(next);
   };
 
   const setValues = (newValues: Record<string, any>) => {
@@ -52,7 +56,9 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
       },
       {} as Record<string, string>
     );
-    _setValues({ ...values, ...stringifiedValues });
+    const next = { ...valuesRef.current, ...stringifiedValues };
+    valuesRef.current = next;
+    _setValues(next);
   };
 
   const validate = (
@@ -61,8 +67,7 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
   ) => {
     const errors: Record<string, string> = {};
     for (const field of fields) {
-      const error = validateFieldHelper(field, values, autofillValues ?? {});
-      console.log("err", error, field);
+      const error = validateFieldHelper(field, valuesRef.current, autofillValues ?? {});
       if (error) errors[field.field] = error;
     }
 
@@ -74,9 +79,17 @@ export const FormFillerContextProvider = ({ children }: { children: React.ReactN
   const validateField = (
     fieldKey: string,
     field: ClientField<any> | ClientPhantomField<any>,
-    autofillValues?: FormValues
+    autofillValues?: FormValues,
+    nextValue?: unknown
   ) => {
-    const error = validateFieldHelper(field, values, autofillValues ?? {});
+    const valuesForValidation =
+      nextValue === undefined
+        ? valuesRef.current
+        : {
+            ...valuesRef.current,
+            [fieldKey]: nextValue === null || nextValue === undefined ? "" : String(nextValue),
+          };
+    const error = validateFieldHelper(field, valuesForValidation, autofillValues ?? {});
     if (error) {
       _setErrors((prev) => ({ ...prev, [fieldKey]: error }));
     } else {

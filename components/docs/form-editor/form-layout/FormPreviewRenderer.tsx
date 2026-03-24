@@ -110,11 +110,11 @@ export const FormPreviewRenderer = ({
     return <div className="py-8 text-center text-sm text-slate-500">No blocks to display</div>;
   }
 
-  const handleBlurValidate = (fieldKey: string) => {
+  const handleBlurValidate = (fieldKey: string, nextValue?: unknown) => {
     const field = fieldMap.get(fieldKey);
     if (!field || field.source !== "manual") return;
 
-    const value = displayValues[fieldKey];
+    const value = nextValue === undefined ? displayValues[fieldKey] : String(nextValue ?? "");
     const coerced = field.coerce(value);
     const result = field.validator?.safeParse(coerced);
 
@@ -183,7 +183,7 @@ const BlocksRenderer = ({
   values: Record<string, string>;
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
-  onBlurValidate?: (fieldKey: string) => void;
+  onBlurValidate?: (fieldKey: string, nextValue?: unknown) => void;
   fieldRefs: Record<string, HTMLDivElement | null>;
   fieldMap: Map<string, any>;
   selectedFieldId?: string | null;
@@ -222,7 +222,7 @@ const BlocksRenderer = ({
                 field={metadataField}
                 value={values[blockField.field] ?? ""}
                 onChange={(v) => onChange(blockField.field, v)}
-                onBlur={() => onBlurValidate?.(blockField.field)}
+                onBlur={(nextValue) => onBlurValidate?.(blockField.field, nextValue)}
                 error={errors[blockField.field]}
                 allValues={values}
               />

@@ -5,18 +5,8 @@ import type {
   ValidatorIRv0 as CoreValidatorIRv0,
 } from "@betterinternship/core/forms";
 
-type ExtendedRequiredRule = { kind: "required"; message?: string };
-type ExtendedValidatorIR = {
-  version: 0;
-  baseType: "email" | "phone" | "url";
-  rules: ExtendedRequiredRule[];
-  mode?: "builder" | "imported";
-  importStatus?: "exact" | "partial" | "custom";
-  unmapped?: string[];
-};
-
-export type ValidatorBaseType = CoreValidatorBaseType | ExtendedValidatorIR["baseType"];
-export type ValidatorIRv0 = CoreValidatorIRv0 | ExtendedValidatorIR;
+export type ValidatorBaseType = CoreValidatorBaseType;
+export type ValidatorIRv0 = CoreValidatorIRv0;
 
 type ImportStatus = "exact" | "partial" | "custom";
 export type ValidatorIRImportResult = {
@@ -105,13 +95,58 @@ function normalizeDateIso(value: string): string {
 type DatePresetRule =
   | { kind: "dateOnOrAfterToday"; message?: string }
   | { kind: "dateOnOrBeforeToday"; message?: string }
+  | { kind: "dateOnOrAfterBusinessDays"; businessDays: number; message?: string }
   | { kind: "dateOnOrAfterField"; field: string; message?: string }
   | { kind: "dateOnOrBeforeField"; field: string; message?: string };
+
+const DATE_PRESET_KINDS = [
+  "dateOnOrAfterToday",
+  "dateOnOrBeforeToday",
+  "dateOnOrAfterBusinessDays",
+  "dateOnOrAfterField",
+  "dateOnOrBeforeField",
+] as const;
+
+type DatePresetKind = (typeof DATE_PRESET_KINDS)[number];
+
+function isDatePresetKind(kind: string): kind is DatePresetKind {
+  return (DATE_PRESET_KINDS as readonly string[]).includes(kind);
+}
+
+function buildBusinessDaysRefineCode(businessDays: number): string {
+  return `const __businessDaysMin__ = ${businessDays};
+const today = new Date(params.currentDateTimestamp);
+today.setHours(0, 0, 0, 0);
+const candidate = new Date(date.getTime());
+candidate.setHours(0, 0, 0, 0);
+const candidateDay = candidate.getDay();
+let businessDaysBetween = 0;
+const cursor = new Date(today.getTime());
+while (cursor.getTime() < candidate.getTime()) {
+  cursor.setDate(cursor.getDate() + 1);
+  if (cursor.getTime() >= candidate.getTime()) break;
+  const day = cursor.getDay();
+  if (day !== 0 && day !== 6) businessDaysBetween += 1;
+}
+const isWeekend = candidateDay === 0 || candidateDay === 6;
+const passed = !isWeekend && businessDaysBetween >= __businessDaysMin__;
+return passed;`;
+}
 
 function parseDateCustomRefine(rule: ValidatorRule): DatePresetRule | null {
   const code = String(rule.params?.customCode || "");
   const message = String(rule.params?.message || "Invalid date");
   if (!code) return null;
+
+  const businessDaysMatch = code.match(/__businessDaysMin__\s*=\s*(\d+)/);
+  if (businessDaysMatch) {
+    const parsed = Number(businessDaysMatch[1]);
+    return {
+      kind: "dateOnOrAfterBusinessDays",
+      businessDays: Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1,
+      message,
+    };
+  }
 
   if (code.includes("currentDateTimestamp")) {
     if (code.includes(">=") || code.includes(">")) return { kind: "dateOnOrAfterToday", message };
@@ -289,6 +324,24 @@ function datePresetRuleToConfigRule(rule: any): ValidatorRule | null {
           refineType: "refine",
         },
       };
+    case "dateOnOrAfterBusinessDays": {
+      const businessDays =
+        Number.isFinite(rule.businessDays) && rule.businessDays > 0
+          ? Math.floor(rule.businessDays)
+          : 1;
+      return {
+        id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        type: "customRefine",
+        params: {
+          customCode: buildBusinessDaysRefineCode(businessDays),
+          message:
+            message ||
+            `Date must be at least ${businessDays} business day${businessDays === 1 ? "" : "s"} after today.`,
+          usesContext: true,
+          refineType: "refine",
+        },
+      };
+    }
     case "dateOnOrAfterField":
       return {
         id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -319,12 +372,7 @@ function datePresetRuleToConfigRule(rule: any): ValidatorRule | null {
 export function persistedIRToValidatorConfig(ir: ValidatorIRv0): ValidatorConfig {
   const rules: ValidatorRule[] = [];
   for (const rule of ir.rules as any[]) {
-    if (
-      rule.kind === "dateOnOrAfterToday" ||
-      rule.kind === "dateOnOrBeforeToday" ||
-      rule.kind === "dateOnOrAfterField" ||
-      rule.kind === "dateOnOrBeforeField"
-    ) {
+    if (isDatePresetKind(String(rule.kind || ""))) {
       const mapped = datePresetRuleToConfigRule(rule);
       if (mapped) rules.push(mapped);
       continue;
@@ -364,20 +412,18 @@ export function persistedIRToZod(ir: ValidatorIRv0): string {
   if (ir.baseType === "email") {
     const message =
       (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
-    const validator =
-      (ir.rules as any[]).some((r) => r.kind === "required")
-        ? `z.string().email().nonempty({ message: "${message}" })`
-        : "z.string().email()";
+    const validator = (ir.rules as any[]).some((r) => r.kind === "required")
+      ? `z.string().email().nonempty({ message: "${message}" })`
+      : "z.string().email()";
     return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
   }
 
   if (ir.baseType === "url") {
     const message =
       (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
-    const validator =
-      (ir.rules as any[]).some((r) => r.kind === "required")
-        ? `z.string().url().nonempty({ message: "${message}" })`
-        : "z.string().url()";
+    const validator = (ir.rules as any[]).some((r) => r.kind === "required")
+      ? `z.string().url().nonempty({ message: "${message}" })`
+      : "z.string().url()";
     return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
   }
 
@@ -385,10 +431,9 @@ export function persistedIRToZod(ir: ValidatorIRv0): string {
     const message =
       (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
     const requiredMessage = JSON.stringify(message);
-    const validator =
-      (ir.rules as any[]).some((r) => r.kind === "required")
-        ? `z.string().regex(/^\\+?[0-9()\\-\\s]{7,20}$/, { message: "Please enter a valid phone number." }).nonempty({ message: ${requiredMessage} }).describe("phone")`
-        : 'z.string().regex(/^\\+?[0-9()\\-\\s]{7,20}$/, { message: "Please enter a valid phone number." }).describe("phone")';
+    const validator = (ir.rules as any[]).some((r) => r.kind === "required")
+      ? `z.string().regex(/^\\+?[0-9()\\-\\s]{7,20}$/, { message: "Please enter a valid phone number." }).nonempty({ message: ${requiredMessage} }).describe("phone")`
+      : 'z.string().regex(/^\\+?[0-9()\\-\\s]{7,20}$/, { message: "Please enter a valid phone number." }).describe("phone")';
     return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
   }
 
@@ -430,14 +475,7 @@ export function zodToPersistedIR(
   const hasUnmappedCustomRefine =
     baseType === "date" &&
     config.rules.some((r) => r.type === "customRefine") &&
-    !(ir.rules as any[]).some((r) =>
-      [
-        "dateOnOrAfterToday",
-        "dateOnOrBeforeToday",
-        "dateOnOrAfterField",
-        "dateOnOrBeforeField",
-      ].includes(r.kind)
-    );
+    !(ir.rules as any[]).some((r) => isDatePresetKind(String(r?.kind || "")));
 
   if (hasUnmappedCustomRefine) {
     return {
@@ -448,11 +486,12 @@ export function zodToPersistedIR(
   }
 
   // If unsupported rules were filtered out, classify as partial.
-  const compatibleRulesCount = config.rules.filter((r) =>
-    isRuleCompatible(baseType, r.type) ||
-    (baseType === "email" && r.type === "email") ||
-    (baseType === "url" && r.type === "url") ||
-    (baseType === "phone" && r.type === "regex")
+  const compatibleRulesCount = config.rules.filter(
+    (r) =>
+      isRuleCompatible(baseType, r.type) ||
+      (baseType === "email" && r.type === "email") ||
+      (baseType === "url" && r.type === "url") ||
+      (baseType === "phone" && r.type === "regex")
   ).length;
   if (compatibleRulesCount !== config.rules.length) {
     return {
@@ -482,15 +521,7 @@ export function validateValidatorIR(ir: unknown): { ok: boolean; errors: string[
       const rule = candidate.rules[i];
       const kind = String(rule?.kind || "");
       const mapped = RULE_KIND_TO_ENGINE[kind];
-      if (
-        !mapped &&
-        ![
-          "dateOnOrAfterToday",
-          "dateOnOrBeforeToday",
-          "dateOnOrAfterField",
-          "dateOnOrBeforeField",
-        ].includes(kind)
-      ) {
+      if (!mapped && !isDatePresetKind(kind)) {
         errors.push(`rules[${i}] has unknown kind`);
         continue;
       }

@@ -261,6 +261,47 @@ export function ValidatorGroups({
           disabled={readOnly}
         />
         <ValidatorRow
+          label="On or after business days from today"
+          enabled={relativeDate.kind === "dateOnOrAfterBusinessDays"}
+          onToggle={(enabled) =>
+            onConfigChange(
+              setDateRelativeValidator(
+                config,
+                enabled
+                  ? {
+                      kind: "dateOnOrAfterBusinessDays",
+                      businessDays:
+                        relativeDate.kind === "dateOnOrAfterBusinessDays"
+                          ? relativeDate.businessDays
+                          : 1,
+                      message: undefined,
+                    }
+                  : { kind: "none" }
+              )
+            )
+          }
+          disabled={readOnly}
+        >
+          <ValidatorNumberInput
+            value={
+              relativeDate.kind === "dateOnOrAfterBusinessDays" ? relativeDate.businessDays : 1
+            }
+            onChange={(next) => {
+              const parsed = Number(next);
+              const businessDays = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
+              onConfigChange(
+                setDateRelativeValidator(config, {
+                  kind: "dateOnOrAfterBusinessDays",
+                  businessDays,
+                  message: undefined,
+                })
+              );
+            }}
+            placeholder="Business days"
+            disabled={readOnly}
+          />
+        </ValidatorRow>
+        <ValidatorRow
           label="On or before today"
           enabled={relativeDate.kind === "dateOnOrBeforeToday"}
           onToggle={(enabled) =>

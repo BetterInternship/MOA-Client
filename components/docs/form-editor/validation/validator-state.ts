@@ -11,6 +11,7 @@ export type DateRelativeValidator =
   | { kind: "none" }
   | { kind: "dateOnOrAfterToday"; message?: string }
   | { kind: "dateOnOrBeforeToday"; message?: string }
+  | { kind: "dateOnOrAfterBusinessDays"; businessDays: number; message?: string }
   | { kind: "dateOnOrAfterField"; field: string; message?: string }
   | { kind: "dateOnOrBeforeField"; field: string; message?: string };
 
@@ -43,9 +44,13 @@ const DATE_REFINEMENT_DEFAULT_MESSAGE = "Invalid date";
 const RELATIVE_DATE_RULES = new Set([
   "dateOnOrAfterToday",
   "dateOnOrBeforeToday",
+  "dateOnOrAfterBusinessDays",
   "dateOnOrAfterField",
   "dateOnOrBeforeField",
 ]);
+
+const getBusinessDaysMessage = (businessDays: number) =>
+  `Date must be at least ${businessDays} business day${businessDays === 1 ? "" : "s"} after today.`;
 
 // Generic helpers for immutable rule CRUD against ValidatorConfig.
 function getRule(config: ValidatorConfig, type: ValidatorRuleType): ValidatorRule | undefined {
@@ -99,6 +104,16 @@ function parseDateRelativeRule(rule: ValidatorRule | undefined): DateRelativeVal
   const message = String(rule.params?.message || DATE_REFINEMENT_DEFAULT_MESSAGE);
   if (!code) return { kind: "none" };
 
+  const businessDaysMatch = code.match(/__businessDaysMin__\s*=\s*(\d+)/);
+  if (businessDaysMatch) {
+    const parsed = Number(businessDaysMatch[1]);
+    return {
+      kind: "dateOnOrAfterBusinessDays",
+      businessDays: Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1,
+      message,
+    };
+  }
+
   if (code.includes("currentDateTimestamp")) {
     if (code.includes(">=") || code.includes(">")) return { kind: "dateOnOrAfterToday", message };
     if (code.includes("<=") || code.includes("<")) return { kind: "dateOnOrBeforeToday", message };
@@ -139,6 +154,37 @@ function buildDateRelativeRule(relative: DateRelativeValidator): ValidatorRule |
           refineType: "refine",
         },
       };
+    case "dateOnOrAfterBusinessDays": {
+      const businessDays =
+        Number.isFinite(relative.businessDays) && relative.businessDays > 0
+          ? Math.floor(relative.businessDays)
+          : 1;
+      return {
+        ...createValidatorRule("customRefine"),
+        params: {
+          customCode: `const __businessDaysMin__ = ${businessDays};
+const today = new Date(params.currentDateTimestamp);
+today.setHours(0, 0, 0, 0);
+const candidate = new Date(date.getTime());
+candidate.setHours(0, 0, 0, 0);
+const candidateDay = candidate.getDay();
+let businessDaysBetween = 0;
+const cursor = new Date(today.getTime());
+while (cursor.getTime() < candidate.getTime()) {
+  cursor.setDate(cursor.getDate() + 1);
+  if (cursor.getTime() >= candidate.getTime()) break;
+  const day = cursor.getDay();
+  if (day !== 0 && day !== 6) businessDaysBetween += 1;
+}
+const isWeekend = candidateDay === 0 || candidateDay === 6;
+const passed = !isWeekend && businessDaysBetween >= __businessDaysMin__;
+return passed;`,
+          message: relative.message || getBusinessDaysMessage(businessDays),
+          usesContext: true,
+          refineType: "refine",
+        },
+      };
+    }
     case "dateOnOrAfterField":
       return {
         ...createValidatorRule("customRefine"),

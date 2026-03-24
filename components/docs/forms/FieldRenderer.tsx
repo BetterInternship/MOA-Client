@@ -35,7 +35,7 @@ export const FieldRenderer = <T extends any[]>({
   value: string;
   onChange: (v: any) => void;
   error?: string;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
   allValues?: Record<string, string>;
   isPhantom?: boolean;
 }) => {
@@ -205,7 +205,7 @@ const FieldRendererDropdown = <T extends any[]>({
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string | number) => void;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
   isPhantom?: boolean;
 }) => {
   const options: Option[] = (field.options ?? []).map((o) => ({
@@ -250,7 +250,7 @@ const FieldRendererDate = <T extends any[]>({
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: number) => void;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
   isPhantom?: boolean;
 }) => {
   // Try to parse it first
@@ -266,8 +266,9 @@ const FieldRendererDate = <T extends any[]>({
         label={field.label}
         date={numericalValue}
         setter={(v) => {
-          onChange(v ?? 0);
-          onBlur?.();
+          const resolved = v ?? 0;
+          onChange(resolved);
+          onBlur?.(resolved);
         }}
         className="w-full"
         contentClassName="z-[1100]"
@@ -306,7 +307,7 @@ const FieldRendererTime = <T extends any[]>({
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string) => void;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
   isPhantom?: boolean;
 }) => {
   const badge = isPhantom && <PhantomFieldBadge />;
@@ -344,7 +345,7 @@ const FieldRendererCheckbox = <T extends any[]>({
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: boolean) => void;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
   isPhantom?: boolean;
 }) => {
   const badge = isPhantom && <PhantomFieldBadge />;
@@ -383,7 +384,7 @@ const FieldRendererInput = <T extends any[]>({
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string | number) => void;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
   isPhantom?: boolean;
 }) => {
   const inputMode = field.type === "number" ? "numeric" : undefined;
@@ -427,7 +428,7 @@ const FieldRendererSignature = <T extends any[]>({
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string | number) => void;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
 }) => {
   const signContext = useSignContext();
   const [checked, setChecked] = useState(false);
@@ -479,7 +480,7 @@ const FieldRendererTextarea = <T extends any[]>({
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string | number) => void;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
   isPhantom?: boolean;
 }) => {
   const badge = isPhantom && <PhantomFieldBadge />;
@@ -520,7 +521,7 @@ const FieldRendererMultiselect = <T extends any[]>({
   options: TreeOption[];
   TooltipContent: () => React.ReactNode;
   onChange: (v: string[]) => void;
-  onBlur?: () => void;
+  onBlur?: (nextValue?: unknown) => void;
   isPhantom?: boolean;
 }) => {
   const badge = isPhantom && <PhantomFieldBadge />;
