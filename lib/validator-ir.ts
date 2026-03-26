@@ -1,3 +1,15 @@
+/**
+ * Validator IR module (domain/model layer).
+ *
+ * Purpose:
+ * - Defines compatibility between field base types and validator rule types.
+ * - Converts builder-engine config <-> persisted `validator_ir` shape.
+ * - Handles import/export bridges (Zod code, legacy refine snippets, IR normalization).
+ *
+ * Scope:
+ * - No editor UI state.
+ * - Shared conversion logic used by save/load pipelines and runtime validators.
+ */
 import type { ValidatorConfig, ValidatorRule, ValidatorRuleType } from "@/lib/validator-engine";
 import { validatorConfigToZodCode, zodCodeToValidatorConfig } from "@/lib/validator-engine";
 import type {
@@ -119,7 +131,6 @@ const today = new Date(params.currentDateTimestamp);
 today.setHours(0, 0, 0, 0);
 const candidate = new Date(date.getTime());
 candidate.setHours(0, 0, 0, 0);
-const candidateDay = candidate.getDay();
 let businessDaysBetween = 0;
 const cursor = new Date(today.getTime());
 while (cursor.getTime() < candidate.getTime()) {
@@ -128,8 +139,7 @@ while (cursor.getTime() < candidate.getTime()) {
   const day = cursor.getDay();
   if (day !== 0 && day !== 6) businessDaysBetween += 1;
 }
-const isWeekend = candidateDay === 0 || candidateDay === 6;
-const passed = !isWeekend && businessDaysBetween >= __businessDaysMin__;
+const passed = businessDaysBetween >= __businessDaysMin__;
 return passed;`;
 }
 

@@ -1,3 +1,15 @@
+/**
+ * Validator state helpers for the form-editor UI (presentation layer).
+ *
+ * Purpose:
+ * - Builds and mutates toggle-first `ValidatorConfig` state immutably.
+ * - Maps date-relative UI presets to/from `customRefine` code snippets.
+ * - Exposes view-model helpers consumed by validation controls in the editor.
+ *
+ * Scope:
+ * - Editor interaction/state only.
+ * - Does not own persisted IR shape/serialization policy.
+ */
 import {
   createValidatorRule,
   type ValidatorConfig,
@@ -167,7 +179,6 @@ const today = new Date(params.currentDateTimestamp);
 today.setHours(0, 0, 0, 0);
 const candidate = new Date(date.getTime());
 candidate.setHours(0, 0, 0, 0);
-const candidateDay = candidate.getDay();
 let businessDaysBetween = 0;
 const cursor = new Date(today.getTime());
 while (cursor.getTime() < candidate.getTime()) {
@@ -176,8 +187,7 @@ while (cursor.getTime() < candidate.getTime()) {
   const day = cursor.getDay();
   if (day !== 0 && day !== 6) businessDaysBetween += 1;
 }
-const isWeekend = candidateDay === 0 || candidateDay === 6;
-const passed = !isWeekend && businessDaysBetween >= __businessDaysMin__;
+const passed = businessDaysBetween >= __businessDaysMin__;
 return passed;`,
           message: relative.message || getBusinessDaysMessage(businessDays),
           usesContext: true,
