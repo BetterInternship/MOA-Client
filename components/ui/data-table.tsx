@@ -308,7 +308,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col items-center justify-between gap-2 sm:flex-row">
+      <div className="sticky bottom-0 z-10 flex flex-col items-center justify-between gap-2 sm:flex-row bg-white py-2 border-t-2">
         <div className="text-muted-foreground text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected

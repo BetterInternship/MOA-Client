@@ -89,53 +89,34 @@ export default function DocsDashboardPage() {
         ) : error ? (
           <div className="text-sm text-red-600">Failed to load signed documents.</div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {/* Tabs with External Arrows */}
-            <div className="flex items-center gap-3">
+            <div
+              className="scrollbar-hide flex flex-1 flex-row gap-1 overflow-x-auto"
+            >
               <button
-                onClick={() => scroll("left")}
-                className="flex-shrink-0 rounded-lg border border-gray-200 bg-white p-2 transition-colors hover:bg-gray-50"
-                aria-label="Scroll left"
+                onClick={() => setActiveTab("all")}
+                className={cn(
+                  "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                  activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
+                )}
               >
-                <ChevronLeft className="h-5 w-5 text-gray-600" />
+                All Forms
               </button>
 
-              <div
-                ref={scrollContainerRef}
-                className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto rounded-[0.33em] border border-gray-200 bg-white p-2"
-              >
+              {statuses.map((status) => (
                 <button
-                  onClick={() => setActiveTab("all")}
+                  key={status.id}
+                  onClick={() => setActiveTab(status.id)}
+                  title={status.label}
                   className={cn(
                     "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                    activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
+                    activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
                   )}
                 >
-                  All Forms
+                  {status.label}
                 </button>
-
-                {statuses.map((status) => (
-                  <button
-                    key={status.id}
-                    onClick={() => setActiveTab(status.id)}
-                    title={status.label}
-                    className={cn(
-                      "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                      activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
-                    )}
-                  >
-                    {status.label}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => scroll("right")}
-                className="flex-shrink-0 rounded-lg border border-gray-200 bg-white p-2 transition-colors hover:bg-gray-50"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="h-5 w-5 text-gray-600" />
-              </button>
+              ))}
             </div>
 
             {/* Content */}
