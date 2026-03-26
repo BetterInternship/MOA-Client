@@ -3,13 +3,14 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { z } from "zod";
-import { Search } from "lucide-react";
+import { Search, SearchCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { VerificationDetailsCard } from "@/components/docs/VerificationDetailsCard";
 import { PdfViewerPanel } from "@/components/docs/PdfViewerPanel";
 import { SignedOrExternalDocumentInfo, useDocsControllerGetByVerificationCode } from "../api";
 import { useSearchParams } from "next/navigation";
+import { HeaderIcon, HeaderText } from "@/components/ui/text";
 
 const SerialSchema = z
   .string()
@@ -68,11 +69,12 @@ function VerifyDocsPageContent() {
             <div className="flex min-h-[62vh] items-center justify-center">
               <div className="w-full max-w-3xl">
                 {/* Header on the form */}
-                <div className="mb-6 space-y-2 text-center">
-                  <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                    BetterInternship Document Verifier
-                  </h1>
-                  <p className="text-muted-foreground text-sm">
+                <div className="mb-6 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <HeaderIcon icon={SearchCheck} />
+                    <HeaderText> Document Verifier </HeaderText>
+                  </div>
+                  <p className="text-sm text-muted-foreground sm:text-base">
                     Enter the <strong>Serial Number</strong> printed on the document to check its
                     authenticity.
                   </p>
@@ -104,10 +106,11 @@ function VerifyDocsPageContent() {
           ) : (
             <div className="mb-5">
               {/* Header stays above the form when pinned */}
-              <div className="mb-3 text-center sm:mb-4">
-                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  BetterInternship Document Verifier
-                </h1>
+              <div className="mb-3 sm:mb-4">
+                <div className="flex items-center gap-3">
+                  <HeaderIcon icon={SearchCheck} />
+                  <HeaderText> Document Verifier </HeaderText>
+                </div>
                 <p className="text-muted-foreground text-sm">
                   Enter the <strong>Serial Number</strong> printed on the document to check its
                   authenticity.
@@ -116,7 +119,7 @@ function VerifyDocsPageContent() {
 
               <form
                 onSubmit={handleVerify}
-                className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:flex-row"
+                className="mx-auto flex w-full flex-col gap-3 sm:flex-row"
               >
                 <Input
                   value={serial}

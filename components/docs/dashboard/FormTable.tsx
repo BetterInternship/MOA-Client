@@ -1,18 +1,19 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Download, Hourglass, Table2, Loader2 } from "lucide-react";
-import FormDataModal from "@/components/docs/dashboard/FormDataModal";
-import { useModal } from "@/app/providers/modal-provider";
-import { IMyForm } from "../forms/myforms.ctx";
+import { ArrowRight, Download, Hourglass, ChevronDown, Sheet } from "lucide-react";
+import { IMyForm, useMyForms } from "../forms/myforms.ctx";
 import { IFormSignatory } from "@betterinternship/core/forms";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { useFormsControllerGetBulkFormProcesses, ExportableFormsResponse } from "@/app/api";
 import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { downloadFormsAsCsv } from "./CsvExporter";
+import { RowEntry } from "@/lib/types";
 
 export type FormRow = {
   form_label: string;
@@ -152,7 +153,7 @@ const createActionColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
 export default function MyFormsTable({
   rows,
   isCoordinator,
-  exportEnabled = false,
+  exportEnabled = true,
   exportLabel,
   exportFormName,
 }: {
@@ -166,86 +167,102 @@ export default function MyFormsTable({
   const columns = isCoordinator
     ? createCoordinatorFormColumns(profile)
     : createNonCoordintatorColumns(profile);
-  const { openModal } = useModal();
-  const modalName = useMemo(
-    () => `form-data-${exportLabel ? exportLabel.replace(/\s+/g, "-").toLowerCase() : "all"}`,
-    [exportLabel]
-  );
 
-  // Export mutation handler
-  const mutation = useFormsControllerGetBulkFormProcesses({
-    mutation: {
-      onSuccess: (response) => {
-        try {
-          const data = (response as ExportableFormsResponse) ?? null;
+  const { forms } = useMyForms();
+  const [selectedFormTypes, setSelectedFormTypes] = useState<Set<string>>(new Set());
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState<boolean>(false);
 
-          // Validate response structure
-          if (!data || !Array.isArray(data.processes)) {
-            toast.error("Invalid response format");
-            return;
-          }
+  const formTypes = useMemo(() => {
+    return forms.reduce<{ id: string; label: string; formName: string }[]>((acc, form: IMyForm) => {
+      const id = form.label;
+      if (!id || !!acc.find((tab) => tab.id === id)) return acc;
+      acc.push({
+        id,
+        label: form.label || "Untitled Form",
+        formName: form.name,
+      });
+      return acc;
+    }, []);
+  }, [forms]);
 
-          if (data.processes.length === 0) {
-            toast.info("No signed forms available to export");
-            return;
-          }
+  // track selected form types
+  const handleFormTypeToggle = (formName: string, checked: boolean) => {
+    const newSelected = new Set(selectedFormTypes);
 
-          // Transform response data with validation (just check if process exists)
-          const exportedForms: FormRow[] = data.processes
-            .filter((process) => {
-              // Just validate that process exists and has at least an id
-              return process && (process.id || process.formLabel || process.formName);
-            })
-            .map((process) => {
-              return {
-                form_label: process.formLabel || "Unknown",
-                form_name: process.formName || "Unknown",
-                timestamp: process.createdAt || new Date().toISOString(),
-                url: (typeof process.documentUrl === "string" ? process.documentUrl : "") || "",
-                inputs: process.inputs || {},
-              };
-            });
+    if (checked) {
+      newSelected.add(formName);
+    } else {
+      newSelected.delete(formName);
+    }
 
-          if (exportedForms.length === 0) {
-            toast.warning("No valid forms found in response");
-            return;
-          }
+    setSelectedFormTypes(newSelected);
+  }
 
-          // Open modal with filtered data
-          openModal(
-            modalName,
-            <FormDataModal
-              rows={exportedForms}
-              label={exportLabel ?? "Form Data"}
-              formName={exportFormName}
-            />,
-            {
-              title: `${exportLabel ?? "Form Data"} (${exportedForms.length} forms)`,
-              panelClassName: "sm:max-w-6xl sm:w-[92vw]",
-            }
-          );
-        } catch (error) {
-          console.error("Error processing export data:", error);
-          toast.error("Error processing export data");
-        }
-      },
-      onError: (error) => {
-        console.error("Export error:", error);
-        toast.error("Failed to load export data. Please try again.");
-      },
-    },
-  });
+  // update dropdown open state and clear selected forms
+  const handleDropdownOpenChange = (open: boolean) => {
+    setIsExportDropdownOpen(open);
+
+    if (!open) {
+      setSelectedFormTypes(new Set());
+    }
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const { mutate: getExportData, isPending } = mutation;
+  const { mutateAsync: fetchExportData } = useFormsControllerGetBulkFormProcesses();
+  const [isExporting, setIsExporting] = useState(false);
 
-  const handleOpenExport = useCallback(() => {
-    if (!profile?.id || !exportFormName) {
-      toast.error("Profile information not available");
-      return;
+  // export csvs.
+  const handleExport = async () => {
+    if (!profile?.id || selectedFormTypes.size === 0) return;
+
+    setIsExporting(true);
+
+    try {
+      const fetchPromises = Array.from(selectedFormTypes).map(async (formName) => {
+        const response = await fetchExportData({
+          data: { signatoryId: profile.id, formName }
+        });
+
+        // parse and conform variables to RowEntry format.
+        if (response && response.processes && response.processes.length > 0) {
+          return response.processes.map((process) => {
+            const entries: RowEntry[] = [
+              { col: "form_label", value: process.formLabel || "Unknown" },
+              { col: "form_name", value: process.formName || "Unknown" },
+              { col: "timestamp", value: process.createdAt || new Date().toISOString() },
+              { col: "url", value: (typeof process.documentUrl === "string" ? process.documentUrl : "") || "" },
+            ];
+
+            // spread inputs horizontally into individual RowEntries.
+            Object.entries(process.inputs || {}).forEach(([k, v]) => {
+              entries.push({ col: k, value: (v as string | number | boolean | null) });
+            });
+
+            return entries;
+          });
+        }
+
+        return [];
+      });
+
+      const results = await Promise.all(fetchPromises);
+
+      const validResults = results.filter((formEntries) => formEntries.length > 0);
+
+      if (validResults.length > 0) {
+        setIsExportDropdownOpen(false); // close dropdown
+        setSelectedFormTypes(new Set()); // clear selection
+        downloadFormsAsCsv(validResults); /// download
+      } else {
+        toast.info("No signed forms available to export for the selected types.");
+      }
+    } catch (error) {
+      console.error("Export error: ", error);
+      toast.error("Failed to fetch export data. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
-    getExportData({ data: { signatoryId: profile.id, formName: exportFormName } });
-  }, [getExportData, profile?.id, exportFormName]);
+  };
 
   return (
     <DataTable
@@ -256,19 +273,54 @@ export default function MyFormsTable({
       pageSizes={[20, 50]}
       toolbarActions={
         exportEnabled ? (
-          <Button
-            className="inline-flex h-10 items-center gap-2"
-            onClick={handleOpenExport}
-            disabled={isPending || !profile?.id}
-            title={isPending ? "Loading..." : "Export signed forms"}
-          >
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Table2 className="h-4 w-4" />
-            )}
-            {isPending ? "Loading..." : "Export CSV"}
-          </Button>
+          <DropdownMenu open={isExportDropdownOpen} onOpenChange={handleDropdownOpenChange}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={"outline"}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="h-10 gap-2"
+              >
+                <Sheet />
+                <span>Export CSV</span>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+              <DropdownMenuLabel>Select forms to export</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {formTypes.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">No forms available.</div>
+              ) : (
+                formTypes.map((formType) => (
+                  <DropdownMenuCheckboxItem
+                    key={formType.id}
+                    onClick={() => handleFormTypeToggle}
+                    checked={selectedFormTypes.has(formType.formName)}
+                    onCheckedChange={(checked) => handleFormTypeToggle(formType.formName, checked)}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {formType.label}
+                  </DropdownMenuCheckboxItem>
+                ))
+              )}
+              <div className="w-full sticky bottom-0 bg-white">
+                <DropdownMenuSeparator />
+                <Button
+                  className="w-full disabled:bg-muted disabled:text-muted-foreground"
+                  disabled={selectedFormTypes.size === 0}
+                  onClick={handleExport}
+                >
+                  <Sheet />
+                  {isExporting
+                    ? "Downloading..."
+                    : selectedFormTypes.size === 0
+                      ? `Select forms to export`
+                      : `Export ${selectedFormTypes.size} CSV${selectedFormTypes.size === 1 ? "" : "s"}`
+                  }
+                </Button>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null
       }
     />

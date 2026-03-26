@@ -23,11 +23,11 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           suppressHydrationWarning
         >
           {showHeader && (
-            <header className="bg-background/70 sticky top-0 z-50 border-b backdrop-blur">
+            <header className="bg-background/70 sticky top-0 z-50 border-b backdrop-blur py-2">
               <div className="mx-auto flex h-16 items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
                 {/* Logo */}
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="block flex-shrink-0 border-none text-black! outline-none focus:outline-none"
                 >
                   <div className="flex items-center gap-2">

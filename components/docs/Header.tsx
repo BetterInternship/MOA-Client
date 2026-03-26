@@ -11,10 +11,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Menu, X as XIcon, LogOut, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronDown, Menu, X as XIcon, LogOut, ChevronRight, Loader2, Newspaper, Settings, Search, SearchCheck } from "lucide-react";
 import { logoutSignatory } from "@/app/api/docs.api";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
@@ -133,14 +133,30 @@ export default function DocsTopbarUser() {
               <nav className="space-y-1">
                 <Link href="/dashboard" className="block w-full">
                   <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
-                    <span>My Signed Forms</span>
+                    <div className="flex gap-2 items-center justify-center">
+                      <Newspaper className="h-4 w-4" />
+                      <span>Forms</span>
+                    </div>
                     <ChevronRight className="h-4 w-4 text-gray-300" />
                   </button>
                 </Link>
 
                 <Link href="/forms" className="block w-full">
                   <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
-                    <span>Form Automation</span>
+                    <div className="flex gap-2 items-center justify-center">
+                      <Settings className="h-4 w-4" />
+                      <span>Automation</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-300" />
+                  </button>
+                </Link>
+
+                <Link href="/" className="block w-full">
+                  <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
+                    <div className="flex gap-2 items-center justify-center">
+                      <SearchCheck className="h-4 w-4" />
+                      <span>Verifier</span>
+                    </div>
                     <ChevronRight className="h-4 w-4 text-gray-300" />
                   </button>
                 </Link>
@@ -209,14 +225,6 @@ export default function DocsTopbarUser() {
   return (
     <div className="flex w-full justify-between gap-2">
       <div className="flex items-center gap-2">
-        <Link href="/dashboard">
-          <Button variant="ghost">My Signed Forms</Button>
-        </Link>
-
-        <Link href="/forms">
-          <Button variant="ghost">Form Automation</Button>
-        </Link>
-
         {profile.god && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -242,23 +250,64 @@ export default function DocsTopbarUser() {
 
       <div className="flex items-center gap-2">
         {profile?.email ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-1">
-                {profile.name?.trim() || profile.email || "User"}
-                <ChevronDown size={14} className="mt-0.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
-              >
-                {logoutMutation.isPending ? "Logging out..." : "Logout"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-20 px-2 py-1 flex-col gap-1 h-auto items-center justify-center rounded-[0.33em]",
+                pathname === "/dashboard"
+                  ? "text-primary"
+                  : "opacity-80 hover:opacity-100 hover:bg-gray-100",
+              )}
+              onClick={() => router.push("/dashboard")}
+            >
+              <Newspaper className="!h-6 !w-6" strokeWidth={1.7} />
+              <span className="text-xs">Forms</span>
+            </Button>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-20 px-2 py-1 flex-col gap-1 h-auto items-center justify-center rounded-[0.33em]",
+                pathname === "/forms"
+                  ? "text-primary"
+                  : "opacity-80 hover:opacity-100 hover:bg-gray-100",
+              )}
+              onClick={() => router.push("/forms")}
+            >
+              <Settings className="!h-6 !w-6" strokeWidth={1.7} />
+              <span className="text-xs">Automation</span>
+            </Button>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-20 px-2 py-1 flex-col gap-1 h-auto items-center justify-center rounded-[0.33em]",
+                pathname === "/"
+                  ? "text-primary"
+                  : "opacity-80 hover:opacity-100 hover:bg-gray-100",
+              )}
+              onClick={() => router.push("/")}
+            >
+              <SearchCheck className="!h-6 !w-6" strokeWidth={1.7} />
+              <span className="text-xs">Verifier</span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-1">
+                  {profile.name?.trim() || profile.email || "User"}
+                  <ChevronDown size={14} className="mt-0.5" />
+                </Button>
+              </DropdownMenuTrigger>  
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                >
+                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         ) : (
           <Link href="/login">
             <Button variant="outline">Login</Button>

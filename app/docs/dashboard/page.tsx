@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
+import { Newspaper, ChevronLeft, ChevronRight, Pen, Clock, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
@@ -19,26 +19,48 @@ export default function DocsDashboardPage() {
   const [activeTab, setActiveTab] = useState("all");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const formTabs = useMemo(() => {
-    return forms.reduce<{ id: string; label: string; formName: string }[]>((acc, form: IMyForm) => {
-      const id = form.label;
-      if (!id || !!acc.find((tab) => tab.id === id)) return acc;
-      acc.push({
-        id,
-        label: form.label || "Untitled Form",
-        formName: form.name,
-      });
-      return acc;
-    }, []);
-  }, [forms]);
-  const scroll = (direction: "left" | "right") => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: direction === "left" ? -200 : 200,
-        behavior: "smooth",
-      });
-    }
-  };
+  const statuses = [
+    {
+      id: "needs_signing",
+      label: "Needs signing",
+      icon: Pen,
+      filter: (form: IMyForm) => {
+        const lastUnsignedSigningParty = form.signing_parties
+          .toSorted((a, b) => a.order - b.order)
+          .find((signingParty) => !signingParty.signed);
+        const mySigningParty = form.signing_parties.find(
+          (signingParty) =>
+            signingParty.signatory_account?.email === profile.email && !signingParty.signed
+        );
+        
+        return lastUnsignedSigningParty?._id === mySigningParty?._id && !Boolean(form.signed_document_id);
+      }
+    },
+    {
+      id: "pending_signatures",
+      label: "Pending other signatures",
+      icon: Clock,
+      filter: (form: IMyForm) => {
+        const lastUnsignedSigningParty = form.signing_parties
+          .toSorted((a, b) => a.order - b.order)
+          .find((signingParty) => !signingParty.signed);
+        const mySigningParty = form.signing_parties.find(
+          (signingParty) =>
+            signingParty.signatory_account?.email === profile.email && !signingParty.signed
+        );
+
+        return lastUnsignedSigningParty?._id !== mySigningParty?._id;
+      }
+    },
+    {
+      id: "completed",
+      label: "Completed",
+      icon: Check,
+      filter: (form: IMyForm) => {
+        return Boolean(form.signed_document_id);
+      }
+    },
+  ]
 
   useEffect(() => {
     if (!profile.loading && !isLoggedIn) {
@@ -56,10 +78,10 @@ export default function DocsDashboardPage() {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
-          <HeaderText>My Signed Forms</HeaderText>
+          <HeaderText>Forms</HeaderText>
         </div>
-        <p className="text-sm text-gray-600 sm:text-base">
-          All internship forms you've successfully signed and completed.
+        <p className="text-sm text-muted-foreground sm:text-base">
+          View and sign internship forms.
         </p>
       </div>
 
@@ -70,53 +92,40 @@ export default function DocsDashboardPage() {
         ) : error ? (
           <div className="text-sm text-red-600">Failed to load signed documents.</div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {/* Tabs with External Arrows */}
-            <div className="flex items-center gap-3">
+            <div
+              className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto"
+            >
               <button
-                onClick={() => scroll("left")}
-                className="flex-shrink-0 rounded-lg border border-gray-200 bg-white p-2 transition-colors hover:bg-gray-50"
-                aria-label="Scroll left"
+                onClick={() => setActiveTab("all")}
+                className={cn(
+                  "w-fit flex items-center gap-2 flex-shrink-0 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                  activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
+                )}
               >
-                <ChevronLeft className="h-5 w-5 text-gray-600" />
+                <Newspaper className="w-4" />
+                All Forms
               </button>
 
-              <div
-                ref={scrollContainerRef}
-                className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto rounded-[0.33em] border border-gray-200 bg-white p-2"
-              >
-                <button
-                  onClick={() => setActiveTab("all")}
-                  className={cn(
-                    "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                    activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
-                  )}
-                >
-                  All Forms
-                </button>
+              {statuses.map((status) => {
+                const IconComponent = status.icon;
 
-                {formTabs.map((tab) => (
+                return (
                   <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    title={tab.label}
+                    key={status.id}
+                    onClick={() => setActiveTab(status.id)}
+                    title={status.label}
                     className={cn(
-                      "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                      activeTab === tab.id ? "bg-primary text-white" : "hover:bg-gray-50"
+                      "w-fit flex items-center gap-2 flex-shrink-0 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                      activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
                     )}
                   >
-                    {tab.label}
+                    <IconComponent className="w-4" />
+                    {status.label}
                   </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => scroll("right")}
-                className="flex-shrink-0 rounded-lg border border-gray-200 bg-white p-2 transition-colors hover:bg-gray-50"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="h-5 w-5 text-gray-600" />
-              </button>
+                )
+              })}
             </div>
 
             {/* Content */}
@@ -126,19 +135,19 @@ export default function DocsDashboardPage() {
               </Card>
             )}
 
-            {formTabs.map((tab) =>
-              activeTab === tab.id ? (
-                <Card key={tab.id} className="space-y-3 p-3">
+            {statuses.map((status) => {
+              return activeTab === status.id ? (
+                <Card key={status.id} className="space-y-3 p-3">
                   <MyFormsTable
-                    rows={forms.filter((form) => form.label === tab.label)}
+                    rows={forms.filter(status.filter)}
                     isCoordinator={isCoordinator}
                     exportEnabled
-                    exportLabel={tab.label}
-                    exportFormName={tab.formName}
+                    exportLabel={status.label}
+                    exportFormName={""}
                   />
                 </Card>
               ) : null
-            )}
+            })}
           </div>
         )}
       </div>
