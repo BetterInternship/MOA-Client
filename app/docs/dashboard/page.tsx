@@ -59,27 +59,6 @@ export default function DocsDashboardPage() {
     },
   ]
 
-  const formTabs = useMemo(() => {
-    return forms.reduce<{ id: string; label: string; formName: string }[]>((acc, form: IMyForm) => {
-      const id = form.label;
-      if (!id || !!acc.find((tab) => tab.id === id)) return acc;
-      acc.push({
-        id,
-        label: form.label || "Untitled Form",
-        formName: form.name,
-      });
-      return acc;
-    }, []);
-  }, [forms]);
-  const scroll = (direction: "left" | "right") => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: direction === "left" ? -200 : 200,
-        behavior: "smooth",
-      });
-    }
-  };
-
   useEffect(() => {
     if (!profile.loading && !isLoggedIn) {
       router.replace("/login");
