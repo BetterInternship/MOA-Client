@@ -32,7 +32,7 @@ export default function DocsDashboardPage() {
             signingParty.signatory_account?.email === profile.email && !signingParty.signed
         );
         
-        return lastUnsignedSigningParty?._id === mySigningParty?._id;
+        return lastUnsignedSigningParty?._id === mySigningParty?._id && !Boolean(form.signed_document_id);
       }
     },
     {
