@@ -19,6 +19,46 @@ export default function DocsDashboardPage() {
   const [activeTab, setActiveTab] = useState("all");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const statuses = [
+    {
+      id: "needs_signing",
+      label: "Needs signing",
+      filter: (form: IMyForm) => {
+        const lastUnsignedSigningParty = form.signing_parties
+          .toSorted((a, b) => a.order - b.order)
+          .find((signingParty) => !signingParty.signed);
+        const mySigningParty = form.signing_parties.find(
+          (signingParty) =>
+            signingParty.signatory_account?.email === profile.email && !signingParty.signed
+        );
+        
+        return lastUnsignedSigningParty?._id === mySigningParty?._id;
+      }
+    },
+    {
+      id: "pending_signatures",
+      label: "Pending other signatures",
+      filter: (form: IMyForm) => {
+        const lastUnsignedSigningParty = form.signing_parties
+          .toSorted((a, b) => a.order - b.order)
+          .find((signingParty) => !signingParty.signed);
+        const mySigningParty = form.signing_parties.find(
+          (signingParty) =>
+            signingParty.signatory_account?.email === profile.email && !signingParty.signed
+        );
+
+        return lastUnsignedSigningParty?._id !== mySigningParty?._id;
+      }
+    },
+    {
+      id: "completed",
+      label: "Completed",
+      filter: (form: IMyForm) => {
+        return Boolean(form.signed_document_id);
+      }
+    },
+  ]
+
   const formTabs = useMemo(() => {
     return forms.reduce<{ id: string; label: string; formName: string }[]>((acc, form: IMyForm) => {
       const id = form.label;
@@ -95,17 +135,17 @@ export default function DocsDashboardPage() {
                   All Forms
                 </button>
 
-                {formTabs.map((tab) => (
+                {statuses.map((status) => (
                   <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    title={tab.label}
+                    key={status.id}
+                    onClick={() => setActiveTab(status.id)}
+                    title={status.label}
                     className={cn(
                       "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                      activeTab === tab.id ? "bg-primary text-white" : "hover:bg-gray-50"
+                      activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
                     )}
                   >
-                    {tab.label}
+                    {status.label}
                   </button>
                 ))}
               </div>
@@ -126,19 +166,19 @@ export default function DocsDashboardPage() {
               </Card>
             )}
 
-            {formTabs.map((tab) =>
-              activeTab === tab.id ? (
-                <Card key={tab.id} className="space-y-3 p-3">
+            {statuses.map((status) => {
+              return activeTab === status.id ? (
+                <Card key={status.id} className="space-y-3 p-3">
                   <MyFormsTable
-                    rows={forms.filter((form) => form.label === tab.label)}
+                    rows={forms.filter(status.filter)}
                     isCoordinator={isCoordinator}
                     exportEnabled
-                    exportLabel={tab.label}
-                    exportFormName={tab.formName}
+                    exportLabel={status.label}
+                    exportFormName={""}
                   />
                 </Card>
               ) : null
-            )}
+            })}
           </div>
         )}
       </div>
