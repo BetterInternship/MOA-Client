@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
+import { Newspaper, ChevronLeft, ChevronRight, Pen, Clock, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
@@ -23,6 +23,7 @@ export default function DocsDashboardPage() {
     {
       id: "needs_signing",
       label: "Needs signing",
+      icon: Pen,
       filter: (form: IMyForm) => {
         const lastUnsignedSigningParty = form.signing_parties
           .toSorted((a, b) => a.order - b.order)
@@ -38,6 +39,7 @@ export default function DocsDashboardPage() {
     {
       id: "pending_signatures",
       label: "Pending other signatures",
+      icon: Clock,
       filter: (form: IMyForm) => {
         const lastUnsignedSigningParty = form.signing_parties
           .toSorted((a, b) => a.order - b.order)
@@ -53,6 +55,7 @@ export default function DocsDashboardPage() {
     {
       id: "completed",
       label: "Completed",
+      icon: Check,
       filter: (form: IMyForm) => {
         return Boolean(form.signed_document_id);
       }
@@ -75,10 +78,10 @@ export default function DocsDashboardPage() {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
-          <HeaderText>My Signed Forms</HeaderText>
+          <HeaderText>Forms</HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
-          All internship forms you've successfully signed and completed.
+          View and sign internship forms.
         </p>
       </div>
 
@@ -92,31 +95,37 @@ export default function DocsDashboardPage() {
           <div className="space-y-2">
             {/* Tabs with External Arrows */}
             <div
-              className="scrollbar-hide flex flex-1 flex-row gap-1 overflow-x-auto"
+              className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto"
             >
               <button
                 onClick={() => setActiveTab("all")}
                 className={cn(
-                  "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                  "w-fit flex items-center gap-2 flex-shrink-0 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
                   activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
                 )}
               >
+                <Newspaper className="w-4" />
                 All Forms
               </button>
 
-              {statuses.map((status) => (
-                <button
-                  key={status.id}
-                  onClick={() => setActiveTab(status.id)}
-                  title={status.label}
-                  className={cn(
-                    "w-fit flex-shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                    activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
-                  )}
-                >
-                  {status.label}
-                </button>
-              ))}
+              {statuses.map((status) => {
+                const IconComponent = status.icon;
+
+                return (
+                  <button
+                    key={status.id}
+                    onClick={() => setActiveTab(status.id)}
+                    title={status.label}
+                    className={cn(
+                      "w-fit flex items-center gap-2 flex-shrink-0 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                      activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
+                    )}
+                  >
+                    <IconComponent className="w-4" />
+                    {status.label}
+                  </button>
+                )
+              })}
             </div>
 
             {/* Content */}

@@ -94,6 +94,7 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({} as Record<string, boolean>);
+  const [globalFilter, setGlobalFilter] = React.useState("");
 
   const table = useReactTable({
     data,
@@ -103,12 +104,24 @@ export function DataTable<TData, TValue>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
     enableRowSelection, // enables internal selection state
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const query = String(filterValue ?? "").toLowerCase().trim();
+      if (!query) return true;
+
+      return row.getAllCells().some((cell) => {
+        const value = cell.getValue();
+        if (value == null) return false;
+        return String(value).toLowerCase().includes(query);
+      });
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -174,46 +187,11 @@ export function DataTable<TData, TValue>({
           )}
           {effectiveSearchKeys.length > 0 && (
             <div className="flex items-center gap-2">
-              {/* Single-column selector */}
-              <Select
-                value={selectedSearchKey}
-                onValueChange={(v) => {
-                  // Clear the previous column's filter before switching
-                  if (selectedSearchKey) {
-                    table.getColumn(selectedSearchKey)?.setFilterValue("");
-                  }
-                  setSelectedSearchKey(v);
-                }}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="start">
-                  {table
-                    .getAllLeafColumns()
-                    .filter((c) => c.getCanFilter() !== false)
-                    .map((column) => (
-                      <SelectItem key={column.id} value={column.id}>
-                        {String(column.columnDef.header ?? column.id)}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-
               <Input
-                placeholder={`Search ${searchLabel ?? effectiveSearchKeys.join(", ")}...`}
-                value={
-                  (effectiveSearchKeys
-                    .map((k) => (table.getColumn(k)?.getFilterValue() as string) ?? "")
-                    .find((v) => !!v) as string) ?? ""
-                }
-                onChange={(e) => {
-                  const v = e.target.value;
-                  for (const k of effectiveSearchKeys) {
-                    table.getColumn(k)?.setFilterValue(v);
-                  }
-                }}
-                className="h-10 w-full sm:w-64"
+                placeholder={`Search forms...`}
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="h-10 w-full sm:w-96"
               />
             </div>
           )}
@@ -310,8 +288,7 @@ export function DataTable<TData, TValue>({
       {/* Pagination */}
       <div className="sticky bottom-0 z-10 flex flex-col items-center justify-between gap-2 sm:flex-row bg-white py-2 border-t-2">
         <div className="text-muted-foreground text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected
+          {table.getFilteredRowModel().rows.length} form{table.getFilteredRowModel().rows.length === 1 ? "" : "s"}
         </div>
 
         <div className="flex items-center gap-2">
