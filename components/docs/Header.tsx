@@ -296,7 +296,7 @@ export default function DocsTopbarUser() {
                   {profile.name?.trim() || profile.email || "User"}
                   <ChevronDown size={14} className="mt-0.5" />
                 </Button>
-              </DropdownMenuTrigger>
+              </DropdownMenuTrigger>  
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   variant="destructive"

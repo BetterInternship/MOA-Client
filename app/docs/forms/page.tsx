@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Newspaper, Loader2 } from "lucide-react";
+import { Newspaper, Loader2, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { useModal } from "@/app/providers/modal-provider";
@@ -392,7 +392,7 @@ export default function DocsFormsPage() {
     <div className="container mx-auto max-w-6xl px-4 pt-6 sm:px-10 sm:pt-16">
       <div className="mb-6 space-y-2 sm:mb-8">
         <div className="flex items-center gap-3">
-          <HeaderIcon icon={Newspaper} />
+          <HeaderIcon icon={Settings} />
           <HeaderText> Form Automation </HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">

@@ -80,7 +80,7 @@ export default function DocsDashboardPage() {
           <HeaderIcon icon={Newspaper} />
           <HeaderText>Forms</HeaderText>
         </div>
-        <p className="text-sm text-gray-600 sm:text-base">
+        <p className="text-sm text-muted-foreground sm:text-base">
           View and sign internship forms.
         </p>
       </div>
