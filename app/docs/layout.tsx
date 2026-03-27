@@ -27,7 +27,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
               <div className="mx-auto flex h-16 items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
                 {/* Logo */}
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="block flex-shrink-0 border-none text-black! outline-none focus:outline-none"
                 >
                   <div className="flex items-center gap-2">
