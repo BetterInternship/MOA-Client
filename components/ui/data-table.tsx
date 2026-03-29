@@ -254,7 +254,7 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow className="odd:bg-white even:bg-muted/70" key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {enableRowSelection && (
                     <TableCell className="w-[42px]">
                       <Checkbox
