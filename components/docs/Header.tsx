@@ -14,7 +14,7 @@ import {
 import { ChevronDown, Menu, X as XIcon, LogOut, ChevronRight, Loader2, Newspaper, Settings, Search, SearchCheck } from "lucide-react";
 import { logoutSignatory } from "@/app/api/docs.api";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
