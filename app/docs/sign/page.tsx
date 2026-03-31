@@ -28,6 +28,7 @@ import { SignIntentGate } from "./components/SignIntentGate";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 type MobileSigningStep = "fields" | "preview-review" | "confirm";
+const COMPACT_SIGNING_LAYOUT_BREAKPOINT_PX = 1150;
 
 const areFormValuesEqual = (left: Record<string, string>, right: Record<string, string>) => {
   const leftEntries = Object.entries(left);
@@ -56,6 +57,8 @@ function PageContent() {
   const [delegateEmail, setDelegateEmail] = useState("");
   const params = useSearchParams();
   const isMobile = useIsMobile();
+  const [isCompactSigningLayout, setIsCompactSigningLayout] = useState(false);
+  const isMobileLayout = isMobile || isCompactSigningLayout;
   const profile = useSignatoryProfile();
   const form = useFormRendererContext();
   const formProcess = useFormProcess();
@@ -83,6 +86,20 @@ function PageContent() {
   );
   const hasInitializedPreviewValuesRef = useRef(false);
   const latestPreviewValuesRef = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateCompactSigningLayout = () => {
+      setIsCompactSigningLayout(window.innerWidth < COMPACT_SIGNING_LAYOUT_BREAKPOINT_PX);
+    };
+
+    updateCompactSigningLayout();
+    window.addEventListener("resize", updateCompactSigningLayout);
+    return () => {
+      window.removeEventListener("resize", updateCompactSigningLayout);
+    };
+  }, []);
 
   useEffect(() => {
     const formProcessId = (params.get("form-process-id") || "").trim();
@@ -153,7 +170,7 @@ function PageContent() {
   useEffect(() => {
     setDesktopStep("fields");
 
-    if (!isMobile) {
+    if (!isMobileLayout) {
       setMobileStep("fields");
       setMobileFieldsTab("form");
       setMobilePreviewNeedsAttention(false);
@@ -161,7 +178,7 @@ function PageContent() {
       hasInitializedPreviewValuesRef.current = false;
       latestPreviewValuesRef.current = {};
     }
-  }, [isMobile]);
+  }, [isMobileLayout]);
 
   useEffect(() => {
     if (mobileStep === "confirm") {
@@ -194,7 +211,7 @@ function PageContent() {
     mySigningParty.signatory_source._id.trim().length > 0;
   const currentView = shouldShowSignIntentGate ? view : "form";
   const hideHeaderForIntentGate = shouldShowSignIntentGate && currentView === "choice";
-  const showOuterHeader = !hideHeaderForIntentGate && (isMobile || currentView !== "form");
+  const showOuterHeader = !hideHeaderForIntentGate && (isMobileLayout || currentView !== "form");
   const desktopHeaderTaskTitle =
     currentView === "delegate"
       ? "Forward this form to the actual signer"
@@ -218,14 +235,14 @@ function PageContent() {
 
     if (
       didValuesChange &&
-      isMobile &&
+      isMobileLayout &&
       currentView === "form" &&
       mobileStep === "fields" &&
       mobileFieldsTab !== "preview"
     ) {
       setMobilePreviewNeedsAttention(true);
     }
-  }, [currentView, isMobile, mobileFieldsTab, mobileStep, previewValues]);
+  }, [currentView, isMobileLayout, mobileFieldsTab, mobileStep, previewValues]);
 
   const mobileSteps: MobileSigningStep[] = ["fields", "preview-review", "confirm"];
   const mobileStepNumber = mobileSteps.indexOf(mobileStep) + 1;
@@ -244,7 +261,10 @@ function PageContent() {
   ];
   const canAdvanceFromFields = !!signContext.hasAgreed;
   const isMobilePreviewTabActive =
-    isMobile && currentView === "form" && mobileStep === "fields" && mobileFieldsTab === "preview";
+    isMobileLayout &&
+    currentView === "form" &&
+    mobileStep === "fields" &&
+    mobileFieldsTab === "preview";
   const mobileStepPaneHiddenClass = "opacity-0 pointer-events-none";
   const getMobileStepHiddenClass = (step: MobileSigningStep) => {
     const currentIndex = mobileStepIndexByStep.get(mobileStep) ?? 0;
@@ -284,7 +304,7 @@ function PageContent() {
   };
 
   const renderMobileFieldsTabs = () =>
-    isMobile && mobileStep === "fields" ? (
+    isMobileLayout && mobileStep === "fields" ? (
       <MobileStepTabs
         tabs={mobileFieldsTabs}
         activeTab={mobileFieldsTab}
@@ -401,7 +421,7 @@ function PageContent() {
               exit={{ opacity: 0, y: -16, transition: choiceExitTransition }}
             >
               <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-[0.33em] border border-gray-300 bg-white">
-                {!isMobile && (
+                {!isMobileLayout && (
                   <div className="border-b border-gray-300 bg-white">
                     <div className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4">
                       <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -437,7 +457,7 @@ function PageContent() {
                   </div>
                 )}
 
-                {isMobile && (
+                {isMobileLayout && (
                   <div className="border-b border-gray-300 bg-gray-100 px-4 py-2">
                     <div className="truncate text-xs font-medium whitespace-nowrap text-gray-700">
                       Step {mobileStepNumber} of {mobileSteps.length}
@@ -447,7 +467,7 @@ function PageContent() {
                   </div>
                 )}
 
-                {isMobile ? (
+                {isMobileLayout ? (
                   <div className="relative min-h-0 flex-1 overflow-hidden">
                     <div
                       className={`absolute inset-0 min-h-0 bg-white transition-all duration-500 ease-in-out ${
@@ -649,15 +669,8 @@ function PageContent() {
                     </div>
                   </div>
                 ) : (
-                  <div
-                    className="grid min-h-0 flex-1 grid-cols-1 transition-[grid-template-columns] duration-500 ease-in-out xl:[grid-template-columns:minmax(0,1fr)_var(--right-pane-width)]"
-                    style={
-                      {
-                        "--right-pane-width": "600px",
-                      } as React.CSSProperties
-                    }
-                  >
-                    <div className="min-h-0 rounded-r-none bg-white transition-[transform] duration-500 ease-in-out xl:scale-100 xl:border-r xl:border-gray-300">
+                  <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] transition-[grid-template-columns] duration-500 ease-in-out">
+                    <div className="min-h-0 rounded-r-none border-r border-gray-300 bg-white transition-[transform] duration-500 ease-in-out">
                       {formProcess.latest_document_url ? (
                         <div className="h-full [&>div]:rounded-none [&>div]:border-0">
                           <FormPreviewPdfDisplay
