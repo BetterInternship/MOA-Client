@@ -14,7 +14,7 @@ export default function DocsDashboardPage() {
   const profile = useSignatoryProfile();
   const isLoggedIn = Boolean(profile?.email);
   const isCoordinator = Boolean(profile.coordinatorId);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("needs_signing");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const statuses = [
@@ -30,9 +30,11 @@ export default function DocsDashboardPage() {
           (signingParty) =>
             signingParty.signatory_account?.email === profile.email && !signingParty.signed
         );
-        
-        return lastUnsignedSigningParty?._id === mySigningParty?._id && !Boolean(form.signed_document_id);
-      }
+
+        return (
+          lastUnsignedSigningParty?._id === mySigningParty?._id && !Boolean(form.signed_document_id)
+        );
+      },
     },
     {
       id: "pending_signatures",
@@ -48,7 +50,7 @@ export default function DocsDashboardPage() {
         );
 
         return lastUnsignedSigningParty?._id !== mySigningParty?._id;
-      }
+      },
     },
     {
       id: "completed",
@@ -56,9 +58,9 @@ export default function DocsDashboardPage() {
       icon: Check,
       filter: (form: IMyForm) => {
         return Boolean(form.signed_document_id);
-      }
+      },
     },
-  ]
+  ];
 
   if (profile.loading || !isLoggedIn) {
     return null;
@@ -72,7 +74,7 @@ export default function DocsDashboardPage() {
           <HeaderIcon icon={Newspaper} />
           <HeaderText>Forms</HeaderText>
         </div>
-        <p className="text-sm text-muted-foreground sm:text-base">
+        <p className="text-muted-foreground text-sm sm:text-base">
           View and sign internship forms.
         </p>
       </div>
@@ -86,20 +88,7 @@ export default function DocsDashboardPage() {
         ) : (
           <div className="space-y-2">
             {/* Tabs with External Arrows */}
-            <div
-              className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto"
-            >
-              <button
-                onClick={() => setActiveTab("all")}
-                className={cn(
-                  "w-fit flex items-center gap-2 flex-shrink-0 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                  activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
-                )}
-              >
-                <Newspaper className="w-4" />
-                All Forms
-              </button>
-
+            <div className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto">
               {statuses.map((status) => {
                 const IconComponent = status.icon;
 
@@ -109,15 +98,25 @@ export default function DocsDashboardPage() {
                     onClick={() => setActiveTab(status.id)}
                     title={status.label}
                     className={cn(
-                      "w-fit flex items-center gap-2 flex-shrink-0 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                      "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
                       activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
                     )}
                   >
                     <IconComponent className="w-4" />
                     {status.label}
                   </button>
-                )
+                );
               })}
+              <button
+                onClick={() => setActiveTab("all")}
+                className={cn(
+                  "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                  activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
+                )}
+              >
+                <Newspaper className="w-4" />
+                All Forms
+              </button>
             </div>
 
             {/* Content */}
@@ -138,7 +137,7 @@ export default function DocsDashboardPage() {
                     exportFormName={""}
                   />
                 </Card>
-              ) : null
+              ) : null;
             })}
           </div>
         )}
