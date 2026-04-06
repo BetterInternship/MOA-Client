@@ -39,17 +39,20 @@ export const FormPreviewRenderer = ({
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const metadataClient = useMemo(() => {
+    if (!metadata) return null;
+    try {
+      return new FormMetadata(metadata);
+    } catch {
+      return null;
+    }
+  }, [metadata]);
 
   // Extract actual fields from metadata for proper validation and field types
   const metadataFields = useMemo(() => {
-    if (!metadata) return [];
-    try {
-      const formMetadata = new FormMetadata(metadata);
-      return formMetadata.getFieldsForClientService();
-    } catch (error) {
-      return [];
-    }
-  }, [metadata]);
+    if (!metadataClient) return [];
+    return metadataClient.getFieldsForClientService();
+  }, [metadataClient]);
 
   // Create a map of field name to field object for easy lookup
   const fieldMap = useMemo(() => {
@@ -111,12 +114,26 @@ export const FormPreviewRenderer = ({
   }
 
   const handleBlurValidate = (fieldKey: string, nextValue?: unknown) => {
-    const field = fieldMap.get(fieldKey);
-    if (!field || field.source !== "manual") return;
+    const currentField = fieldMap.get(fieldKey);
+    if (!currentField || currentField.source !== "manual") return;
 
-    const value = nextValue === undefined ? displayValues[fieldKey] : String(nextValue ?? "");
-    const coerced = field.coerce(value);
-    const result = field.validator?.safeParse(coerced);
+    const nextFieldValue = nextValue === undefined ? displayValues[fieldKey] : String(nextValue ?? "");
+    const valuesForParams: Record<string, string> =
+      nextValue === undefined
+        ? displayValues
+        : {
+            ...displayValues,
+            [fieldKey]: nextFieldValue,
+          };
+
+    // Rebuild fields using merged params so cross-field validators can see latest values.
+    const hydratedField =
+      metadataClient
+        ?.getFieldsForClientService(undefined, valuesForParams)
+        .find((field) => field.field === fieldKey) || currentField;
+
+    const coerced = hydratedField.coerce(nextFieldValue);
+    const result = hydratedField.validator?.safeParse(coerced);
 
     if (result?.error) {
       // ! todo: import zod at the top, not here (dynamic imports bad)
@@ -128,7 +145,7 @@ export const FormPreviewRenderer = ({
         .join("\n");
       setErrors((prev) => ({
         ...prev,
-        [fieldKey]: `${field.label}: ${errorString}`,
+        [fieldKey]: `${hydratedField.label}: ${errorString}`,
       }));
     } else {
       setErrors((prev) => {
