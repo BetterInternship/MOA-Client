@@ -31,12 +31,12 @@ function DocsAuthGate({ children }: { children: React.ReactNode }) {
     PROTECTED_ROUTE_PREFIXES.some((prefix) => routeMatches(normalizedPath, prefix));
 
   useEffect(() => {
-    if (requiresAuth && !profile.loading && !profile.email) {
+    if (requiresAuth && !profile.loading && profile.unauthorized) {
       router.replace("/login");
     }
-  }, [requiresAuth, profile.loading, profile.email, router]);
+  }, [requiresAuth, profile.loading, profile.unauthorized, router]);
 
-  if (requiresAuth && (profile.loading || !profile.email)) return null;
+  if (requiresAuth && (profile.loading || profile.unauthorized)) return null;
   return <>{children}</>;
 }
 

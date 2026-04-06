@@ -20,6 +20,7 @@ interface ISignatoryProfile {
   coordinatorId?: string;
   god?: boolean;
   loading?: boolean;
+  unauthorized?: boolean;
 }
 
 const SignatoryProfileContext = createContext({} as ISignatoryProfile);
@@ -29,6 +30,7 @@ export const useSignatoryProfile = () => useContext(SignatoryProfileContext);
 export const SignatoryProfileContextProvider = ({ children }: { children: React.ReactNode }) => {
   const [signatoryContext, setSignatoryContext] = useState<ISignatoryProfile>({
     loading: true,
+    unauthorized: false,
   } as ISignatoryProfile);
 
   const signatoryProfile = useQuery({
@@ -49,35 +51,45 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
     const profile = signatoryProfile.data?.profile;
 
     if (signatoryProfile.isLoading || signatoryProfile.isFetching) {
-      setSignatoryContext((prev) => ({ ...prev, loading: true }));
+      setSignatoryContext((prev) => ({
+        ...prev,
+        loading: true,
+        unauthorized: false,
+      }));
       return;
     }
 
     if (signatoryProfile.status === "error") {
-      const queryError = signatoryProfile.error as
-        | (Error & { status?: number; response?: { status?: number } })
-        | null;
-      const status = queryError?.status ?? queryError?.response?.status;
-      // Only clear identity when auth is truly invalid.
-      if (status === 401) {
-        setSignatoryContext({ loading: false } as ISignatoryProfile);
+      const queryError = signatoryProfile.error as Error | null;
+      const message = (queryError?.message || "").toLowerCase();
+      const isUnauthorizedError =
+        message.includes("unauthorized") ||
+        message.includes("invalid or expired signatory token");
+
+      if (isUnauthorizedError) {
+        setSignatoryContext({
+          loading: false,
+          unauthorized: true,
+        } as ISignatoryProfile);
         return;
       }
+
       // Preserve last known profile for transient/network errors.
       setSignatoryContext((prev) => ({ ...prev, loading: false }));
       return;
     }
 
     if (!profile) {
-      setSignatoryContext({
-        loading: false,
-      } as ISignatoryProfile);
+      // Sometimes responses can be empty due to browser cache/proxy quirks.
+      // Keep prior identity and avoid forcing logout on ambiguous state.
+      setSignatoryContext((prev) => ({ ...prev, loading: false }));
     } else if (profile) {
       setSignatoryContext({
         ...profile,
         autofill: profile.autofill as Record<string, Record<string, string>>,
         autoFormPermissions: profile.autoFormPermissions as Record<string, string>,
         loading: false,
+        unauthorized: false,
       });
     }
   }, [
