@@ -6,7 +6,6 @@ import { Table2, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Table from "@/components/docs/dashboard/Table";
-import CsvExporter from "@/components/docs/dashboard/CsvExporter";
 import FieldVisibilityToggle from "@/components/docs/dashboard/FieldVisibilityToggle";
 import { RowEntry } from "@/lib/types";
 
@@ -31,7 +30,7 @@ export default function TableDisplayPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(json),
         });
-        
+
         const processed = await res.json();
         setUploadedData(processed);
         setVisibleColumns([]);
@@ -51,10 +50,10 @@ export default function TableDisplayPage() {
   const handleColumnOrderChange = (newOrder: string[]) => {
     // Update both visible and available columns to maintain new order
     setVisibleColumns(newOrder);
-    
+
     // Update availableColumns to reflect new order for future toggles
     const allColumnsInNewOrder = newOrder.concat(
-      availableColumns.filter(col => !newOrder.includes(col))
+      availableColumns.filter((col) => !newOrder.includes(col))
     );
     setAvailableColumns(allColumnsInNewOrder);
   };
@@ -68,7 +67,7 @@ export default function TableDisplayPage() {
         // Add the column back in its original position
         const newVisible = [...prev];
         const originalIndex = availableColumns.indexOf(columnName);
-        
+
         // Find the correct position to insert
         let insertIndex = newVisible.length;
         for (let i = 0; i < newVisible.length; i++) {
@@ -78,7 +77,7 @@ export default function TableDisplayPage() {
             break;
           }
         }
-        
+
         newVisible.splice(insertIndex, 0, columnName);
         return newVisible;
       }
@@ -117,9 +116,6 @@ export default function TableDisplayPage() {
               />
             )}
           </div>
-          {availableColumns.length > 0 && (
-            <CsvExporter tableData={uploadedData} visibleColumns={visibleColumns} />
-          )}
           <input
             ref={fileInputRef}
             type="file"
@@ -132,7 +128,7 @@ export default function TableDisplayPage() {
 
       {/* Table Display */}
       {uploadedData.length > 0 ? (
-        <Card className="p-4 overflow-hidden mb-8">
+        <Card className="mb-8 overflow-hidden p-4">
           <Table
             table={uploadedData}
             visibleColumns={visibleColumns}
@@ -142,9 +138,7 @@ export default function TableDisplayPage() {
         </Card>
       ) : (
         <Card className="p-6">
-          <div className="text-sm text-gray-500">
-            Upload a JSON file to display data
-          </div>
+          <div className="text-sm text-gray-500">Upload a JSON file to display data</div>
         </Card>
       )}
     </div>
