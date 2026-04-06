@@ -1,5 +1,6 @@
 import { type IFormBlock, type IFormSigningParty } from "@betterinternship/core/forms";
 import { getPartyColorByIndex } from "@/lib/party-colors";
+import { coerceAnyDate, formatTimestampDateWithoutTime } from "@/lib/utils";
 
 export type PreviewFieldType = "text" | "signature" | "image";
 
@@ -133,11 +134,19 @@ export const normalizePreviewFieldKey = (fieldKey: string): string => {
 
 export const resolveAutoPreviewValue = (fieldKey: string, now = new Date()): string => {
   const normalized = normalizePreviewFieldKey(fieldKey).toLowerCase();
-  if (normalized === "auto.current-date") return now.getTime().toString();
+  if (normalized === "auto.current-date") return formatTimestampDateWithoutTime(now.getTime());
   if (normalized === "auto.current-day") return now.getDate().toString();
   if (normalized === "auto.current-month") return (now.getMonth() + 1).toString();
   if (normalized === "auto.current-year") return now.getFullYear().toString();
   return "";
+};
+
+const formatPreviewDateValue = (field: PreviewField, rawValue: string): string => {
+  const normalizedFieldKey = normalizePreviewFieldKey(field.field).toLowerCase();
+  if (normalizedFieldKey.startsWith("auto.current-date")) return rawValue;
+  const parsed = coerceAnyDate(rawValue);
+  if (!parsed) return rawValue;
+  return formatTimestampDateWithoutTime(parsed);
 };
 
 export const DEFAULT_PREVIEW_DUMMY_STUDENT_USER: Record<string, string> = {
@@ -313,7 +322,7 @@ export const createPreviewDisplayValueResolver = ({
       : rawValue == null
         ? ""
         : toSafeScalarString(rawValue);
-    if (rawString.trim()) return rawString;
+    if (rawString.trim()) return formatPreviewDateValue(field, rawString);
 
     return resolveFallbackValue({
       field,
