@@ -1,17 +1,15 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Newspaper, ChevronLeft, ChevronRight, Pen, Clock, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export default function DocsDashboardPage() {
-  const router = useRouter();
   const { forms, loading, error } = useMyForms();
   const profile = useSignatoryProfile();
   const isLoggedIn = Boolean(profile?.email);
@@ -61,12 +59,6 @@ export default function DocsDashboardPage() {
       }
     },
   ]
-
-  useEffect(() => {
-    if (!profile.loading && !isLoggedIn) {
-      router.replace("/login");
-    }
-  }, [profile.loading, isLoggedIn, router]);
 
   if (profile.loading || !isLoggedIn) {
     return null;
