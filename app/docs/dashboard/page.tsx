@@ -1,16 +1,8 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useState } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import {
-  Newspaper,
-  ChevronLeft,
-  ChevronRight,
-  Pen,
-  Clock,
-  Check,
-  CircleSlash2,
-} from "lucide-react";
+import { Newspaper, Pen, Clock, Check, CircleSlash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
@@ -28,7 +20,11 @@ export default function DocsDashboardPage() {
     {
       id: "needs_signing",
       label: "Needs signing",
-      icon: Pen,
+      icon: () => (
+        <div className="bg-warning rounded-full p-2 text-white">
+          <Pen className="h-3 w-3" />
+        </div>
+      ),
       filter: (form: IMyForm) => {
         const lastUnsignedSigningParty = form.signing_parties
           .toSorted((a, b) => a.order - b.order)
@@ -49,7 +45,11 @@ export default function DocsDashboardPage() {
     {
       id: "completed",
       label: "Completed",
-      icon: Check,
+      icon: () => (
+        <div className="bg-supportive rounded-full p-1 text-white">
+          <Check className="h-4 w-4" />
+        </div>
+      ),
       filter: (form: IMyForm) => {
         return Boolean(form.signed_document_id);
       },
@@ -57,7 +57,11 @@ export default function DocsDashboardPage() {
     {
       id: "rejected",
       label: "Cancelled",
-      icon: CircleSlash2,
+      icon: () => (
+        <div className="bg-destructive rounded-full p-1 text-white">
+          <CircleSlash2 className="h-4 w-4" />
+        </div>
+      ),
       filter: (form: IMyForm) => {
         return Boolean(form.rejection_reason);
       },
