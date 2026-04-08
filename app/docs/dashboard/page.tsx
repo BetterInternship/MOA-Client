@@ -2,7 +2,15 @@
 
 import { useMemo, useState, useRef } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Newspaper, ChevronLeft, ChevronRight, Pen, Clock, Check } from "lucide-react";
+import {
+  Newspaper,
+  ChevronLeft,
+  ChevronRight,
+  Pen,
+  Clock,
+  Check,
+  CircleSlash2,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
@@ -15,7 +23,6 @@ export default function DocsDashboardPage() {
   const isLoggedIn = Boolean(profile?.email);
   const isCoordinator = Boolean(profile.coordinatorId);
   const [activeTab, setActiveTab] = useState("needs_signing");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const statuses = [
     {
@@ -30,10 +37,29 @@ export default function DocsDashboardPage() {
           (signingParty) =>
             signingParty.signatory_account?.email === profile.email && !signingParty.signed
         );
+        const rejectionReason = form.rejection_reason;
 
         return (
-          lastUnsignedSigningParty?._id === mySigningParty?._id && !Boolean(form.signed_document_id)
+          lastUnsignedSigningParty?._id === mySigningParty?._id &&
+          !form.signed_document_id &&
+          !rejectionReason
         );
+      },
+    },
+    {
+      id: "completed",
+      label: "Completed",
+      icon: Check,
+      filter: (form: IMyForm) => {
+        return Boolean(form.signed_document_id);
+      },
+    },
+    {
+      id: "rejected",
+      label: "Cancelled",
+      icon: CircleSlash2,
+      filter: (form: IMyForm) => {
+        return Boolean(form.rejection_reason);
       },
     },
     {
@@ -50,14 +76,6 @@ export default function DocsDashboardPage() {
         );
 
         return lastUnsignedSigningParty?._id !== mySigningParty?._id;
-      },
-    },
-    {
-      id: "completed",
-      label: "Completed",
-      icon: Check,
-      filter: (form: IMyForm) => {
-        return Boolean(form.signed_document_id);
       },
     },
   ];
