@@ -1,29 +1,30 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Newspaper, ChevronLeft, ChevronRight, Pen, Clock, Check } from "lucide-react";
+import { Newspaper, Pen, Clock, Check, CircleSlash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export default function DocsDashboardPage() {
-  const router = useRouter();
   const { forms, loading, error } = useMyForms();
   const profile = useSignatoryProfile();
   const isLoggedIn = Boolean(profile?.email);
   const isCoordinator = Boolean(profile.coordinatorId);
-  const [activeTab, setActiveTab] = useState("all");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState("needs_signing");
 
   const statuses = [
     {
       id: "needs_signing",
       label: "Needs signing",
-      icon: Pen,
+      icon: () => (
+        <div className="bg-warning rounded-full p-2 text-white">
+          <Pen className="h-3 w-3" />
+        </div>
+      ),
       filter: (form: IMyForm) => {
         const lastUnsignedSigningParty = form.signing_parties
           .toSorted((a, b) => a.order - b.order)
@@ -32,9 +33,38 @@ export default function DocsDashboardPage() {
           (signingParty) =>
             signingParty.signatory_account?.email === profile.email && !signingParty.signed
         );
-        
-        return lastUnsignedSigningParty?._id === mySigningParty?._id && !Boolean(form.signed_document_id);
-      }
+        const rejectionReason = form.rejection_reason;
+
+        return (
+          lastUnsignedSigningParty?._id === mySigningParty?._id &&
+          !form.signed_document_id &&
+          !rejectionReason
+        );
+      },
+    },
+    {
+      id: "completed",
+      label: "Completed",
+      icon: () => (
+        <div className="bg-supportive rounded-full p-1 text-white">
+          <Check className="h-4 w-4" />
+        </div>
+      ),
+      filter: (form: IMyForm) => {
+        return Boolean(form.signed_document_id);
+      },
+    },
+    {
+      id: "rejected",
+      label: "Cancelled",
+      icon: () => (
+        <div className="bg-destructive rounded-full p-1 text-white">
+          <CircleSlash2 className="h-4 w-4" />
+        </div>
+      ),
+      filter: (form: IMyForm) => {
+        return Boolean(form.rejection_reason);
+      },
     },
     {
       id: "pending_signatures",
@@ -50,23 +80,9 @@ export default function DocsDashboardPage() {
         );
 
         return lastUnsignedSigningParty?._id !== mySigningParty?._id;
-      }
+      },
     },
-    {
-      id: "completed",
-      label: "Completed",
-      icon: Check,
-      filter: (form: IMyForm) => {
-        return Boolean(form.signed_document_id);
-      }
-    },
-  ]
-
-  useEffect(() => {
-    if (!profile.loading && !isLoggedIn) {
-      router.replace("/login");
-    }
-  }, [profile.loading, isLoggedIn, router]);
+  ];
 
   if (profile.loading || !isLoggedIn) {
     return null;
@@ -80,7 +96,7 @@ export default function DocsDashboardPage() {
           <HeaderIcon icon={Newspaper} />
           <HeaderText>Forms</HeaderText>
         </div>
-        <p className="text-sm text-muted-foreground sm:text-base">
+        <p className="text-muted-foreground text-sm sm:text-base">
           View and sign internship forms.
         </p>
       </div>
@@ -94,20 +110,7 @@ export default function DocsDashboardPage() {
         ) : (
           <div className="space-y-2">
             {/* Tabs with External Arrows */}
-            <div
-              className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto"
-            >
-              <button
-                onClick={() => setActiveTab("all")}
-                className={cn(
-                  "w-fit flex items-center gap-2 flex-shrink-0 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                  activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
-                )}
-              >
-                <Newspaper className="w-4" />
-                All Forms
-              </button>
-
+            <div className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto">
               {statuses.map((status) => {
                 const IconComponent = status.icon;
 
@@ -117,15 +120,25 @@ export default function DocsDashboardPage() {
                     onClick={() => setActiveTab(status.id)}
                     title={status.label}
                     className={cn(
-                      "w-fit flex items-center gap-2 flex-shrink-0 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                      "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
                       activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
                     )}
                   >
                     <IconComponent className="w-4" />
                     {status.label}
                   </button>
-                )
+                );
               })}
+              <button
+                onClick={() => setActiveTab("all")}
+                className={cn(
+                  "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                  activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
+                )}
+              >
+                <Newspaper className="w-4" />
+                All Forms
+              </button>
             </div>
 
             {/* Content */}
@@ -146,7 +159,7 @@ export default function DocsDashboardPage() {
                     exportFormName={""}
                   />
                 </Card>
-              ) : null
+              ) : null;
             })}
           </div>
         )}

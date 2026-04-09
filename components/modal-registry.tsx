@@ -13,6 +13,7 @@ import { FormRejectionPromptModal } from "./modals/FormRejectionPromptModal";
 import { CompleteProfileModal } from "./docs/modals/CompleteProfileModal";
 import { ISignatoryFormSettings } from "@/app/docs/auth/provider/form-settings.ctx";
 import { SetupFormSettings } from "./modals/SetupFormSettings";
+import { CancelledFormDetailsModal } from "./modals/CancelledFormDetailsModal";
 
 /**
  * Simplifies modal config since we usually reuse each of these modal stuffs.
@@ -106,6 +107,19 @@ export const useModalRegistry = () => {
           title: "Reject to Fill This Form",
         }),
       close: () => close("form-rejection-prompt"),
+    },
+
+    cancelledFormDetails: {
+      open: (rejectionReason?: string | null) =>
+        open(
+          "cancelled-form-details",
+          <CancelledFormDetailsModal rejectionReason={rejectionReason} />,
+          {
+            title: "Cancelled Form Details",
+            hasClose: false,
+          }
+        ),
+      close: () => close("cancelled-form-details"),
     },
 
     // Complete profile modal

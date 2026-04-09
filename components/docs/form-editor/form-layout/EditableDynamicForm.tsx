@@ -12,7 +12,7 @@ interface EditableDynamicFormProps {
   values: Record<string, any>;
   onChange: (key: string, value: any) => void;
   errors?: Record<string, string>;
-  onBlurValidate?: (fieldKey: string) => void;
+  onBlurValidate?: (fieldKey: string, nextValue?: unknown) => void;
   onBlocksReorder?: (blocks: IFormBlock[]) => void;
   onBlockSelect?: (block: IFormBlock, blockIndex: number) => void;
   onAddBlock?: () => void;

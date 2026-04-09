@@ -43,6 +43,7 @@ export function useCustomFieldPreview(
   const [previewValidator, setPreviewValidator] = useState<string>(value.validator || "");
   const [previewValues, setPreviewValues] = useState<Record<string, string>>({});
   const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
+  const previewValuesRef = useRef<Record<string, string>>({});
   const previewFieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const previewRawBlocks = useMemo<IFormBlock[]>(
@@ -107,6 +108,7 @@ export function useCustomFieldPreview(
 
   useEffect(() => {
     setPreviewValues({});
+    previewValuesRef.current = {};
     setPreviewErrors({});
   }, [value.name, resetKey]);
 
@@ -145,7 +147,11 @@ export function useCustomFieldPreview(
     }
   }, [previewMetadata]);
 
-  const onBlurValidate = (fieldKey: string, fieldFromRenderer?: unknown) => {
+  const onBlurValidate = (
+    fieldKey: string,
+    fieldFromRenderer?: unknown,
+    nextValue?: unknown
+  ) => {
     const rendererField = (fieldFromRenderer as Partial<PreviewClientField>) || null;
     const mappedField = previewFieldMap.get(fieldKey);
     const resolvedField =
@@ -163,7 +169,10 @@ export function useCustomFieldPreview(
       return;
     }
 
-    const rawValue = previewValues[fieldKey] ?? "";
+    const rawValue =
+      nextValue === undefined
+        ? (previewValuesRef.current[fieldKey] ?? "")
+        : String(nextValue ?? "");
     const coerced =
       typeof resolvedField.coerce === "function" ? resolvedField.coerce(rawValue) : rawValue;
     const result = resolvedField.validator.safeParse(coerced);
@@ -187,9 +196,11 @@ export function useCustomFieldPreview(
   };
 
   const onValueChange = (key: string, nextValue: unknown) => {
-    setPreviewValues((prev) => ({ ...prev, [key]: String(nextValue) }));
+    const nextRawValue = String(nextValue);
+    const next = { ...previewValuesRef.current, [key]: nextRawValue };
+    previewValuesRef.current = next;
+    setPreviewValues(next);
     setPreviewErrors((prev) => {
-      if (!prev[key]) return prev;
       const next = { ...prev };
       delete next[key];
       return next;

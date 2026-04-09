@@ -71,8 +71,8 @@ export function FormFillerRenderer({ hideActions = false }: FormFillerRendererPr
             onChange={formFiller.setValue}
             errors={formFiller.errors}
             setSelected={form.setSelectedPreviewId}
-            onBlurValidate={(fieldKey, field) =>
-              formFiller.validateField(fieldKey, field, autofillValues)
+            onBlurValidate={(fieldKey, field, nextValue) =>
+              formFiller.validateField(fieldKey, field, autofillValues, nextValue)
             }
             fieldRefs={fieldRefs.current}
             selectedFieldId={form.selectedPreviewId}
@@ -105,7 +105,7 @@ export const BlocksRenderer = <T extends any[]>({
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
   setSelected: (selected: string) => void;
-  onBlurValidate?: (fieldKey: string, field: any) => void;
+  onBlurValidate?: (fieldKey: string, field: any, nextValue?: unknown) => void;
   fieldRefs: Record<string, HTMLDivElement | null>;
   selectedFieldId?: string;
 }) => {
@@ -134,7 +134,7 @@ export const BlocksRenderer = <T extends any[]>({
                 field={field}
                 value={values[field.field]}
                 onChange={(v) => onChange(field.field, v)}
-                onBlur={() => onBlurValidate?.(field.field, field)}
+                onBlur={(nextValue) => onBlurValidate?.(field.field, field, nextValue)}
                 error={errors[field.field]}
                 allValues={values}
               />

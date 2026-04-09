@@ -39,17 +39,20 @@ export const FormPreviewRenderer = ({
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const metadataClient = useMemo(() => {
+    if (!metadata) return null;
+    try {
+      return new FormMetadata(metadata);
+    } catch {
+      return null;
+    }
+  }, [metadata]);
 
   // Extract actual fields from metadata for proper validation and field types
   const metadataFields = useMemo(() => {
-    if (!metadata) return [];
-    try {
-      const formMetadata = new FormMetadata(metadata);
-      return formMetadata.getFieldsForClientService();
-    } catch (error) {
-      return [];
-    }
-  }, [metadata]);
+    if (!metadataClient) return [];
+    return metadataClient.getFieldsForClientService();
+  }, [metadataClient]);
 
   // Create a map of field name to field object for easy lookup
   const fieldMap = useMemo(() => {
@@ -110,13 +113,27 @@ export const FormPreviewRenderer = ({
     return <div className="py-8 text-center text-sm text-slate-500">No blocks to display</div>;
   }
 
-  const handleBlurValidate = (fieldKey: string) => {
-    const field = fieldMap.get(fieldKey);
-    if (!field || field.source !== "manual") return;
+  const handleBlurValidate = (fieldKey: string, nextValue?: unknown) => {
+    const currentField = fieldMap.get(fieldKey);
+    if (!currentField || currentField.source !== "manual") return;
 
-    const value = displayValues[fieldKey];
-    const coerced = field.coerce(value);
-    const result = field.validator?.safeParse(coerced);
+    const nextFieldValue = nextValue === undefined ? displayValues[fieldKey] : String(nextValue ?? "");
+    const valuesForParams: Record<string, string> =
+      nextValue === undefined
+        ? displayValues
+        : {
+            ...displayValues,
+            [fieldKey]: nextFieldValue,
+          };
+
+    // Rebuild fields using merged params so cross-field validators can see latest values.
+    const hydratedField =
+      metadataClient
+        ?.getFieldsForClientService(undefined, valuesForParams)
+        .find((field) => field.field === fieldKey) || currentField;
+
+    const coerced = hydratedField.coerce(nextFieldValue);
+    const result = hydratedField.validator?.safeParse(coerced);
 
     if (result?.error) {
       // ! todo: import zod at the top, not here (dynamic imports bad)
@@ -128,7 +145,7 @@ export const FormPreviewRenderer = ({
         .join("\n");
       setErrors((prev) => ({
         ...prev,
-        [fieldKey]: `${field.label}: ${errorString}`,
+        [fieldKey]: `${hydratedField.label}: ${errorString}`,
       }));
     } else {
       setErrors((prev) => {
@@ -183,7 +200,7 @@ const BlocksRenderer = ({
   values: Record<string, string>;
   onChange: (key: string, value: any) => void;
   errors: Record<string, string>;
-  onBlurValidate?: (fieldKey: string) => void;
+  onBlurValidate?: (fieldKey: string, nextValue?: unknown) => void;
   fieldRefs: Record<string, HTMLDivElement | null>;
   fieldMap: Map<string, any>;
   selectedFieldId?: string | null;
@@ -222,7 +239,7 @@ const BlocksRenderer = ({
                 field={metadataField}
                 value={values[blockField.field] ?? ""}
                 onChange={(v) => onChange(blockField.field, v)}
-                onBlur={() => onBlurValidate?.(blockField.field)}
+                onBlur={(nextValue) => onBlurValidate?.(blockField.field, nextValue)}
                 error={errors[blockField.field]}
                 allValues={values}
               />

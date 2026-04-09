@@ -84,12 +84,6 @@ export default function DocsFormsPage() {
     enabled: isLoggedIn,
   });
 
-  React.useEffect(() => {
-    if (!profile.loading && !isLoggedIn) {
-      router.replace("/login");
-    }
-  }, [profile.loading, isLoggedIn, router]);
-
   // Load form data when modal opens
   React.useEffect(() => {
     if (!openFormName) {

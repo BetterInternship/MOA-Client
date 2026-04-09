@@ -256,8 +256,8 @@ export const FormLayoutEditor = ({
   };
 
   // Validate a field on blur using centralized validation
-  const handleBlurValidate = (fieldKey: string) => {
-    const value = formValues[fieldKey];
+  const handleBlurValidate = (fieldKey: string, nextValue?: unknown) => {
+    const value = nextValue === undefined ? formValues[fieldKey] : String(nextValue ?? "");
     const error = validateFieldWithZod(fieldKey, value, metadata);
 
     if (error) {

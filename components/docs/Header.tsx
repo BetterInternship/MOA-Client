@@ -41,11 +41,13 @@ export default function DocsTopbarUser() {
         { ...toastPresets.loading, duration: Infinity }
       );
 
-      // Refetch to trigger the 401 error and let context clear
+      // Clear cached auth-dependent data immediately, then refetch profile.
+      queryClient.removeQueries({ queryKey: ["my-profile"] });
+      queryClient.removeQueries({ queryKey: ["my-forms"] });
       try {
         await queryClient.refetchQueries({ queryKey: ["my-profile"] });
       } catch {
-        // Expected to fail with 401
+        // Expected to fail with 401 when logout cookie revocation succeeds.
       }
 
       // Wait a bit for context to update, then redirect
