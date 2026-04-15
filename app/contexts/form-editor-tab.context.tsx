@@ -95,6 +95,33 @@ const applyPatchToPhantomFieldSchema = (schema: any, patch: ParentPatch) => ({
   validator_ir: patch.validator_ir !== undefined ? patch.validator_ir : schema.validator_ir,
 });
 
+const ensureRequiredRuleOnFieldSchema = (schema: any) => {
+  if (!schema) return schema;
+  const validatorIr = schema.validator_ir;
+  const rules = Array.isArray(validatorIr?.rules) ? validatorIr.rules : [];
+  const hasRequired = rules.some((rule: any) => rule?.kind === "required");
+  if (hasRequired) return schema;
+
+  const baseType =
+    validatorIr?.baseType ||
+    (schema.type === "signature" ? "signature" : schema.type === "image" ? "image" : "text");
+
+  return {
+    ...schema,
+    validator_ir: validatorIr
+      ? { ...validatorIr, rules: [...rules, { kind: "required" }] }
+      : { version: 0, baseType, rules: [{ kind: "required" }] },
+  };
+};
+
+const ensureRequiredRuleOnNewBlock = (block: IFormBlock): IFormBlock => {
+  if (!block.field_schema) return block;
+  return {
+    ...block,
+    field_schema: ensureRequiredRuleOnFieldSchema(block.field_schema),
+  };
+};
+
 const createUniqueFieldKey = (base: string) =>
   `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -431,8 +458,9 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     (newBlock: IFormBlock) => {
       if (!formMetadata) return;
       const nextOrder = formMetadata.schema.blocks.length;
+      const normalizedNewBlock = ensureRequiredRuleOnNewBlock(newBlock);
       const blockToAppend: IFormBlock = {
-        ...newBlock,
+        ...normalizedNewBlock,
         order: nextOrder,
       };
 
@@ -449,7 +477,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
       const startOrder = formMetadata.schema.blocks.length;
       const blocksToAppend = newBlocks.map((block, index) => ({
-        ...block,
+        ...ensureRequiredRuleOnNewBlock(block),
         order: startOrder + index,
       }));
 
@@ -489,11 +517,14 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
         if (block.field_schema) {
           updated.field_schema = applyPatchToFieldSchema(block.field_schema, patch);
-          updated.field_schema.field = rewriteAutoCurrentDateFieldKeyForParty(
-            updated.field_schema.field,
-            block.signing_party_id,
-            nextPartyId
-          );
+          const updatedFieldSchema = updated.field_schema;
+          if (updatedFieldSchema) {
+            updatedFieldSchema.field = rewriteAutoCurrentDateFieldKeyForParty(
+              updatedFieldSchema.field,
+              block.signing_party_id,
+              nextPartyId
+            );
+          }
         }
 
         if (block.phantom_field_schema) {
