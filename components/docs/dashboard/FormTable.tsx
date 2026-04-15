@@ -1,19 +1,27 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Download, Hourglass, ChevronDown, Sheet } from "lucide-react";
+import { ArrowRight, Download, Hourglass, ChevronDown, Sheet, ExternalLink } from "lucide-react";
 import { IMyForm, useMyForms } from "../forms/myforms.ctx";
 import { IFormSignatory } from "@betterinternship/core/forms";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
-import { useFormsControllerGetBulkFormProcesses, ExportableFormsResponse } from "@/app/api";
+import { useFormsControllerGetBulkFormProcesses } from "@/app/api";
 import { toast } from "sonner";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { downloadFormsAsCsv } from "./CsvExporter";
 import { RowEntry } from "@/lib/types";
+import useModalRegistry from "@/components/modal-registry";
 
 export type FormRow = {
   form_label: string;
@@ -67,7 +75,10 @@ export const createBaseFormColumns = (): ColumnDef<IMyForm>[] => [
  *
  * @returns
  */
-const createCoordinatorFormColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
+const createCoordinatorFormColumns = (
+  profile: IFormSignatory,
+  onViewRejectedDetails: (form: IMyForm) => void
+): ColumnDef<IMyForm>[] => [
   ...createBaseFormColumns(),
   {
     id: "student_id",
@@ -83,7 +94,7 @@ const createCoordinatorFormColumns = (profile: IFormSignatory): ColumnDef<IMyFor
     cell: (info) => info.getValue(),
     enableSorting: true,
   },
-  ...createActionColumns(profile),
+  ...createActionColumns(profile, onViewRejectedDetails),
 ];
 
 /**
@@ -91,9 +102,12 @@ const createCoordinatorFormColumns = (profile: IFormSignatory): ColumnDef<IMyFor
  *
  * @returns
  */
-const createNonCoordintatorColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
+const createNonCoordintatorColumns = (
+  profile: IFormSignatory,
+  onViewRejectedDetails: (form: IMyForm) => void
+): ColumnDef<IMyForm>[] => [
   ...createBaseFormColumns(),
-  ...createActionColumns(profile),
+  ...createActionColumns(profile, onViewRejectedDetails),
 ];
 
 /**
@@ -101,7 +115,10 @@ const createNonCoordintatorColumns = (profile: IFormSignatory): ColumnDef<IMyFor
  *
  * @returns
  */
-const createActionColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
+const createActionColumns = (
+  profile: IFormSignatory,
+  onViewRejectedDetails: (form: IMyForm) => void
+): ColumnDef<IMyForm>[] => [
   {
     id: "actions",
     header: "Actions",
@@ -133,6 +150,17 @@ const createActionColumns = (profile: IFormSignatory): ColumnDef<IMyForm>[] => [
             <Hourglass className="h-4 w-4" />
           </Button>
         );
+      } else if (myForm.rejection_reason) {
+        return (
+          <Button
+            size="sm"
+            onClick={() => onViewRejectedDetails(myForm)}
+            className="flex items-center gap-2"
+          >
+            View Details
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+        );
       } else {
         const baseUrl = process.env.NEXT_PUBLIC_DOCS_URL;
         const pendingLink = `${baseUrl}sign?form-process-id=${myForm.form_process_id}&signing-party-id=${mySigningParty?._id}`;
@@ -154,8 +182,6 @@ export default function MyFormsTable({
   rows,
   isCoordinator,
   exportEnabled = true,
-  exportLabel,
-  exportFormName,
 }: {
   rows: IMyForm[];
   isCoordinator: boolean;
@@ -164,9 +190,13 @@ export default function MyFormsTable({
   exportFormName?: string;
 }) {
   const profile = useSignatoryProfile();
+  const modalRegistry = useModalRegistry();
+  const handleViewRejectedDetails = (form: IMyForm) => {
+    modalRegistry.cancelledFormDetails.open(form.rejection_reason);
+  };
   const columns = isCoordinator
-    ? createCoordinatorFormColumns(profile)
-    : createNonCoordintatorColumns(profile);
+    ? createCoordinatorFormColumns(profile, handleViewRejectedDetails)
+    : createNonCoordintatorColumns(profile, handleViewRejectedDetails);
 
   const { forms } = useMyForms();
   const [selectedFormTypes, setSelectedFormTypes] = useState<Set<string>>(new Set());
@@ -196,7 +226,7 @@ export default function MyFormsTable({
     }
 
     setSelectedFormTypes(newSelected);
-  }
+  };
 
   // update dropdown open state and clear selected forms
   const handleDropdownOpenChange = (open: boolean) => {
@@ -205,9 +235,8 @@ export default function MyFormsTable({
     if (!open) {
       setSelectedFormTypes(new Set());
     }
-  }
+  };
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { mutateAsync: fetchExportData } = useFormsControllerGetBulkFormProcesses();
   const [isExporting, setIsExporting] = useState(false);
 
@@ -220,7 +249,7 @@ export default function MyFormsTable({
     try {
       const fetchPromises = Array.from(selectedFormTypes).map(async (formName) => {
         const response = await fetchExportData({
-          data: { signatoryId: profile.id, formName }
+          data: { signatoryId: profile.id, formName },
         });
 
         // parse and conform variables to RowEntry format.
@@ -230,12 +259,15 @@ export default function MyFormsTable({
               { col: "form_label", value: process.formLabel || "Unknown" },
               { col: "form_name", value: process.formName || "Unknown" },
               { col: "timestamp", value: process.createdAt || new Date().toISOString() },
-              { col: "url", value: (typeof process.documentUrl === "string" ? process.documentUrl : "") || "" },
+              {
+                col: "url",
+                value: (typeof process.documentUrl === "string" ? process.documentUrl : "") || "",
+              },
             ];
 
             // spread inputs horizontally into individual RowEntries.
             Object.entries(process.inputs || {}).forEach(([k, v]) => {
-              entries.push({ col: k, value: (v as string | number | boolean | null) });
+              entries.push({ col: k, value: v as string | number | boolean | null });
             });
 
             return entries;
@@ -289,7 +321,7 @@ export default function MyFormsTable({
               <DropdownMenuLabel>Select forms to export</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {formTypes.length === 0 ? (
-                <div className="px-2 py-1.5 text-sm text-muted-foreground">No forms available.</div>
+                <div className="text-muted-foreground px-2 py-1.5 text-sm">No forms available.</div>
               ) : (
                 formTypes.map((formType) => (
                   <DropdownMenuCheckboxItem
@@ -303,20 +335,19 @@ export default function MyFormsTable({
                   </DropdownMenuCheckboxItem>
                 ))
               )}
-              <div className="w-full sticky bottom-0 bg-white">
+              <div className="sticky bottom-0 w-full bg-white">
                 <DropdownMenuSeparator />
                 <Button
-                  className="w-full disabled:bg-muted disabled:text-muted-foreground"
+                  className="disabled:bg-muted disabled:text-muted-foreground w-full"
                   disabled={selectedFormTypes.size === 0}
-                  onClick={handleExport}
+                  onClick={() => void handleExport()}
                 >
                   <Sheet />
                   {isExporting
                     ? "Downloading..."
                     : selectedFormTypes.size === 0
                       ? `Select forms to export`
-                      : `Export ${selectedFormTypes.size} CSV${selectedFormTypes.size === 1 ? "" : "s"}`
-                  }
+                      : `Export ${selectedFormTypes.size} CSV${selectedFormTypes.size === 1 ? "" : "s"}`}
                 </Button>
               </div>
             </DropdownMenuContent>
