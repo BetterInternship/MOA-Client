@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface AddFormToGroupDto {
+export interface RemoveFormFromGroupDto {
   formNames: string[];
   groupId: string;
 }

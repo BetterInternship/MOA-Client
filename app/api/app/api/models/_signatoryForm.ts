@@ -19,4 +19,6 @@ export interface _SignatoryForm {
   form_processes: FormProcess;
   /** @nullable */
   first_viewed: string | null;
+  /** @nullable */
+  signing_party_id: string | null;
 }

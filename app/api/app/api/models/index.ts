@@ -278,3 +278,4 @@ export * from "./updateFieldDtoValidatorIrRulesItemOneOfThreeKind";
 export * from "./updateFieldDtoValidatorIrRulesItemOneOfThreeValue";
 export * from "./updateFieldDtoValidatorIrVersion";
 export * from "./updateSignatoryDto";
+export * from "./removeFormFromGroupDto";

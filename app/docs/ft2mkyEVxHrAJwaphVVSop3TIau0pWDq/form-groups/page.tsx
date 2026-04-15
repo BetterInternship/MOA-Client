@@ -3,11 +3,11 @@
 import React, { useMemo, useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { FolderOpen, Plus, Loader2, ChevronDown, Check } from "lucide-react";
+import { FolderOpen, Plus, Loader2, ChevronDown, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useFormsControllerGetRegistry } from "@/app/api";
-import { fetchAllFormGroups, addFormToGroup } from "@/app/api/forms.api";
+import { fetchAllFormGroups, addFormToGroup, removeFormsFromGroup } from "@/app/api/forms.api";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useModal } from "@/app/providers/modal-provider";
@@ -31,11 +31,11 @@ function AddFormModalContent({
   onClose,
 }: {
   forms: FormOption[];
-  onSubmit: (formName: string) => Promise<void>;
+  onSubmit: (formNames: string[]) => Promise<void>;
   onClose: () => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedForm, setSelectedForm] = useState("");
+  const [selectedForms, setSelectedForms] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredForms = useMemo(() => {
@@ -50,18 +50,24 @@ function AddFormModalContent({
   }, [forms, searchQuery]);
 
   const handleAdd = async () => {
-    if (!selectedForm) {
-      toast.error("Please select a form");
+    if (!selectedForms.length) {
+      toast.error("Please select at least one form");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await onSubmit(selectedForm);
+      await onSubmit(selectedForms);
       onClose();
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const toggleSelectedForm = (formName: string) => {
+    setSelectedForms((prev) =>
+      prev.includes(formName) ? prev.filter((name) => name !== formName) : [...prev, formName]
+    );
   };
 
   return (
@@ -86,12 +92,12 @@ function AddFormModalContent({
         ) : (
           <div className="divide-y divide-slate-100">
             {filteredForms.map((form) => {
-              const isSelected = selectedForm === form.name;
+              const isSelected = selectedForms.includes(form.name);
               return (
                 <button
                   key={form.name}
                   type="button"
-                  onClick={() => setSelectedForm(form.name)}
+                  onClick={() => toggleSelectedForm(form.name)}
                   className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors ${
                     isSelected ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-50"
                   }`}
@@ -107,13 +113,141 @@ function AddFormModalContent({
         )}
       </div>
 
+      <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+        <p className="mb-1 text-xs font-semibold text-slate-700">
+          Forms to be added ({selectedForms.length})
+        </p>
+        {selectedForms.length === 0 ? (
+          <p className="text-xs text-slate-500">No forms selected.</p>
+        ) : (
+          <p className="text-xs text-slate-600">{selectedForms.join(", ")}</p>
+        )}
+      </div>
+
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" onClick={onClose} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button size="sm" onClick={handleAdd} disabled={!selectedForm || isSubmitting}>
+        <Button size="sm" onClick={handleAdd} disabled={!selectedForms.length || isSubmitting}>
           {isSubmitting ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : null}
-          Add
+          Add Selected
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function RemoveFormModalContent({
+  forms,
+  onSubmit,
+  onClose,
+}: {
+  forms: FormOption[];
+  onSubmit: (formNames: string[]) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedForms, setSelectedForms] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const filteredForms = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return forms;
+    return forms.filter(
+      (form) =>
+        form.name.toLowerCase().includes(query) ||
+        (form.label || "").toLowerCase().includes(query) ||
+        String(form.version || "").includes(query)
+    );
+  }, [forms, searchQuery]);
+
+  const handleDelete = async () => {
+    if (!selectedForms.length) {
+      toast.error("Please select at least one form");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(selectedForms);
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleSelectedForm = (formName: string) => {
+    setSelectedForms((prev) =>
+      prev.includes(formName) ? prev.filter((name) => name !== formName) : [...prev, formName]
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <Input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search forms..."
+        className="h-9 text-sm"
+        autoFocus
+      />
+
+      <div className="h-72 overflow-auto rounded-md border border-slate-200">
+        {forms.length === 0 ? (
+          <div className="flex h-full items-center justify-center p-3 text-sm text-slate-500">
+            No forms available in this group
+          </div>
+        ) : filteredForms.length === 0 ? (
+          <div className="flex h-full items-center justify-center p-3 text-sm text-slate-500">
+            No forms match your search
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {filteredForms.map((form) => {
+              const isSelected = selectedForms.includes(form.name);
+              return (
+                <button
+                  key={form.name}
+                  type="button"
+                  onClick={() => toggleSelectedForm(form.name)}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors ${
+                    isSelected ? "bg-rose-50 text-rose-900" : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="truncate pr-3">
+                    {form.label || form.name} (v{form.version})
+                  </span>
+                  {isSelected ? <Check className="h-4 w-4 flex-shrink-0 text-rose-700" /> : null}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-md border border-slate-200 bg-rose-50 px-3 py-2">
+        <p className="mb-1 text-xs font-semibold text-rose-800">
+          Forms to be deleted ({selectedForms.length})
+        </p>
+        {selectedForms.length === 0 ? (
+          <p className="text-xs text-rose-700/70">No forms selected.</p>
+        ) : (
+          <p className="text-xs text-rose-700">{selectedForms.join(", ")}</p>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-2 pt-1">
+        <Button variant="ghost" size="sm" onClick={onClose} disabled={isSubmitting}>
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={handleDelete}
+          disabled={!selectedForms.length || isSubmitting}
+        >
+          {isSubmitting ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : null}
+          Delete Selected
         </Button>
       </div>
     </div>
@@ -151,6 +285,18 @@ export default function FormGroupsPage() {
     },
   });
 
+  const removeFormsMutation = useMutation({
+    mutationFn: ({ formNames, groupId }: { formNames: string[]; groupId: string }) =>
+      removeFormsFromGroup(formNames, groupId),
+    onSuccess: () => {
+      toast.success("Form(s) removed from group successfully");
+      queryClient.invalidateQueries({ queryKey: ["FormGroupsController_GetAllFormGroups"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to remove form(s) from group");
+    },
+  });
+
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) => {
       const newSet = new Set(prev);
@@ -169,11 +315,37 @@ export default function FormGroupsPage() {
       modalKey,
       <AddFormModalContent
         forms={allForms}
-        onSubmit={(formName) => addFormMutation.mutateAsync({ formNames: [formName], groupId })}
+        onSubmit={(formNames) => addFormMutation.mutateAsync({ formNames, groupId })}
         onClose={() => closeModal(modalKey)}
       />,
       {
         title: "Add Form",
+        panelClassName: "sm:w-[640px] sm:min-w-[640px] sm:max-w-[640px]",
+        contentClassName: "w-full px-4 pb-4 pt-2",
+      }
+    );
+  };
+
+  const openRemoveFormModal = (groupId: string, groupFormNames: string[]) => {
+    const modalKey = "form-groups:remove-form";
+    const groupForms: FormOption[] = groupFormNames.map((formName) => {
+      const formInfo = allForms.find((f) => f.name === formName);
+      return {
+        name: formName,
+        label: formInfo?.label || formName,
+        version: formInfo?.version || 0,
+      };
+    });
+
+    openModal(
+      modalKey,
+      <RemoveFormModalContent
+        forms={groupForms}
+        onSubmit={(formNames) => removeFormsMutation.mutateAsync({ formNames, groupId })}
+        onClose={() => closeModal(modalKey)}
+      />,
+      {
+        title: "Remove Form",
         panelClassName: "sm:w-[640px] sm:min-w-[640px] sm:max-w-[640px]",
         contentClassName: "w-full px-4 pb-4 pt-2",
       }
@@ -226,15 +398,28 @@ export default function FormGroupsPage() {
                             {group.forms?.length || 0} forms
                           </span>
                         </div>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openAddFormModal(group.id);
-                          }}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span className="text-xs">Add</span>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openRemoveFormModal(group.id, group.forms || []);
+                            }}
+                            disabled={!group.forms || group.forms.length === 0}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span className="text-xs">Remove</span>
+                          </Button>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openAddFormModal(group.id);
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span className="text-xs">Add</span>
+                          </Button>
+                        </div>
                       </div>
                     </button>
 

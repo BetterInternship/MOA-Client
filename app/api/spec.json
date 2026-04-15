@@ -2045,6 +2045,35 @@
         "tags": ["FormGroups"]
       }
     },
+    "/api/form-groups/remove-form": {
+      "post": {
+        "operationId": "FormGroupsController_removeFormFromGroup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RemoveFormFromGroupDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["FormGroups"]
+      }
+    },
     "/api/form-sync/compare": {
       "get": {
         "operationId": "FormSyncController_compareFormVersions",
@@ -3807,8 +3836,19 @@
       "CreateFormGroupDto": { "type": "object", "properties": { "name": { "type": "string" } } },
       "AddFormToGroupDto": {
         "type": "object",
-        "properties": { "formName": { "type": "string" }, "groupId": { "type": "string" } },
-        "required": ["formName", "groupId"]
+        "properties": {
+          "formNames": { "type": "array", "items": { "type": "string" } },
+          "groupId": { "type": "string" }
+        },
+        "required": ["formNames", "groupId"]
+      },
+      "RemoveFormFromGroupDto": {
+        "type": "object",
+        "properties": {
+          "formNames": { "type": "array", "items": { "type": "string" } },
+          "groupId": { "type": "string" }
+        },
+        "required": ["formNames", "groupId"]
       },
       "SyncSingleFormDto": {
         "type": "object",
@@ -3892,7 +3932,8 @@
           "rejection_response": { "type": "string" },
           "timestamp": { "type": "string" },
           "form_processes": { "$ref": "#/components/schemas/FormProcess" },
-          "first_viewed": { "type": "string", "format": "date-time", "nullable": true }
+          "first_viewed": { "type": "string", "format": "date-time", "nullable": true },
+          "signing_party_id": { "type": "string", "nullable": true }
         },
         "required": [
           "id",
@@ -3904,7 +3945,8 @@
           "rejection_response",
           "timestamp",
           "form_processes",
-          "first_viewed"
+          "first_viewed",
+          "signing_party_id"
         ]
       },
       "SignatorySignedFormsResponse": {
