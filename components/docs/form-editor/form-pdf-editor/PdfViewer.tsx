@@ -35,6 +35,8 @@ import {
   resolveSignaturePrintedNameDimensions,
 } from "@/lib/composite-block-factory";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
 
 export type PointerLocation = {
   page: number;
@@ -112,7 +114,7 @@ export function PdfViewer() {
     setEditorViewMode,
   } = useFormEditorTab();
 
-  const { formMetadata } = useFormEditor();
+  const { formMetadata, updateBlocks } = useFormEditor();
 
   const {
     pdfDoc,
@@ -156,6 +158,32 @@ export function PdfViewer() {
   useEffect(() => {
     setPreferredPlacementPage(visiblePage);
   }, [visiblePage, setPreferredPlacementPage]);
+
+  useEffect(() => {
+    if (!formMetadata || pageCount <= 0) return;
+
+    const currentBlocks = formMetadata.schema.blocks || [];
+    const keptBlocks = currentBlocks.filter((block) => {
+      if (block.block_type !== "form_field") return true;
+      const page = block.field_schema?.page;
+      if (typeof page !== "number") return true;
+      return page <= pageCount;
+    });
+
+    const removedCount = currentBlocks.length - keptBlocks.length;
+    if (removedCount <= 0) return;
+
+    const reorderedBlocks = keptBlocks.map((block, index) => ({
+      ...block,
+      order: index,
+    }));
+    updateBlocks(reorderedBlocks);
+
+    toast.info(
+      `Removed ${removedCount} field${removedCount === 1 ? "" : "s"} from pages beyond ${pageCount}.`,
+      toastPresets.alert
+    );
+  }, [formMetadata, pageCount, updateBlocks]);
   const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const pdfContainerRef = useRef<HTMLDivElement | null>(null);
   const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
