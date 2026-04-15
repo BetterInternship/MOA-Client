@@ -68,13 +68,10 @@ export const createFormGroup = async (name: string) => {
   }
 };
 
-export const addFormToGroup = async (formName: string, groupId: string) => {
-  console.log("API call to addFormToGroup with", { formName, groupId });
+export const addFormToGroup = async (formNames: string[], groupId: string) => {
+  console.log("API call to addFormToGroup with", { formNames, groupId });
   try {
-    const res = await formGroupsControllerAddFormToGroup({
-      formName,
-      groupId,
-    });
+    const res = await formGroupsControllerAddFormToGroup({ formNames, groupId });
     const result = res?.response ?? null;
     return { result, isLoading: false, error: null };
   } catch (error) {

@@ -140,8 +140,8 @@ export default function FormGroupsPage() {
 
   // Mutation to add form to group
   const addFormMutation = useMutation({
-    mutationFn: ({ formName, groupId }: { formName: string; groupId: string }) =>
-      addFormToGroup(formName, groupId),
+    mutationFn: ({ formNames, groupId }: { formNames: string[]; groupId: string }) =>
+      addFormToGroup(formNames, groupId),
     onSuccess: () => {
       toast.success("Form added to group successfully");
       queryClient.invalidateQueries({ queryKey: ["FormGroupsController_GetAllFormGroups"] });
@@ -169,7 +169,7 @@ export default function FormGroupsPage() {
       modalKey,
       <AddFormModalContent
         forms={allForms}
-        onSubmit={(formName) => addFormMutation.mutateAsync({ formName, groupId })}
+        onSubmit={(formName) => addFormMutation.mutateAsync({ formNames: [formName], groupId })}
         onClose={() => closeModal(modalKey)}
       />,
       {
