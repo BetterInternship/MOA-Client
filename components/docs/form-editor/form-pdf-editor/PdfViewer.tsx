@@ -35,6 +35,7 @@ import {
   resolveSignaturePrintedNameDimensions,
 } from "@/lib/composite-block-factory";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
+import { computePreviewBaselineOffset, ensurePreviewFontsLoaded } from "@/lib/form-previewer-rendering";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 
@@ -51,6 +52,10 @@ export type PointerLocation = {
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const createUniqueFieldKey = (base: string) =>
   `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const normalizeVerticalAlign = (value: unknown): "top" | "middle" | "bottom" => {
+  if (value === "middle" || value === "bottom" || value === "top") return value;
+  return "top";
+};
 type DraggedFieldPayload = {
   id?: string;
   name: string;
@@ -136,6 +141,7 @@ export function PdfViewer() {
     if (typeof window === "undefined") return;
     const workerFile = pdfjsVersion.startsWith("4") ? "pdf.worker.min.mjs" : "pdf.worker.min.js";
     GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/${workerFile}`;
+    ensurePreviewFontsLoaded();
   }, []);
 
   // File upload handler
@@ -186,6 +192,7 @@ export function PdfViewer() {
   }, [formMetadata, pageCount, updateBlocks]);
   const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const pdfContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showBaselineGuides, setShowBaselineGuides] = useState(false);
   const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
     pageRefs.current.set(page, node);
   }, []);
@@ -442,6 +449,18 @@ export function PdfViewer() {
               <>
                 <div className="h-5 w-px border-l bg-slate-500" />
                 <label
+                  className="inline-flex cursor-pointer items-center gap-2 rounded p-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                  title="Toggle baseline guides"
+                >
+                  <Switch
+                    checked={showBaselineGuides}
+                    onCheckedChange={setShowBaselineGuides}
+                    aria-label="Show baselines"
+                  />
+                  <span>Show baselines</span>
+                </label>
+                <div className="h-5 w-px border-l bg-slate-500" />
+                <label
                   className="flex cursor-pointer items-center rounded p-1.5 text-sm transition-colors hover:bg-slate-100"
                   title="Upload PDF"
                   aria-label="Upload PDF"
@@ -543,6 +562,7 @@ export function PdfViewer() {
                       selectedPartyId={selectedPartyId}
                       _registry={registry}
                       formMetadata={formMetadata}
+                      showBaselineGuides={showBaselineGuides}
                     />
                   ))}
                 </div>
@@ -570,6 +590,7 @@ type PdfPageCanvasProps = {
   selectedPartyId: string | null;
   _registry: FieldRegistryEntry[];
   formMetadata: IFormMetadata | null;
+  showBaselineGuides: boolean;
 };
 
 const PdfPageCanvas = memo(
@@ -588,6 +609,7 @@ const PdfPageCanvas = memo(
     selectedPartyId,
     _registry,
     formMetadata,
+    showBaselineGuides,
   }: PdfPageCanvasProps) => {
     const { handleBlockCreate, handleBlocksCreate, handleDeleteBlock, handleDuplicateBlock } =
       useFormEditorTab();
@@ -1112,7 +1134,20 @@ const PdfPageCanvas = memo(
                 signing_party_order:
                   formMetadata?.signing_parties?.find((p) => p._id === block.signing_party_id)
                     ?.order ?? 0,
+                size: schema.size,
+                font: schema.font,
+                align_v: normalizeVerticalAlign(schema.align_v),
+                wrap: schema.wrap,
               };
+
+              const baselineOffsetDoc = computePreviewBaselineOffset({
+                fieldType: schema.type,
+                fieldFont: schema.font,
+                fontSize: schema.size,
+                fieldHeight: schema.h,
+                alignV: normalizeVerticalAlign(schema.align_v),
+              });
+              const baselineOffsetPx = baselineOffsetDoc * scale;
 
               const sameFieldIds = findSameFieldIds(fieldId);
               const sameFieldIndex = Math.max(0, sameFieldIds.indexOf(fieldId)) + 1;
@@ -1156,6 +1191,8 @@ const PdfPageCanvas = memo(
                     sameFieldCount={sameFieldIds.length}
                     onPrevSameField={() => handleSelectPrevSameField(fieldId)}
                     onNextSameField={() => handleSelectNextSameField(fieldId)}
+                    showBaselineGuide={showBaselineGuides}
+                    baselineGuideOffsetPx={baselineOffsetPx}
                   />
                 </div>
               );

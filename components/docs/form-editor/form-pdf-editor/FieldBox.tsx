@@ -25,6 +25,10 @@ export type FormField = {
   isPhantom?: boolean;
   signing_party_order?: number;
   signing_party_id?: string;
+  size?: number;
+  font?: string;
+  align_v?: "top" | "middle" | "bottom";
+  wrap?: boolean;
 };
 
 type ResizeHandle = "n" | "e" | "s" | "w" | "nw" | "ne" | "sw" | "se";
@@ -45,6 +49,8 @@ export type FieldBoxProps = {
   sameFieldCount?: number;
   onPrevSameField?: () => void;
   onNextSameField?: () => void;
+  showBaselineGuide?: boolean;
+  baselineGuideOffsetPx?: number;
 };
 
 export const FieldBox = ({
@@ -63,6 +69,8 @@ export const FieldBox = ({
   sameFieldCount = 1,
   onPrevSameField,
   onNextSameField,
+  showBaselineGuide = false,
+  baselineGuideOffsetPx,
 }: FieldBoxProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -160,6 +168,11 @@ export const FieldBox = ({
   };
 
   const showQuickActions = !!isSelected;
+  const shouldShowBaseline =
+    showBaselineGuide &&
+    (field.type === "text" || field.type === "signature") &&
+    typeof baselineGuideOffsetPx === "number" &&
+    Number.isFinite(baselineGuideOffsetPx);
 
   return (
     <div
@@ -190,6 +203,16 @@ export const FieldBox = ({
       >
         {field.label}
       </div>
+
+      {shouldShowBaseline && (
+        <div
+          className="pointer-events-none absolute right-0 left-0"
+          style={{
+            top: `${baselineGuideOffsetPx}px`,
+            borderTop: "1px dashed rgba(15, 23, 42, 0.75)",
+          }}
+        />
+      )}
 
       {showQuickActions && (
         <div
