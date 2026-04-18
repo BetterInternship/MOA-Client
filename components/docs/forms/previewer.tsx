@@ -66,6 +66,7 @@ interface FormPreviewPdfDisplayProps {
   signingParties?: IFormSigningParty[];
   currentSigningPartyId?: string;
   showOwnership?: boolean;
+  fieldVisibility?: DefaultFieldVisibility;
   defaultFieldVisibility?: DefaultFieldVisibility;
   fieldErrors?: Record<string, string>;
   prefillMode?: PreviewPrefillMode;
@@ -94,7 +95,8 @@ export const FormPreviewPdfDisplay = ({
   signingParties = [],
   currentSigningPartyId,
   showOwnership = false,
-  defaultFieldVisibility: _defaultFieldVisibility = "mine",
+  fieldVisibility,
+  defaultFieldVisibility = "mine",
   fieldErrors = {},
   prefillMode = "live",
   prefillUser = null,
@@ -121,6 +123,7 @@ export const FormPreviewPdfDisplay = ({
       }),
     [prefillMode, prefillUser]
   );
+  const effectiveFieldVisibility = fieldVisibility ?? defaultFieldVisibility;
   const ownerMetaByFieldId = useMemo(() => {
     const ownerMetaMap = new Map<string, OwnerMeta>();
     normalizedFields.forEach((field) => {
@@ -132,7 +135,11 @@ export const FormPreviewPdfDisplay = ({
     () => normalizedFields.filter((field) => ownerMetaByFieldId.get(field.id)?.isMine),
     [normalizedFields, ownerMetaByFieldId]
   );
-  const visibleFields = useMemo(() => normalizedFields, [normalizedFields]);
+  const visibleFields = useMemo(() => {
+    if (effectiveFieldVisibility !== "mine") return normalizedFields;
+    if (!currentSigningPartyId) return normalizedFields;
+    return normalizedFields.filter((field) => ownerMetaByFieldId.get(field.id)?.isMine);
+  }, [normalizedFields, effectiveFieldVisibility, currentSigningPartyId, ownerMetaByFieldId]);
   const fieldsByPage = useMemo(() => groupFieldsByPage(visibleFields), [visibleFields]);
 
   // Keep internal zoom in sync with prop updates (e.g. mobile breakpoint after hydration).
@@ -299,6 +306,7 @@ export const FormPreviewPdfDisplay = ({
               selectedFieldId={selectedFieldId}
               ownerMetaByFieldId={ownerMetaByFieldId}
               showOwnership={showOwnership}
+              fieldVisibility={effectiveFieldVisibility}
               fieldErrors={fieldErrors}
               resolveDisplayValue={resolveDisplayValue}
             />
@@ -375,6 +383,7 @@ interface PdfPageOverlayProps {
   selectedFieldId?: string;
   ownerMetaByFieldId: Map<string, OwnerMeta>;
   showOwnership: boolean;
+  fieldVisibility: DefaultFieldVisibility;
   fieldErrors: Record<string, string>;
   resolveDisplayValue: (field: PreviewField, rawValue: unknown) => string;
 }
@@ -393,6 +402,7 @@ const PdfPageOverlay = ({
   selectedFieldId,
   ownerMetaByFieldId,
   showOwnership,
+  fieldVisibility,
   fieldErrors,
   resolveDisplayValue,
 }: PdfPageOverlayProps) => {
@@ -551,7 +561,8 @@ const PdfPageOverlay = ({
           const heightPixels = h * scale;
 
           const ownerMeta = ownerMetaByFieldId.get(field.id);
-          const canRevealValue = !showOwnership || ownerMeta?.isMine;
+          const canRevealValue =
+            !showOwnership || ownerMeta?.isMine || fieldVisibility === "all";
           const rawValue = canRevealValue ? getPreviewRawValue(values, fieldName) : "";
           const valueStr = canRevealValue ? resolveDisplayValue(field, rawValue) : "";
           const isFilled = valueStr.trim().length > 0;

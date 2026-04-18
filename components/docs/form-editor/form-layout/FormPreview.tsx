@@ -17,6 +17,7 @@ import { getPartyColorByIndex } from "@/lib/party-colors";
 import { cn } from "@/lib/utils";
 import { withDerivedFormValues } from "@/lib/derived-form-values";
 import { DEFAULT_PREVIEW_DUMMY_STUDENT_USER } from "@/lib/form-previewer-model";
+import { Switch } from "@/components/ui/switch";
 
 interface FormPreviewProps {
   metadata?: IFormMetadata;
@@ -100,6 +101,7 @@ const FormPreviewContent = ({
   const [generationResult, setGenerationResult] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [selectedFieldSource, setSelectedFieldSource] = useState<"form" | "pdf" | null>(null);
+  const [showAllPdfFields, setShowAllPdfFields] = useState(false);
 
   const filteredBlocks = useMemo(
     () => blocks.filter((b) => b.signing_party_id === selectedPartyId || !b.signing_party_id),
@@ -233,6 +235,12 @@ const FormPreviewContent = ({
                 documentUrl={documentUrl}
                 blocks={blocks}
                 values={previewValues}
+                headerLeft={
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-700">
+                    <span>Show all fields</span>
+                    <Switch checked={showAllPdfFields} onCheckedChange={setShowAllPdfFields} />
+                  </label>
+                }
                 onFieldClick={(fieldId) => {
                   setSelectedFieldSource("pdf");
                   setSelectedFieldId(fieldId);
@@ -242,6 +250,7 @@ const FormPreviewContent = ({
                 signingParties={signingParties}
                 currentSigningPartyId={selectedPartyId}
                 showOwnership
+                fieldVisibility={showAllPdfFields ? "all" : "mine"}
                 defaultFieldVisibility="mine"
                 prefillMode="dummy"
                 prefillUser={DEFAULT_PREVIEW_DUMMY_STUDENT_USER}
