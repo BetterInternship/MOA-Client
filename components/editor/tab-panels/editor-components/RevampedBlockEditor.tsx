@@ -212,6 +212,9 @@ export function RevampedBlockEditor() {
         id: field,
         name: schema?.label || field,
         partyName: partyTitleById.get(candidate.signing_party_id || "") || undefined,
+        type: schema?.type,
+        validator: schema?.validator || "",
+        validator_ir: schema?.validator_ir || null,
       });
     });
     return options.sort((a, b) => a.name.localeCompare(b.name));
@@ -560,6 +563,7 @@ export function RevampedBlockEditor() {
                       schemaType={parentSchemaType}
                       validatorIr={parentValidatorIrValue as any}
                       fieldOptions={parentFieldOptions}
+                      currentFieldId={parentFieldKey}
                       onChange={(next) => {
                         setEditingValues((prev) => ({
                           ...prev,
@@ -886,6 +890,7 @@ export function RevampedBlockEditor() {
                   schemaType={schema?.type}
                   validatorIr={(schema?.validator_ir || null) as any}
                   fieldOptions={childFieldOptions}
+                  currentFieldId={childFieldKey}
                   onChange={(next) => {
                     handleFieldPatch({
                       validator: next.validator,

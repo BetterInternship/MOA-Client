@@ -111,6 +111,38 @@ export function ValidatorTextInput({
   );
 }
 
+export function ValidatorSelectInput({
+  value,
+  options,
+  onChange,
+  placeholder,
+  disabled,
+}: {
+  value?: string;
+  options: Array<{ id: string; name: string }>;
+  onChange: (next: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const resolvedValue = value && options.some((option) => option.id === value) ? value : "__none";
+
+  return (
+    <Select value={resolvedValue} onValueChange={(next) => onChange(next === "__none" ? "" : next)}>
+      <SelectTrigger className="h-8 text-xs" disabled={disabled}>
+        <SelectValue placeholder={placeholder || "Select"} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none">{placeholder || "Select"}</SelectItem>
+        {options.map((option) => (
+          <SelectItem key={option.id} value={option.id}>
+            {option.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function ValidatorDateInput({
   value,
   onChange,

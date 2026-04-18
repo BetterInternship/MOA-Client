@@ -4,6 +4,9 @@ type RegistryLikeField = {
   id: string;
   name: string;
   label?: string;
+  type?: string;
+  validator?: string | null;
+  validator_ir?: unknown;
   tag?: string;
   preset?: string;
 };
@@ -20,6 +23,9 @@ export const buildFieldOptionsFromRegistry = (fields: RegistryLikeField[]) =>
     .map((field) => ({
       id: field.name,
       name: field.label || field.name,
+      type: field.type,
+      validator: field.validator || "",
+      validator_ir: field.validator_ir || null,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -35,14 +41,27 @@ export const buildTagOptionsFromRegistry = (fields: RegistryLikeField[]) =>
 
 export const buildFieldOptionsFromBlocks = (blocks: IFormBlock[]) => {
   // Deduplicate by field key so duplicate blocks of the same field only appear once in selectors.
-  const map = new Map<string, { id: string; name: string }>();
+  const map = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      type?: string;
+      validator?: string;
+      validator_ir?: unknown;
+    }
+  >();
   blocks.forEach((block) => {
-    if (block.block_type !== "form_field") return;
-    const fieldName = block.field_schema?.field;
+    if (block.block_type !== "form_field" && block.block_type !== "form_phantom_field") return;
+    const schema = block.field_schema || block.phantom_field_schema;
+    const fieldName = schema?.field;
     if (!fieldName) return;
     map.set(fieldName, {
       id: fieldName,
-      name: block.field_schema?.label || fieldName,
+      name: schema?.label || fieldName,
+      type: schema?.type,
+      validator: schema?.validator || "",
+      validator_ir: schema?.validator_ir || null,
     });
   });
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));

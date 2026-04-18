@@ -51,6 +51,9 @@ export interface CustomFieldModalFormValue {
 export interface CustomFieldFormOption {
   id: string;
   name: string;
+  type?: string;
+  validator?: string;
+  validator_ir?: ValidatorIRv0 | null;
 }
 
 export interface CustomFieldPresetOption {
@@ -489,6 +492,7 @@ export function CustomFieldModalForm({
                   validator={value.validator || ""}
                   validatorIr={value.validator_ir || null}
                   fieldOptions={fieldOptions}
+                  currentFieldId={value.name}
                   allowedRuleIds={allowedValidationRuleIds}
                   onChange={(next) => onChange(next)}
                 />

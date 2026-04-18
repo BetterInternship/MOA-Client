@@ -16,7 +16,14 @@ import {
   type ValidatorRule,
   type ValidatorRuleType,
 } from "@/lib/validator-engine";
-import type { ValidatorBaseType } from "@/lib/validator-ir";
+import type { ValidatorBaseType, ValidatorIRv0 } from "@/lib/validator-ir";
+
+type DateFieldRelativeRule = Extract<
+  Extract<ValidatorIRv0, { baseType: "date" }>["rules"][number],
+  { kind: "dateOnOrAfterField" | "dateOnOrBeforeField" }
+>;
+type DateOffsetUnit = NonNullable<DateFieldRelativeRule["offsetUnit"]>;
+type DateOffsetDirection = NonNullable<DateFieldRelativeRule["offsetDirection"]>;
 
 // IR-backed date presets represented through `customRefine` code snippets.
 export type DateRelativeValidator =
@@ -24,8 +31,22 @@ export type DateRelativeValidator =
   | { kind: "dateOnOrAfterToday"; message?: string }
   | { kind: "dateOnOrBeforeToday"; message?: string }
   | { kind: "dateOnOrAfterBusinessDays"; businessDays: number; message?: string }
-  | { kind: "dateOnOrAfterField"; field: string; message?: string }
-  | { kind: "dateOnOrBeforeField"; field: string; message?: string };
+  | {
+      kind: "dateOnOrAfterField";
+      field: string;
+      offsetValue?: number;
+      offsetUnit?: DateOffsetUnit;
+      offsetDirection?: DateOffsetDirection;
+      message?: string;
+    }
+  | {
+      kind: "dateOnOrBeforeField";
+      field: string;
+      offsetValue?: number;
+      offsetUnit?: DateOffsetUnit;
+      offsetDirection?: DateOffsetDirection;
+      message?: string;
+    };
 
 export type ToggleValidatorId =
   | "required"
@@ -52,17 +73,60 @@ export type ToggleValidatorState = {
 export type ToggleValidatorViewModel = Record<ToggleValidatorId, ToggleValidatorState>;
 
 const DATE_REFINEMENT_DEFAULT_MESSAGE = "Invalid date";
-
-const RELATIVE_DATE_RULES = new Set([
-  "dateOnOrAfterToday",
-  "dateOnOrBeforeToday",
-  "dateOnOrAfterBusinessDays",
-  "dateOnOrAfterField",
-  "dateOnOrBeforeField",
-]);
+const DATE_FIELD_OFFSET_DEFAULT = {
+  offsetValue: 0,
+  offsetUnit: "day" as DateOffsetUnit,
+  offsetDirection: "after" as DateOffsetDirection,
+};
 
 const getBusinessDaysMessage = (businessDays: number) =>
   `Date must be at least ${businessDays} business day${businessDays === 1 ? "" : "s"} after today.`;
+
+function normalizeDateFieldOffset(relative: {
+  offsetValue?: number;
+  offsetUnit?: DateOffsetUnit;
+  offsetDirection?: DateOffsetDirection;
+}) {
+  const parsedValue = Number(relative.offsetValue);
+  const offsetValue = Number.isFinite(parsedValue) && parsedValue >= 0 ? Math.floor(parsedValue) : 0;
+  const offsetUnit =
+    relative.offsetUnit === "day" || relative.offsetUnit === "week" || relative.offsetUnit === "month"
+      ? relative.offsetUnit
+      : DATE_FIELD_OFFSET_DEFAULT.offsetUnit;
+  const offsetDirection =
+    relative.offsetDirection === "before" || relative.offsetDirection === "after"
+      ? relative.offsetDirection
+      : DATE_FIELD_OFFSET_DEFAULT.offsetDirection;
+  return { offsetValue, offsetUnit, offsetDirection };
+}
+
+function buildFieldRelativeRefineCode(
+  comparator: ">=" | "<=",
+  field: string,
+  offset: { offsetValue: number; offsetUnit: DateOffsetUnit; offsetDirection: DateOffsetDirection }
+) {
+  const fieldLiteral = JSON.stringify(String(field || ""));
+  return `const __relativeField__ = ${fieldLiteral};
+const __offsetValue__ = ${offset.offsetValue};
+const __offsetUnit__ = "${offset.offsetUnit}";
+const __offsetDirection__ = "${offset.offsetDirection}";
+const rawReference = params[__relativeField__];
+if (rawReference == null || rawReference === "") return true;
+const referenceDate = new Date(rawReference);
+if (Number.isNaN(referenceDate.getTime())) return true;
+const shiftedReference = new Date(referenceDate.getTime());
+if (__offsetValue__ > 0) {
+  const directionMultiplier = __offsetDirection__ === "before" ? -1 : 1;
+  const magnitude = directionMultiplier * __offsetValue__;
+  if (__offsetUnit__ === "day") shiftedReference.setDate(shiftedReference.getDate() + magnitude);
+  else if (__offsetUnit__ === "week") shiftedReference.setDate(shiftedReference.getDate() + magnitude * 7);
+  else shiftedReference.setMonth(shiftedReference.getMonth() + magnitude);
+}
+const candidate = new Date(date.getTime());
+candidate.setHours(0, 0, 0, 0);
+shiftedReference.setHours(0, 0, 0, 0);
+return candidate.getTime() ${comparator} shiftedReference.getTime();`;
+}
 
 // Generic helpers for immutable rule CRUD against ValidatorConfig.
 function getRule(config: ValidatorConfig, type: ValidatorRuleType): ValidatorRule | undefined {
@@ -131,13 +195,28 @@ function parseDateRelativeRule(rule: ValidatorRule | undefined): DateRelativeVal
     if (code.includes("<=") || code.includes("<")) return { kind: "dateOnOrBeforeToday", message };
   }
 
-  const fieldRef = code.match(/params\[\s*["']([^"']+)["']\s*\]/)?.[1];
+  const fieldRef =
+    code.match(/__relativeField__\s*=\s*["']([^"']+)["']/)?.[1] ||
+    code.match(/params\[\s*["']([^"']+)["']\s*\]/)?.[1];
   if (!fieldRef) return { kind: "none" };
-  if (code.includes(">=") || code.includes(">")) {
-    return { kind: "dateOnOrAfterField", field: fieldRef, message };
+  const offsetValue = Number(code.match(/__offsetValue__\s*=\s*(-?\d+)/)?.[1] || 0);
+  const rawOffsetUnit = code.match(/__offsetUnit__\s*=\s*["']([^"']+)["']/)?.[1];
+  const rawOffsetDirection = code.match(/__offsetDirection__\s*=\s*["']([^"']+)["']/)?.[1];
+  const offset = normalizeDateFieldOffset({
+    offsetValue,
+    offsetUnit:
+      rawOffsetUnit === "day" || rawOffsetUnit === "week" || rawOffsetUnit === "month"
+        ? (rawOffsetUnit as DateOffsetUnit)
+        : undefined,
+    offsetDirection: rawOffsetDirection === "before" || rawOffsetDirection === "after"
+      ? (rawOffsetDirection as DateOffsetDirection)
+      : undefined,
+  });
+  if (/return\s+(?:candidate\.getTime\(\)|date\.getTime\(\))\s*>=/.test(code) || code.includes(">=")) {
+    return { kind: "dateOnOrAfterField", field: fieldRef, ...offset, message };
   }
-  if (code.includes("<=") || code.includes("<")) {
-    return { kind: "dateOnOrBeforeField", field: fieldRef, message };
+  if (/return\s+(?:candidate\.getTime\(\)|date\.getTime\(\))\s*<=/.test(code) || code.includes("<=")) {
+    return { kind: "dateOnOrBeforeField", field: fieldRef, ...offset, message };
   }
 
   return { kind: "none" };
@@ -196,25 +275,33 @@ return passed;`,
       };
     }
     case "dateOnOrAfterField":
-      return {
-        ...createValidatorRule("customRefine"),
-        params: {
-          customCode: `return date.getTime() >= (new Date(params["${relative.field}"])).getTime();`,
-          message: relative.message || DATE_REFINEMENT_DEFAULT_MESSAGE,
-          usesContext: true,
-          refineType: "refine",
-        },
-      };
+      if (!String(relative.field || "").trim()) return null;
+      {
+        const offset = normalizeDateFieldOffset(relative);
+        return {
+          ...createValidatorRule("customRefine"),
+          params: {
+            customCode: buildFieldRelativeRefineCode(">=", relative.field, offset),
+            message: relative.message || DATE_REFINEMENT_DEFAULT_MESSAGE,
+            usesContext: true,
+            refineType: "refine",
+          },
+        };
+      }
     case "dateOnOrBeforeField":
-      return {
-        ...createValidatorRule("customRefine"),
-        params: {
-          customCode: `return date.getTime() <= (new Date(params["${relative.field}"])).getTime();`,
-          message: relative.message || DATE_REFINEMENT_DEFAULT_MESSAGE,
-          usesContext: true,
-          refineType: "refine",
-        },
-      };
+      if (!String(relative.field || "").trim()) return null;
+      {
+        const offset = normalizeDateFieldOffset(relative);
+        return {
+          ...createValidatorRule("customRefine"),
+          params: {
+            customCode: buildFieldRelativeRefineCode("<=", relative.field, offset),
+            message: relative.message || DATE_REFINEMENT_DEFAULT_MESSAGE,
+            usesContext: true,
+            refineType: "refine",
+          },
+        };
+      }
     default:
       return null;
   }
@@ -448,11 +535,3 @@ export function supportsRuleInBase(baseType: ValidatorBaseType, id: ToggleValida
   return false;
 }
 
-export function hasCustomDateRefinement(config: ValidatorConfig): boolean {
-  const relative = getDateRelativeValidator(config);
-  return relative.kind !== "none";
-}
-
-export function isKnownDateRelativeKind(kind: string): boolean {
-  return RELATIVE_DATE_RULES.has(kind);
-}
