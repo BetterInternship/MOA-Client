@@ -1078,7 +1078,7 @@ const PdfPageCanvas = memo(
         ref={containerRef}
         data-page={pageNumber}
         className={cn(
-          "relative w-fit max-w-none overflow-hidden rounded-[0.33em] border bg-white shadow-sm transition-colors",
+          "relative w-fit max-w-none overflow-visible rounded-[0.33em] border bg-white shadow-sm transition-colors",
           isSelected ? "border-primary/80 ring-primary/50 ring-1" : "border-border"
         )}
       >
