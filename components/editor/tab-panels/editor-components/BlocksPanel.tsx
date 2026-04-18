@@ -100,6 +100,7 @@ export function BlocksPanel() {
   } = useFormEditorTab();
   const { visiblePage } = usePdfViewer();
   const [fieldTab, setFieldTab] = useState<"default" | "custom">("default");
+  const allowClickToAdd = false;
   const signingParties = formMetadata?.signing_parties || [];
 
   const selectedParty =
@@ -544,9 +545,16 @@ export function BlocksPanel() {
                   key={field.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, field)}
-                  onClick={() => handleFieldAdd(field)}
+                  onClick={(e) => {
+                    if (!allowClickToAdd) {
+                      e.preventDefault();
+                      return;
+                    }
+                    handleFieldAdd(field);
+                  }}
                   className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center gap-2 rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
                   type="button"
+                  title="Drag to add"
                 >
                   <Icon className="h-4 w-4 flex-shrink-0 text-slate-500" />
                   <span className="text-sm text-slate-800">{field.label}</span>
@@ -578,9 +586,16 @@ export function BlocksPanel() {
                         key={field.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, field)}
-                        onClick={() => handleFieldAdd(field)}
+                        onClick={(e) => {
+                          if (!allowClickToAdd) {
+                            e.preventDefault();
+                            return;
+                          }
+                          handleFieldAdd(field);
+                        }}
                         className="hover:bg-primary/5 hover:text-primary flex w-full cursor-move items-center gap-2 rounded-[0.33em] border border-transparent px-2 py-1.5 text-left transition-colors"
                         type="button"
+                        title="Drag to add"
                       >
                         <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" />
                         <span className="text-sm text-slate-800">{field.label}</span>
