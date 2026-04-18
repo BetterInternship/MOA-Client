@@ -209,7 +209,7 @@ export const FieldBox = ({
           className="pointer-events-none absolute right-0 left-0"
           style={{
             top: `${baselineGuideOffsetPx}px`,
-            borderTop: "1px dashed rgba(15, 23, 42, 0.75)",
+            borderTop: "1px dashed rgba(57, 255, 20, 0.95)",
           }}
         />
       )}
