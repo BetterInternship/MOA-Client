@@ -187,7 +187,11 @@ const __offsetUnit__ = "${offset.offsetUnit}";
 const __offsetDirection__ = "${offset.offsetDirection}";
 const rawReference = params[__relativeField__];
 if (rawReference == null || rawReference === "") return true;
-const referenceDate = new Date(rawReference);
+const normalizedReference =
+  typeof rawReference === "string" && /^-?\\d+$/.test(rawReference.trim())
+    ? Number(rawReference)
+    : rawReference;
+const referenceDate = new Date(normalizedReference);
 if (Number.isNaN(referenceDate.getTime())) return true;
 const shiftedReference = new Date(referenceDate.getTime());
 if (__offsetValue__ > 0) {
