@@ -333,6 +333,27 @@ export function validatorConfigToPersistedIR(
   };
 }
 
+function getDateRelativeFieldMessage(
+  kind: "dateOnOrAfterField" | "dateOnOrBeforeField",
+  field: string,
+  offset: { offsetValue: number; offsetUnit: DateOffsetUnit; offsetDirection: DateOffsetDirection }
+) {
+  const unit =
+    offset.offsetUnit === "day"
+      ? offset.offsetValue === 1
+        ? "day"
+        : "days"
+      : offset.offsetUnit === "week"
+        ? offset.offsetValue === 1
+          ? "week"
+          : "weeks"
+        : offset.offsetValue === 1
+          ? "month"
+          : "months";
+  const comparison = kind === "dateOnOrAfterField" ? "on or after" : "on or before";
+  return `Date must be ${comparison} ${offset.offsetValue} ${unit} ${offset.offsetDirection} ${field}.`;
+}
+
 function ruleToConfigRule(rule: any): ValidatorRule | null {
   const kind = rule?.kind as string;
   const mapped = RULE_KIND_TO_ENGINE[kind];
@@ -386,7 +407,10 @@ function ruleToConfigRule(rule: any): ValidatorRule | null {
 }
 
 function datePresetRuleToConfigRule(rule: DatePresetRule): ValidatorRule | null {
-  const message = String(rule?.message || "Invalid date");
+  const message =
+    typeof rule?.message === "string" && rule.message.trim().length > 0
+      ? rule.message.trim()
+      : undefined;
   switch (rule?.kind) {
     case "dateOnOrAfterToday":
       return {
@@ -394,7 +418,7 @@ function datePresetRuleToConfigRule(rule: DatePresetRule): ValidatorRule | null 
         type: "customRefine",
         params: {
           customCode: "return date.getTime() >= params.currentDateTimestamp;",
-          message,
+          message: message || "Date must be on or after today.",
           usesContext: true,
           refineType: "refine",
         },
@@ -405,7 +429,7 @@ function datePresetRuleToConfigRule(rule: DatePresetRule): ValidatorRule | null 
         type: "customRefine",
         params: {
           customCode: "return date.getTime() <= params.currentDateTimestamp;",
-          message,
+          message: message || "Date must be on or before today.",
           usesContext: true,
           refineType: "refine",
         },
@@ -437,7 +461,8 @@ function datePresetRuleToConfigRule(rule: DatePresetRule): ValidatorRule | null 
           type: "customRefine",
           params: {
             customCode: buildFieldRelativeRefineCode(">=", rule.field, offset),
-            message,
+            message:
+              message || getDateRelativeFieldMessage("dateOnOrAfterField", rule.field, offset),
             usesContext: true,
             refineType: "refine",
           },
@@ -452,7 +477,8 @@ function datePresetRuleToConfigRule(rule: DatePresetRule): ValidatorRule | null 
           type: "customRefine",
           params: {
             customCode: buildFieldRelativeRefineCode("<=", rule.field, offset),
-            message,
+            message:
+              message || getDateRelativeFieldMessage("dateOnOrBeforeField", rule.field, offset),
             usesContext: true,
             refineType: "refine",
           },

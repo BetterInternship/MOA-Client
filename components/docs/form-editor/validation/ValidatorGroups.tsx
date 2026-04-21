@@ -129,6 +129,29 @@ export function ValidatorGroups({
     activeRelativeFieldKind === "dateOnOrAfterField"
       ? `This date must be on or after ${baseFieldOffset.offsetValue} ${offsetUnitLabel} ${baseFieldOffset.offsetDirection} ${selectedReferenceFieldName}.`
       : `This date must be on or before ${baseFieldOffset.offsetValue} ${offsetUnitLabel} ${baseFieldOffset.offsetDirection} ${selectedReferenceFieldName}.`;
+  const getRelativeReferenceLabel = (fieldId: string) =>
+    dateFieldOptions.find((option) => option.id === fieldId)?.name || fieldId || "selected date field";
+  const buildRelativeDateValidationMessage = (
+    kind: RelativeFieldKind,
+    fieldId: string,
+    offset: { offsetValue: number; offsetUnit: "day" | "week" | "month"; offsetDirection: "before" | "after" }
+  ) => {
+    const referenceLabel = getRelativeReferenceLabel(fieldId);
+    const unit =
+      offset.offsetUnit === "day"
+        ? offset.offsetValue === 1
+          ? "day"
+          : "days"
+        : offset.offsetUnit === "week"
+          ? offset.offsetValue === 1
+            ? "week"
+            : "weeks"
+          : offset.offsetValue === 1
+            ? "month"
+            : "months";
+    const comparator = kind === "dateOnOrAfterField" ? "on or after" : "on or before";
+    return `Date must be ${comparator} ${offset.offsetValue} ${unit} ${offset.offsetDirection} ${referenceLabel}.`;
+  };
   const updateRelativeField = (
     kind: RelativeFieldKind,
     patch?: Partial<{
@@ -148,25 +171,34 @@ export function ValidatorGroups({
     const nextOffsetUnit = patch?.offsetUnit ?? current?.offsetUnit ?? baseFieldOffset.offsetUnit;
     const nextOffsetDirection =
       patch?.offsetDirection ?? current?.offsetDirection ?? baseFieldOffset.offsetDirection;
+    const normalizedOffsetValue =
+      Number.isFinite(Number(nextOffsetValue)) && Number(nextOffsetValue) >= 0
+        ? Math.floor(Number(nextOffsetValue))
+        : 0;
+    const normalizedOffsetUnit =
+      nextOffsetUnit === "day" || nextOffsetUnit === "week" || nextOffsetUnit === "month"
+        ? nextOffsetUnit
+        : "day";
+    const normalizedOffsetDirection =
+      nextOffsetDirection === "before" || nextOffsetDirection === "after"
+        ? nextOffsetDirection
+        : "after";
     const nextMessage =
-      patch?.message !== undefined ? patch.message : (current?.message ?? relativeDateMessage);
+      patch?.message !== undefined
+        ? patch.message
+        : buildRelativeDateValidationMessage(kind, nextField, {
+            offsetValue: normalizedOffsetValue,
+            offsetUnit: normalizedOffsetUnit,
+            offsetDirection: normalizedOffsetDirection,
+          });
 
     onConfigChange(
       setDateRelativeValidator(config, {
         kind,
         field: nextField,
-        offsetValue:
-          Number.isFinite(Number(nextOffsetValue)) && Number(nextOffsetValue) >= 0
-            ? Math.floor(Number(nextOffsetValue))
-            : 0,
-        offsetUnit:
-          nextOffsetUnit === "day" || nextOffsetUnit === "week" || nextOffsetUnit === "month"
-            ? nextOffsetUnit
-            : "day",
-        offsetDirection:
-          nextOffsetDirection === "before" || nextOffsetDirection === "after"
-            ? nextOffsetDirection
-            : "after",
+        offsetValue: normalizedOffsetValue,
+        offsetUnit: normalizedOffsetUnit,
+        offsetDirection: normalizedOffsetDirection,
         message: nextMessage,
       })
     );

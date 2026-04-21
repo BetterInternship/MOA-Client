@@ -82,6 +82,27 @@ const DATE_FIELD_OFFSET_DEFAULT = {
 const getBusinessDaysMessage = (businessDays: number) =>
   `Date must be at least ${businessDays} business day${businessDays === 1 ? "" : "s"} after today.`;
 
+function getDateRelativeFieldMessage(
+  kind: "dateOnOrAfterField" | "dateOnOrBeforeField",
+  field: string,
+  offset: { offsetValue: number; offsetUnit: DateOffsetUnit; offsetDirection: DateOffsetDirection }
+) {
+  const unit =
+    offset.offsetUnit === "day"
+      ? offset.offsetValue === 1
+        ? "day"
+        : "days"
+      : offset.offsetUnit === "week"
+        ? offset.offsetValue === 1
+          ? "week"
+          : "weeks"
+        : offset.offsetValue === 1
+          ? "month"
+          : "months";
+  const comparison = kind === "dateOnOrAfterField" ? "on or after" : "on or before";
+  return `Date must be ${comparison} ${offset.offsetValue} ${unit} ${offset.offsetDirection} ${field}.`;
+}
+
 function normalizeDateFieldOffset(relative: {
   offsetValue?: number;
   offsetUnit?: DateOffsetUnit;
@@ -282,7 +303,9 @@ return passed;`,
           ...createValidatorRule("customRefine"),
           params: {
             customCode: buildFieldRelativeRefineCode(">=", relative.field, offset),
-            message: relative.message || DATE_REFINEMENT_DEFAULT_MESSAGE,
+            message:
+              relative.message ||
+              getDateRelativeFieldMessage("dateOnOrAfterField", relative.field, offset),
             usesContext: true,
             refineType: "refine",
           },
@@ -296,7 +319,9 @@ return passed;`,
           ...createValidatorRule("customRefine"),
           params: {
             customCode: buildFieldRelativeRefineCode("<=", relative.field, offset),
-            message: relative.message || DATE_REFINEMENT_DEFAULT_MESSAGE,
+            message:
+              relative.message ||
+              getDateRelativeFieldMessage("dateOnOrBeforeField", relative.field, offset),
             usesContext: true,
             refineType: "refine",
           },
