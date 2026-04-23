@@ -50,13 +50,13 @@ function FormEditorTabContent() {
         {editorViewMode === "pdf" ? <BlocksPanel /> : <FormViewCanvas />}
       </ResizablePanel>
 
-      <ResizableHandle withHandle />
+      <ResizableHandle  />
 
       <ResizablePanel defaultSize={56} minSize={30} className="min-w-0 overflow-hidden">
         <PdfViewer />
       </ResizablePanel>
 
-      <ResizableHandle withHandle />
+      <ResizableHandle  />
 
       <ResizablePanel defaultSize={22} minSize={16} maxSize={40} className="bg-card overflow-hidden">
         <RevampedBlockEditor />
