@@ -8,6 +8,8 @@ const MIN_RECT_WIDTH = 12;
 const MAX_RECT_WIDTH = 280;
 const MIN_RECT_HEIGHT = 8;
 const MAX_RECT_HEIGHT = 48;
+const DEFAULT_LINE_FIELD_HEIGHT = 12;
+const DEFAULT_TEXT_BASELINE_FROM_TOP = 9.8;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -200,9 +202,10 @@ const detectUnderscoreRegions = (
         {
           page,
           x: token.x + token.w * ratioStart,
-          y: token.y - 2,
+          // Align detected underline with the inferred text baseline inside the suggestion box.
+          y: token.y + token.h - DEFAULT_TEXT_BASELINE_FROM_TOP,
           w: Math.max(36, token.w * ratioLength),
-          h: Math.max(12, token.h + 2),
+          h: Math.max(DEFAULT_LINE_FIELD_HEIGHT, token.h + 2),
           patternType: "underscore",
           confidence: 0.92,
         },
@@ -316,9 +319,10 @@ const detectVectorRegions = async (
           {
             page,
             x: Math.min(start.x, end.x),
-            y: yTop - 7,
+            // Place the suggestion so its text baseline sits on the detected line.
+            y: yTop - DEFAULT_TEXT_BASELINE_FROM_TOP,
             w: Math.abs(dx),
-            h: 14,
+            h: DEFAULT_LINE_FIELD_HEIGHT,
             patternType: "horizontal-line",
             confidence: length > 100 ? 0.84 : 0.77,
           },

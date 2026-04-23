@@ -114,6 +114,8 @@ export function createBlockFromSuggestionWithPreset({
 
   const fallbackType: IFormField["type"] = suggestion.inferredKind === "signature" ? "signature" : "text";
   const fieldType = (preset?.type as IFormField["type"] | undefined) || fallbackType;
+  const isLineLikeSuggestion =
+    suggestion.patternType === "horizontal-line" || suggestion.patternType === "underscore";
 
   const baseFieldName = normalize(preset?.name || suggestion.inferredLabel || "field").replace(/[^a-z0-9]/g, "") || "field";
   const fieldKey = createUniqueFieldKey(baseFieldName);
@@ -136,7 +138,8 @@ export function createBlockFromSuggestionWithPreset({
       w: Math.max(10, suggestion.w),
       h: Math.max(10, suggestion.h),
       align_h: defaults?.align_h || "center",
-      align_v: defaults?.align_v || (fieldType === "signature" ? "bottom" : "middle"),
+      align_v:
+        defaults?.align_v || (fieldType === "signature" || isLineLikeSuggestion ? "bottom" : "middle"),
       shared: typeof preset?.shared === "boolean" ? preset.shared : true,
       source: (preset?.source || "manual") as IFormField["source"],
       ...(preset?.prefiller ? { prefiller: preset.prefiller } : {}),
