@@ -42,6 +42,7 @@ import { runMissingFieldPipeline, type MissingFieldSuggestion } from "@/lib/miss
 import { createBlockFromSuggestionWithPreset } from "@/lib/missing-fields/presets";
 import { classifyBlankRegionsAgainstBlocks } from "@/lib/missing-fields/compare";
 import { toExistingFieldRects } from "@/lib/missing-fields/types";
+import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 
 export type PointerLocation = {
   page: number;
@@ -127,6 +128,7 @@ export function PdfViewer() {
   } = useFormEditorTab();
 
   const { formMetadata, updateBlocks } = useFormEditor();
+  const { registry: fieldRegistryDetails } = useFieldTemplateContext();
 
   const {
     pdfDoc,
@@ -269,6 +271,7 @@ export function PdfViewer() {
       suggestion: target,
       signingPartyId: nextPartyId,
       presets: resolvedSystemPresets,
+      registryFields: fieldRegistryDetails as any[],
     });
     setPendingMissingFieldDraft(draftBlock);
     setSelectedBlockId(draftBlock._id);
@@ -281,6 +284,7 @@ export function PdfViewer() {
     setSelectedBlockGroup,
     setSelectedBlockId,
     setVisiblePage,
+    fieldRegistryDetails,
     visibleMissingSuggestions,
   ]);
 
