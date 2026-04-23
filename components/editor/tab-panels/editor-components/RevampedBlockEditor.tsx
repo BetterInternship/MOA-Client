@@ -105,15 +105,22 @@ export function RevampedBlockEditor() {
     handleBlockUpdate,
     handleParentUpdate,
     editorViewMode,
+    pendingMissingFieldDraft,
+    setPendingMissingFieldDraft,
+    confirmPendingMissingFieldDraft,
+    cancelPendingMissingFieldDraft,
   } = useFormEditorTab();
 
   // Get the selected block and parent group from context
   const block = selectedBlockId
     ? formMetadata?.schema.blocks?.find((b) => b._id === selectedBlockId) || null
     : null;
+  const isPendingDraftSelected =
+    Boolean(pendingMissingFieldDraft) && selectedBlockId === pendingMissingFieldDraft?._id && !block;
+  const activeBlock = block || (isPendingDraftSelected ? pendingMissingFieldDraft : null);
   const parentGroup = selectedBlockGroup;
 
-  const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(block);
+  const [editedBlock, setEditedBlock] = useState<IFormBlock | null>(activeBlock);
   const [editedTextContent, setEditedTextContent] = useState<string>("");
 
   // Local state for immediate typing feedback - will sync back to formMetadata through handler
@@ -131,8 +138,8 @@ export function RevampedBlockEditor() {
   };
 
   useEffect(() => {
-    setEditedBlock(block);
-  }, [block]);
+    setEditedBlock(activeBlock);
+  }, [activeBlock]);
 
   // Update editedTextContent when selectedBlockGroup changes
   useEffect(() => {
@@ -257,7 +264,12 @@ export function RevampedBlockEditor() {
     // Update local state for immediate UI feedback
     setEditedBlock(updated);
 
-    // Use context handler to update and sync
+    if (isPendingDraftSelected) {
+      setPendingMissingFieldDraft(updated);
+      return;
+    }
+
+    // Use context handler to update and sync for persisted fields
     handleBlockUpdate(updated);
   };
 
@@ -275,6 +287,10 @@ export function RevampedBlockEditor() {
     }
 
     setEditedBlock(updated);
+    if (isPendingDraftSelected) {
+      setPendingMissingFieldDraft(updated);
+      return;
+    }
     handleBlockUpdate(updated);
   };
 
@@ -651,10 +667,36 @@ export function RevampedBlockEditor() {
             onChange={(value) => {
               const updatedBlock = { ...editedBlock, signing_party_id: value };
               setEditedBlock(updatedBlock);
+              if (isPendingDraftSelected) {
+                setPendingMissingFieldDraft(updatedBlock);
+                return;
+              }
               handleBlockUpdate(updatedBlock);
             }}
           />
         </Card>
+
+        {isPendingDraftSelected ? (
+          <Card className="gap-2.5 p-2.5">
+            <h4 className="text-muted-foreground text-xs font-semibold uppercase">Suggested field</h4>
+            <p className="text-xs text-slate-600">
+              This is a suggested field. Confirm to add it to the form, or cancel to discard it.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={cancelPendingMissingFieldDraft}
+              >
+                Cancel
+              </Button>
+              <Button type="button" className="flex-1" onClick={confirmPendingMissingFieldDraft}>
+                Confirm
+              </Button>
+            </div>
+          </Card>
+        ) : null}
 
         <Card className="gap-2.5 p-2.5">
           <h4 className="text-muted-foreground text-xs font-semibold uppercase">Layout & Text</h4>
