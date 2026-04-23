@@ -7,6 +7,8 @@ import { PdfViewer } from "@/components/docs/form-editor/form-pdf-editor/PdfView
 import { BlocksPanel } from "./editor-components/BlocksPanel";
 import { RevampedBlockEditor } from "./editor-components/RevampedBlockEditor";
 import { FormViewCanvas } from "./editor-components/FormViewCanvas";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * Main builder surface (left palette + center PDF + right block editor).
@@ -15,6 +17,7 @@ import { FormViewCanvas } from "./editor-components/FormViewCanvas";
 function FormEditorTabContent() {
   const { formMetadata } = useFormEditor();
   const { editorViewMode } = useFormEditorTab();
+  const isMobile = useIsMobile();
 
   if (!formMetadata) {
     return (
@@ -24,23 +27,41 @@ function FormEditorTabContent() {
     );
   }
 
+  if (isMobile) {
+    return (
+      <div className="bg-background flex h-full w-full">
+        <div className="bg-card flex flex-shrink-0 basis-72 flex-col overflow-hidden border-r lg:basis-[320px] xl:basis-[360px]">
+          {editorViewMode === "pdf" ? <BlocksPanel /> : <FormViewCanvas />}
+        </div>
+        <div className="min-w-0 flex-1 overflow-hidden border-r">
+          <PdfViewer />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-background flex h-full w-full">
-      {/* Left Panel - Responsive */}
-      <div className="bg-card flex flex-shrink-0 basis-72 flex-col overflow-hidden border-r lg:basis-[320px] xl:basis-[360px]">
+    <ResizablePanelGroup
+      direction="horizontal"
+      autoSaveId="form-editor:pdf-layout"
+      className="bg-background h-full w-full"
+    >
+      <ResizablePanel defaultSize={22} minSize={16} maxSize={40} className="bg-card overflow-hidden">
         {editorViewMode === "pdf" ? <BlocksPanel /> : <FormViewCanvas />}
-      </div>
+      </ResizablePanel>
 
-      {/* Center - PDF Viewer */}
-      <div className="min-w-0 flex-1 overflow-hidden border-r">
+      <ResizableHandle withHandle />
+
+      <ResizablePanel defaultSize={56} minSize={30} className="min-w-0 overflow-hidden">
         <PdfViewer />
-      </div>
+      </ResizablePanel>
 
-      {/* Right Panel - Responsive */}
-      <div className="bg-card hidden flex-shrink-0 basis-60 flex-col overflow-hidden border-l md:flex lg:basis-74 xl:basis-80">
+      <ResizableHandle withHandle />
+
+      <ResizablePanel defaultSize={22} minSize={16} maxSize={40} className="bg-card overflow-hidden">
         <RevampedBlockEditor />
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
 
