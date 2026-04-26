@@ -33,12 +33,11 @@ export default function DocsDashboardPage() {
           (signingParty) =>
             signingParty.signatory_account?.email === profile.email && !signingParty.signed
         );
-        const rejectionReason = form.rejection_reason;
 
         return (
           lastUnsignedSigningParty?._id === mySigningParty?._id &&
           !form.signed_document_id &&
-          !rejectionReason
+          !form.rejection_reason
         );
       },
     },
@@ -55,7 +54,7 @@ export default function DocsDashboardPage() {
       },
     },
     {
-      id: "rejected",
+      id: "cancelled",
       label: "Cancelled",
       icon: () => (
         <div className="bg-destructive rounded-full p-1 text-white">
@@ -79,7 +78,7 @@ export default function DocsDashboardPage() {
             signingParty.signatory_account?.email === profile.email && !signingParty.signed
         );
 
-        return lastUnsignedSigningParty?._id !== mySigningParty?._id;
+        return lastUnsignedSigningParty?._id !== mySigningParty?._id && !form.rejection_reason;
       },
     },
   ];

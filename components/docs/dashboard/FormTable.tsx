@@ -143,13 +143,6 @@ const createActionColumns = (
             <Download className="h-4 w-4" />
           </Button>
         );
-      } else if (lastUnsignedSigningParty?._id !== mySigningParty?._id) {
-        return (
-          <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
-            Pending
-            <Hourglass className="h-4 w-4" />
-          </Button>
-        );
       } else if (myForm.rejection_reason) {
         return (
           <Button
@@ -159,6 +152,13 @@ const createActionColumns = (
           >
             View Details
             <ExternalLink className="h-4 w-4" />
+          </Button>
+        );
+      } else if (lastUnsignedSigningParty?._id !== mySigningParty?._id) {
+        return (
+          <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
+            Pending
+            <Hourglass className="h-4 w-4" />
           </Button>
         );
       } else {
@@ -301,7 +301,7 @@ export default function MyFormsTable({
       columns={columns}
       data={rows}
       enableColumnVisibility
-      initialSorting={[{ id: "timestamp", desc: true }]}
+      initialSorting={[{ id: "timestamp", desc: false }]}
       pageSizes={[20, 50]}
       toolbarActions={
         exportEnabled ? (
