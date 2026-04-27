@@ -48,56 +48,45 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   const showHeader = !isEditorRoute && !isSignRoute;
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/BetterInternshipLogo.ico" sizes="any" />
-      </head>
-      <Providers>
-        <body
-          className="flex h-[100svh]! w-[100vw] flex-col overflow-x-hidden bg-white"
-          suppressHydrationWarning
-        >
-          {showHeader && (
-            <header className="bg-background/70 sticky top-0 z-50 border-b backdrop-blur py-2">
-              <div className="mx-auto flex h-16 items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
-                {/* Logo */}
-                <Link
-                  href="/dashboard"
-                  className="block flex-shrink-0 border-none text-black! outline-none focus:outline-none"
-                >
-                  <div className="flex items-center gap-2">
-                    <img
-                      src="/betterinternship-logo.png"
-                      alt="Logo"
-                      width={25}
-                      height={25}
-                      className="flex-none"
-                    />
-                    <h1 className="font-display flex flex-row items-center space-x-2 text-lg font-bold text-gray-900">
-                      BetterInternship
-                    </h1>
-                  </div>
-                </Link>
-
-                <div className="flex flex-1 justify-end gap-2">
-                  <Header />
+    <Providers>
+      <div className="flex h-[100svh] w-screen flex-col overflow-hidden bg-white">
+        {showHeader && (
+          <header className="bg-background/70 sticky top-0 z-50 border-b py-2 backdrop-blur">
+            <div className="mx-auto flex h-16 items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
+              {/* Logo */}
+              <Link
+                href="/dashboard"
+                className="block flex-shrink-0 border-none text-black! outline-none focus:outline-none"
+              >
+                <div className="flex items-center gap-2">
+                  <img
+                    src="/betterinternship-logo.png"
+                    alt="Logo"
+                    width={25}
+                    height={25}
+                    className="flex-none"
+                  />
+                  <h1 className="font-display flex flex-row items-center space-x-2 text-lg font-bold text-gray-900">
+                    BetterInternship
+                  </h1>
                 </div>
-              </div>
-            </header>
-          )}
+              </Link>
 
-          <main
-            className={`mx-auto flex min-h-0 w-full flex-1 ${
-              isFieldsRoute ? "overflow-hidden" : "overflow-auto"
-            }`}
-            style={{
-              height: showHeader ? "calc(100svh - 5rem)" : "100svh",
-            }}
-          >
-            <DocsAuthGate>{children}</DocsAuthGate>
-          </main>
-        </body>
-      </Providers>
-    </html>
+              <div className="flex flex-1 justify-end gap-2">
+                <Header />
+              </div>
+            </div>
+          </header>
+        )}
+
+        <main
+          className={`mx-auto flex min-h-0 w-full flex-1 ${
+            isFieldsRoute ? "overflow-hidden" : "overflow-auto"
+          }`}
+        >
+          <DocsAuthGate>{children}</DocsAuthGate>
+        </main>
+      </div>
+    </Providers>
   );
 }

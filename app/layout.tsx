@@ -7,6 +7,9 @@ import ApiQueryProvider from "./providers/api-query-provider";
 export const metadata: Metadata = {
   title: "MOA Management Platform",
   description: "Manage company MOAs",
+  icons: {
+    icon: [{ url: "/BetterInternshipLogo.ico", sizes: "any" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <head>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
         </head>
-        <body className="overflow-y-auto">
+        <body className="overflow-hidden" suppressHydrationWarning>
           <ThemeProvider>{children}</ThemeProvider>
           <SonnerToaster />
         </body>
