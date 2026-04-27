@@ -88,9 +88,9 @@ export default function DocsDashboardPage() {
   }
 
   return (
-    <div className="max-w-8xl container mx-auto space-y-6 px-4 pt-6 sm:px-10 sm:pt-16">
+    <div className="max-w-8xl container mx-auto flex h-full min-h-0 flex-col gap-6 overflow-hidden px-4 pt-6 pb-0 sm:px-10 sm:pt-16">
       {/* Header */}
-      <div className="space-y-2">
+      <div className="shrink-0 space-y-2">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
           <HeaderText>Forms</HeaderText>
@@ -101,15 +101,15 @@ export default function DocsDashboardPage() {
       </div>
 
       {/* Table */}
-      <div>
+      <div className="min-h-0 flex-1">
         {loading ? (
           <div className="text-sm text-gray-600">Loading signed documents…</div>
         ) : error ? (
           <div className="text-sm text-red-600">Failed to load signed documents.</div>
         ) : (
-          <div className="space-y-2">
+          <div className="flex h-full min-h-0 flex-col gap-2">
             {/* Tabs with External Arrows */}
-            <div className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto">
+            <div className="scrollbar-hide flex shrink-0 flex-row gap-2 overflow-x-auto">
               {statuses.map((status) => {
                 const IconComponent = status.icon;
 
@@ -142,14 +142,14 @@ export default function DocsDashboardPage() {
 
             {/* Content */}
             {activeTab === "all" && (
-              <Card className="space-y-3 p-3">
+              <Card className="min-h-0 flex-1 p-3">
                 <MyFormsTable rows={forms} isCoordinator={isCoordinator} />
               </Card>
             )}
 
             {statuses.map((status) => {
               return activeTab === status.id ? (
-                <Card key={status.id} className="space-y-3 p-3">
+                <Card key={status.id} className="min-h-0 flex-1 p-3">
                   <MyFormsTable
                     rows={forms.filter(status.filter)}
                     isCoordinator={isCoordinator}

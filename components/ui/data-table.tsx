@@ -118,6 +118,7 @@ export function DataTable<TData, TValue>({
           try {
             localStorage.setItem(sortingStorageKey, JSON.stringify(nextSorting));
           } catch {
+            // Keep sorting usable even when storage is unavailable.
           }
         }
 
@@ -185,7 +186,7 @@ export function DataTable<TData, TValue>({
   }, [selectedSearchKey, searchKeys]);
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("flex min-h-0 flex-col gap-3", className)}>
       {/* Toolbar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
@@ -237,9 +238,9 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-[0.33em]">
+      <div className="min-h-0 flex-1 overflow-auto rounded-[0.33em]">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10 bg-white">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {enableRowSelection && (
@@ -317,12 +318,12 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="sticky bottom-0 z-10 flex flex-col items-center justify-between gap-2 sm:flex-row bg-white py-2 border-t-2">
+      <div className="z-10 flex shrink-0 flex-col items-center justify-between gap-1 border-t bg-white py-1 sm:flex-row">
         <div className="text-muted-foreground text-sm">
           {table.getFilteredRowModel().rows.length} form{table.getFilteredRowModel().rows.length === 1 ? "" : "s"}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span className="text-sm">Rows per page</span>
           <Select
             value={String(table.getState().pagination.pageSize)}
@@ -357,7 +358,7 @@ export function DataTable<TData, TValue>({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="px-2 text-sm">
+            <span className="px-1 text-sm">
               Page {table.getState().pagination.pageIndex + 1} {""}
               of {table.getPageCount() || 1}
             </span>

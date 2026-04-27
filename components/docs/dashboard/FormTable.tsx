@@ -304,6 +304,7 @@ export default function MyFormsTable({
       initialSorting={[{ id: "timestamp", desc: false }]}
       sortingStorageKey="docs-dashboard-forms-sorting"
       pageSizes={[20, 50]}
+      className="h-full"
       toolbarActions={
         exportEnabled ? (
           <DropdownMenu open={isExportDropdownOpen} onOpenChange={handleDropdownOpenChange}>
