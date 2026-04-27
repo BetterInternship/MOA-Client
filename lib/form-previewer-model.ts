@@ -7,6 +7,21 @@ export type PreviewFieldType = "text" | "signature" | "image";
 type ValidatorRuleLike = { kind?: string };
 type ValidatorIrLike = { rules?: ValidatorRuleLike[] } | null;
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 export interface PreviewField {
   id: string;
   field: string;
@@ -136,7 +151,7 @@ export const resolveAutoPreviewValue = (fieldKey: string, now = new Date()): str
   const normalized = normalizePreviewFieldKey(fieldKey).toLowerCase();
   if (normalized === "auto.current-date") return formatTimestampDateWithoutTime(now.getTime());
   if (normalized === "auto.current-day") return now.getDate().toString();
-  if (normalized === "auto.current-month") return (now.getMonth() + 1).toString();
+  if (normalized === "auto.current-month") return MONTH_NAMES[now.getMonth()] ?? "";
   if (normalized === "auto.current-year") return now.getFullYear().toString();
   return "";
 };
