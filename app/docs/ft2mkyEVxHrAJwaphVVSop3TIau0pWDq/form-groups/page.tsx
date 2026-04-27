@@ -360,7 +360,7 @@ export default function FormGroupsPage() {
           <div className="flex items-center gap-3">
             <HeaderIcon icon={FolderOpen} />
             <div>
-              <HeaderText>Form Groups</HeaderText>
+              <HeaderText>Student Form Access</HeaderText>
             </div>
           </div>
         </div>

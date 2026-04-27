@@ -46,6 +46,8 @@ export default function DocsTopbarUser() {
     ? pathname.slice("/docs".length)
     : (pathname ?? "/");
 
+  console.log(profile, profile.coordinatorId);
+
   const logoutMutation = useMutation({
     mutationFn: logoutSignatory,
     onSuccess: async () => {

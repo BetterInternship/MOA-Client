@@ -377,9 +377,7 @@ const FormRegistryPage = () => {
               <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
               <div>
                 <p className="text-sm font-medium text-amber-900">Could not load folders</p>
-                <p className="text-xs text-amber-800">
-                  Showing all forms only. Form groups are temporarily unavailable.
-                </p>
+                <p className="text-xs text-amber-800">Form groups are temporarily unavailable.</p>
               </div>
             </div>
           </div>
