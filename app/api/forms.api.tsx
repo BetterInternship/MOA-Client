@@ -4,6 +4,7 @@ import { signatoryControllerGetSignedDocumentsBySignatory } from "./app/api/endp
 import {
   formGroupsControllerAddFormToGroup,
   formGroupsControllerCreateFormGroup,
+  formGroupsControllerRemoveFormFromGroup,
 } from "./app/api/endpoints/form-groups/form-groups";
 export const getFormFields = async (name: string) => {
   return await formsControllerGetLatestFormDocumentAndMetadata({ name });
@@ -68,13 +69,20 @@ export const createFormGroup = async (name: string) => {
   }
 };
 
-export const addFormToGroup = async (formName: string, groupId: string) => {
-  console.log("API call to addFormToGroup with", { formName, groupId });
+export const addFormToGroup = async (formNames: string[], groupId: string) => {
+  console.log("API call to addFormToGroup with", { formNames, groupId });
   try {
-    const res = await formGroupsControllerAddFormToGroup({
-      formName,
-      groupId,
-    });
+    const res = await formGroupsControllerAddFormToGroup({ formNames, groupId });
+    const result = res?.response ?? null;
+    return { result, isLoading: false, error: null };
+  } catch (error) {
+    return { result: null, isLoading: false, error };
+  }
+};
+
+export const removeFormsFromGroup = async (formNames: string[], groupId: string) => {
+  try {
+    const res = await formGroupsControllerRemoveFormFromGroup({ formNames, groupId });
     const result = res?.response ?? null;
     return { result, isLoading: false, error: null };
   } catch (error) {

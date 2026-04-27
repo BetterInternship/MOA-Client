@@ -27,6 +27,14 @@ export type ValidatorIRImportResult = {
   errors?: string[];
 };
 
+type DatePersistedRule = Extract<Extract<ValidatorIRv0, { baseType: "date" }>["rules"][number], { kind: string }>;
+type DateFieldRelativeRule = Extract<
+  DatePersistedRule,
+  { kind: "dateOnOrAfterField" | "dateOnOrBeforeField" }
+>;
+type DateOffsetUnit = NonNullable<DateFieldRelativeRule["offsetUnit"]>;
+type DateOffsetDirection = NonNullable<DateFieldRelativeRule["offsetDirection"]>;
+
 const BASE_RULE_MAP: Record<ValidatorBaseType, ValidatorRuleType[]> = {
   text: [
     "required",
@@ -105,11 +113,11 @@ function normalizeDateIso(value: string): string {
 }
 
 type DatePresetRule =
-  | { kind: "dateOnOrAfterToday"; message?: string }
-  | { kind: "dateOnOrBeforeToday"; message?: string }
-  | { kind: "dateOnOrAfterBusinessDays"; businessDays: number; message?: string }
-  | { kind: "dateOnOrAfterField"; field: string; message?: string }
-  | { kind: "dateOnOrBeforeField"; field: string; message?: string };
+  Extract<DatePersistedRule, { kind: "dateOnOrAfterToday" }>
+  | Extract<DatePersistedRule, { kind: "dateOnOrBeforeToday" }>
+  | Extract<DatePersistedRule, { kind: "dateOnOrAfterBusinessDays" }>
+  | Extract<DatePersistedRule, { kind: "dateOnOrAfterField" }>
+  | Extract<DatePersistedRule, { kind: "dateOnOrBeforeField" }>;
 
 const DATE_PRESET_KINDS = [
   "dateOnOrAfterToday",
@@ -143,6 +151,62 @@ const passed = businessDaysBetween >= __businessDaysMin__;
 return passed;`;
 }
 
+const DATE_FIELD_OFFSET_DEFAULT = {
+  offsetValue: 0,
+  offsetUnit: "day" as DateOffsetUnit,
+  offsetDirection: "after" as DateOffsetDirection,
+};
+
+function normalizeDateFieldOffset(rule: {
+  offsetValue?: number;
+  offsetUnit?: DateOffsetUnit;
+  offsetDirection?: DateOffsetDirection;
+}) {
+  const parsedValue = Number(rule.offsetValue);
+  const offsetValue = Number.isFinite(parsedValue) && parsedValue >= 0 ? Math.floor(parsedValue) : 0;
+  const offsetUnit =
+    rule.offsetUnit === "day" || rule.offsetUnit === "week" || rule.offsetUnit === "month"
+      ? rule.offsetUnit
+      : DATE_FIELD_OFFSET_DEFAULT.offsetUnit;
+  const offsetDirection =
+    rule.offsetDirection === "before" || rule.offsetDirection === "after"
+      ? rule.offsetDirection
+      : DATE_FIELD_OFFSET_DEFAULT.offsetDirection;
+  return { offsetValue, offsetUnit, offsetDirection };
+}
+
+function buildFieldRelativeRefineCode(
+  comparator: ">=" | "<=",
+  field: string,
+  offset: { offsetValue: number; offsetUnit: DateOffsetUnit; offsetDirection: DateOffsetDirection }
+) {
+  const fieldLiteral = JSON.stringify(String(field || ""));
+  return `const __relativeField__ = ${fieldLiteral};
+const __offsetValue__ = ${offset.offsetValue};
+const __offsetUnit__ = "${offset.offsetUnit}";
+const __offsetDirection__ = "${offset.offsetDirection}";
+const rawReference = params[__relativeField__];
+if (rawReference == null || rawReference === "") return true;
+const normalizedReference =
+  typeof rawReference === "string" && /^-?\\d+$/.test(rawReference.trim())
+    ? Number(rawReference)
+    : rawReference;
+const referenceDate = new Date(normalizedReference);
+if (Number.isNaN(referenceDate.getTime())) return true;
+const shiftedReference = new Date(referenceDate.getTime());
+if (__offsetValue__ > 0) {
+  const directionMultiplier = __offsetDirection__ === "before" ? -1 : 1;
+  const magnitude = directionMultiplier * __offsetValue__;
+  if (__offsetUnit__ === "day") shiftedReference.setDate(shiftedReference.getDate() + magnitude);
+  else if (__offsetUnit__ === "week") shiftedReference.setDate(shiftedReference.getDate() + magnitude * 7);
+  else shiftedReference.setMonth(shiftedReference.getMonth() + magnitude);
+}
+const candidate = new Date(date.getTime());
+candidate.setHours(0, 0, 0, 0);
+shiftedReference.setHours(0, 0, 0, 0);
+return candidate.getTime() ${comparator} shiftedReference.getTime();`;
+}
+
 function parseDateCustomRefine(rule: ValidatorRule): DatePresetRule | null {
   const code = String(rule.params?.customCode || "");
   const message = String(rule.params?.message || "Invalid date");
@@ -159,17 +223,33 @@ function parseDateCustomRefine(rule: ValidatorRule): DatePresetRule | null {
   }
 
   if (code.includes("currentDateTimestamp")) {
-    if (code.includes(">=") || code.includes(">")) return { kind: "dateOnOrAfterToday", message };
-    if (code.includes("<=") || code.includes("<")) return { kind: "dateOnOrBeforeToday", message };
+    if (/return\s+(?:candidate\.getTime\(\)|date\.getTime\(\))\s*>=/.test(code) || code.includes(">=")) return { kind: "dateOnOrAfterToday", message };
+    if (/return\s+(?:candidate\.getTime\(\)|date\.getTime\(\))\s*<=/.test(code) || code.includes("<=")) return { kind: "dateOnOrBeforeToday", message };
   }
 
-  const fieldRefMatch = code.match(/params\[\s*["']([^"']+)["']\s*\]/);
+  const fieldRefMatch =
+    code.match(/__relativeField__\s*=\s*["']([^"']+)["']/) ||
+    code.match(/params\[\s*["']([^"']+)["']\s*\]/);
   if (fieldRefMatch) {
     const field = fieldRefMatch[1];
-    if (code.includes(">=") || code.includes(">"))
-      return { kind: "dateOnOrAfterField", field, message };
-    if (code.includes("<=") || code.includes("<"))
-      return { kind: "dateOnOrBeforeField", field, message };
+    const offsetValue = Number(code.match(/__offsetValue__\s*=\s*(-?\d+)/)?.[1] || 0);
+    const rawOffsetUnit = code.match(/__offsetUnit__\s*=\s*["']([^"']+)["']/)?.[1];
+    const rawOffsetDirection = code.match(/__offsetDirection__\s*=\s*["']([^"']+)["']/)?.[1];
+    const offset = normalizeDateFieldOffset({
+      offsetValue,
+      offsetUnit:
+        rawOffsetUnit === "day" || rawOffsetUnit === "week" || rawOffsetUnit === "month"
+          ? (rawOffsetUnit as DateOffsetUnit)
+          : undefined,
+      offsetDirection:
+        rawOffsetDirection === "before" || rawOffsetDirection === "after"
+          ? (rawOffsetDirection as DateOffsetDirection)
+          : undefined,
+    });
+    if (/return\s+(?:candidate\.getTime\(\)|date\.getTime\(\))\s*>=/.test(code) || code.includes(">="))
+      return { kind: "dateOnOrAfterField", field, ...offset, message };
+    if (/return\s+(?:candidate\.getTime\(\)|date\.getTime\(\))\s*<=/.test(code) || code.includes("<="))
+      return { kind: "dateOnOrBeforeField", field, ...offset, message };
   }
 
   return null;
@@ -257,6 +337,27 @@ export function validatorConfigToPersistedIR(
   };
 }
 
+function getDateRelativeFieldMessage(
+  kind: "dateOnOrAfterField" | "dateOnOrBeforeField",
+  field: string,
+  offset: { offsetValue: number; offsetUnit: DateOffsetUnit; offsetDirection: DateOffsetDirection }
+) {
+  const unit =
+    offset.offsetUnit === "day"
+      ? offset.offsetValue === 1
+        ? "day"
+        : "days"
+      : offset.offsetUnit === "week"
+        ? offset.offsetValue === 1
+          ? "week"
+          : "weeks"
+        : offset.offsetValue === 1
+          ? "month"
+          : "months";
+  const comparison = kind === "dateOnOrAfterField" ? "on or after" : "on or before";
+  return `Date must be ${comparison} ${offset.offsetValue} ${unit} ${offset.offsetDirection} ${field}.`;
+}
+
 function ruleToConfigRule(rule: any): ValidatorRule | null {
   const kind = rule?.kind as string;
   const mapped = RULE_KIND_TO_ENGINE[kind];
@@ -309,8 +410,11 @@ function ruleToConfigRule(rule: any): ValidatorRule | null {
   }
 }
 
-function datePresetRuleToConfigRule(rule: any): ValidatorRule | null {
-  const message = String(rule?.message || "Invalid date");
+function datePresetRuleToConfigRule(rule: DatePresetRule): ValidatorRule | null {
+  const message =
+    typeof rule?.message === "string" && rule.message.trim().length > 0
+      ? rule.message.trim()
+      : undefined;
   switch (rule?.kind) {
     case "dateOnOrAfterToday":
       return {
@@ -318,7 +422,7 @@ function datePresetRuleToConfigRule(rule: any): ValidatorRule | null {
         type: "customRefine",
         params: {
           customCode: "return date.getTime() >= params.currentDateTimestamp;",
-          message,
+          message: message || "Date must be on or after today.",
           usesContext: true,
           refineType: "refine",
         },
@@ -329,7 +433,7 @@ function datePresetRuleToConfigRule(rule: any): ValidatorRule | null {
         type: "customRefine",
         params: {
           customCode: "return date.getTime() <= params.currentDateTimestamp;",
-          message,
+          message: message || "Date must be on or before today.",
           usesContext: true,
           refineType: "refine",
         },
@@ -353,27 +457,37 @@ function datePresetRuleToConfigRule(rule: any): ValidatorRule | null {
       };
     }
     case "dateOnOrAfterField":
-      return {
-        id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        type: "customRefine",
-        params: {
-          customCode: `return date.getTime() >= (new Date(params["${rule.field}"])).getTime();`,
-          message,
-          usesContext: true,
-          refineType: "refine",
-        },
-      };
+      if (!String(rule.field || "").trim()) return null;
+      {
+        const offset = normalizeDateFieldOffset(rule);
+        return {
+          id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          type: "customRefine",
+          params: {
+            customCode: buildFieldRelativeRefineCode(">=", rule.field, offset),
+            message:
+              message || getDateRelativeFieldMessage("dateOnOrAfterField", rule.field, offset),
+            usesContext: true,
+            refineType: "refine",
+          },
+        };
+      }
     case "dateOnOrBeforeField":
-      return {
-        id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        type: "customRefine",
-        params: {
-          customCode: `return date.getTime() <= (new Date(params["${rule.field}"])).getTime();`,
-          message,
-          usesContext: true,
-          refineType: "refine",
-        },
-      };
+      if (!String(rule.field || "").trim()) return null;
+      {
+        const offset = normalizeDateFieldOffset(rule);
+        return {
+          id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          type: "customRefine",
+          params: {
+            customCode: buildFieldRelativeRefineCode("<=", rule.field, offset),
+            message:
+              message || getDateRelativeFieldMessage("dateOnOrBeforeField", rule.field, offset),
+            usesContext: true,
+            refineType: "refine",
+          },
+        };
+      }
     default:
       return null;
   }
@@ -383,7 +497,7 @@ export function persistedIRToValidatorConfig(ir: ValidatorIRv0): ValidatorConfig
   const rules: ValidatorRule[] = [];
   for (const rule of ir.rules as any[]) {
     if (isDatePresetKind(String(rule.kind || ""))) {
-      const mapped = datePresetRuleToConfigRule(rule);
+      const mapped = datePresetRuleToConfigRule(rule as DatePresetRule);
       if (mapped) rules.push(mapped);
       continue;
     }
@@ -410,7 +524,7 @@ export function persistedIRToValidatorConfig(ir: ValidatorIRv0): ValidatorConfig
 export function persistedIRToZod(ir: ValidatorIRv0): string {
   if (ir.baseType === "checkbox") {
     const message =
-      (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
+      ir.rules.find((r) => r.kind === "required")?.message || "This field is required.";
     return `z.preprocess((v) => !!v, z.boolean().refine((v) => v === true, { message: "${message}" }).describe("checkbox"))`;
   }
 
@@ -421,8 +535,8 @@ export function persistedIRToZod(ir: ValidatorIRv0): string {
 
   if (ir.baseType === "email") {
     const message =
-      (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
-    const validator = (ir.rules as any[]).some((r) => r.kind === "required")
+      ir.rules.find((r) => r.kind === "required")?.message || "This field is required.";
+    const validator = ir.rules.some((r) => r.kind === "required")
       ? `z.string().email().nonempty({ message: "${message}" })`
       : "z.string().email()";
     return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
@@ -430,8 +544,8 @@ export function persistedIRToZod(ir: ValidatorIRv0): string {
 
   if (ir.baseType === "url") {
     const message =
-      (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
-    const validator = (ir.rules as any[]).some((r) => r.kind === "required")
+      ir.rules.find((r) => r.kind === "required")?.message || "This field is required.";
+    const validator = ir.rules.some((r) => r.kind === "required")
       ? `z.string().url().nonempty({ message: "${message}" })`
       : "z.string().url()";
     return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
@@ -439,9 +553,9 @@ export function persistedIRToZod(ir: ValidatorIRv0): string {
 
   if (ir.baseType === "phone") {
     const message =
-      (ir.rules as any[]).find((r) => r.kind === "required")?.message || "This field is required.";
+      ir.rules.find((r) => r.kind === "required")?.message || "This field is required.";
     const requiredMessage = JSON.stringify(message);
-    const validator = (ir.rules as any[]).some((r) => r.kind === "required")
+    const validator = ir.rules.some((r) => r.kind === "required")
       ? `z.string().regex(/^\\+?[0-9()\\-\\s]{7,20}$/, { message: "Please enter a valid phone number." }).nonempty({ message: ${requiredMessage} }).describe("phone")`
       : 'z.string().regex(/^\\+?[0-9()\\-\\s]{7,20}$/, { message: "Please enter a valid phone number." }).describe("phone")';
     return `z.preprocess((v) => ((v ?? null) == null ? "" : (typeof v === "string" ? v.trim() : v)), ${validator})`;
@@ -485,7 +599,7 @@ export function zodToPersistedIR(
   const hasUnmappedCustomRefine =
     baseType === "date" &&
     config.rules.some((r) => r.type === "customRefine") &&
-    !(ir.rules as any[]).some((r) => isDatePresetKind(String(r?.kind || "")));
+    !ir.rules.some((r) => isDatePresetKind(String(r?.kind || "")));
 
   if (hasUnmappedCustomRefine) {
     return {

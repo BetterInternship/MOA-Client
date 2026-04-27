@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { getPartyColorByIndex } from "@/lib/party-colors";
 import { ArrowLeft, ArrowRight, ChevronDown, Copy, Trash2 } from "lucide-react";
@@ -25,6 +25,10 @@ export type FormField = {
   isPhantom?: boolean;
   signing_party_order?: number;
   signing_party_id?: string;
+  size?: number;
+  font?: string;
+  align_v?: "top" | "middle" | "bottom";
+  wrap?: boolean;
 };
 
 type ResizeHandle = "n" | "e" | "s" | "w" | "nw" | "ne" | "sw" | "se";
@@ -45,6 +49,8 @@ export type FieldBoxProps = {
   sameFieldCount?: number;
   onPrevSameField?: () => void;
   onNextSameField?: () => void;
+  showBaselineGuide?: boolean;
+  baselineGuideOffsetPx?: number;
 };
 
 export const FieldBox = ({
@@ -63,12 +69,16 @@ export const FieldBox = ({
   sameFieldCount = 1,
   onPrevSameField,
   onNextSameField,
+  showBaselineGuide = false,
+  baselineGuideOffsetPx,
 }: FieldBoxProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [toolbarShiftX, setToolbarShiftX] = useState(0);
   const dragState = useRef<{ startX: number; startY: number } | null>(null);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const elementRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const resizeState = useRef<{
     startX: number;
     startY: number;
@@ -160,6 +170,49 @@ export const FieldBox = ({
   };
 
   const showQuickActions = !!isSelected;
+  const shouldShowBaseline =
+    showBaselineGuide &&
+    (field.type === "text" || field.type === "signature") &&
+    typeof baselineGuideOffsetPx === "number" &&
+    Number.isFinite(baselineGuideOffsetPx);
+
+  useEffect(() => {
+    if (!showQuickActions) {
+      setToolbarShiftX(0);
+      return;
+    }
+
+    const adjustToolbarPosition = () => {
+      const toolbarEl = toolbarRef.current;
+      if (!toolbarEl) return;
+
+      const rect = toolbarEl.getBoundingClientRect();
+      const viewportPadding = 12;
+
+      let shift = 0;
+      const overflowRight = rect.right - (window.innerWidth - viewportPadding);
+      if (overflowRight > 0) {
+        shift -= overflowRight;
+      }
+
+      const overflowLeft = viewportPadding - rect.left;
+      if (overflowLeft > 0) {
+        shift += overflowLeft;
+      }
+
+      setToolbarShiftX(Math.round(shift));
+    };
+
+    const frame = window.requestAnimationFrame(adjustToolbarPosition);
+    window.addEventListener("resize", adjustToolbarPosition);
+    window.addEventListener("scroll", adjustToolbarPosition, true);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", adjustToolbarPosition);
+      window.removeEventListener("scroll", adjustToolbarPosition, true);
+    };
+  }, [showQuickActions, field.id, field.w, field.h]);
 
   return (
     <div
@@ -191,8 +244,19 @@ export const FieldBox = ({
         {field.label}
       </div>
 
+      {shouldShowBaseline && (
+        <div
+          className="pointer-events-none absolute right-0 left-0"
+          style={{
+            top: `${baselineGuideOffsetPx}px`,
+            borderTop: "1px dashed rgba(57, 255, 20, 0.95)",
+          }}
+        />
+      )}
+
       {showQuickActions && (
         <div
+          ref={toolbarRef}
           className="absolute -top-14 left-0 z-50 flex h-11 items-center gap-2 rounded-[0.33em] border border-slate-200/90 bg-white/95 px-2.5 shadow-lg ring-1 ring-black/5 backdrop-blur-sm"
           onMouseDown={(e) => {
             e.stopPropagation();
@@ -200,6 +264,7 @@ export const FieldBox = ({
           onClick={(e) => {
             e.stopPropagation();
           }}
+          style={{ transform: `translateX(${toolbarShiftX}px)` }}
         >
           {signingPartyOptions.length > 0 && (
             <DropdownMenu modal={false}>

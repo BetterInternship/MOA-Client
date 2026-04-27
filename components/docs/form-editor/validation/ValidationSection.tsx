@@ -15,6 +15,7 @@ export interface ValidationSectionProps {
   validator: string;
   validatorIr?: ValidatorIRv0 | null;
   fieldOptions?: ValidationFieldOption[];
+  currentFieldId?: string;
   allowedRuleIds?: ValidationRuleId[];
   onChange: (next: { validator: string; validator_ir: ValidatorIRv0 | null }) => void;
 }
@@ -51,6 +52,7 @@ export function ValidationSection({
   validator,
   validatorIr,
   fieldOptions = [],
+  currentFieldId,
   allowedRuleIds,
   onChange,
 }: ValidationSectionProps) {
@@ -123,6 +125,7 @@ export function ValidationSection({
             config={config}
             readOnly={isReadOnlyLegacy}
             fieldOptions={fieldOptions}
+            currentFieldId={currentFieldId}
             allowedRuleIds={allowedRuleIds}
             onConfigChange={onConfigChange}
           />

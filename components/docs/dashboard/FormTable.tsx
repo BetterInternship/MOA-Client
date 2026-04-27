@@ -143,17 +143,11 @@ const createActionColumns = (
             <Download className="h-4 w-4" />
           </Button>
         );
-      } else if (lastUnsignedSigningParty?._id !== mySigningParty?._id) {
-        return (
-          <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
-            Pending
-            <Hourglass className="h-4 w-4" />
-          </Button>
-        );
       } else if (myForm.rejection_reason) {
         return (
           <Button
             size="sm"
+            variant="outline"
             onClick={() => onViewRejectedDetails(myForm)}
             className="flex items-center gap-2"
           >
@@ -161,15 +155,24 @@ const createActionColumns = (
             <ExternalLink className="h-4 w-4" />
           </Button>
         );
+      } else if (lastUnsignedSigningParty?._id !== mySigningParty?._id) {
+        return (
+          <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
+            Pending
+            <Hourglass className="h-4 w-4" />
+          </Button>
+        );
       } else {
         const baseUrl = process.env.NEXT_PUBLIC_DOCS_URL;
         const pendingLink = `${baseUrl}sign?form-process-id=${myForm.form_process_id}&signing-party-id=${mySigningParty?._id}`;
         return (
           <a href={pendingLink} target="_blank">
-            <Button size="sm" variant="outline" className="relative flex items-center gap-1">
+            <Button
+              size="sm"
+              className="bg-warning hover:bg-warning/90 relative flex items-center gap-1 text-white"
+            >
               Sign Now
               <ArrowRight className="h-4 w-4" />
-              <div className="bg-warning absolute top-[-4px] right-[-4px] aspect-square h-2 w-2 rounded-full"></div>
             </Button>
           </a>
         );
@@ -301,8 +304,10 @@ export default function MyFormsTable({
       columns={columns}
       data={rows}
       enableColumnVisibility
-      initialSorting={[{ id: "timestamp", desc: true }]}
+      initialSorting={[{ id: "timestamp", desc: false }]}
+      sortingStorageKey="docs-dashboard-forms-sorting"
       pageSizes={[20, 50]}
+      className="h-full"
       toolbarActions={
         exportEnabled ? (
           <DropdownMenu open={isExportDropdownOpen} onOpenChange={handleDropdownOpenChange}>

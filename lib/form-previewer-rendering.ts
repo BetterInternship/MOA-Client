@@ -11,6 +11,8 @@ export type ResolvedPreviewFont = {
   fontWeight: "400";
 };
 
+type VerticalAlign = "top" | "middle" | "bottom";
+
 const normalizeFontToken = (value?: string | null) =>
   String(value ?? "")
     .trim()
@@ -135,6 +137,7 @@ const fitNoWrapCache = new Map<
 >();
 
 function getSharedContext(): CanvasRenderingContext2D | null {
+  if (typeof document === "undefined") return null;
   if (!sharedCanvas) {
     sharedCanvas = document.createElement("canvas");
     sharedCtx = sharedCanvas.getContext("2d");
@@ -175,6 +178,52 @@ function getFontMetricsAtSize(fontSize: number, fontFamily: string) {
     descent,
     height: ascent - descent,
   };
+}
+
+export function getPreviewFontMetrics({
+  fieldType,
+  fieldFont,
+  fontSize,
+}: {
+  fieldType?: PreviewFieldType;
+  fieldFont?: string | null;
+  fontSize: number;
+}) {
+  const resolvedFont = resolvePreviewFont(fieldType, fieldFont);
+  return getFontMetricsAtSize(fontSize, resolvedFont.canvasFamily);
+}
+
+export function computePreviewBaselineOffset({
+  fieldType,
+  fieldFont,
+  fontSize,
+  fieldHeight,
+  alignV = "top",
+}: {
+  fieldType?: PreviewFieldType;
+  fieldFont?: string | null;
+  fontSize?: number;
+  fieldHeight: number;
+  alignV?: VerticalAlign;
+}) {
+  const defaultSize = fieldType === "signature" ? 25 : 11;
+  const effectiveFontSize = Number.isFinite(fontSize) && (fontSize || 0) > 0 ? fontSize! : defaultSize;
+  const safeFieldHeight = Number.isFinite(fieldHeight) && fieldHeight > 0 ? fieldHeight : 0;
+  const { ascent, descent } = getPreviewFontMetrics({
+    fieldType,
+    fieldFont,
+    fontSize: effectiveFontSize,
+  });
+
+  const textHeight = Math.max(0, ascent - descent);
+  const remainingHeight = Math.max(0, safeFieldHeight - textHeight);
+  const blockTop =
+    alignV === "middle" ? remainingHeight / 2 : alignV === "bottom" ? remainingHeight : 0;
+  const baseline = blockTop + ascent;
+
+  if (!Number.isFinite(baseline)) return 0;
+  if (safeFieldHeight <= 0) return 0;
+  return Math.min(Math.max(baseline, 0), safeFieldHeight);
 }
 
 function wrapText({

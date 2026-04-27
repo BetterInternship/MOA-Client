@@ -18,6 +18,9 @@ export interface DefaultValueFieldOption {
   id: string;
   name: string;
   partyName?: string;
+  type?: string;
+  validator?: string;
+  validator_ir?: { baseType?: string } | null;
 }
 
 interface DefaultValueSimplePickerProps {

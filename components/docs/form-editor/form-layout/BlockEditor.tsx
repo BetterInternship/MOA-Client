@@ -316,6 +316,7 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
                     schemaType={editedBlock.field_schema.type}
                     validator={editedBlock.field_schema.validator || ""}
                     validatorIr={(editedBlock.field_schema as any).validator_ir || null}
+                    currentFieldId={editedBlock.field_schema.field}
                     onChange={(next) => {
                       handleFieldSchemaPatch({
                         validator: next.validator,
@@ -427,6 +428,7 @@ export const BlockEditor = ({ block, onClose, onUpdate, signingParties }: BlockE
                     schemaType={editedBlock.phantom_field_schema.type}
                     validator={editedBlock.phantom_field_schema.validator || ""}
                     validatorIr={(editedBlock.phantom_field_schema as any).validator_ir || null}
+                    currentFieldId={editedBlock.phantom_field_schema.field}
                     onChange={(next) => {
                       handlePhantomFieldSchemaPatch({
                         validator: next.validator,

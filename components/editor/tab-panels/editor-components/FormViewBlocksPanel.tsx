@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
 import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { FormPreviewRenderer } from "@/components/docs/form-editor/form-layout/FormPreviewRenderer";
+import { FormMetadata } from "@betterinternship/core/forms";
+import { withDerivedFormValues } from "@/lib/derived-form-values";
 
 interface FormViewBlocksPanelProps {
   signingParties: any[];
@@ -18,15 +20,19 @@ export function FormViewBlocksPanel({ signingParties: _signingParties }: FormVie
     selectedBlockGroup,
     handleSelectFormViewUnit,
   } = useFormEditorTab();
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, any>>({});
   const activePartyId = selectedPartyId || formMetadata?.signing_parties?.[0]?._id || "";
+  const previewValues = useMemo(() => {
+    if (!formMetadata) return values;
+    return withDerivedFormValues(new FormMetadata(formMetadata), values);
+  }, [formMetadata, values]);
 
   const selectedPartyBlocks = useMemo(
     () =>
       blocks
         .filter((block) => {
           const party = block.signing_party_id || "";
-          return party === activePartyId;
+          return party === activePartyId || party === "";
         })
         .sort((a, b) => (a.order || 0) - (b.order || 0)),
     [activePartyId, blocks]
@@ -66,8 +72,8 @@ export function FormViewBlocksPanel({ signingParties: _signingParties }: FormVie
               formName={formMetadata?.name || "form"}
               formLabel={formMetadata?.label || "Form"}
               blocks={selectedPartyBlocks}
-              values={values}
-              onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: String(value) }))}
+              values={previewValues}
+              onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
               metadata={formMetadata || undefined}
               selectedFieldId={selectedFieldId}
               onFieldClick={handleFieldClick}

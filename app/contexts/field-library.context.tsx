@@ -7,6 +7,9 @@ import type { FieldSchemaDefaults } from "@/lib/field-schema-defaults";
 export type FieldLibraryFieldOption = {
   id: string;
   name: string;
+  type?: string;
+  validator?: string;
+  validator_ir?: ValidatorIRv0 | null;
 };
 
 export type FieldLibraryPresetTemplateOption = {

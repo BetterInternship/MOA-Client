@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { GlobalWorkerOptions, version as pdfjsVersion } from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/types/src/display/api";
 import type { PageViewport } from "pdfjs-dist/types/src/display/display_utils";
-import { ZoomIn, ZoomOut, FileUp } from "lucide-react";
+import { ZoomIn, ZoomOut, FileUp, SlidersHorizontal } from "lucide-react";
 import { FieldBox, type FormField } from "./FieldBox";
 import { FieldRegistryEntry } from "@/app/api";
 import { useFormEditorTab } from "@/app/contexts/form-editor-tab.context";
@@ -22,6 +22,15 @@ import { useFormEditor } from "@/app/contexts/form-editor.context";
 import { usePdfViewer } from "@/app/contexts/pdf-viewer.context";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { IFormBlock, IFormField, IFormMetadata } from "@betterinternship/core/forms";
 import { FormViewBlocksPanel } from "@/components/editor/tab-panels/editor-components/FormViewBlocksPanel";
 import { sanitizeFieldSchemaDefaults, type FieldSchemaDefaults } from "@/lib/field-schema-defaults";
@@ -35,6 +44,14 @@ import {
   resolveSignaturePrintedNameDimensions,
 } from "@/lib/composite-block-factory";
 import type { ValidatorIRv0 } from "@/lib/validator-ir";
+import { computePreviewBaselineOffset, ensurePreviewFontsLoaded } from "@/lib/form-previewer-rendering";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
+import { runMissingFieldPipeline, type MissingFieldSuggestion } from "@/lib/missing-fields/pipeline";
+import { createBlockFromSuggestionWithPreset } from "@/lib/missing-fields/presets";
+import { classifyBlankRegionsAgainstBlocks } from "@/lib/missing-fields/compare";
+import { toExistingFieldRects } from "@/lib/missing-fields/types";
+import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 
 export type PointerLocation = {
   page: number;
@@ -49,6 +66,10 @@ export type PointerLocation = {
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const createUniqueFieldKey = (base: string) =>
   `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const normalizeVerticalAlign = (value: unknown): "top" | "middle" | "bottom" => {
+  if (value === "middle" || value === "bottom" || value === "top") return value;
+  return "top";
+};
 type DraggedFieldPayload = {
   id?: string;
   name: string;
@@ -70,7 +91,6 @@ type DraggedFieldPayload = {
 
 const DEFAULT_PAGE_WIDTH = 560;
 const DEFAULT_PAGE_HEIGHT = 760;
-
 const resolveDroppedFieldKey = (field: DraggedFieldPayload, selectedPartyId?: string | null) => {
   const base = field.name || "field";
   if (base === "auto.current-date") {
@@ -110,9 +130,14 @@ export function PdfViewer() {
     setPreferredPlacementPage,
     editorViewMode,
     setEditorViewMode,
+    setSelectedBlockId,
+    setSelectedBlockGroup,
+    pendingMissingFieldDraft,
+    setPendingMissingFieldDraft,
   } = useFormEditorTab();
 
-  const { formMetadata } = useFormEditor();
+  const { formMetadata, updateBlocks } = useFormEditor();
+  const { registry: fieldRegistryDetails } = useFieldTemplateContext();
 
   const {
     pdfDoc,
@@ -134,6 +159,7 @@ export function PdfViewer() {
     if (typeof window === "undefined") return;
     const workerFile = pdfjsVersion.startsWith("4") ? "pdf.worker.min.mjs" : "pdf.worker.min.js";
     GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/${workerFile}`;
+    ensurePreviewFontsLoaded();
   }, []);
 
   // File upload handler
@@ -156,11 +182,133 @@ export function PdfViewer() {
   useEffect(() => {
     setPreferredPlacementPage(visiblePage);
   }, [visiblePage, setPreferredPlacementPage]);
+
+  useEffect(() => {
+    if (!formMetadata || pageCount <= 0) return;
+
+    const currentBlocks = formMetadata.schema.blocks || [];
+    const keptBlocks = currentBlocks.filter((block) => {
+      if (block.block_type !== "form_field") return true;
+      const page = block.field_schema?.page;
+      if (typeof page !== "number") return true;
+      return page <= pageCount;
+    });
+
+    const removedCount = currentBlocks.length - keptBlocks.length;
+    if (removedCount <= 0) return;
+
+    const reorderedBlocks = keptBlocks.map((block, index) => ({
+      ...block,
+      order: index,
+    }));
+    updateBlocks(reorderedBlocks);
+
+    toast.info(
+      `Removed ${removedCount} field${removedCount === 1 ? "" : "s"} from pages beyond ${pageCount}.`,
+      toastPresets.alert
+    );
+  }, [formMetadata, pageCount, updateBlocks]);
   const pageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const pdfContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showBaselineGuides, setShowBaselineGuides] = useState(false);
+  const [showMissingFieldSuggestions, setShowMissingFieldSuggestions] = useState(false);
+  const [isMissingFieldScanRunning, setIsMissingFieldScanRunning] = useState(false);
+  const [missingFieldSuggestions, setMissingFieldSuggestions] = useState<MissingFieldSuggestion[]>(
+    []
+  );
+  const [selectedMissingSuggestionId, setSelectedMissingSuggestionId] = useState<string | null>(null);
+  const resolvedSystemPresets = useMemo(
+    () => resolveSystemPresetTemplates(registry as any[]),
+    [registry]
+  );
   const registerPageRef = useCallback((page: number, node: HTMLDivElement | null) => {
     pageRefs.current.set(page, node);
   }, []);
+  const visibleMissingSuggestions = useMemo(() => {
+    const mappedFieldRects = toExistingFieldRects(blocks);
+    const reclassified = classifyBlankRegionsAgainstBlocks(missingFieldSuggestions, mappedFieldRects);
+    return reclassified.filter((suggestion) => suggestion.classification === "missing");
+  }, [blocks, missingFieldSuggestions]);
+
+  useEffect(() => {
+    if (pendingMissingFieldDraft) return;
+    if (!selectedMissingSuggestionId) return;
+    const stillVisible = visibleMissingSuggestions.some(
+      (suggestion) => suggestion.id === selectedMissingSuggestionId
+    );
+    if (!stillVisible) {
+      setSelectedMissingSuggestionId(null);
+    }
+  }, [pendingMissingFieldDraft, selectedMissingSuggestionId, visibleMissingSuggestions]);
+
+  const runMissingFieldScan = useCallback(async () => {
+    if (!pdfDoc) return;
+
+    setIsMissingFieldScanRunning(true);
+    try {
+      const suggestions = await runMissingFieldPipeline({ pdfDoc, blocks });
+      setMissingFieldSuggestions(suggestions);
+      setSelectedMissingSuggestionId(
+        suggestions.find((suggestion) => suggestion.classification === "missing")?.id || null
+      );
+      setShowMissingFieldSuggestions(true);
+      setPendingMissingFieldDraft(null);
+    } catch (error) {
+      console.error("Failed to scan for missing fields", error);
+      toast.error("Failed to scan PDF for missing fields.", toastPresets.destructive);
+    } finally {
+      setIsMissingFieldScanRunning(false);
+    }
+  }, [blocks, pdfDoc, setPendingMissingFieldDraft]);
+
+  const selectSuggestionDraft = useCallback((suggestionId: string) => {
+    const target = visibleMissingSuggestions.find((suggestion) => suggestion.id === suggestionId);
+    if (!target) return;
+
+    const nextPartyId = selectedPartyId || formMetadata?.signing_parties?.[0]?._id || "";
+    if (!nextPartyId) {
+      toast.error("Please add a recipient before accepting suggested fields.", toastPresets.alert);
+      return;
+    }
+
+    setSelectedMissingSuggestionId(target.id);
+    setVisiblePage(target.page);
+    const pageNode = pageRefs.current.get(target.page);
+    pageNode?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    const draftBlock = createBlockFromSuggestionWithPreset({
+      suggestion: target,
+      signingPartyId: nextPartyId,
+      presets: resolvedSystemPresets,
+      registryFields: fieldRegistryDetails as any[],
+    });
+    setPendingMissingFieldDraft(draftBlock);
+    setSelectedBlockId(draftBlock._id);
+    setSelectedBlockGroup(null);
+  }, [
+    formMetadata?.signing_parties,
+    resolvedSystemPresets,
+    selectedPartyId,
+    setPendingMissingFieldDraft,
+    setSelectedBlockGroup,
+    setSelectedBlockId,
+    setVisiblePage,
+    fieldRegistryDetails,
+    visibleMissingSuggestions,
+  ]);
+
+  const clearMissingFieldSuggestions = useCallback(() => {
+    setShowMissingFieldSuggestions(false);
+    setMissingFieldSuggestions([]);
+    setSelectedMissingSuggestionId(null);
+
+    if (pendingMissingFieldDraft) {
+      if (selectedFieldId === pendingMissingFieldDraft._id) {
+        setSelectedBlockId(null);
+      }
+      setPendingMissingFieldDraft(null);
+    }
+  }, [pendingMissingFieldDraft, selectedFieldId, setPendingMissingFieldDraft, setSelectedBlockId]);
 
   useEffect(() => {
     if (!selectedFieldId) return;
@@ -362,21 +510,66 @@ export function PdfViewer() {
       {/* Header */}
       <div className="relative flex-shrink-0 border-b border-slate-300 bg-white px-3 py-2">
         <div className="flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            size="sm"
-            variant={editorViewMode === "form" ? "default" : "outline"}
-            onClick={() => setEditorViewMode(editorViewMode === "form" ? "pdf" : "form")}
-            className="min-w-34 gap-2"
-          >
-            <span>Form View</span>
-            <Switch
-              checked={editorViewMode === "form"}
-              aria-label="Form View visual indicator"
-              disabled
-              className="pointer-events-none border border-slate-400 data-[state=checked]:border-white"
-            />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={editorViewMode === "form" ? "default" : "outline"}
+              onClick={() => setEditorViewMode(editorViewMode === "form" ? "pdf" : "form")}
+              className="min-w-34 gap-2"
+            >
+              <span>Form View</span>
+              <Switch
+                checked={editorViewMode === "form"}
+                aria-label="Form View visual indicator"
+                disabled
+                className="pointer-events-none border border-slate-400 data-[state=checked]:border-white"
+              />
+            </Button>
+
+            {editorViewMode === "pdf" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0"
+                    title="Open PDF tools"
+                    aria-label="Open PDF tools"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-52">
+                  <DropdownMenuLabel>PDF Tools</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (showMissingFieldSuggestions) {
+                        clearMissingFieldSuggestions();
+                        return;
+                      }
+                      void runMissingFieldScan();
+                    }}
+                    disabled={!pdfDoc || isMissingFieldScanRunning}
+                  >
+                    {isMissingFieldScanRunning
+                      ? "Scanning..."
+                      : showMissingFieldSuggestions
+                        ? "Clear Missing Fields"
+                        : "Find Missing Fields"}
+                  </DropdownMenuItem>
+                  <DropdownMenuCheckboxItem
+                    checked={showBaselineGuides}
+                    onCheckedChange={(checked) => setShowBaselineGuides(Boolean(checked))}
+                  >
+                    Show baselines
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
@@ -412,7 +605,6 @@ export function PdfViewer() {
 
             {editorViewMode === "pdf" ? (
               <>
-                <div className="h-5 w-px border-l bg-slate-500" />
                 <label
                   className="flex cursor-pointer items-center rounded p-1.5 text-sm transition-colors hover:bg-slate-100"
                   title="Upload PDF"
@@ -433,94 +625,103 @@ export function PdfViewer() {
       </div>
 
       {/* PDF Canvas / Form View */}
-      <div ref={pdfContainerRef} className="relative flex-1 overflow-hidden bg-white">
+      <div className="relative flex-1 overflow-hidden bg-white">
         {editorViewMode === "form" ? (
           <FormViewBlocksPanel signingParties={formMetadata?.signing_parties || []} />
         ) : (
-          <>
-            {isLoadingDoc && (
-              <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center">
-                <Loader>Loading PDF…</Loader>
-              </div>
-            )}
-
-            {error && (
-              <div className="text-destructive flex h-full items-center justify-center text-sm">
-                {error}
-              </div>
-            )}
-
-            {!error && !pdfDoc && !isLoadingDoc && (
-              <div className="flex h-full flex-col items-center justify-center gap-8">
-                <div className="text-center">
-                  <p className="text-base font-medium text-slate-900">Drop your PDF here</p>
-                  <p className="mt-1 text-sm text-slate-500">or click the button below to browse</p>
+          <div className="flex h-full min-w-0">
+            <div ref={pdfContainerRef} className="relative min-w-0 flex-1 overflow-hidden">
+              {isLoadingDoc && (
+                <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center">
+                  <Loader>Loading PDF…</Loader>
                 </div>
+              )}
 
+              {error && (
+                <div className="text-destructive flex h-full items-center justify-center text-sm">
+                  {error}
+                </div>
+              )}
+
+              {!error && !pdfDoc && !isLoadingDoc && (
+                <div className="flex h-full flex-col items-center justify-center gap-8">
+                  <div className="text-center">
+                    <p className="text-base font-medium text-slate-900">Drop your PDF here</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      or click the button below to browse
+                    </p>
+                  </div>
+
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={cn(
+                      "flex h-80 w-120 cursor-pointer flex-col items-center justify-center rounded-[0.33em] border-2 border-dashed transition-colors",
+                      isDragging
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-slate-300 bg-slate-50 hover:border-slate-400"
+                    )}
+                  >
+                    <FileUp className="h-16 w-16 text-slate-400" />
+                  </div>
+
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                    <Button asChild>
+                      <span>
+                        <FileUp className="h-5 w-5" />
+                        Upload PDF
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+              )}
+
+              {pdfDoc && (
                 <div
+                  className="h-full overflow-auto p-4"
+                  aria-live="polite"
+                  onScroll={handlePdfScroll}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  className={cn(
-                    "flex h-80 w-120 cursor-pointer flex-col items-center justify-center rounded-[0.33em] border-2 border-dashed transition-colors",
-                    isDragging
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-300 bg-slate-50 hover:border-slate-400"
-                  )}
                 >
-                  <FileUp className="h-16 w-16 text-slate-400" />
+                  <div className="flex w-full flex-col items-center gap-4">
+                    {pagesArray.map((page) => (
+                      <PdfPageCanvas
+                        key={page}
+                        pdf={pdfDoc}
+                        pageNumber={page}
+                        scale={scale}
+                        isSelected={page === visiblePage}
+                        _isVisible={page === visiblePage}
+                        onVisible={setVisiblePage}
+                        registerPageRef={registerPageRef}
+                        blocks={blocks}
+                        selectedFieldId={selectedFieldId}
+                        onFieldSelect={handleFieldSelectFromPdf}
+                        onBlockUpdate={handleBlockUpdate}
+                        selectedPartyId={selectedPartyId}
+                        _registry={registry}
+                        formMetadata={formMetadata}
+                        showBaselineGuides={showBaselineGuides}
+                        showMissingFieldSuggestions={showMissingFieldSuggestions}
+                        suggestions={visibleMissingSuggestions}
+                        selectedSuggestionId={selectedMissingSuggestionId}
+                        onSuggestionSelect={selectSuggestionDraft}
+                      />
+                    ))}
+                  </div>
                 </div>
-
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <Button asChild>
-                    <span>
-                      <FileUp className="h-5 w-5" />
-                      Upload PDF
-                    </span>
-                  </Button>
-                </label>
-              </div>
-            )}
-
-            {pdfDoc && (
-              <div
-                className="h-full overflow-auto p-4"
-                aria-live="polite"
-                onScroll={handlePdfScroll}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <div className="flex w-full flex-col items-center gap-4">
-                  {pagesArray.map((page) => (
-                    <PdfPageCanvas
-                      key={page}
-                      pdf={pdfDoc}
-                      pageNumber={page}
-                      scale={scale}
-                      isSelected={page === visiblePage}
-                      _isVisible={page === visiblePage}
-                      onVisible={setVisiblePage}
-                      registerPageRef={registerPageRef}
-                      blocks={blocks}
-                      selectedFieldId={selectedFieldId}
-                      onFieldSelect={handleFieldSelectFromPdf}
-                      onBlockUpdate={handleBlockUpdate}
-                      selectedPartyId={selectedPartyId}
-                      _registry={registry}
-                      formMetadata={formMetadata}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -542,6 +743,11 @@ type PdfPageCanvasProps = {
   selectedPartyId: string | null;
   _registry: FieldRegistryEntry[];
   formMetadata: IFormMetadata | null;
+  showBaselineGuides: boolean;
+  showMissingFieldSuggestions: boolean;
+  suggestions: MissingFieldSuggestion[];
+  selectedSuggestionId: string | null;
+  onSuggestionSelect: (suggestionId: string) => void;
 };
 
 const PdfPageCanvas = memo(
@@ -560,6 +766,11 @@ const PdfPageCanvas = memo(
     selectedPartyId,
     _registry,
     formMetadata,
+    showBaselineGuides,
+    showMissingFieldSuggestions,
+    suggestions,
+    selectedSuggestionId,
+    onSuggestionSelect,
   }: PdfPageCanvasProps) => {
     const { handleBlockCreate, handleBlocksCreate, handleDeleteBlock, handleDuplicateBlock } =
       useFormEditorTab();
@@ -1028,7 +1239,7 @@ const PdfPageCanvas = memo(
         ref={containerRef}
         data-page={pageNumber}
         className={cn(
-          "relative w-fit max-w-none overflow-hidden rounded-[0.33em] border bg-white shadow-sm transition-colors",
+          "relative w-fit max-w-none overflow-visible rounded-[0.33em] border bg-white shadow-sm transition-colors",
           isSelected ? "border-primary/80 ring-primary/50 ring-1" : "border-border"
         )}
       >
@@ -1084,7 +1295,20 @@ const PdfPageCanvas = memo(
                 signing_party_order:
                   formMetadata?.signing_parties?.find((p) => p._id === block.signing_party_id)
                     ?.order ?? 0,
+                size: schema.size,
+                font: schema.font,
+                align_v: normalizeVerticalAlign(schema.align_v),
+                wrap: schema.wrap,
               };
+
+              const baselineOffsetDoc = computePreviewBaselineOffset({
+                fieldType: schema.type,
+                fieldFont: schema.font,
+                fontSize: schema.size,
+                fieldHeight: schema.h,
+                alignV: normalizeVerticalAlign(schema.align_v),
+              });
+              const baselineOffsetPx = baselineOffsetDoc * scale;
 
               const sameFieldIds = findSameFieldIds(fieldId);
               const sameFieldIndex = Math.max(0, sameFieldIds.indexOf(fieldId)) + 1;
@@ -1128,6 +1352,8 @@ const PdfPageCanvas = memo(
                     sameFieldCount={sameFieldIds.length}
                     onPrevSameField={() => handleSelectPrevSameField(fieldId)}
                     onNextSameField={() => handleSelectNextSameField(fieldId)}
+                    showBaselineGuide={showBaselineGuides}
+                    baselineGuideOffsetPx={baselineOffsetPx}
                   />
                 </div>
               );
@@ -1147,6 +1373,38 @@ const PdfPageCanvas = memo(
               />
             </div>
           )}
+
+          {showMissingFieldSuggestions
+            ? suggestions
+                .filter((suggestion) => suggestion.page === pageNumber)
+                .map((suggestion) => {
+                  const suggestionPosition = pdfToDisplay(suggestion.x, suggestion.y);
+                  if (!suggestionPosition) return null;
+                  const isSelected = selectedSuggestionId === suggestion.id;
+                  return (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      className={cn(
+                        "absolute z-30 border-2 transition-colors",
+                        isSelected
+                          ? "border-slate-600 bg-slate-300/20"
+                          : "border-slate-400/80 bg-slate-300/10 hover:bg-slate-300/15"
+                      )}
+                      style={{
+                        left: `${suggestionPosition.displayX}px`,
+                        top: `${suggestionPosition.displayY}px`,
+                        width: `${suggestion.w * scale}px`,
+                        height: `${suggestion.h * scale}px`,
+                        backgroundImage:
+                          "repeating-linear-gradient(135deg, rgba(71,85,105,0.12) 0px, rgba(71,85,105,0.12) 6px, transparent 6px, transparent 12px)",
+                      }}
+                      title={`Suggested field: ${suggestion.inferredLabel}`}
+                      onClick={() => onSuggestionSelect(suggestion.id)}
+                    />
+                  );
+                })
+            : null}
         </div>
       </div>
     );

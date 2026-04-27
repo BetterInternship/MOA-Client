@@ -95,6 +95,33 @@ const applyPatchToPhantomFieldSchema = (schema: any, patch: ParentPatch) => ({
   validator_ir: patch.validator_ir !== undefined ? patch.validator_ir : schema.validator_ir,
 });
 
+const ensureRequiredRuleOnFieldSchema = (schema: any) => {
+  if (!schema) return schema;
+  const validatorIr = schema.validator_ir;
+  const rules = Array.isArray(validatorIr?.rules) ? validatorIr.rules : [];
+  const hasRequired = rules.some((rule: any) => rule?.kind === "required");
+  if (hasRequired) return schema;
+
+  const baseType =
+    validatorIr?.baseType ||
+    (schema.type === "signature" ? "signature" : schema.type === "image" ? "image" : "text");
+
+  return {
+    ...schema,
+    validator_ir: validatorIr
+      ? { ...validatorIr, rules: [...rules, { kind: "required" }] }
+      : { version: 0, baseType, rules: [{ kind: "required" }] },
+  };
+};
+
+const ensureRequiredRuleOnNewBlock = (block: IFormBlock): IFormBlock => {
+  if (!block.field_schema) return block;
+  return {
+    ...block,
+    field_schema: ensureRequiredRuleOnFieldSchema(block.field_schema),
+  };
+};
+
 const createUniqueFieldKey = (base: string) =>
   `${base}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -118,6 +145,8 @@ interface FormEditorTabContextType {
 
   selectedFieldId: string | null;
   setSelectedFieldId: (fieldId: string | null) => void;
+  pendingMissingFieldDraft: IFormBlock | null;
+  setPendingMissingFieldDraft: (block: IFormBlock | null) => void;
 
   // Normalized state for blocks and groups
   blockGroupsOrder: string[]; // ordered list of block group IDs
@@ -163,6 +192,8 @@ interface FormEditorTabContextType {
   handleSelectFormViewUnit: (unitId: string) => void;
   handleReorderFormViewUnits: (nextUnitIds: string[]) => void;
   handleAddFormTextBlock: (type: "header" | "paragraph") => void;
+  confirmPendingMissingFieldDraft: () => void;
+  cancelPendingMissingFieldDraft: () => void;
 }
 
 const FormEditorTabContext = createContext<FormEditorTabContextType | undefined>(undefined);
@@ -175,6 +206,7 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
   );
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [pendingMissingFieldDraft, setPendingMissingFieldDraft] = useState<IFormBlock | null>(null);
   const [blockGroupsOrder, setBlockGroupsOrder] = useState<string[]>([]);
   const [blockGroups, setBlockGroups] = useState<Record<string, BlockGroup>>({});
   const [selectedBlockGroup, setSelectedBlockGroup] = useState<BlockGroup | null>(null);
@@ -431,14 +463,16 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     (newBlock: IFormBlock) => {
       if (!formMetadata) return;
       const nextOrder = formMetadata.schema.blocks.length;
+      const normalizedNewBlock = ensureRequiredRuleOnNewBlock(newBlock);
       const blockToAppend: IFormBlock = {
-        ...newBlock,
+        ...normalizedNewBlock,
         order: nextOrder,
       };
 
       updateBlocks([...formMetadata.schema.blocks, blockToAppend]);
       setSelectedBlockId(blockToAppend._id);
       setSelectedBlockGroup(null);
+      setPendingMissingFieldDraft(null);
     },
     [formMetadata, updateBlocks]
   );
@@ -449,13 +483,14 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
       const startOrder = formMetadata.schema.blocks.length;
       const blocksToAppend = newBlocks.map((block, index) => ({
-        ...block,
+        ...ensureRequiredRuleOnNewBlock(block),
         order: startOrder + index,
       }));
 
       updateBlocks([...formMetadata.schema.blocks, ...blocksToAppend]);
       setSelectedBlockId(blocksToAppend[0]?._id || null);
       setSelectedBlockGroup(null);
+      setPendingMissingFieldDraft(null);
     },
     [formMetadata, updateBlocks]
   );
@@ -464,7 +499,36 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     setSelectedFieldId(fieldId);
     setSelectedBlockId(fieldId);
     setSelectedBlockGroup(null);
-  }, []);
+    if (!pendingMissingFieldDraft || pendingMissingFieldDraft._id !== fieldId) {
+      setPendingMissingFieldDraft(null);
+    }
+  }, [pendingMissingFieldDraft]);
+
+  const confirmPendingMissingFieldDraft = useCallback(() => {
+    if (!pendingMissingFieldDraft) return;
+    if (!formMetadata) return;
+
+    const nextOrder = formMetadata.schema.blocks.length;
+    const normalizedDraft = ensureRequiredRuleOnNewBlock(pendingMissingFieldDraft);
+    updateBlocks([
+      ...formMetadata.schema.blocks,
+      {
+        ...normalizedDraft,
+        order: nextOrder,
+      },
+    ]);
+    setPendingMissingFieldDraft(null);
+    setSelectedBlockId(normalizedDraft._id);
+    setSelectedBlockGroup(null);
+  }, [formMetadata, pendingMissingFieldDraft, updateBlocks]);
+
+  const cancelPendingMissingFieldDraft = useCallback(() => {
+    if (!pendingMissingFieldDraft) return;
+    setPendingMissingFieldDraft(null);
+    if (selectedBlockId === pendingMissingFieldDraft._id) {
+      setSelectedBlockId(null);
+    }
+  }, [pendingMissingFieldDraft, selectedBlockId]);
 
   /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
   const handleParentUpdate = useCallback(
@@ -489,11 +553,14 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
 
         if (block.field_schema) {
           updated.field_schema = applyPatchToFieldSchema(block.field_schema, patch);
-          updated.field_schema.field = rewriteAutoCurrentDateFieldKeyForParty(
-            updated.field_schema.field,
-            block.signing_party_id,
-            nextPartyId
-          );
+          const updatedFieldSchema = updated.field_schema;
+          if (updatedFieldSchema) {
+            updatedFieldSchema.field = rewriteAutoCurrentDateFieldKeyForParty(
+              updatedFieldSchema.field,
+              block.signing_party_id,
+              nextPartyId
+            );
+          }
         }
 
         if (block.phantom_field_schema) {
@@ -757,6 +824,8 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     setSelectedBlockId,
     selectedFieldId,
     setSelectedFieldId,
+    pendingMissingFieldDraft,
+    setPendingMissingFieldDraft,
     blockGroupsOrder,
     blockGroups,
     blocksMap: _blocksMap,
@@ -786,6 +855,8 @@ export function FormEditorTabProvider({ children }: { children: ReactNode }) {
     handleSelectFormViewUnit,
     handleReorderFormViewUnits,
     handleAddFormTextBlock,
+    confirmPendingMissingFieldDraft,
+    cancelPendingMissingFieldDraft,
   };
 
   return <FormEditorTabContext.Provider value={value}>{children}</FormEditorTabContext.Provider>;
@@ -798,4 +869,3 @@ export function useFormEditorTab() {
   }
   return context;
 }
-

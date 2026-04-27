@@ -20,11 +20,8 @@ export default function DocsDashboardPage() {
     {
       id: "needs_signing",
       label: "Needs signing",
-      icon: () => (
-        <div className="bg-warning rounded-full p-2 text-white">
-          <Pen className="h-3 w-3" />
-        </div>
-      ),
+      icon: Pen,
+      countClass: "bg-warning text-white",
       filter: (form: IMyForm) => {
         const lastUnsignedSigningParty = form.signing_parties
           .toSorted((a, b) => a.order - b.order)
@@ -33,35 +30,26 @@ export default function DocsDashboardPage() {
           (signingParty) =>
             signingParty.signatory_account?.email === profile.email && !signingParty.signed
         );
-        const rejectionReason = form.rejection_reason;
 
         return (
           lastUnsignedSigningParty?._id === mySigningParty?._id &&
           !form.signed_document_id &&
-          !rejectionReason
+          !form.rejection_reason
         );
       },
     },
     {
       id: "completed",
       label: "Completed",
-      icon: () => (
-        <div className="bg-supportive rounded-full p-1 text-white">
-          <Check className="h-4 w-4" />
-        </div>
-      ),
+      icon: Check,
       filter: (form: IMyForm) => {
         return Boolean(form.signed_document_id);
       },
     },
     {
-      id: "rejected",
+      id: "cancelled",
       label: "Cancelled",
-      icon: () => (
-        <div className="bg-destructive rounded-full p-1 text-white">
-          <CircleSlash2 className="h-4 w-4" />
-        </div>
-      ),
+      icon: CircleSlash2,
       filter: (form: IMyForm) => {
         return Boolean(form.rejection_reason);
       },
@@ -79,19 +67,24 @@ export default function DocsDashboardPage() {
             signingParty.signatory_account?.email === profile.email && !signingParty.signed
         );
 
-        return lastUnsignedSigningParty?._id !== mySigningParty?._id;
+        return lastUnsignedSigningParty?._id !== mySigningParty?._id && !form.rejection_reason;
       },
     },
   ];
+  const allFormsTab = {
+    id: "all",
+    label: "All forms",
+    icon: Newspaper,
+  };
 
   if (profile.loading || !isLoggedIn) {
     return null;
   }
 
   return (
-    <div className="max-w-8xl container mx-auto space-y-6 px-4 pt-6 sm:px-10 sm:pt-16">
+    <div className="max-w-8xl container mx-auto flex h-full min-h-0 flex-col gap-6 overflow-hidden px-4 pt-6 pb-0 sm:px-10 sm:pt-16">
       {/* Header */}
-      <div className="space-y-2">
+      <div className="shrink-0 space-y-2">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Newspaper} />
           <HeaderText>Forms</HeaderText>
@@ -102,17 +95,19 @@ export default function DocsDashboardPage() {
       </div>
 
       {/* Table */}
-      <div>
+      <div className="min-h-0 flex-1">
         {loading ? (
           <div className="text-sm text-gray-600">Loading signed documents…</div>
         ) : error ? (
           <div className="text-sm text-red-600">Failed to load signed documents.</div>
         ) : (
-          <div className="space-y-2">
+          <div className="flex h-full min-h-0 flex-col gap-2">
             {/* Tabs with External Arrows */}
-            <div className="scrollbar-hide flex flex-1 flex-row gap-2 overflow-x-auto">
+            <div className="scrollbar-hide flex shrink-0 flex-row gap-1.5 overflow-x-auto border-b border-slate-200 pb-1">
               {statuses.map((status) => {
                 const IconComponent = status.icon;
+                const count = forms.filter(status.filter).length;
+                const isActive = activeTab === status.id;
 
                 return (
                   <button
@@ -120,37 +115,58 @@ export default function DocsDashboardPage() {
                     onClick={() => setActiveTab(status.id)}
                     title={status.label}
                     className={cn(
-                      "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                      activeTab === status.id ? "bg-primary text-white" : "hover:bg-gray-50"
+                      "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] border border-transparent px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                      isActive
+                        ? "border-primary bg-primary text-white shadow-sm"
+                        : "text-slate-600 hover:border-primary/20 hover:bg-primary/10 hover:text-primary"
                     )}
                   >
-                    <IconComponent className="w-4" />
+                    <IconComponent
+                      className={cn("h-4 w-4", isActive ? "text-white" : "text-slate-400")}
+                    />
                     {status.label}
+                    {status.id === "needs_signing" && (
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-xs font-semibold",
+                          status.countClass
+                        )}
+                      >
+                        {count}
+                      </span>
+                    )}
                   </button>
                 );
               })}
               <button
-                onClick={() => setActiveTab("all")}
+                onClick={() => setActiveTab(allFormsTab.id)}
                 className={cn(
-                  "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] px-3 py-2 text-sm whitespace-nowrap transition-colors",
-                  activeTab === "all" ? "bg-primary text-white" : "hover:bg-gray-50"
+                  "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] border border-transparent px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                  activeTab === allFormsTab.id
+                    ? "border-primary bg-primary text-white shadow-sm"
+                    : "text-slate-600 hover:border-primary/20 hover:bg-primary/10 hover:text-primary"
                 )}
               >
-                <Newspaper className="w-4" />
-                All Forms
+                <Newspaper
+                  className={cn(
+                    "h-4 w-4",
+                    activeTab === allFormsTab.id ? "text-white" : "text-slate-400"
+                  )}
+                />
+                {allFormsTab.label}
               </button>
             </div>
 
             {/* Content */}
             {activeTab === "all" && (
-              <Card className="space-y-3 p-3">
+              <Card className="min-h-0 flex-1 p-3">
                 <MyFormsTable rows={forms} isCoordinator={isCoordinator} />
               </Card>
             )}
 
             {statuses.map((status) => {
               return activeTab === status.id ? (
-                <Card key={status.id} className="space-y-3 p-3">
+                <Card key={status.id} className="min-h-0 flex-1 p-3">
                   <MyFormsTable
                     rows={forms.filter(status.filter)}
                     isCoordinator={isCoordinator}

@@ -8,6 +8,7 @@ import {
   ValidatorNumberInput,
   ValidatorOptionsInput,
   ValidatorRow,
+  ValidatorSelectInput,
   ValidatorStaticRow,
   ValidatorTimeInput,
 } from "@/components/docs/form-editor/validation/ValidatorControls";
@@ -28,6 +29,9 @@ export type ValidationFieldOption = {
   id: string;
   name: string;
   partyName?: string;
+  type?: string;
+  validator?: string;
+  validator_ir?: { baseType?: string } | null;
 };
 
 export type ValidationRuleId = ToggleValidatorId;
@@ -42,6 +46,7 @@ export function ValidatorGroups({
   config,
   readOnly,
   fieldOptions,
+  currentFieldId,
   allowedRuleIds,
   onConfigChange,
 }: {
@@ -49,6 +54,7 @@ export function ValidatorGroups({
   config: ValidatorConfig;
   readOnly: boolean;
   fieldOptions: ValidationFieldOption[];
+  currentFieldId?: string;
   allowedRuleIds?: ValidationRuleId[];
   onConfigChange: (next: ValidatorConfig) => void;
 }) {
@@ -57,14 +63,153 @@ export function ValidatorGroups({
   const relativeDateMessage = "message" in relativeDate ? relativeDate.message : undefined;
   const enumOptions = getEnumOptions(config);
   const arrayOptions = getArrayOptions(config);
+  const dateFieldOptions = fieldOptions.filter((option) => {
+    if (currentFieldId && option.id === currentFieldId) return false;
+    if (option.validator_ir?.baseType === "date") return true;
+    if (option.type === "date") return true;
+    const validatorValue = String(option.validator || "");
+    return validatorValue.includes("z.coerce.date(") || validatorValue.includes("new Date(");
+  });
+  const hasDateFieldOptions = dateFieldOptions.length > 0;
+  const defaultDateFieldId = dateFieldOptions[0]?.id ?? "";
+  const baseFieldOffset =
+    relativeDate.kind === "dateOnOrAfterField" || relativeDate.kind === "dateOnOrBeforeField"
+      ? {
+          offsetValue:
+            Number.isFinite(Number(relativeDate.offsetValue)) &&
+            Number(relativeDate.offsetValue) >= 0
+              ? Math.floor(Number(relativeDate.offsetValue))
+              : 0,
+          offsetUnit:
+            relativeDate.offsetUnit === "day" ||
+            relativeDate.offsetUnit === "week" ||
+            relativeDate.offsetUnit === "month"
+              ? relativeDate.offsetUnit
+              : ("day" as const),
+          offsetDirection:
+            relativeDate.offsetDirection === "before" || relativeDate.offsetDirection === "after"
+              ? relativeDate.offsetDirection
+              : ("after" as const),
+        }
+      : { offsetValue: 0, offsetUnit: "day" as const, offsetDirection: "after" as const };
+  const dateOffsetUnitOptions = [
+    { id: "day", name: "Days" },
+    { id: "week", name: "Weeks" },
+    { id: "month", name: "Months" },
+  ];
+  const dateOffsetDirectionOptions = [
+    { id: "after", name: "After reference field" },
+    { id: "before", name: "Before reference field" },
+  ];
+  type RelativeFieldKind = "dateOnOrAfterField" | "dateOnOrBeforeField";
+  const isRelativeFieldRule =
+    relativeDate.kind === "dateOnOrAfterField" || relativeDate.kind === "dateOnOrBeforeField";
+  const activeRelativeFieldKind: RelativeFieldKind =
+    relativeDate.kind === "dateOnOrBeforeField" ? "dateOnOrBeforeField" : "dateOnOrAfterField";
+  const relativeComparatorOptions = [
+    { id: "dateOnOrAfterField", name: "Be on or after" },
+    { id: "dateOnOrBeforeField", name: "Be on or before" },
+  ];
+  const selectedReferenceFieldName =
+    dateFieldOptions.find((option) => option.id === (isRelativeFieldRule ? relativeDate.field : ""))
+      ?.name || "selected date field";
+  const offsetUnitLabel =
+    baseFieldOffset.offsetUnit === "day"
+      ? baseFieldOffset.offsetValue === 1
+        ? "day"
+        : "days"
+      : baseFieldOffset.offsetUnit === "week"
+        ? baseFieldOffset.offsetValue === 1
+          ? "week"
+          : "weeks"
+        : baseFieldOffset.offsetValue === 1
+          ? "month"
+          : "months";
+  const relativeRuleSentence =
+    activeRelativeFieldKind === "dateOnOrAfterField"
+      ? `This date must be on or after ${baseFieldOffset.offsetValue} ${offsetUnitLabel} ${baseFieldOffset.offsetDirection} ${selectedReferenceFieldName}.`
+      : `This date must be on or before ${baseFieldOffset.offsetValue} ${offsetUnitLabel} ${baseFieldOffset.offsetDirection} ${selectedReferenceFieldName}.`;
+  const getRelativeReferenceLabel = (fieldId: string) =>
+    dateFieldOptions.find((option) => option.id === fieldId)?.name || fieldId || "selected date field";
+  const buildRelativeDateValidationMessage = (
+    kind: RelativeFieldKind,
+    fieldId: string,
+    offset: { offsetValue: number; offsetUnit: "day" | "week" | "month"; offsetDirection: "before" | "after" }
+  ) => {
+    const referenceLabel = getRelativeReferenceLabel(fieldId);
+    const unit =
+      offset.offsetUnit === "day"
+        ? offset.offsetValue === 1
+          ? "day"
+          : "days"
+        : offset.offsetUnit === "week"
+          ? offset.offsetValue === 1
+            ? "week"
+            : "weeks"
+          : offset.offsetValue === 1
+            ? "month"
+            : "months";
+    const comparator = kind === "dateOnOrAfterField" ? "on or after" : "on or before";
+    return `Date must be ${comparator} ${offset.offsetValue} ${unit} ${offset.offsetDirection} ${referenceLabel}.`;
+  };
+  const updateRelativeField = (
+    kind: RelativeFieldKind,
+    patch?: Partial<{
+      field: string;
+      offsetValue: number;
+      offsetUnit: "day" | "week" | "month";
+      offsetDirection: "before" | "after";
+      message?: string;
+    }>
+  ) => {
+    const current = relativeDate.kind === kind ? relativeDate : null;
+    const nextField = patch?.field ?? current?.field ?? defaultDateFieldId;
+    const nextOffsetValue =
+      patch?.offsetValue !== undefined
+        ? patch.offsetValue
+        : (current?.offsetValue ?? baseFieldOffset.offsetValue);
+    const nextOffsetUnit = patch?.offsetUnit ?? current?.offsetUnit ?? baseFieldOffset.offsetUnit;
+    const nextOffsetDirection =
+      patch?.offsetDirection ?? current?.offsetDirection ?? baseFieldOffset.offsetDirection;
+    const normalizedOffsetValue =
+      Number.isFinite(Number(nextOffsetValue)) && Number(nextOffsetValue) >= 0
+        ? Math.floor(Number(nextOffsetValue))
+        : 0;
+    const normalizedOffsetUnit =
+      nextOffsetUnit === "day" || nextOffsetUnit === "week" || nextOffsetUnit === "month"
+        ? nextOffsetUnit
+        : "day";
+    const normalizedOffsetDirection =
+      nextOffsetDirection === "before" || nextOffsetDirection === "after"
+        ? nextOffsetDirection
+        : "after";
+    const nextMessage =
+      patch?.message !== undefined
+        ? patch.message
+        : buildRelativeDateValidationMessage(kind, nextField, {
+            offsetValue: normalizedOffsetValue,
+            offsetUnit: normalizedOffsetUnit,
+            offsetDirection: normalizedOffsetDirection,
+          });
+
+    onConfigChange(
+      setDateRelativeValidator(config, {
+        kind,
+        field: nextField,
+        offsetValue: normalizedOffsetValue,
+        offsetUnit: normalizedOffsetUnit,
+        offsetDirection: normalizedOffsetDirection,
+        message: nextMessage,
+      })
+    );
+  };
 
   // Thin wrappers keep JSX concise and enforce immutable updates in one place.
   const toggle = (id: Parameters<typeof setToggleValidatorEnabled>[1], enabled: boolean) =>
     onConfigChange(setToggleValidatorEnabled(config, id, enabled));
   const setValue = (id: Parameters<typeof setToggleValidatorValue>[1], value: string | number) =>
     onConfigChange(setToggleValidatorValue(config, id, value));
-  const isAllowed = (id: ValidationRuleId) =>
-    !allowedRuleIds || allowedRuleIds.includes(id);
+  const isAllowed = (id: ValidationRuleId) => !allowedRuleIds || allowedRuleIds.includes(id);
   const isRequiredOnly =
     Array.isArray(allowedRuleIds) &&
     allowedRuleIds.length === 1 &&
@@ -77,6 +222,81 @@ export function ValidatorGroups({
       onToggle={(enabled) => toggle("required", enabled)}
       disabled={readOnly}
     />
+  );
+  const renderRelativeDateFieldRow = () => (
+    <ValidatorRow
+      label="Relative to another date field"
+      description={
+        !hasDateFieldOptions
+          ? "No date fields available."
+          : "Format: on or after/on or before [offset] [unit] after/before [field]."
+      }
+      enabled={isRelativeFieldRule}
+      onToggle={(enabled) => {
+        if (!enabled) {
+          onConfigChange(setDateRelativeValidator(config, { kind: "none" }));
+          return;
+        }
+        updateRelativeField(activeRelativeFieldKind);
+      }}
+      disabled={readOnly || !hasDateFieldOptions}
+    >
+      <ValidatorSelectInput
+        value={activeRelativeFieldKind}
+        options={relativeComparatorOptions}
+        onChange={(next) => {
+          if (next === "dateOnOrAfterField" || next === "dateOnOrBeforeField") {
+            updateRelativeField(next);
+          }
+        }}
+        placeholder="Rule"
+        disabled={readOnly || !hasDateFieldOptions}
+      />
+      <ValidatorFieldReferenceInput
+        value={isRelativeFieldRule ? relativeDate.field : ""}
+        options={dateFieldOptions}
+        onChange={(next) => updateRelativeField(activeRelativeFieldKind, { field: next })}
+        disabled={readOnly || !hasDateFieldOptions}
+      />
+      <div className="grid grid-cols-3 gap-2">
+        <ValidatorNumberInput
+          value={baseFieldOffset.offsetValue}
+          onChange={(next) =>
+            updateRelativeField(activeRelativeFieldKind, {
+              offsetValue:
+                Number.isFinite(Number(next)) && Number(next) >= 0 ? Math.floor(Number(next)) : 0,
+            })
+          }
+          placeholder="Offset"
+          disabled={readOnly || !hasDateFieldOptions}
+        />
+        <ValidatorSelectInput
+          value={baseFieldOffset.offsetUnit}
+          options={dateOffsetUnitOptions}
+          onChange={(next) =>
+            updateRelativeField(activeRelativeFieldKind, {
+              offsetUnit: next === "day" || next === "week" || next === "month" ? next : "day",
+            })
+          }
+          placeholder="Time unit"
+          disabled={readOnly || !hasDateFieldOptions}
+        />
+        <ValidatorSelectInput
+          value={baseFieldOffset.offsetDirection}
+          options={dateOffsetDirectionOptions}
+          onChange={(next) =>
+            updateRelativeField(activeRelativeFieldKind, {
+              offsetDirection: next === "before" || next === "after" ? next : "after",
+            })
+          }
+          placeholder="Before/after field"
+          disabled={readOnly || !hasDateFieldOptions}
+        />
+      </div>
+      {hasDateFieldOptions && (
+        <p className="text-muted-foreground text-xs">{relativeRuleSentence}</p>
+      )}
+    </ValidatorRow>
   );
 
   if (isRequiredOnly) {
@@ -132,7 +352,6 @@ export function ValidatorGroups({
             disabled={readOnly}
           />
         )}
-
       </div>
     );
   }
@@ -316,82 +535,7 @@ export function ValidatorGroups({
           }
           disabled={readOnly}
         />
-        <ValidatorRow
-          label="On or after another field"
-          enabled={relativeDate.kind === "dateOnOrAfterField"}
-          onToggle={(enabled) =>
-            onConfigChange(
-              setDateRelativeValidator(
-                config,
-                enabled
-                  ? {
-                      kind: "dateOnOrAfterField",
-                      field:
-                        relativeDate.kind === "dateOnOrAfterField"
-                          ? relativeDate.field
-                          : (fieldOptions[0]?.id ?? ""),
-                      message: relativeDateMessage,
-                    }
-                  : { kind: "none" }
-              )
-            )
-          }
-          disabled={readOnly}
-        >
-          <ValidatorFieldReferenceInput
-            value={relativeDate.kind === "dateOnOrAfterField" ? relativeDate.field : ""}
-            options={fieldOptions}
-            onChange={(next) =>
-              onConfigChange(
-                setDateRelativeValidator(config, {
-                  kind: "dateOnOrAfterField",
-                  field: next,
-                  message:
-                    relativeDate.kind === "dateOnOrAfterField" ? relativeDate.message : undefined,
-                })
-              )
-            }
-            disabled={readOnly}
-          />
-        </ValidatorRow>
-        <ValidatorRow
-          label="On or before another field"
-          enabled={relativeDate.kind === "dateOnOrBeforeField"}
-          onToggle={(enabled) =>
-            onConfigChange(
-              setDateRelativeValidator(
-                config,
-                enabled
-                  ? {
-                      kind: "dateOnOrBeforeField",
-                      field:
-                        relativeDate.kind === "dateOnOrBeforeField"
-                          ? relativeDate.field
-                          : (fieldOptions[0]?.id ?? ""),
-                      message: relativeDateMessage,
-                    }
-                  : { kind: "none" }
-              )
-            )
-          }
-          disabled={readOnly}
-        >
-          <ValidatorFieldReferenceInput
-            value={relativeDate.kind === "dateOnOrBeforeField" ? relativeDate.field : ""}
-            options={fieldOptions}
-            onChange={(next) =>
-              onConfigChange(
-                setDateRelativeValidator(config, {
-                  kind: "dateOnOrBeforeField",
-                  field: next,
-                  message:
-                    relativeDate.kind === "dateOnOrBeforeField" ? relativeDate.message : undefined,
-                })
-              )
-            }
-            disabled={readOnly}
-          />
-        </ValidatorRow>
+        {renderRelativeDateFieldRow()}
       </div>
     );
   }
