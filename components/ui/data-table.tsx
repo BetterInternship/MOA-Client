@@ -12,6 +12,7 @@ import {
   SortingState,
   ColumnFiltersState,
   VisibilityState,
+  Updater,
 } from "@tanstack/react-table";
 
 import {
@@ -69,6 +70,8 @@ interface DataTableProps<TData, TValue> {
   enableRowSelection?: boolean;
   /** Optional: initial sorting state */
   initialSorting?: SortingState;
+  /** Optional: persist sorting state in localStorage under this key */
+  sortingStorageKey?: string;
   /** Optional: right-side toolbar slot (e.g., extra buttons) */
   toolbarActions?: React.ReactNode;
   /** Optional: page size options */
@@ -86,15 +89,43 @@ export function DataTable<TData, TValue>({
   enableColumnVisibility = true,
   enableRowSelection = false,
   initialSorting,
+  sortingStorageKey,
   toolbarActions,
   pageSizes = [5, 10, 20, 50],
   className,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>(initialSorting ?? []);
+  const [sorting, setSorting] = React.useState<SortingState>(() => {
+    if (!sortingStorageKey) return initialSorting ?? [];
+
+    try {
+      return JSON.parse(localStorage.getItem(sortingStorageKey) || "") || initialSorting || [];
+    } catch {
+      return initialSorting ?? [];
+    }
+  });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({} as Record<string, boolean>);
   const [globalFilter, setGlobalFilter] = React.useState("");
+
+  const handleSortingChange = React.useCallback(
+    (updater: Updater<SortingState>) => {
+      setSorting((currentSorting) => {
+        const nextSorting =
+          typeof updater === "function" ? updater(currentSorting) : updater;
+
+        if (sortingStorageKey) {
+          try {
+            localStorage.setItem(sortingStorageKey, JSON.stringify(nextSorting));
+          } catch {
+          }
+        }
+
+        return nextSorting;
+      });
+    },
+    [sortingStorageKey]
+  );
 
   const table = useReactTable({
     data,
@@ -107,7 +138,7 @@ export function DataTable<TData, TValue>({
       globalFilter,
     },
     enableRowSelection, // enables internal selection state
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,

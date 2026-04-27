@@ -302,6 +302,7 @@ export default function MyFormsTable({
       data={rows}
       enableColumnVisibility
       initialSorting={[{ id: "timestamp", desc: false }]}
+      sortingStorageKey="docs-dashboard-forms-sorting"
       pageSizes={[20, 50]}
       toolbarActions={
         exportEnabled ? (
