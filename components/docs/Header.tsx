@@ -11,7 +11,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Menu, X as XIcon, LogOut, ChevronRight, Loader2, Newspaper, Settings, Search, SearchCheck } from "lucide-react";
+import {
+  ChevronDown,
+  Menu,
+  X as XIcon,
+  LogOut,
+  ChevronRight,
+  Loader2,
+  Newspaper,
+  Settings,
+  Search,
+  SearchCheck,
+  LucideArrowRightCircle,
+} from "lucide-react";
 import { logoutSignatory } from "@/app/api/docs.api";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import React, { useState, useEffect } from "react";
@@ -19,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
+import { Badge } from "../ui/badge";
 
 export default function DocsTopbarUser() {
   const queryClient = useQueryClient();
@@ -127,6 +140,9 @@ export default function DocsTopbarUser() {
                   {profile.name?.trim() || profile.email || "User"}
                 </h2>
                 <p className="mt-1 truncate text-xs text-gray-500">{profile.email}</p>
+                <Badge type="supportive" className="mt-4 w-fit">
+                  Coordinator Account
+                </Badge>
               </div>
 
               <Separator className="my-4" />
@@ -135,7 +151,7 @@ export default function DocsTopbarUser() {
               <nav className="space-y-1">
                 <Link href="/dashboard" className="block w-full">
                   <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
-                    <div className="flex gap-2 items-center justify-center">
+                    <div className="flex items-center justify-center gap-2">
                       <Newspaper className="h-4 w-4" />
                       <span>Forms</span>
                     </div>
@@ -145,7 +161,7 @@ export default function DocsTopbarUser() {
 
                 <Link href="/forms" className="block w-full">
                   <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
-                    <div className="flex gap-2 items-center justify-center">
+                    <div className="flex items-center justify-center gap-2">
                       <Settings className="h-4 w-4" />
                       <span>Automation</span>
                     </div>
@@ -155,7 +171,7 @@ export default function DocsTopbarUser() {
 
                 <Link href="/" className="block w-full">
                   <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
-                    <div className="flex gap-2 items-center justify-center">
+                    <div className="flex items-center justify-center gap-2">
                       <SearchCheck className="h-4 w-4" />
                       <span>Verifier</span>
                     </div>
@@ -256,10 +272,10 @@ export default function DocsTopbarUser() {
             <Button
               variant="ghost"
               className={cn(
-                "w-20 px-2 py-1 flex-col gap-1 h-auto items-center justify-center rounded-[0.33em]",
+                "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] px-2 py-1",
                 pathname === "/dashboard"
                   ? "text-primary"
-                  : "opacity-80 hover:opacity-100 hover:bg-gray-100",
+                  : "opacity-80 hover:bg-gray-100 hover:opacity-100"
               )}
               onClick={() => router.push("/dashboard")}
             >
@@ -269,10 +285,10 @@ export default function DocsTopbarUser() {
             <Button
               variant="ghost"
               className={cn(
-                "w-20 px-2 py-1 flex-col gap-1 h-auto items-center justify-center rounded-[0.33em]",
+                "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] px-2 py-1",
                 pathname === "/forms"
                   ? "text-primary"
-                  : "opacity-80 hover:opacity-100 hover:bg-gray-100",
+                  : "opacity-80 hover:bg-gray-100 hover:opacity-100"
               )}
               onClick={() => router.push("/forms")}
             >
@@ -282,33 +298,42 @@ export default function DocsTopbarUser() {
             <Button
               variant="ghost"
               className={cn(
-                "w-20 px-2 py-1 flex-col gap-1 h-auto items-center justify-center rounded-[0.33em]",
-                pathname === "/"
-                  ? "text-primary"
-                  : "opacity-80 hover:opacity-100 hover:bg-gray-100",
+                "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] px-2 py-1",
+                pathname === "/" ? "text-primary" : "opacity-80 hover:bg-gray-100 hover:opacity-100"
               )}
               onClick={() => router.push("/")}
             >
               <SearchCheck className="!h-6 !w-6" strokeWidth={1.7} />
               <span className="text-xs">Verifier</span>
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-1">
-                  {profile.name?.trim() || profile.email || "User"}
-                  <ChevronDown size={14} className="mt-0.5" />
-                </Button>
-              </DropdownMenuTrigger>  
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => logoutMutation.mutate()}
-                  disabled={logoutMutation.isPending}
-                >
-                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="outline"
+              scheme="destructive"
+              className={cn(
+                "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] border-0 px-2 py-1"
+              )}
+              onClick={() => logoutMutation.mutate()}
+            >
+              <LucideArrowRightCircle className="!h-6 !w-6" strokeWidth={1.7} />
+              <span className="text-xs">
+                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+              </span>
+            </Button>
+            <div className="relative flex h-full flex-col justify-center">
+              {profile.coordinatorId && (
+                <div className="bg-supportive/90 w-full rounded-t-[0.33em] px-3 text-center text-[9px] text-white">
+                  <span className="opacity-75">Coordinator Account</span>
+                </div>
+              )}
+              <div
+                className={cn(
+                  "rounded-[0.33em] border border-gray-300 p-2 px-3 text-xs",
+                  profile.coordinatorId ? "rounded-t-none" : ""
+                )}
+              >
+                {profile.name?.trim() || profile.email || "User"}
+              </div>
+            </div>
           </>
         ) : (
           <Link href="/login">
