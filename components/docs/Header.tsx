@@ -42,6 +42,9 @@ export default function DocsTopbarUser() {
   const isLoggedIn = Boolean(profile?.email);
   const isMobile = useIsMobile();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const docsPathname = pathname?.startsWith("/docs/")
+    ? pathname.slice("/docs".length)
+    : (pathname ?? "/");
 
   const logoutMutation = useMutation({
     mutationFn: logoutSignatory,
@@ -160,15 +163,17 @@ export default function DocsTopbarUser() {
                   </button>
                 </Link>
 
-                <Link href="/students" className="block w-full">
-                  <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
-                    <div className="flex items-center justify-center gap-2">
-                      <Users2 className="h-4 w-4" />
-                      <span>My Students</span>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-gray-300" />
-                  </button>
-                </Link>
+                {profile.coordinatorId && (
+                  <Link href="/students" className="block w-full">
+                    <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
+                      <div className="flex items-center justify-center gap-2">
+                        <Users2 className="h-4 w-4" />
+                        <span>My Students</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-gray-300" />
+                    </button>
+                  </Link>
+                )}
 
                 <Link href="/forms" className="block w-full">
                   <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
@@ -284,7 +289,7 @@ export default function DocsTopbarUser() {
               variant="ghost"
               className={cn(
                 "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] px-2 py-1",
-                pathname === "/dashboard"
+                docsPathname === "/dashboard"
                   ? "text-primary"
                   : "opacity-80 hover:bg-gray-100 hover:opacity-100"
               )}
@@ -293,24 +298,26 @@ export default function DocsTopbarUser() {
               <Newspaper className="!h-6 !w-6" strokeWidth={1.7} />
               <span className="text-xs">Forms</span>
             </Button>
+            {profile.coordinatorId && (
+              <Button
+                variant="ghost"
+                className={cn(
+                  "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] px-2 py-1",
+                  docsPathname === "/students"
+                    ? "text-primary"
+                    : "opacity-80 hover:bg-gray-100 hover:opacity-100"
+                )}
+                onClick={() => router.push("/students")}
+              >
+                <Users2 className="!h-6 !w-6" strokeWidth={1.7} />
+                <span className="text-xs">My Students</span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               className={cn(
                 "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] px-2 py-1",
-                pathname === "/forms"
-                  ? "text-primary"
-                  : "opacity-80 hover:bg-gray-100 hover:opacity-100"
-              )}
-              onClick={() => router.push("/students")}
-            >
-              <Users2 className="!h-6 !w-6" strokeWidth={1.7} />
-              <span className="text-xs">My Students</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={cn(
-                "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] px-2 py-1",
-                pathname === "/forms"
+                docsPathname === "/forms"
                   ? "text-primary"
                   : "opacity-80 hover:bg-gray-100 hover:opacity-100"
               )}
@@ -323,7 +330,9 @@ export default function DocsTopbarUser() {
               variant="ghost"
               className={cn(
                 "h-auto w-20 flex-col items-center justify-center gap-1 rounded-[0.33em] px-2 py-1",
-                pathname === "/" ? "text-primary" : "opacity-80 hover:bg-gray-100 hover:opacity-100"
+                docsPathname === "/"
+                  ? "text-primary"
+                  : "opacity-80 hover:bg-gray-100 hover:opacity-100"
               )}
               onClick={() => router.push("/")}
             >

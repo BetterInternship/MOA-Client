@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSignatoryProfile } from "./auth/provider/signatory.ctx";
 
-const PROTECTED_ROUTE_PREFIXES = ["/dashboard", "/forms"];
+const PROTECTED_ROUTE_PREFIXES = ["/dashboard", "/forms", "/students"];
 const PUBLIC_ROUTE_PREFIXES = ["/login", "/sign-in", "/auth/magic-link"];
 
 function normalizeDocsPath(pathname: string) {
