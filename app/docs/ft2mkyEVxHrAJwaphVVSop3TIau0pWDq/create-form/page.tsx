@@ -11,6 +11,8 @@ import { IFormSigningParty, IFormMetadata, SCHEMA_VERSION } from "@betterinterns
 import { formsControllerRegisterForm } from "@/app/api";
 import { Card } from "@/components/ui/card";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const CreateFormPage = () => {
   const router = useRouter();
@@ -19,6 +21,7 @@ const CreateFormPage = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [formLabel, setFormLabel] = useState("");
+  const [isDebugForm, setIsDebugForm] = useState(false);
   const [signingParties, setSigningParties] = useState<IFormSigningParty[]>([
     {
       _id: "initiator",
@@ -27,14 +30,16 @@ const CreateFormPage = () => {
     },
   ]);
 
-  // Derive form name from label (no spaces, lowercase)
+  // Derive form name from label (hyphen-separated, lowercase)
   const formName = useMemo(() => {
-    return formLabel
+    const slug = formLabel
       .trim()
       .toLowerCase()
-      .replace(/\s+/g, "_")
-      .replace(/[^a-z0-9_]/g, "");
-  }, [formLabel]);
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    return isDebugForm && slug ? `.debug-${slug}` : slug;
+  }, [formLabel, isDebugForm]);
 
   const hasMissingPartyTitle = useMemo(() => {
     return signingParties.some((party) => !party.signatory_title?.trim());
@@ -137,6 +142,16 @@ const CreateFormPage = () => {
             setter={setFormLabel}
             required={true}
           />
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="debug-form"
+              checked={isDebugForm}
+              onCheckedChange={(checked) => setIsDebugForm(checked === true)}
+            />
+            <Label htmlFor="debug-form" className="text-sm font-normal text-slate-700">
+              Debug form
+            </Label>
+          </div>
           {formLabel && (
             <p className="text-xs text-slate-500">
               Form name: <span className="font-mono font-semibold text-slate-700">{formName}</span>
