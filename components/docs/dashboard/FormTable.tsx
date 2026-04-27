@@ -147,6 +147,7 @@ const createActionColumns = (
         return (
           <Button
             size="sm"
+            variant="outline"
             onClick={() => onViewRejectedDetails(myForm)}
             className="flex items-center gap-2"
           >
@@ -166,10 +167,12 @@ const createActionColumns = (
         const pendingLink = `${baseUrl}sign?form-process-id=${myForm.form_process_id}&signing-party-id=${mySigningParty?._id}`;
         return (
           <a href={pendingLink} target="_blank">
-            <Button size="sm" variant="outline" className="relative flex items-center gap-1">
+            <Button
+              size="sm"
+              className="bg-warning hover:bg-warning/90 relative flex items-center gap-1 text-white"
+            >
               Sign Now
               <ArrowRight className="h-4 w-4" />
-              <div className="bg-warning absolute top-[-4px] right-[-4px] aspect-square h-2 w-2 rounded-full"></div>
             </Button>
           </a>
         );
