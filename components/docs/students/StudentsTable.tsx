@@ -7,18 +7,17 @@ import { X } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 
-export type Student = {
-  id?: string;
+export type FormGroupMember = {
   name: string;
   email: string;
   joinedAt: string | Date;
 };
 
-function getStudentId(student: Student) {
-  return student.id ?? student.email;
+function getStudentId(student: FormGroupMember) {
+  return student.email;
 }
 
-function createColumns(onRemove: (studentId: string) => void): ColumnDef<Student>[] {
+function createColumns(onRemove: (studentId: string) => void): ColumnDef<FormGroupMember>[] {
   return [
     {
       accessorKey: "name",
@@ -54,12 +53,12 @@ function createColumns(onRemove: (studentId: string) => void): ColumnDef<Student
   ];
 }
 
-export default function StudentsTable({ students }: { students: Student[] }) {
+export default function StudentsTable({ members }: { members: FormGroupMember[] }) {
   const [removedStudentIds, setRemovedStudentIds] = useState<Set<string>>(new Set());
 
   const rows = useMemo(() => {
-    return students.filter((student) => !removedStudentIds.has(getStudentId(student)));
-  }, [students, removedStudentIds]);
+    return members.filter((student) => !removedStudentIds.has(getStudentId(student)));
+  }, [members, removedStudentIds]);
 
   const columns = useMemo(
     () =>

@@ -8,7 +8,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { FormGroupStudentsDetail } from "./FormGroupStudentsDetail";
-import type { Student } from "./StudentsTable";
+import type { FormGroupMember } from "./StudentsTable";
 import type { FormGroup } from "./types";
 
 export function MobileFormGroupDrawer({
@@ -23,7 +23,7 @@ export function MobileFormGroupDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formGroup: FormGroup | null;
-  students: Student[];
+  students: FormGroupMember[];
   onCopyAccessCode: (code: string) => void | Promise<void>;
   onResetAccessCode: () => void;
   onClearStudentList: () => void;
@@ -40,7 +40,7 @@ export function MobileFormGroupDrawer({
             <div className="min-h-0 flex-1 overflow-hidden p-4 pt-5">
               <FormGroupStudentsDetail
                 formGroup={formGroup}
-                students={students}
+                members={students}
                 onCopyAccessCode={onCopyAccessCode}
                 onResetAccessCode={onResetAccessCode}
                 onClearStudentList={onClearStudentList}

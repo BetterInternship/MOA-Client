@@ -17,19 +17,19 @@ import {
 import { cn } from "@/lib/utils";
 import { AccessCodeCopy } from "./AccessCodeCopy";
 import StudentsTable from "./StudentsTable";
-import type { Student } from "./StudentsTable";
+import type { FormGroupMember } from "./StudentsTable";
 import type { FormGroup } from "./types";
 
 export function FormGroupStudentsDetail({
   formGroup,
-  students,
+  members,
   onCopyAccessCode,
   onResetAccessCode,
   onClearStudentList,
   className,
 }: {
   formGroup: FormGroup;
-  students: Student[];
+  members: FormGroupMember[];
   onCopyAccessCode: (code: string) => void | Promise<void>;
   onResetAccessCode: () => void;
   onClearStudentList: () => void;
@@ -98,7 +98,7 @@ export function FormGroupStudentsDetail({
       </div>
 
       <Card className="min-h-0 flex-1 p-3">
-        <StudentsTable key={formGroup.id} students={students} />
+        <StudentsTable key={formGroup.id} members={members} />
       </Card>
     </div>
   );

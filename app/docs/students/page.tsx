@@ -10,12 +10,15 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { FormGroupList } from "@/components/docs/students/FormGroupList";
 import { FormGroupStudentsDetail } from "@/components/docs/students/FormGroupStudentsDetail";
 import { MobileFormGroupDrawer } from "@/components/docs/students/MobileFormGroupDrawer";
-import type { Student } from "@/components/docs/students/StudentsTable";
+import type { FormGroupMember } from "@/components/docs/students/StudentsTable";
 import type { FormGroup } from "@/components/docs/students/types";
-import { useSignatoryControllerGetSignatoryFormGroups } from "@/app/api";
+import {
+  signatoryControllerGetSignatoryFormGroupMembers,
+  useSignatoryControllerGetSignatoryFormGroupMembers,
+  useSignatoryControllerGetSignatoryFormGroups,
+} from "@/app/api";
+import { Loader } from "@/components/ui/loader";
 
-const formGroups: FormGroup[] = [{ id: "", description: "Test Forms", forms: [], code: "ABC123" }];
-const students: Student[] = [];
 const detailEnterTransition = {
   duration: 0.24,
   ease: [0.22, 1, 0.36, 1] as const,
@@ -40,6 +43,8 @@ export default function DocsStudentsPage() {
   const sortedFormGroups = formGroups.toSorted((a, b) =>
     a.description.localeCompare(b.description)
   );
+  const { data: { formGroupMembers } = { formGroupMembers: [] } } =
+    useSignatoryControllerGetSignatoryFormGroupMembers(selectedFormGroupId);
   const loading = useMemo(() => isLoading || isFetching, [isLoading, isFetching]);
 
   const selectedFormGroup = useMemo(() => {
@@ -47,7 +52,7 @@ export default function DocsStudentsPage() {
   }, [formGroups, selectedFormGroupId]);
 
   useEffect(() => {
-    if (!profile.loading && isLoggedIn && !profile.coordinatorId) {
+    if (!loading && !profile.loading && isLoggedIn && !profile.coordinatorId) {
       router.push("/dashboard");
     }
   }, [isLoggedIn, profile.coordinatorId, profile.loading, router]);
@@ -82,7 +87,11 @@ export default function DocsStudentsPage() {
     toast.success("Student list cleared.");
   };
 
-  if (profile.loading || !isLoggedIn || !profile.coordinatorId) {
+  if (loading || profile.loading) {
+    return <Loader>Loading...</Loader>;
+  }
+
+  if (!isLoggedIn || !profile.coordinatorId) {
     return null;
   }
 
@@ -108,7 +117,7 @@ export default function DocsStudentsPage() {
               >
                 <FormGroupStudentsDetail
                   formGroup={selectedFormGroup as FormGroup}
-                  students={students}
+                  members={formGroupMembers as FormGroupMember[]}
                   onCopyAccessCode={copyAccessCode}
                   onResetAccessCode={resetAccessCode}
                   onClearStudentList={clearStudentList}
@@ -136,7 +145,7 @@ export default function DocsStudentsPage() {
         open={isMobileDetailOpen}
         onOpenChange={setIsMobileDetailOpen}
         formGroup={selectedFormGroup as FormGroup | null}
-        students={students}
+        students={formGroupMembers as FormGroupMember[]}
         onCopyAccessCode={copyAccessCode}
         onResetAccessCode={resetAccessCode}
         onClearStudentList={clearStudentList}

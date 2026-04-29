@@ -30,6 +30,7 @@ import type {
   GetSignatoryFormSettingsRequest,
   GetSignatoryFormSettingsResponse,
   SetSignatoryFormSettingsRequest,
+  SignatoryFormGroupMembersResponse,
   SignatoryFormGroupsResponse,
   SignatorySelfResponse,
   SignatorySignedFormsResponse,
@@ -984,6 +985,267 @@ export function useSignatoryControllerGetSignatoryFormGroupsSuspense<
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getSignatoryControllerGetSignatoryFormGroupsSuspenseQueryOptions(options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const signatoryControllerGetSignatoryFormGroupMembers = (
+  id: string | undefined | null,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<SignatoryFormGroupMembersResponse>({
+    url: `/api/signatory/me/form-group/${id}`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getSignatoryControllerGetSignatoryFormGroupMembersQueryKey = (
+  id?: string | undefined | null
+) => {
+  return [`/api/signatory/me/form-group/${id}`] as const;
+};
+
+export const getSignatoryControllerGetSignatoryFormGroupMembersQueryOptions = <
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSignatoryControllerGetSignatoryFormGroupMembersQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>
+  > = ({ signal }) => signatoryControllerGetSignatoryFormGroupMembers(id, signal);
+
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SignatoryControllerGetSignatoryFormGroupMembersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>
+>;
+export type SignatoryControllerGetSignatoryFormGroupMembersQueryError = ErrorResponse;
+
+export function useSignatoryControllerGetSignatoryFormGroupMembers<
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+          TError,
+          Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSignatoryControllerGetSignatoryFormGroupMembers<
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+          TError,
+          Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSignatoryControllerGetSignatoryFormGroupMembers<
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSignatoryControllerGetSignatoryFormGroupMembers<
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSignatoryControllerGetSignatoryFormGroupMembersQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getSignatoryControllerGetSignatoryFormGroupMembersSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSignatoryControllerGetSignatoryFormGroupMembersQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>
+  > = ({ signal }) => signatoryControllerGetSignatoryFormGroupMembers(id, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SignatoryControllerGetSignatoryFormGroupMembersSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>
+>;
+export type SignatoryControllerGetSignatoryFormGroupMembersSuspenseQueryError = ErrorResponse;
+
+export function useSignatoryControllerGetSignatoryFormGroupMembersSuspense<
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSignatoryControllerGetSignatoryFormGroupMembersSuspense<
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSignatoryControllerGetSignatoryFormGroupMembersSuspense<
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSignatoryControllerGetSignatoryFormGroupMembersSuspense<
+  TData = Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+  TError = ErrorResponse,
+>(
+  id: string | undefined | null,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof signatoryControllerGetSignatoryFormGroupMembers>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSignatoryControllerGetSignatoryFormGroupMembersSuspenseQueryOptions(
+    id,
+    options
+  );
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

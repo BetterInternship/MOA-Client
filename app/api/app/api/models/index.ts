@@ -9,6 +9,7 @@
 export * from "./_formGroup";
 export * from "./_formGroupCode";
 export * from "./_formGroupCoordinatorId";
+export * from "./_formGroupMember";
 export * from "./_signatoryForm";
 export * from "./_signatoryJWTPayload";
 export * from "./addFormToGroupDto";
@@ -236,6 +237,7 @@ export * from "./setSignatoryFormSettingsRequestAudit";
 export * from "./setSignatoryFormSettingsRequestSettings";
 export * from "./signCustomMoaRequestDto";
 export * from "./signatoryForm";
+export * from "./signatoryFormGroupMembersResponse";
 export * from "./signatoryFormGroupsResponse";
 export * from "./signatoryFormtemplatesResponse";
 export * from "./signatoryInfo";
