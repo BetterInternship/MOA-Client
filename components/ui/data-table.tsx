@@ -74,6 +74,11 @@ interface DataTableProps<TData, TValue> {
   sortingStorageKey?: string;
   /** Optional: right-side toolbar slot (e.g., extra buttons) */
   toolbarActions?: React.ReactNode;
+  /** Optional: override the search input placeholder */
+  searchPlaceholder?: string;
+  /** Optional: labels used in the pagination row count */
+  rowLabelSingular?: string;
+  rowLabelPlural?: string;
   /** Optional: page size options */
   pageSizes?: number[];
   /** Optional: className for wrapper */
@@ -91,6 +96,9 @@ export function DataTable<TData, TValue>({
   initialSorting,
   sortingStorageKey,
   toolbarActions,
+  searchPlaceholder = "Search forms...",
+  rowLabelSingular = "form",
+  rowLabelPlural = "forms",
   pageSizes = [5, 10, 20, 50],
   className,
 }: DataTableProps<TData, TValue>) {
@@ -111,8 +119,7 @@ export function DataTable<TData, TValue>({
   const handleSortingChange = React.useCallback(
     (updater: Updater<SortingState>) => {
       setSorting((currentSorting) => {
-        const nextSorting =
-          typeof updater === "function" ? updater(currentSorting) : updater;
+        const nextSorting = typeof updater === "function" ? updater(currentSorting) : updater;
 
         if (sortingStorageKey) {
           try {
@@ -145,7 +152,9 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: (row, _columnId, filterValue) => {
-      const query = String(filterValue ?? "").toLowerCase().trim();
+      const query = String(filterValue ?? "")
+        .toLowerCase()
+        .trim();
       if (!query) return true;
 
       return row.getAllCells().some((cell) => {
@@ -220,7 +229,7 @@ export function DataTable<TData, TValue>({
           {effectiveSearchKeys.length > 0 && (
             <div className="flex items-center gap-2">
               <Input
-                placeholder={`Search forms...`}
+                placeholder={searchPlaceholder}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 className="h-10 w-full sm:w-96"
@@ -286,7 +295,11 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow className="odd:bg-white even:bg-muted/70" key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  className="even:bg-muted/70 odd:bg-white"
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {enableRowSelection && (
                     <TableCell className="w-[42px]">
                       <Checkbox
@@ -320,7 +333,8 @@ export function DataTable<TData, TValue>({
       {/* Pagination */}
       <div className="z-10 flex shrink-0 flex-col items-center justify-between gap-1 border-t bg-white py-1 sm:flex-row">
         <div className="text-muted-foreground text-sm">
-          {table.getFilteredRowModel().rows.length} form{table.getFilteredRowModel().rows.length === 1 ? "" : "s"}
+          {table.getFilteredRowModel().rows.length}{" "}
+          {table.getFilteredRowModel().rows.length === 1 ? rowLabelSingular : rowLabelPlural}
         </div>
 
         <div className="flex items-center gap-1.5">
