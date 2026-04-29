@@ -84,5 +84,5 @@ export const formatTimeAgo = (fromDateString: string) => {
     }
   }
 
-  return "just now";
+  return "a long time ago";
 };

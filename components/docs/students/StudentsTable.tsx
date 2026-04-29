@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { formatTimeAgo } from "@/lib/format";
 
 export type FormGroupMember = {
   id: string;
@@ -46,7 +47,7 @@ function createColumns(
     {
       accessorKey: "joinedAt",
       header: "Joined At",
-      cell: (info) => formatDate(new Date(info.getValue() as string | Date), "MM/dd/yyyy hh:mm a"),
+      cell: (info) => formatTimeAgo(info.getValue() as string),
     },
     {
       id: "actions",
