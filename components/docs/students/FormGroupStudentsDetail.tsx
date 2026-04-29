@@ -43,7 +43,7 @@ export function FormGroupStudentsDetail({
 }) {
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col gap-3", className)}>
-      <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 space-y-2">
           <h2 className="text-2xl leading-tight font-semibold break-words text-gray-900 sm:text-3xl">
             {formGroup.description}
@@ -54,7 +54,7 @@ export function FormGroupStudentsDetail({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+        <div className="flex shrink-0 flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap lg:justify-end lg:pt-0">
           <Button
             variant="outline"
             type="button"
