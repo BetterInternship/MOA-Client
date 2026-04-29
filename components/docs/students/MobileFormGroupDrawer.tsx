@@ -19,6 +19,7 @@ export function MobileFormGroupDrawer({
   onCopyAccessCode,
   onResetAccessCode,
   onClearStudentList,
+  onRemoveMember,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -27,6 +28,7 @@ export function MobileFormGroupDrawer({
   onCopyAccessCode: (code: string) => void | Promise<void>;
   onResetAccessCode: () => void;
   onClearStudentList: () => void;
+  onRemoveMember: (formGroupId: string, memberId: string) => void | Promise<void>;
 }) {
   return (
     <Drawer open={open && Boolean(formGroup)} onOpenChange={onOpenChange} direction="bottom">
@@ -44,6 +46,7 @@ export function MobileFormGroupDrawer({
                 onCopyAccessCode={onCopyAccessCode}
                 onResetAccessCode={onResetAccessCode}
                 onClearStudentList={onClearStudentList}
+                onRemoveMember={onRemoveMember}
               />
             </div>
           </>

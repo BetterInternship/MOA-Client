@@ -14,9 +14,12 @@ import { MobileFormGroupDrawer } from "@/components/docs/students/MobileFormGrou
 import type { FormGroupMember } from "@/components/docs/students/StudentsTable";
 import type { FormGroup } from "@/components/docs/students/types";
 import {
+  getSignatoryControllerGetSignatoryFormGroupMembersQueryKey,
   getSignatoryControllerGetSignatoryFormGroupsQueryKey,
   signatoryControllerClearFormGroupMembers,
+  signatoryControllerRemoveFormGroupMember,
   signatoryControllerResetFormGroupCode,
+  type SignatoryControllerGetSignatoryFormGroupMembersQueryResult,
   type SignatoryControllerGetSignatoryFormGroupsQueryResult,
   useSignatoryControllerGetSignatoryFormGroupMembers,
   useSignatoryControllerGetSignatoryFormGroups,
@@ -31,6 +34,24 @@ const detailExitTransition = {
   duration: 0.16,
   ease: [0.4, 0, 1, 1] as const,
 };
+
+function getRequestErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message.replace(/^Error:\s*/, "");
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.trim()
+  ) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 export default function DocsStudentsPage() {
   const profile = useSignatoryProfile();
@@ -86,35 +107,104 @@ export default function DocsStudentsPage() {
 
   const resetAccessCode = useCallback(async () => {
     if (!selectedFormGroupId) return toast.error("No form group selected.");
-    const response = await signatoryControllerResetFormGroupCode({
-      formGroupId: selectedFormGroupId,
-    });
-    const code = response.code;
 
-    // This updates the cached value so it reflects properly
-    // This is a very common pattern, so find a way to make this easy to replicate
-    queryClient.setQueryData<SignatoryControllerGetSignatoryFormGroupsQueryResult>(
-      getSignatoryControllerGetSignatoryFormGroupsQueryKey(),
-      (current) => {
-        if (!current) return current;
+    try {
+      const response = await signatoryControllerResetFormGroupCode({
+        formGroupId: selectedFormGroupId,
+      });
 
-        return {
-          ...current,
-          formGroups: current.formGroups.map((formGroup) =>
-            formGroup.id === selectedFormGroupId ? { ...formGroup, code } : formGroup
-          ),
-        };
+      if (!response.success) {
+        toast.error(response.message || "Failed to reset access code.");
+        return;
       }
-    );
 
-    toast.success("Access code reset.");
+      const code = response.code;
+
+      // This updates the cached value so it reflects properly
+      // This is a very common pattern, so find a way to make this easy to replicate
+      queryClient.setQueryData<SignatoryControllerGetSignatoryFormGroupsQueryResult>(
+        getSignatoryControllerGetSignatoryFormGroupsQueryKey(),
+        (current) => {
+          if (!current) return current;
+
+          return {
+            ...current,
+            formGroups: current.formGroups.map((formGroup) =>
+              formGroup.id === selectedFormGroupId ? { ...formGroup, code } : formGroup
+            ),
+          };
+        }
+      );
+
+      toast.success("Access code reset.");
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error, "Failed to reset access code."));
+    }
   }, [queryClient, selectedFormGroupId]);
 
   const clearStudentList = useCallback(async () => {
     if (!selectedFormGroupId) return toast.error("No form group selected.");
-    await signatoryControllerClearFormGroupMembers({ formGroupId: selectedFormGroupId });
-    toast.success("Student list cleared.");
-  }, [selectedFormGroupId]);
+
+    try {
+      const response = await signatoryControllerClearFormGroupMembers({
+        formGroupId: selectedFormGroupId,
+      });
+
+      if (!response.success) {
+        toast.error(response.message || "Failed to clear student list.");
+        return;
+      }
+
+      queryClient.setQueryData<SignatoryControllerGetSignatoryFormGroupMembersQueryResult>(
+        getSignatoryControllerGetSignatoryFormGroupMembersQueryKey(selectedFormGroupId),
+        (current) => {
+          if (!current) return current;
+
+          return {
+            ...current,
+            formGroupMembers: [],
+          };
+        }
+      );
+
+      toast.success("Student list cleared.");
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error, "Failed to clear student list."));
+    }
+  }, [queryClient, selectedFormGroupId]);
+
+  const removeFormGroupMember = useCallback(
+    async (formGroupId: string, userId: string) => {
+      try {
+        const response = await signatoryControllerRemoveFormGroupMember({
+          formGroupId,
+          userId,
+        });
+
+        if (!response.success) {
+          toast.error(response.message || "Failed to remove student.");
+          return;
+        }
+
+        queryClient.setQueryData<SignatoryControllerGetSignatoryFormGroupMembersQueryResult>(
+          getSignatoryControllerGetSignatoryFormGroupMembersQueryKey(formGroupId),
+          (current) => {
+            if (!current) return current;
+
+            return {
+              ...current,
+              formGroupMembers: current.formGroupMembers.filter((member) => member.id !== userId),
+            };
+          }
+        );
+
+        toast.success("Student removed.");
+      } catch (error) {
+        toast.error(getRequestErrorMessage(error, "Failed to remove student."));
+      }
+    },
+    [queryClient]
+  );
 
   if (loading || profile.loading) {
     return <Loader>Loading...</Loader>;
@@ -150,6 +240,7 @@ export default function DocsStudentsPage() {
                   onCopyAccessCode={copyAccessCode}
                   onResetAccessCode={resetAccessCode}
                   onClearStudentList={clearStudentList}
+                  onRemoveMember={removeFormGroupMember}
                 />
               </motion.div>
             ) : (
@@ -178,6 +269,7 @@ export default function DocsStudentsPage() {
         onCopyAccessCode={copyAccessCode}
         onResetAccessCode={resetAccessCode}
         onClearStudentList={clearStudentList}
+        onRemoveMember={removeFormGroupMember}
       />
     </>
   );

@@ -1,23 +1,37 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { X } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export type FormGroupMember = {
+  id: string;
   name: string;
   email: string;
   joinedAt: string | Date;
 };
 
 function getStudentId(student: FormGroupMember) {
-  return student.email;
+  return student.id;
 }
 
-function createColumns(onRemove: (studentId: string) => void): ColumnDef<FormGroupMember>[] {
+function createColumns(
+  onRemoveMember: (member: FormGroupMember) => void | Promise<void>
+): ColumnDef<FormGroupMember>[] {
   return [
     {
       accessorKey: "name",
@@ -37,35 +51,58 @@ function createColumns(onRemove: (studentId: string) => void): ColumnDef<FormGro
     {
       id: "actions",
       header: "Actions",
-      cell: (info) => (
-        <Button
-          size="sm"
-          variant="outline"
-          scheme="destructive"
-          className="gap-1"
-          onClick={() => onRemove(getStudentId(info.row.original))}
-        >
-          Remove
-          <X className="h-4 w-4" />
-        </Button>
-      ),
+      cell: (info) => {
+        const member = info.row.original;
+
+        return (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" scheme="destructive" className="gap-1">
+                Remove
+                <X className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent variant="destructive">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove student?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove {member.name} from the selected form group.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  scheme="destructive"
+                  onClick={() => {
+                    void onRemoveMember(member);
+                  }}
+                >
+                  Remove Student
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        );
+      },
     },
   ];
 }
 
-export default function StudentsTable({ members }: { members: FormGroupMember[] }) {
-  const [removedStudentIds, setRemovedStudentIds] = useState<Set<string>>(new Set());
-
-  const rows = useMemo(() => {
-    return members.filter((student) => !removedStudentIds.has(getStudentId(student)));
-  }, [members, removedStudentIds]);
+export default function StudentsTable({
+  members,
+  onRemoveMember,
+}: {
+  members: FormGroupMember[];
+  onRemoveMember: (memberId: string) => void | Promise<void>;
+}) {
+  const rows = useMemo(() => members, [members]);
 
   const columns = useMemo(
     () =>
-      createColumns((studentId) => {
-        setRemovedStudentIds((current) => new Set(current).add(studentId));
+      createColumns((member) => {
+        return onRemoveMember(getStudentId(member));
       }),
-    []
+    [onRemoveMember]
   );
 
   return (

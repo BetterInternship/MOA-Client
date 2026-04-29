@@ -26,6 +26,7 @@ export function FormGroupStudentsDetail({
   onCopyAccessCode,
   onResetAccessCode,
   onClearStudentList,
+  onRemoveMember,
   className,
 }: {
   formGroup: FormGroup;
@@ -33,6 +34,7 @@ export function FormGroupStudentsDetail({
   onCopyAccessCode: (code: string) => void | Promise<void>;
   onResetAccessCode: () => void;
   onClearStudentList: () => void;
+  onRemoveMember: (formGroupId: string, memberId: string) => void | Promise<void>;
   className?: string;
 }) {
   return (
@@ -98,7 +100,11 @@ export function FormGroupStudentsDetail({
       </div>
 
       <Card className="min-h-0 flex-1 p-3">
-        <StudentsTable key={formGroup.id} members={members} />
+        <StudentsTable
+          key={formGroup.id}
+          members={members}
+          onRemoveMember={(memberId) => onRemoveMember(formGroup.id, memberId)}
+        />
       </Card>
     </div>
   );
