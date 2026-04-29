@@ -90,9 +90,12 @@ export default function DocsStudentsPage() {
   });
 
   const loading = useMemo(() => isLoading || isFetching, [isLoading, isFetching]);
-  const sortedFormGroupMembers = formGroupMembers.toSorted((a, b) =>
-    a.joinedAt.localeCompare(b.joinedAt)
-  );
+  const sortedFormGroupMembers = formGroupMembers
+    .map((formGroupMember) => ({
+      ...formGroupMember,
+      joinedAt: formGroupMember.joinedAt ?? "a long time ago",
+    }))
+    .toSorted((a, b) => a.joinedAt.localeCompare(b.joinedAt));
   const selectedFormGroup = useMemo(() => {
     return formGroups.find((group) => group.id === selectedFormGroupId) ?? null;
   }, [formGroups, selectedFormGroupId]);
