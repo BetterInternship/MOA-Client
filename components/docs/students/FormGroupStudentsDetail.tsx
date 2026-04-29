@@ -24,6 +24,8 @@ export function FormGroupStudentsDetail({
   formGroup,
   members,
   onCopyAccessCode,
+  onRefreshStudentList,
+  isRefreshingStudentList = false,
   onResetAccessCode,
   onClearStudentList,
   onRemoveMember,
@@ -32,6 +34,8 @@ export function FormGroupStudentsDetail({
   formGroup: FormGroup;
   members: FormGroupMember[];
   onCopyAccessCode: (code: string) => void | Promise<void>;
+  onRefreshStudentList: () => void | Promise<void>;
+  isRefreshingStudentList?: boolean;
   onResetAccessCode: () => void;
   onClearStudentList: () => void;
   onRemoveMember: (formGroupId: string, memberId: string) => void | Promise<void>;
@@ -51,6 +55,19 @@ export function FormGroupStudentsDetail({
         </div>
 
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+          <Button
+            variant="outline"
+            type="button"
+            className="gap-2"
+            disabled={isRefreshingStudentList}
+            onClick={() => {
+              void onRefreshStudentList();
+            }}
+          >
+            Refresh List
+            <RefreshCw className={cn("h-4 w-4", isRefreshingStudentList && "animate-spin")} />
+          </Button>
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" type="button" scheme="destructive" className="gap-2">

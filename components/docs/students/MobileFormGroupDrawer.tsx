@@ -15,19 +15,23 @@ export function MobileFormGroupDrawer({
   open,
   onOpenChange,
   formGroup,
-  students,
+  members,
   onCopyAccessCode,
+  onRefreshMemberList,
+  isRefreshingMemberList,
   onResetAccessCode,
-  onClearStudentList,
+  onClearMemberList,
   onRemoveMember,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formGroup: FormGroup | null;
-  students: FormGroupMember[];
+  members: FormGroupMember[];
   onCopyAccessCode: (code: string) => void | Promise<void>;
+  onRefreshMemberList: () => void | Promise<void>;
+  isRefreshingMemberList?: boolean;
   onResetAccessCode: () => void;
-  onClearStudentList: () => void;
+  onClearMemberList: () => void;
   onRemoveMember: (formGroupId: string, memberId: string) => void | Promise<void>;
 }) {
   return (
@@ -42,10 +46,12 @@ export function MobileFormGroupDrawer({
             <div className="min-h-0 flex-1 overflow-hidden p-4 pt-5">
               <FormGroupStudentsDetail
                 formGroup={formGroup}
-                members={students}
+                members={members}
                 onCopyAccessCode={onCopyAccessCode}
+                onRefreshStudentList={onRefreshMemberList}
+                isRefreshingStudentList={isRefreshingMemberList}
                 onResetAccessCode={onResetAccessCode}
-                onClearStudentList={onClearStudentList}
+                onClearStudentList={onClearMemberList}
                 onRemoveMember={onRemoveMember}
               />
             </div>

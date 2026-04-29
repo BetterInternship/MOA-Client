@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Users2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
@@ -34,6 +34,9 @@ const detailExitTransition = {
   duration: 0.16,
   ease: [0.4, 0, 1, 1] as const,
 };
+const FORM_GROUPS_STALE_TIME_MS = 60 * 60 * 1000;
+const FORM_GROUP_MEMBERS_STALE_TIME_MS = 60 * 60 * 1000;
+const FORM_GROUP_QUERY_PARAM = "form-group-id";
 
 function getRequestErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) {
@@ -56,6 +59,8 @@ function getRequestErrorMessage(error: unknown, fallback: string) {
 export default function DocsStudentsPage() {
   const profile = useSignatoryProfile();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const isLoggedIn = Boolean(profile?.email);
@@ -63,19 +68,58 @@ export default function DocsStudentsPage() {
     data: { formGroups } = { formGroups: [] },
     isLoading,
     isFetching,
-  } = useSignatoryControllerGetSignatoryFormGroups();
+    isError: isFormGroupsError,
+  } = useSignatoryControllerGetSignatoryFormGroups({
+    query: {
+      staleTime: FORM_GROUPS_STALE_TIME_MS,
+    },
+  });
   const [selectedFormGroupId, setSelectedFormGroupId] = useState<string | null>(null);
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
   const sortedFormGroups = formGroups.toSorted((a, b) =>
     a.description.localeCompare(b.description)
   );
-  const { data: { formGroupMembers } = { formGroupMembers: [] } } =
-    useSignatoryControllerGetSignatoryFormGroupMembers(selectedFormGroupId);
-  const loading = useMemo(() => isLoading || isFetching, [isLoading, isFetching]);
+  const {
+    data: { formGroupMembers } = { formGroupMembers: [] },
+    refetch: refetchFormGroupMembers,
+    isFetching: isFetchingFormGroupMembers,
+  } = useSignatoryControllerGetSignatoryFormGroupMembers(selectedFormGroupId, {
+    query: {
+      staleTime: FORM_GROUP_MEMBERS_STALE_TIME_MS,
+    },
+  });
 
+  const loading = useMemo(() => isLoading || isFetching, [isLoading, isFetching]);
+  const sortedFormGroupMembers = formGroupMembers.toSorted((a, b) =>
+    a.joinedAt.localeCompare(b.joinedAt)
+  );
   const selectedFormGroup = useMemo(() => {
     return formGroups.find((group) => group.id === selectedFormGroupId) ?? null;
   }, [formGroups, selectedFormGroupId]);
+
+  const updateFormGroupIdInUrl = useCallback(
+    (formGroupId: string | null, method: "push" | "replace" = "push") => {
+      const currentFormGroupId = searchParams.get(FORM_GROUP_QUERY_PARAM);
+
+      if (currentFormGroupId === formGroupId) {
+        return;
+      }
+
+      const nextParams = new URLSearchParams(searchParams.toString());
+
+      if (formGroupId) {
+        nextParams.set(FORM_GROUP_QUERY_PARAM, formGroupId);
+      } else {
+        nextParams.delete(FORM_GROUP_QUERY_PARAM);
+      }
+
+      const queryString = nextParams.toString();
+      const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
+      router[method](nextUrl, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   useEffect(() => {
     if (!loading && !profile.loading && isLoggedIn && !profile.coordinatorId) {
@@ -89,8 +133,34 @@ export default function DocsStudentsPage() {
     }
   }, [isMobile]);
 
+  useEffect(() => {
+    if (isLoading || isFormGroupsError) return;
+
+    const formGroupIdFromUrl = searchParams.get(FORM_GROUP_QUERY_PARAM);
+
+    if (!formGroupIdFromUrl) {
+      setSelectedFormGroupId(null);
+      return;
+    }
+
+    const formGroupExists = formGroups.some((group) => group.id === formGroupIdFromUrl);
+
+    if (!formGroupExists) {
+      setSelectedFormGroupId(null);
+      updateFormGroupIdInUrl(null, "replace");
+      return;
+    }
+
+    setSelectedFormGroupId(formGroupIdFromUrl);
+
+    if (isMobile) {
+      setIsMobileDetailOpen(true);
+    }
+  }, [formGroups, isFormGroupsError, isLoading, isMobile, searchParams, updateFormGroupIdInUrl]);
+
   const handleSelectFormGroup = (formGroup: FormGroup) => {
     setSelectedFormGroupId(formGroup.id);
+    updateFormGroupIdInUrl(formGroup.id);
     if (isMobile) {
       setIsMobileDetailOpen(true);
     }
@@ -104,6 +174,31 @@ export default function DocsStudentsPage() {
       toast.error("Failed to copy access code.");
     }
   };
+
+  const refreshMemberList = useCallback(async () => {
+    if (!selectedFormGroupId) {
+      toast.error("No form group selected.");
+      return;
+    }
+
+    try {
+      const result = await refetchFormGroupMembers();
+
+      if (result.error) {
+        toast.error(getRequestErrorMessage(result.error, "Failed to refresh student list."));
+        return;
+      }
+
+      if (result.data && !result.data.success) {
+        toast.error(result.data.message || "Failed to refresh student list.");
+        return;
+      }
+
+      toast.success("Student list refreshed.");
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error, "Failed to refresh student list."));
+    }
+  }, [refetchFormGroupMembers, selectedFormGroupId]);
 
   const resetAccessCode = useCallback(async () => {
     if (!selectedFormGroupId) return toast.error("No form group selected.");
@@ -142,7 +237,7 @@ export default function DocsStudentsPage() {
     }
   }, [queryClient, selectedFormGroupId]);
 
-  const clearStudentList = useCallback(async () => {
+  const clearMemberList = useCallback(async () => {
     if (!selectedFormGroupId) return toast.error("No form group selected.");
 
     try {
@@ -236,10 +331,12 @@ export default function DocsStudentsPage() {
               >
                 <FormGroupStudentsDetail
                   formGroup={selectedFormGroup as FormGroup}
-                  members={formGroupMembers as FormGroupMember[]}
+                  members={sortedFormGroupMembers as FormGroupMember[]}
                   onCopyAccessCode={copyAccessCode}
+                  onRefreshStudentList={refreshMemberList}
+                  isRefreshingStudentList={isFetchingFormGroupMembers}
                   onResetAccessCode={resetAccessCode}
-                  onClearStudentList={clearStudentList}
+                  onClearStudentList={clearMemberList}
                   onRemoveMember={removeFormGroupMember}
                 />
               </motion.div>
@@ -265,10 +362,12 @@ export default function DocsStudentsPage() {
         open={isMobileDetailOpen}
         onOpenChange={setIsMobileDetailOpen}
         formGroup={selectedFormGroup as FormGroup | null}
-        students={formGroupMembers as FormGroupMember[]}
+        members={sortedFormGroupMembers as FormGroupMember[]}
         onCopyAccessCode={copyAccessCode}
+        onRefreshMemberList={refreshMemberList}
+        isRefreshingMemberList={isFetchingFormGroupMembers}
         onResetAccessCode={resetAccessCode}
-        onClearStudentList={clearStudentList}
+        onClearMemberList={clearMemberList}
         onRemoveMember={removeFormGroupMember}
       />
     </>

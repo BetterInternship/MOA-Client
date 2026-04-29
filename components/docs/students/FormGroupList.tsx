@@ -58,7 +58,7 @@ export function FormGroupList({
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1 space-y-4">
+                    <div className="min-w-0 flex-1 space-y-6">
                       <div className="flex flex-col flex-wrap items-start">
                         <h3 className="text-base leading-snug font-semibold break-words text-gray-900">
                           {formGroup.description}
@@ -74,14 +74,15 @@ export function FormGroupList({
                         </div>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs font-bold text-gray-500">
                           {formGroup.forms.length} Form Template
                           {formGroup.forms.length === 1 ? "" : "s"}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {formGroup.forms.length} Student
-                          {formGroup.forms.length === 1 ? "" : "s"}
-                        </p>
+                        <div className="mt-2 flex flex-col">
+                          {formGroup.forms.map((form) => (
+                            <p className="text-xs text-gray-400">{form}</p>
+                          ))}
+                        </div>
                       </div>
                     </div>
                     <ChevronRight
