@@ -11,6 +11,7 @@ import { FormGroupStudentsDetail } from "@/components/docs/students/FormGroupStu
 import { MobileFormGroupDrawer } from "@/components/docs/students/MobileFormGroupDrawer";
 import type { Student } from "@/components/docs/students/StudentsTable";
 import type { FormGroup } from "@/components/docs/students/types";
+import { useSignatoryControllerGetSignatoryFormGroups } from "@/app/api";
 
 const formGroups: FormGroup[] = [{ id: "", description: "Test Forms", forms: [], code: "ABC123" }];
 const students: Student[] = [];
@@ -20,8 +21,18 @@ export default function DocsStudentsPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const isLoggedIn = Boolean(profile?.email);
+  const {
+    data: { formGroups } = { formGroups: [] },
+    isLoading,
+    isFetching,
+  } = useSignatoryControllerGetSignatoryFormGroups();
   const [selectedFormGroupId, setSelectedFormGroupId] = useState<string | null>(null);
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
+  const sortedFormGroups = formGroups.toSorted((a, b) =>
+    a.description.localeCompare(b.description)
+  );
+  const loading = useMemo(() => isLoading || isFetching, [isLoading, isFetching]);
+
 
   const selectedFormGroup = useMemo(() => {
     return formGroups.find((group) => group.id === selectedFormGroupId) ?? null;
@@ -71,7 +82,7 @@ export default function DocsStudentsPage() {
     <>
       <div className="grid h-full min-h-0 w-full grid-rows-[minmax(0,1fr)] overflow-hidden bg-gray-50 md:grid-cols-[clamp(260px,32vw,420px)_minmax(0,1fr)]">
         <FormGroupList
-          formGroups={formGroups}
+          formGroups={sortedFormGroups as FormGroup[]}
           selectedFormGroupId={selectedFormGroupId}
           onSelectFormGroup={handleSelectFormGroup}
           onCopyAccessCode={copyAccessCode}
@@ -80,7 +91,7 @@ export default function DocsStudentsPage() {
         <section className="hidden min-h-0 flex-col gap-3 overflow-hidden p-3 sm:p-4 md:flex">
           {selectedFormGroup ? (
             <FormGroupStudentsDetail
-              formGroup={selectedFormGroup}
+              formGroup={selectedFormGroup as FormGroup}
               students={students}
               onCopyAccessCode={copyAccessCode}
               onResetAccessCode={resetAccessCode}
