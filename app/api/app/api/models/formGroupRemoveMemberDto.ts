@@ -6,9 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface _FormGroupMember {
-  id: string;
-  name: string;
-  email: string;
-  joinedAt: string;
+export interface FormGroupRemoveMemberDto {
+  formGroupId: string;
+  userId: string;
 }

@@ -6,9 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface _FormGroupMember {
-  id: string;
-  name: string;
-  email: string;
-  joinedAt: string;
+export interface SignatoryFormGroupsResetCodeResponse {
+  success: boolean;
+  message: string;
+  code: string;
 }

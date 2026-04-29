@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Users2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FormGroupList } from "@/components/docs/students/FormGroupList";
@@ -13,7 +14,10 @@ import { MobileFormGroupDrawer } from "@/components/docs/students/MobileFormGrou
 import type { FormGroupMember } from "@/components/docs/students/StudentsTable";
 import type { FormGroup } from "@/components/docs/students/types";
 import {
-  signatoryControllerGetSignatoryFormGroupMembers,
+  getSignatoryControllerGetSignatoryFormGroupsQueryKey,
+  signatoryControllerClearFormGroupMembers,
+  signatoryControllerResetFormGroupCode,
+  type SignatoryControllerGetSignatoryFormGroupsQueryResult,
   useSignatoryControllerGetSignatoryFormGroupMembers,
   useSignatoryControllerGetSignatoryFormGroups,
 } from "@/app/api";
@@ -32,6 +36,7 @@ export default function DocsStudentsPage() {
   const profile = useSignatoryProfile();
   const router = useRouter();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   const isLoggedIn = Boolean(profile?.email);
   const {
     data: { formGroups } = { formGroups: [] },
@@ -79,13 +84,37 @@ export default function DocsStudentsPage() {
     }
   };
 
-  const resetAccessCode = () => {
-    toast.success("Access code reset.");
-  };
+  const resetAccessCode = useCallback(async () => {
+    if (!selectedFormGroupId) return toast.error("No form group selected.");
+    const response = await signatoryControllerResetFormGroupCode({
+      formGroupId: selectedFormGroupId,
+    });
+    const code = response.code;
 
-  const clearStudentList = () => {
+    // This updates the cached value so it reflects properly
+    // This is a very common pattern, so find a way to make this easy to replicate
+    queryClient.setQueryData<SignatoryControllerGetSignatoryFormGroupsQueryResult>(
+      getSignatoryControllerGetSignatoryFormGroupsQueryKey(),
+      (current) => {
+        if (!current) return current;
+
+        return {
+          ...current,
+          formGroups: current.formGroups.map((formGroup) =>
+            formGroup.id === selectedFormGroupId ? { ...formGroup, code } : formGroup
+          ),
+        };
+      }
+    );
+
+    toast.success("Access code reset.");
+  }, [queryClient, selectedFormGroupId]);
+
+  const clearStudentList = useCallback(async () => {
+    if (!selectedFormGroupId) return toast.error("No form group selected.");
+    await signatoryControllerClearFormGroupMembers({ formGroupId: selectedFormGroupId });
     toast.success("Student list cleared.");
-  };
+  }, [selectedFormGroupId]);
 
   if (loading || profile.loading) {
     return <Loader>Loading...</Loader>;

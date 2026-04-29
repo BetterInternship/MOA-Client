@@ -27,10 +27,13 @@ import type {
   BaseResponse,
   CreateSignatoryResponse,
   ErrorResponse,
+  FormGroupIdDto,
+  FormGroupRemoveMemberDto,
   GetSignatoryFormSettingsRequest,
   GetSignatoryFormSettingsResponse,
   SetSignatoryFormSettingsRequest,
   SignatoryFormGroupMembersResponse,
+  SignatoryFormGroupsResetCodeResponse,
   SignatoryFormGroupsResponse,
   SignatorySelfResponse,
   SignatorySignedFormsResponse,
@@ -996,6 +999,237 @@ export function useSignatoryControllerGetSignatoryFormGroupsSuspense<
   return query;
 }
 
+export const signatoryControllerResetFormGroupCode = (
+  formGroupIdDto: FormGroupIdDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<SignatoryFormGroupsResetCodeResponse>({
+    url: `/api/signatory/me/form-group/regenerate`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: formGroupIdDto,
+    signal,
+  });
+};
+
+export const getSignatoryControllerResetFormGroupCodeMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signatoryControllerResetFormGroupCode>>,
+    TError,
+    { data: FormGroupIdDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signatoryControllerResetFormGroupCode>>,
+  TError,
+  { data: FormGroupIdDto },
+  TContext
+> => {
+  const mutationKey = ["signatoryControllerResetFormGroupCode"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signatoryControllerResetFormGroupCode>>,
+    { data: FormGroupIdDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return signatoryControllerResetFormGroupCode(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignatoryControllerResetFormGroupCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerResetFormGroupCode>>
+>;
+export type SignatoryControllerResetFormGroupCodeMutationBody = FormGroupIdDto;
+export type SignatoryControllerResetFormGroupCodeMutationError = ErrorResponse;
+
+export const useSignatoryControllerResetFormGroupCode = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signatoryControllerResetFormGroupCode>>,
+      TError,
+      { data: FormGroupIdDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof signatoryControllerResetFormGroupCode>>,
+  TError,
+  { data: FormGroupIdDto },
+  TContext
+> => {
+  const mutationOptions = getSignatoryControllerResetFormGroupCodeMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const signatoryControllerClearFormGroupMembers = (
+  formGroupIdDto: FormGroupIdDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/signatory/me/form-group/clear`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: formGroupIdDto,
+    signal,
+  });
+};
+
+export const getSignatoryControllerClearFormGroupMembersMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signatoryControllerClearFormGroupMembers>>,
+    TError,
+    { data: FormGroupIdDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signatoryControllerClearFormGroupMembers>>,
+  TError,
+  { data: FormGroupIdDto },
+  TContext
+> => {
+  const mutationKey = ["signatoryControllerClearFormGroupMembers"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signatoryControllerClearFormGroupMembers>>,
+    { data: FormGroupIdDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return signatoryControllerClearFormGroupMembers(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignatoryControllerClearFormGroupMembersMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerClearFormGroupMembers>>
+>;
+export type SignatoryControllerClearFormGroupMembersMutationBody = FormGroupIdDto;
+export type SignatoryControllerClearFormGroupMembersMutationError = ErrorResponse;
+
+export const useSignatoryControllerClearFormGroupMembers = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signatoryControllerClearFormGroupMembers>>,
+      TError,
+      { data: FormGroupIdDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof signatoryControllerClearFormGroupMembers>>,
+  TError,
+  { data: FormGroupIdDto },
+  TContext
+> => {
+  const mutationOptions = getSignatoryControllerClearFormGroupMembersMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const signatoryControllerRemoveFormGroupMember = (
+  formGroupRemoveMemberDto: FormGroupRemoveMemberDto,
+  signal?: AbortSignal
+) => {
+  return preconfiguredAxiosFunction<BaseResponse>({
+    url: `/api/signatory/me/form-group/remove`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: formGroupRemoveMemberDto,
+    signal,
+  });
+};
+
+export const getSignatoryControllerRemoveFormGroupMemberMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signatoryControllerRemoveFormGroupMember>>,
+    TError,
+    { data: FormGroupRemoveMemberDto },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signatoryControllerRemoveFormGroupMember>>,
+  TError,
+  { data: FormGroupRemoveMemberDto },
+  TContext
+> => {
+  const mutationKey = ["signatoryControllerRemoveFormGroupMember"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signatoryControllerRemoveFormGroupMember>>,
+    { data: FormGroupRemoveMemberDto }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return signatoryControllerRemoveFormGroupMember(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignatoryControllerRemoveFormGroupMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signatoryControllerRemoveFormGroupMember>>
+>;
+export type SignatoryControllerRemoveFormGroupMemberMutationBody = FormGroupRemoveMemberDto;
+export type SignatoryControllerRemoveFormGroupMemberMutationError = ErrorResponse;
+
+export const useSignatoryControllerRemoveFormGroupMember = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signatoryControllerRemoveFormGroupMember>>,
+      TError,
+      { data: FormGroupRemoveMemberDto },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof signatoryControllerRemoveFormGroupMember>>,
+  TError,
+  { data: FormGroupRemoveMemberDto },
+  TContext
+> => {
+  const mutationOptions = getSignatoryControllerRemoveFormGroupMemberMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const signatoryControllerGetSignatoryFormGroupMembers = (
   id: string | undefined | null,
   signal?: AbortSignal
