@@ -247,13 +247,13 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="min-h-0 flex-1 overflow-auto rounded-[0.33em]">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-white">
+      <div className="min-h-0 flex-1 rounded-[0.1em] [&_[data-slot=table-container]]:h-full [&_[data-slot=table-container]]:overflow-auto">
+        <Table className="table-fixed">
+          <TableHeader className="[&_tr]:border-b-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {enableRowSelection && (
-                  <TableHead className="w-[42px]">
+                  <TableHead className="sticky top-0 z-20 w-[42px] bg-gray-100 shadow-[inset_0_-2px_0_theme(colors.gray.300)]">
                     <Checkbox
                       checked={
                         table.getIsAllPageRowsSelected() ||
@@ -268,22 +268,42 @@ export function DataTable<TData, TValue>({
                   <TableHead
                     key={header.id}
                     className={cn(
-                      header.column.getCanSort() && "hover:bg-muted/50 cursor-pointer select-none"
+                      "font-heading sticky top-0 z-20 max-w-0 bg-gray-100 tracking-tight text-gray-600 shadow-[inset_0_-2px_0_theme(colors.gray.300)] transition-colors duration-300",
+                      header.column.getCanSort() && "cursor-pointer select-none hover:bg-gray-200",
+                      header.column.getIsSorted() && "bg-gray-50 hover:bg-gray-200"
                     )}
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {header.isPlaceholder ? null : (
-                      <div className="flex items-center gap-1">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getCanSort() && !header.column.getIsSorted() && (
-                          <ChevronsUpDown className="text-muted-foreground/40 mt-0.5 h-4 w-4" />
-                        )}
-                        {header.column.getIsSorted() === "asc" && (
-                          <ChevronUp className="text-muted-foreground mt-0.5 h-4 w-4" />
-                        )}
-                        {header.column.getIsSorted() === "desc" && (
-                          <ChevronDown className="text-muted-foreground mt-0.5 h-4 w-4" />
-                        )}
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-1">
+                          <span
+                            className={cn(
+                              "font-demibold min-w-0 truncate rounded px-1.5 py-0.5 transition-colors duration-300",
+                              header.column.getIsSorted() && "text-primary"
+                            )}
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                          </span>
+                          {header.column.getCanSort() && !header.column.getIsSorted() && (
+                            <ChevronsUpDown className="text-muted-foreground/40 mt-0.5 h-4 w-4 shrink-0" />
+                          )}
+                          {header.column.getIsSorted() === "asc" && (
+                            <ChevronUp className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                          )}
+                          {header.column.getIsSorted() === "desc" && (
+                            <ChevronDown className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                          )}
+                        </div>
+                        <span
+                          className={cn(
+                            "bg-primary/85 mr-2 h-3 w-3 shrink-0 rounded-full transition-all duration-300 ease-out",
+                            header.column.getIsSorted()
+                              ? "scale-100 opacity-100"
+                              : "scale-50 opacity-0"
+                          )}
+                          aria-hidden="true"
+                        />
                       </div>
                     )}
                   </TableHead>
@@ -296,7 +316,7 @@ export function DataTable<TData, TValue>({
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
-                  className="even:bg-muted/70 odd:bg-white"
+                  className="even:bg-muted/40 hover:bg-primary/10 odd:bg-white"
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
@@ -310,8 +330,10 @@ export function DataTable<TData, TValue>({
                     </TableCell>
                   )}
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <TableCell key={cell.id} className="max-w-0">
+                      <div className="min-w-0 truncate px-1.5">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
                     </TableCell>
                   ))}
                 </TableRow>
@@ -320,7 +342,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={table.getVisibleLeafColumns().length + (enableRowSelection ? 1 : 0)}
-                  className="h-24 text-center"
+                  className="h-24 px-1.5 text-center"
                 >
                   No results.
                 </TableCell>
@@ -332,7 +354,7 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination */}
       <div className="z-10 flex shrink-0 flex-col items-center justify-between gap-1 border-t bg-white py-1 sm:flex-row">
-        <div className="text-muted-foreground text-sm">
+        <div className="text-muted-foreground px-1.5 text-sm">
           {table.getFilteredRowModel().rows.length}{" "}
           {table.getFilteredRowModel().rows.length === 1 ? rowLabelSingular : rowLabelPlural}
         </div>
