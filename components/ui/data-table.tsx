@@ -194,6 +194,24 @@ export function DataTable<TData, TValue>({
     return selectedSearchKey ? [selectedSearchKey] : searchKeys;
   }, [selectedSearchKey, searchKeys]);
 
+  const filteredRowCount = table.getFilteredRowModel().rows.length;
+  const indexColumnWidthRem = Math.max(
+    3.25,
+    String(Math.max(filteredRowCount, 1)).length * 0.625 + 2
+  );
+  const indexColumnStyle: React.CSSProperties = {
+    width: `${indexColumnWidthRem}rem`,
+    minWidth: `${indexColumnWidthRem}rem`,
+    maxWidth: `${indexColumnWidthRem}rem`,
+  };
+  const tableMinWidthRem = Math.max(
+    48,
+    table.getVisibleLeafColumns().length * 12 +
+      (enableRowSelection ? 2.75 : 0) +
+      indexColumnWidthRem
+  );
+  const { pageIndex, pageSize } = table.getState().pagination;
+
   return (
     <div className={cn("flex min-h-0 flex-col gap-3", className)}>
       {/* Toolbar */}
@@ -238,20 +256,19 @@ export function DataTable<TData, TValue>({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          {toolbarActions}
-          {/* <Button variant="ghost" size="sm" onClick={resetFilters} disabled={!isFiltered}>
-            Clear
-          </Button> */}
-        </div>
+        <div className="flex items-center gap-2">{toolbarActions}</div>
       </div>
 
       {/* Table */}
       <div className="min-h-0 flex-1 rounded-[0.1em] [&_[data-slot=table-container]]:h-full [&_[data-slot=table-container]]:overflow-auto">
-        <Table className="table-fixed">
+        <Table className="table-fixed" style={{ minWidth: `${tableMinWidthRem}rem` }}>
           <TableHeader className="[&_tr]:border-b-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
+                <TableHead
+                  className="sticky top-0 left-0 z-30 bg-gray-100 pr-2 text-right text-gray-600 shadow-[inset_-2px_0_0_theme(colors.gray.300),inset_0_-2px_0_theme(colors.gray.300)]"
+                  style={indexColumnStyle}
+                ></TableHead>
                 {enableRowSelection && (
                   <TableHead className="sticky top-0 z-20 w-[42px] bg-gray-100 shadow-[inset_0_-2px_0_theme(colors.gray.300)]">
                     <Checkbox
@@ -314,12 +331,29 @@ export function DataTable<TData, TValue>({
 
           <TableBody>
             {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map((row, rowIndex) => (
                 <TableRow
-                  className="even:bg-muted/40 hover:bg-primary/10 odd:bg-white"
+                  className="group even:bg-muted/40 hover:bg-primary/10 odd:bg-white"
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
+                  <TableCell
+                    className={cn(
+                      "text-muted-foreground sticky left-0 z-10 pr-2 text-right font-medium shadow-[inset_-2px_0_0_theme(colors.gray.200)]",
+                      row.getIsSelected()
+                        ? "bg-muted"
+                        : rowIndex % 2 === 0
+                          ? "bg-white"
+                          : "bg-gray-50"
+                    )}
+                    style={indexColumnStyle}
+                  >
+                    <span
+                      className="absolute top-1/2 left-1.5 ml-1 h-2.5 w-2.5 -translate-y-1/2 scale-50 rounded-full bg-gray-400 opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100"
+                      aria-hidden="true"
+                    />
+                    <span>{pageIndex * pageSize + rowIndex + 1}</span>
+                  </TableCell>
                   {enableRowSelection && (
                     <TableCell className="w-[42px]">
                       <Checkbox
@@ -341,7 +375,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={table.getVisibleLeafColumns().length + (enableRowSelection ? 1 : 0)}
+                  colSpan={table.getVisibleLeafColumns().length + (enableRowSelection ? 1 : 0) + 1}
                   className="h-24 px-1.5 text-center"
                 >
                   No results.
