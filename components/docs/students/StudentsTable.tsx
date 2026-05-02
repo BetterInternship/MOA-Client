@@ -47,7 +47,8 @@ function createColumns(
     {
       accessorKey: "joinedAt",
       header: "Joined At",
-      cell: (info) => formatTimeAgo(info.getValue() as string),
+      cell: (info) =>
+        info.getValue() ? formatTimeAgo(info.getValue() as string) : "a long time ago",
     },
     {
       id: "actions",
