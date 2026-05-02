@@ -93,9 +93,9 @@ export default function DocsStudentsPage() {
   const sortedFormGroupMembers = formGroupMembers
     .map((formGroupMember) => ({
       ...formGroupMember,
-      joinedAt: formGroupMember.joinedAt ?? "a long time ago",
+      joinedAt: Date.parse(formGroupMember.joinedAt) || 0,
     }))
-    .toSorted((a, b) => a.joinedAt.localeCompare(b.joinedAt));
+    .toSorted((a, b) => b.joinedAt - a.joinedAt);
   const selectedFormGroup = useMemo(() => {
     return formGroups.find((group) => group.id === selectedFormGroupId) ?? null;
   }, [formGroups, selectedFormGroupId]);

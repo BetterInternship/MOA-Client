@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { formatDate } from "date-fns";
 import { X } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,8 @@ function createColumns(
     {
       accessorKey: "joinedAt",
       header: "Joined At",
-      cell: (info) => formatTimeAgo(info.getValue() as string),
+      cell: (info) =>
+        info.getValue() ? formatTimeAgo(info.getValue() as string) : "a long time ago",
     },
     {
       id: "actions",
