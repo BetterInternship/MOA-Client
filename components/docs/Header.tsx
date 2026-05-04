@@ -46,8 +46,6 @@ export default function DocsTopbarUser() {
     ? pathname.slice("/docs".length)
     : (pathname ?? "/");
 
-  console.log(profile, profile.coordinatorId);
-
   const logoutMutation = useMutation({
     mutationFn: logoutSignatory,
     onSuccess: async () => {
@@ -90,10 +88,6 @@ export default function DocsTopbarUser() {
       document.body.style.overflow = "";
     };
   }, [isDrawerOpen]);
-
-  if (profile.loading) {
-    return <div className="bg-muted h-9 w-24 animate-pulse rounded" />;
-  }
 
   if (!isLoggedIn) {
     return (

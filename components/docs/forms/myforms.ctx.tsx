@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-18 15:17:08
- * @ Modified time: 2026-01-09 11:30:04
+ * @ Modified time: 2026-05-04 17:00:13
  * @ Description:
  *
  * These are the forms a user has generated or initiated.
@@ -10,6 +10,7 @@
 "use client";
 
 import { getAllSignedForms } from "@/app/api/forms.api";
+import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { IFormSigningParty } from "@betterinternship/core/forms";
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
@@ -39,6 +40,7 @@ const MyFormsContext = createContext<IMyForms>({} as IMyForms);
 export const useMyForms = () => useContext<IMyForms>(MyFormsContext);
 
 export const MyFormsContextProvider = ({ children }: { children: React.ReactNode }) => {
+  const profile = useSignatoryProfile();
   const {
     data: forms,
     isLoading,
@@ -50,6 +52,7 @@ export const MyFormsContextProvider = ({ children }: { children: React.ReactNode
       return res?.forms ?? [];
     },
     // ! place this in env
+    enabled: !profile.loading && !!profile.email,
     staleTime: 1 * 60 * 1000,
     gcTime: 1 * 60 * 1000,
   });

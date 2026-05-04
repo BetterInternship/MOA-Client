@@ -10,8 +10,8 @@ import MyFormsTable from "@/components/docs/dashboard/FormTable";
 import { cn } from "@/lib/utils";
 
 export default function DocsDashboardPage() {
-  const { forms, loading, error } = useMyForms();
   const profile = useSignatoryProfile();
+  const { forms, loading, error } = useMyForms();
   const isLoggedIn = Boolean(profile?.email);
   const isCoordinator = Boolean(profile.coordinatorId);
   const [activeTab, setActiveTab] = useState("needs_signing");

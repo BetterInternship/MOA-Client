@@ -1,7 +1,7 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-30 07:06:04
- * @ Modified time: 2026-01-01 00:55:01
+ * @ Modified time: 2026-05-04 16:28:49
  * @ Description:
  *
  * Makes it easier to manage signatory account state across files.
@@ -36,21 +36,17 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
   const signatoryProfile = useQuery({
     queryKey: ["my-profile"],
     queryFn: async () => await getSignatorySelf(),
-    staleTime: 60_000,
-    retry: (failureCount, error: any) => {
-      // Don't retry on 401 (Unauthorized) - user is logged out
-      if (error?.status === 401 || error?.response?.status === 401) {
-        return false;
-      }
-      // Retry up to 3 times for other errors
-      return failureCount < 3;
-    },
+    staleTime: Infinity,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   useEffect(() => {
     const profile = signatoryProfile.data?.profile;
 
-    if (signatoryProfile.isLoading || signatoryProfile.isFetching) {
+    if (signatoryProfile.isLoading) {
       setSignatoryContext((prev) => ({
         ...prev,
         loading: true,
@@ -63,8 +59,7 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
       const queryError = signatoryProfile.error as Error | null;
       const message = (queryError?.message || "").toLowerCase();
       const isUnauthorizedError =
-        message.includes("unauthorized") ||
-        message.includes("invalid or expired signatory token");
+        message.includes("unauthorized") || message.includes("invalid or expired signatory token");
 
       if (isUnauthorizedError) {
         setSignatoryContext({
@@ -80,9 +75,10 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
     }
 
     if (!profile) {
-      // Sometimes responses can be empty due to browser cache/proxy quirks.
-      // Keep prior identity and avoid forcing logout on ambiguous state.
-      setSignatoryContext((prev) => ({ ...prev, loading: false }));
+      setSignatoryContext({
+        loading: false,
+        unauthorized: true,
+      } as ISignatoryProfile);
     } else if (profile) {
       setSignatoryContext({
         ...profile,
@@ -97,7 +93,6 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
     signatoryProfile.status,
     signatoryProfile.error,
     signatoryProfile.isLoading,
-    signatoryProfile.isFetching,
   ]);
 
   return (
