@@ -8,6 +8,7 @@ import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
 import { cn } from "@/lib/utils";
+import { Loader } from "@/components/ui/loader";
 
 export default function DocsDashboardPage() {
   const profile = useSignatoryProfile();
@@ -78,7 +79,7 @@ export default function DocsDashboardPage() {
   };
 
   if (profile.loading || !isLoggedIn) {
-    return null;
+    return <Loader>Loading dashboard...</Loader>;
   }
 
   return (
