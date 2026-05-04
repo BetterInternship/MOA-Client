@@ -21,22 +21,22 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex flex-col gap-4 justify-center items-center min-h-screen">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
       <Card className="flex flex-col gap-4 p-12">
-        <Image src={errorImg} alt="Error" className="w-96 mx-auto" />
-        <div className="flex gap-3 items-center">
+        <Image src={errorImg} alt="Error" className="mx-auto w-96" />
+        <div className="flex items-center gap-3">
           <HeaderIcon icon={TriangleAlert} />
           <HeaderText>Something went wrong.</HeaderText>
         </div>
         <span>
           Sorry for the inconvenience. Please{" "}
-          <a href="https://www.facebook.com/betterinternship.sherwin">
-            contact us for support
-          </a>
-          .
+          <a href="https://www.facebook.com/betterinternship.sherwin">contact us for support</a>.
         </span>
         {error && (
-          <span className="text-muted-foreground">Error: {error.message}</span>
+          <div className="flex flex-col gap-4">
+            <span className="text-muted-foreground">Error: {error.message}</span>
+            <span className="text-muted-foreground">Trace: {error.stack}</span>
+          </div>
         )}
         <div className="flex justify-between">
           <Button
