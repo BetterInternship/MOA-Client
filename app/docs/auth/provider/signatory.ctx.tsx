@@ -1,14 +1,14 @@
 /**
  * @ Author: BetterInternship
  * @ Create Time: 2025-12-30 07:06:04
- * @ Modified time: 2026-05-04 16:28:49
+ * @ Modified time: 2026-05-04 23:31:28
  * @ Description:
  *
  * Makes it easier to manage signatory account state across files.
  */
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useIsRestoring, useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getSignatorySelf } from "@/app/api/docs.api";
 
 interface ISignatoryProfile {
@@ -27,7 +27,18 @@ const SignatoryProfileContext = createContext({} as ISignatoryProfile);
 
 export const useSignatoryProfile = () => useContext(SignatoryProfileContext);
 
+function isUnauthorizedError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  return (
+    message.includes("unauthorized") ||
+    message.includes("invalid or expired signatory token") ||
+    message.includes("401") ||
+    message.includes("403")
+  );
+}
+
 export const SignatoryProfileContextProvider = ({ children }: { children: React.ReactNode }) => {
+  const isRestoring = useIsRestoring();
   const [signatoryContext, setSignatoryContext] = useState<ISignatoryProfile>({
     loading: true,
     unauthorized: false,
@@ -41,12 +52,14 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    placeholderData: keepPreviousData,
+    retry: (failureCount, error) => !isUnauthorizedError(error) && failureCount < 1,
   });
 
   useEffect(() => {
     const profile = signatoryProfile.data?.profile;
 
-    if (signatoryProfile.isLoading) {
+    if (isRestoring || signatoryProfile.isPending || (signatoryProfile.isFetching && !profile)) {
       setSignatoryContext((prev) => ({
         ...prev,
         loading: true,
@@ -56,12 +69,7 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
     }
 
     if (signatoryProfile.status === "error") {
-      const queryError = signatoryProfile.error as Error | null;
-      const message = (queryError?.message || "").toLowerCase();
-      const isUnauthorizedError =
-        message.includes("unauthorized") || message.includes("invalid or expired signatory token");
-
-      if (isUnauthorizedError) {
+      if (isUnauthorizedError(signatoryProfile.error)) {
         setSignatoryContext({
           loading: false,
           unauthorized: true,
@@ -75,10 +83,11 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
     }
 
     if (!profile) {
-      setSignatoryContext({
-        loading: false,
-        unauthorized: true,
-      } as ISignatoryProfile);
+      setSignatoryContext((prev) => ({
+        ...prev,
+        loading: true,
+        unauthorized: false,
+      }));
     } else if (profile) {
       setSignatoryContext({
         ...profile,
@@ -89,10 +98,12 @@ export const SignatoryProfileContextProvider = ({ children }: { children: React.
       });
     }
   }, [
+    isRestoring,
     signatoryProfile.data,
     signatoryProfile.status,
     signatoryProfile.error,
-    signatoryProfile.isLoading,
+    signatoryProfile.isPending,
+    signatoryProfile.isFetching,
   ]);
 
   return (
