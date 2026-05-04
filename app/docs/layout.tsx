@@ -44,8 +44,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isEditorRoute = pathname?.includes("/editor") ?? false;
   const isFieldsRoute = pathname?.endsWith("/fields") ?? false;
+  const isLoginRoute = pathname === "/login" || pathname === "/docs/login";
   const isSignRoute = pathname === "/sign" || pathname === "/docs/sign";
-  const showHeader = !isEditorRoute && !isSignRoute;
+  const showHeader = !isEditorRoute && !isLoginRoute && !isSignRoute;
 
   return (
     <Providers>
