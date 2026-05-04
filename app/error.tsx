@@ -33,6 +33,7 @@ export default function Error({
         {error && (
           <div className="flex flex-col gap-4">
             <span className="text-muted-foreground">Error: {error.message}</span>
+            <span className="text-muted-foreground text-xs">Error: {error.stack}</span>
           </div>
         )}
         <div className="flex justify-between">
