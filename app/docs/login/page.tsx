@@ -124,6 +124,18 @@ export default function DocsLoginPage() {
   const [resentAt, setResentAt] = useState<number | null>(null);
   const [resendWait, setResendWait] = useState(0);
 
+  useEffect(() => {
+    if (step !== "otp") return;
+
+    const confirmRefresh = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", confirmRefresh);
+    return () => window.removeEventListener("beforeunload", confirmRefresh);
+  }, [step]);
+
   // countdown for resend
   useEffect(() => {
     if (!resentAt) return;

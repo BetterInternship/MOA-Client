@@ -52,6 +52,7 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 /**
  * Reusable table shell used by registry screens.
@@ -84,6 +85,62 @@ interface DataTableProps<TData, TValue> {
   /** Optional: className for wrapper */
   className?: string;
   onSelectionChange?: (rows: TData[]) => void;
+}
+
+function TruncatedCellValue({
+  children,
+  tooltip,
+}: {
+  children: React.ReactNode;
+  tooltip?: string;
+}) {
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [isTruncated, setIsTruncated] = React.useState(false);
+
+  React.useEffect(() => {
+    const element = textRef.current;
+    if (!element) return;
+
+    const checkTruncation = () => {
+      setIsTruncated(element.scrollWidth > element.clientWidth);
+    };
+
+    checkTruncation();
+
+    const resizeObserver = new ResizeObserver(checkTruncation);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, [children]);
+
+  const content = (
+    <div ref={textRef} className="min-w-0 truncate px-1.5">
+      {children}
+    </div>
+  );
+
+  if (!tooltip || !isTruncated) return content;
+
+  return (
+    <Tooltip delayDuration={700}>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <TooltipContent
+        arrowClassName="fill-white"
+        className="max-w-xs border border-gray-200 bg-white px-2 py-1 text-xs font-normal text-gray-400 shadow-sm"
+        side="top"
+        sideOffset={1}
+      >
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function getCellTooltipText(value: unknown) {
+  if (value == null) return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return undefined;
 }
 
 export function DataTable<TData, TValue>({
@@ -365,9 +422,9 @@ export function DataTable<TData, TValue>({
                   )}
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="max-w-0">
-                      <div className="min-w-0 truncate px-1.5">
+                      <TruncatedCellValue tooltip={getCellTooltipText(cell.getValue())}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </div>
+                      </TruncatedCellValue>
                     </TableCell>
                   ))}
                 </TableRow>
