@@ -33,6 +33,7 @@ import {
   fitWrappedText,
   resolvePreviewFont,
 } from "@/lib/form-previewer-rendering";
+import { getSignatureImageFieldKey, parseSignatureImageValue } from "@/lib/signature-value";
 
 type DefaultFieldVisibility = "all" | "mine";
 type FieldStatus = "empty" | "filled" | "signed";
@@ -74,6 +75,7 @@ interface FormPreviewPdfDisplayProps {
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const SIGNATURE_IMAGE_OVERFLOW_SCALE = 1.8;
 
 /**
  * PDF display component that shows form fields as boxes overlaid on the PDF
@@ -560,12 +562,25 @@ const PdfPageOverlay = ({
           const widthPixels = w * scale;
           const heightPixels = h * scale;
 
-          const ownerMeta = ownerMetaByFieldId.get(field.id);
+          const ownerMeta =
+            ownerMetaByFieldId.get(field.id) ??
+            ({
+              ownerRoleId: "unknown",
+              ownerGroupId: "other",
+              ownerLabel: "Unassigned",
+              ownerColorHex: "#94a3b8",
+              isMine: false,
+              isKnownOwner: false,
+            } satisfies OwnerMeta);
           const canRevealValue =
             !showOwnership || ownerMeta?.isMine || fieldVisibility === "all";
           const rawValue = canRevealValue ? getPreviewRawValue(values, fieldName) : "";
+          const signatureImage =
+            field.type === "signature"
+              ? parseSignatureImageValue(values[getSignatureImageFieldKey(fieldName)])
+              : null;
           const valueStr = canRevealValue ? resolveDisplayValue(field, rawValue) : "";
-          const isFilled = valueStr.trim().length > 0;
+          const isFilled = !!signatureImage || valueStr.trim().length > 0;
 
           // Get alignment and wrapping from field schema
           const align_h = field.align_h ?? "left";
@@ -696,7 +711,23 @@ const PdfPageOverlay = ({
                   align_h === "center" ? "center" : align_h === "right" ? "flex-end" : "flex-start",
               }}
             >
-              {isFilled && (
+              {signatureImage ? (
+                <div
+                  className="pointer-events-none absolute top-1/2 left-1/2 flex items-center justify-center"
+                  style={{
+                    width: `${Math.max(widthPixels * SIGNATURE_IMAGE_OVERFLOW_SCALE, 4)}px`,
+                    height: `${Math.max(heightPixels * SIGNATURE_IMAGE_OVERFLOW_SCALE, 4)}px`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                >
+                  <img
+                    src={signatureImage.dataUrl}
+                    alt="Signature"
+                    className="h-full w-full object-contain"
+                    draggable={false}
+                  />
+                </div>
+              ) : isFilled ? (
                 <div
                   className="text-black"
                   style={{
@@ -720,7 +751,7 @@ const PdfPageOverlay = ({
                 >
                   {displayLines.length > 0 ? displayLines.join("\n") : valueStr}
                 </div>
-              )}
+              ) : null}
               {showNonOwnedTooltip ? (
                 <AssignedOwnerTooltip ownerLabel={ownerMeta.ownerLabel} />
               ) : null}

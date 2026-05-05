@@ -20,20 +20,30 @@ import {
 } from "./EditForm";
 import { AutocompleteTreeMulti, TreeOption } from "./autocomplete";
 import { ClientField } from "@betterinternship/core/forms";
-import { useEffect, useState } from "react";
-import { Eye } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Eye, ImageUp, PenLine, Trash2, Type } from "lucide-react";
+import {
+  createSignatureImageValue,
+  getSignatureImageFieldKey,
+  parseSignatureImageValue,
+  serializeSignatureImageValue,
+  type SignatureImageValue,
+} from "@/lib/signature-value";
 
 export const FieldRenderer = <T extends any[]>({
   field,
   value = "",
   onChange,
+  onAuxValueChange,
   error,
   onBlur,
+  allValues,
   isPhantom = false,
 }: {
   field: ClientField<T>;
   value: string;
   onChange: (v: any) => void;
+  onAuxValueChange?: (key: string, value: any) => void;
   error?: string;
   onBlur?: (nextValue?: unknown) => void;
   allValues?: Record<string, string>;
@@ -141,7 +151,9 @@ export const FieldRenderer = <T extends any[]>({
         value={value}
         TooltipContent={TooltipLabel}
         onChange={onChange}
+        onAuxValueChange={onAuxValueChange}
         onBlur={onBlur}
+        allValues={allValues}
       />
     );
   }
@@ -422,33 +434,307 @@ const FieldRendererSignature = <T extends any[]>({
   value,
   TooltipContent,
   onChange,
+  onAuxValueChange,
   onBlur,
+  allValues = {},
 }: {
   field: ClientField<T>;
   value: string;
   TooltipContent: () => React.ReactNode;
   onChange: (v: string | number) => void;
+  onAuxValueChange?: (key: string, value: any) => void;
   onBlur?: (nextValue?: unknown) => void;
+  allValues?: Record<string, string>;
 }) => {
   const signContext = useSignContext();
   const [checked, setChecked] = useState(false);
+  const imageFieldKey = getSignatureImageFieldKey(field.field);
+  const currentSignatureImage = parseSignatureImageValue(allValues[imageFieldKey]);
+  const [mode, setMode] = useState<"type" | "upload" | "draw">(
+    currentSignatureImage?.source === "draw"
+      ? "draw"
+      : currentSignatureImage?.source === "upload"
+        ? "upload"
+        : "type"
+  );
+  const [typedName, setTypedName] = useState(value || "");
+  const [uploadError, setUploadError] = useState("");
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawingRef = useRef(false);
 
   // ! PUT THIS SOMEWHERE ELSE
   useEffect(() => {
     signContext.setHasAgreedForSignature(field.field, value, checked);
   }, [checked, value]);
 
+  useEffect(() => {
+    const parsed = parseSignatureImageValue(allValues[imageFieldKey]);
+    if (parsed) {
+      setMode(parsed.source);
+    }
+
+    setTypedName(value || "");
+  }, [allValues, imageFieldKey, value]);
+
+  const emitSignatureImage = (nextImage: SignatureImageValue) => {
+    onAuxValueChange?.(imageFieldKey, serializeSignatureImageValue(nextImage));
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const drawImageOnCanvas = (dataUrl: string) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    const image = new Image();
+    image.onload = () => {
+      clearCanvas();
+      const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+      const width = image.width * scale;
+      const height = image.height * scale;
+      const x = (canvas.width - width) / 2;
+      const y = (canvas.height - height) / 2;
+      ctx.drawImage(image, x, y, width, height);
+    };
+    image.src = dataUrl;
+  };
+
+  useEffect(() => {
+    if (mode !== "draw") return;
+    window.requestAnimationFrame(() => {
+      const latestImage = parseSignatureImageValue(allValues[imageFieldKey]);
+      if (latestImage?.source === "draw") {
+        drawImageOnCanvas(latestImage.dataUrl);
+        return;
+      }
+      clearCanvas();
+    });
+  }, [allValues, imageFieldKey, mode]);
+
+  const handleTypedNameChange = (nextName: string) => {
+    setTypedName(nextName);
+    onChange(nextName);
+  };
+
+  const clearSignatureImage = () => {
+    setUploadError("");
+    clearCanvas();
+    onAuxValueChange?.(imageFieldKey, "");
+  };
+
+  const handleUpload = (file: File | undefined) => {
+    if (!file) return;
+
+    if (file.type !== "image/png" && file.type !== "image/jpeg") {
+      setUploadError("Please upload a PNG or JPEG signature image.");
+      return;
+    }
+
+    const mimeType = file.type as "image/png" | "image/jpeg";
+    setUploadError("");
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      if (!dataUrl) return;
+      emitSignatureImage(
+        createSignatureImageValue({
+          source: "upload",
+          dataUrl,
+          mimeType,
+        })
+      );
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const exportCanvasSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    emitSignatureImage(
+      createSignatureImageValue({
+        source: "draw",
+        dataUrl: canvas.toDataURL("image/png"),
+        mimeType: "image/png",
+      })
+    );
+  };
+
+  const getCanvasPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  };
+
+  const handleDrawStart = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    const point = getCanvasPoint(event);
+    if (!canvas || !ctx || !point) return;
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    isDrawingRef.current = true;
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(point.x, point.y);
+  };
+
+  const handleDrawMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+    const ctx = canvasRef.current?.getContext("2d");
+    const point = getCanvasPoint(event);
+    if (!ctx || !point) return;
+
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+  };
+
+  const handleDrawEnd = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+
+    isDrawingRef.current = false;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    exportCanvasSignature();
+  };
+
+  const signatureImage = parseSignatureImageValue(allValues[imageFieldKey]);
+  const ModeButton = ({
+    active,
+    children,
+    onClick,
+  }: {
+    active: boolean;
+    children: React.ReactNode;
+    onClick: () => void;
+  }) => (
+    <button
+      type="button"
+      className={`inline-flex h-8 items-center gap-1.5 rounded-[0.33em] border px-2.5 text-xs font-medium transition-colors ${
+        active
+          ? "border-slate-900 bg-slate-900 text-white"
+          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+
   return (
     <div className="space-y-1.5 rounded-[0.33em] border border-gray-300 p-4 px-5">
       <FormInput
         required={true}
         label={`${field.label} (Signatory Full Name)`}
-        value={value ?? ""}
-        setter={(v) => onChange(v)}
+        value={typedName ?? ""}
+        setter={handleTypedNameChange}
         tooltip={field.tooltip_label}
         className="w-full"
-        onBlur={() => onBlur?.()}
+        onBlur={() => onBlur?.(value)}
       />
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <ModeButton
+          active={mode === "type"}
+          onClick={() => {
+            setMode("type");
+            clearSignatureImage();
+          }}
+        >
+          <Type className="h-3.5 w-3.5" />
+          Type
+        </ModeButton>
+        <label
+          className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[0.33em] border px-2.5 text-xs font-medium transition-colors ${
+            mode === "upload"
+              ? "border-slate-900 bg-slate-900 text-white"
+              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          <ImageUp className="h-3.5 w-3.5" />
+          Upload
+          <input
+            type="file"
+            accept="image/png,image/jpeg"
+            className="hidden"
+            onChange={(event) => {
+              setMode("upload");
+              handleUpload(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+        </label>
+        <ModeButton
+          active={mode === "draw"}
+          onClick={() => {
+            setMode("draw");
+            setUploadError("");
+          }}
+        >
+          <PenLine className="h-3.5 w-3.5" />
+          Draw
+        </ModeButton>
+        {signatureImage ? (
+          <button
+            type="button"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[0.33em] border border-red-200 bg-white text-red-600 transition-colors hover:bg-red-50"
+            onClick={clearSignatureImage}
+            title="Clear signature image"
+            aria-label="Clear signature image"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+      </div>
+      {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
+      {mode === "upload" && signatureImage ? (
+        <div className="mt-3 flex h-32 items-center justify-center rounded-[0.33em] border border-slate-200 bg-white p-2">
+          <img
+            src={signatureImage.dataUrl}
+            alt="Uploaded signature"
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
+      ) : null}
+      {mode === "draw" ? (
+        <div className="mt-3 space-y-2">
+          <canvas
+            ref={canvasRef}
+            width={720}
+            height={220}
+            className="h-36 w-full touch-none rounded-[0.33em] border border-slate-300 bg-white"
+            onPointerDown={handleDrawStart}
+            onPointerMove={handleDrawMove}
+            onPointerUp={handleDrawEnd}
+            onPointerCancel={() => {
+              isDrawingRef.current = false;
+            }}
+          />
+          <button
+            type="button"
+            className="rounded-[0.33em] border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            onClick={() => {
+              clearCanvas();
+              clearSignatureImage();
+            }}
+          >
+            Clear drawing
+          </button>
+        </div>
+      ) : null}
       <div className="mt-5 flex flex-row" onClick={() => setChecked(!checked)}>
         <div className="mt-1 mr-2">
           <FormCheckbox checked={checked} setter={setChecked}></FormCheckbox>
