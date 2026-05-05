@@ -8,10 +8,11 @@ import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
 import { cn } from "@/lib/utils";
+import { Loader } from "@/components/ui/loader";
 
 export default function DocsDashboardPage() {
-  const { forms, loading, error } = useMyForms();
   const profile = useSignatoryProfile();
+  const { forms, loading, error } = useMyForms();
   const isLoggedIn = Boolean(profile?.email);
   const isCoordinator = Boolean(profile.coordinatorId);
   const [activeTab, setActiveTab] = useState("needs_signing");
@@ -78,11 +79,11 @@ export default function DocsDashboardPage() {
   };
 
   if (profile.loading || !isLoggedIn) {
-    return null;
+    return <Loader>Loading dashboard...</Loader>;
   }
 
   return (
-    <div className="max-w-8xl container mx-auto flex h-full min-h-0 flex-col gap-6 overflow-hidden px-4 pt-6 pb-0 sm:px-10 sm:pt-16">
+    <div className="max-w-8xl container mx-auto flex h-full min-h-0 flex-col gap-6 overflow-hidden px-4 pt-6 pb-4 sm:px-10 sm:pt-16 sm:pb-6">
       {/* Header */}
       <div className="shrink-0 space-y-2">
         <div className="flex items-center gap-3">
@@ -118,7 +119,7 @@ export default function DocsDashboardPage() {
                       "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] border border-transparent px-3 py-2 text-sm whitespace-nowrap transition-colors",
                       isActive
                         ? "border-primary bg-primary text-white shadow-sm"
-                        : "text-slate-600 hover:border-primary/20 hover:bg-primary/10 hover:text-primary"
+                        : "hover:border-primary/20 hover:bg-primary/10 hover:text-primary text-slate-600"
                     )}
                   >
                     <IconComponent
@@ -144,7 +145,7 @@ export default function DocsDashboardPage() {
                   "flex w-fit shrink-0 items-center gap-2 rounded-[0.33em] border border-transparent px-3 py-2 text-sm whitespace-nowrap transition-colors",
                   activeTab === allFormsTab.id
                     ? "border-primary bg-primary text-white shadow-sm"
-                    : "text-slate-600 hover:border-primary/20 hover:bg-primary/10 hover:text-primary"
+                    : "hover:border-primary/20 hover:bg-primary/10 hover:text-primary text-slate-600"
                 )}
               >
                 <Newspaper

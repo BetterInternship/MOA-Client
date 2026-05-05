@@ -124,6 +124,18 @@ export default function DocsLoginPage() {
   const [resentAt, setResentAt] = useState<number | null>(null);
   const [resendWait, setResendWait] = useState(0);
 
+  useEffect(() => {
+    if (step !== "otp") return;
+
+    const confirmRefresh = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", confirmRefresh);
+    return () => window.removeEventListener("beforeunload", confirmRefresh);
+  }, [step]);
+
   // countdown for resend
   useEffect(() => {
     if (!resentAt) return;
@@ -235,14 +247,14 @@ export default function DocsLoginPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-lg px-4 pt-10 sm:px-10 sm:pt-16">
+    <div className="container mx-auto flex h-full max-w-lg flex-col overflow-hidden px-4 pt-10 sm:px-10 sm:pt-16">
       <div className="mb-6 space-y-4 sm:mb-8">
         <div className="flex items-center gap-3">
           <HeaderIcon icon={Lock} />
-          <HeaderText>Sign in to Documents</HeaderText>
+          <HeaderText>Sign in to Docs</HeaderText>
         </div>
         <p className="text-sm text-gray-600 sm:text-base">
-          Use your email to receive a one-time passcode.
+          You will receive a one-time password to login.
         </p>
       </div>
 
@@ -334,6 +346,10 @@ export default function DocsLoginPage() {
           </div>
         </Card>
       )}
+
+      <div className="hidden min-h-0 flex-1 overflow-hidden sm:block">
+        <img className="mx-auto w-3/4" src="/login.png" alt="Login graphic" />
+      </div>
     </div>
   );
 }

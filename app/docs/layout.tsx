@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSignatoryProfile } from "./auth/provider/signatory.ctx";
 
-const PROTECTED_ROUTE_PREFIXES = ["/dashboard", "/forms"];
+const PROTECTED_ROUTE_PREFIXES = ["/dashboard", "/forms", "/students"];
 const PUBLIC_ROUTE_PREFIXES = ["/login", "/sign-in", "/auth/magic-link"];
 
 function normalizeDocsPath(pathname: string) {
@@ -44,8 +44,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isEditorRoute = pathname?.includes("/editor") ?? false;
   const isFieldsRoute = pathname?.endsWith("/fields") ?? false;
+  const isLoginRoute = pathname === "/login" || pathname === "/docs/login";
   const isSignRoute = pathname === "/sign" || pathname === "/docs/sign";
-  const showHeader = !isEditorRoute && !isSignRoute;
+  const showHeader = !isEditorRoute && !isLoginRoute && !isSignRoute;
 
   return (
     <Providers>

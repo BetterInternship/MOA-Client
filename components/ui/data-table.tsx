@@ -52,6 +52,7 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 /**
  * Reusable table shell used by registry screens.
@@ -74,11 +75,72 @@ interface DataTableProps<TData, TValue> {
   sortingStorageKey?: string;
   /** Optional: right-side toolbar slot (e.g., extra buttons) */
   toolbarActions?: React.ReactNode;
+  /** Optional: override the search input placeholder */
+  searchPlaceholder?: string;
+  /** Optional: labels used in the pagination row count */
+  rowLabelSingular?: string;
+  rowLabelPlural?: string;
   /** Optional: page size options */
   pageSizes?: number[];
   /** Optional: className for wrapper */
   className?: string;
   onSelectionChange?: (rows: TData[]) => void;
+}
+
+function TruncatedCellValue({
+  children,
+  tooltip,
+}: {
+  children: React.ReactNode;
+  tooltip?: string;
+}) {
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [isTruncated, setIsTruncated] = React.useState(false);
+
+  React.useEffect(() => {
+    const element = textRef.current;
+    if (!element) return;
+
+    const checkTruncation = () => {
+      setIsTruncated(element.scrollWidth > element.clientWidth);
+    };
+
+    checkTruncation();
+
+    const resizeObserver = new ResizeObserver(checkTruncation);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, [children]);
+
+  const content = (
+    <div ref={textRef} className="min-w-0 truncate px-1.5">
+      {children}
+    </div>
+  );
+
+  if (!tooltip || !isTruncated) return content;
+
+  return (
+    <Tooltip delayDuration={700}>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <TooltipContent
+        arrowClassName="fill-white"
+        className="max-w-xs border border-gray-200 bg-white px-2 py-1 text-xs font-normal text-gray-400 shadow-sm"
+        side="top"
+        sideOffset={1}
+      >
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function getCellTooltipText(value: unknown) {
+  if (value == null) return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return undefined;
 }
 
 export function DataTable<TData, TValue>({
@@ -91,6 +153,9 @@ export function DataTable<TData, TValue>({
   initialSorting,
   sortingStorageKey,
   toolbarActions,
+  searchPlaceholder = "Search forms...",
+  rowLabelSingular = "form",
+  rowLabelPlural = "forms",
   pageSizes = [5, 10, 20, 50],
   className,
 }: DataTableProps<TData, TValue>) {
@@ -111,8 +176,7 @@ export function DataTable<TData, TValue>({
   const handleSortingChange = React.useCallback(
     (updater: Updater<SortingState>) => {
       setSorting((currentSorting) => {
-        const nextSorting =
-          typeof updater === "function" ? updater(currentSorting) : updater;
+        const nextSorting = typeof updater === "function" ? updater(currentSorting) : updater;
 
         if (sortingStorageKey) {
           try {
@@ -145,7 +209,9 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: (row, _columnId, filterValue) => {
-      const query = String(filterValue ?? "").toLowerCase().trim();
+      const query = String(filterValue ?? "")
+        .toLowerCase()
+        .trim();
       if (!query) return true;
 
       return row.getAllCells().some((cell) => {
@@ -185,6 +251,24 @@ export function DataTable<TData, TValue>({
     return selectedSearchKey ? [selectedSearchKey] : searchKeys;
   }, [selectedSearchKey, searchKeys]);
 
+  const filteredRowCount = table.getFilteredRowModel().rows.length;
+  const indexColumnWidthRem = Math.max(
+    3.25,
+    String(Math.max(filteredRowCount, 1)).length * 0.625 + 2
+  );
+  const indexColumnStyle: React.CSSProperties = {
+    width: `${indexColumnWidthRem}rem`,
+    minWidth: `${indexColumnWidthRem}rem`,
+    maxWidth: `${indexColumnWidthRem}rem`,
+  };
+  const tableMinWidthRem = Math.max(
+    48,
+    table.getVisibleLeafColumns().length * 12 +
+      (enableRowSelection ? 2.75 : 0) +
+      indexColumnWidthRem
+  );
+  const { pageIndex, pageSize } = table.getState().pagination;
+
   return (
     <div className={cn("flex min-h-0 flex-col gap-3", className)}>
       {/* Toolbar */}
@@ -220,7 +304,7 @@ export function DataTable<TData, TValue>({
           {effectiveSearchKeys.length > 0 && (
             <div className="flex items-center gap-2">
               <Input
-                placeholder={`Search forms...`}
+                placeholder={searchPlaceholder}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 className="h-10 w-full sm:w-96"
@@ -229,22 +313,21 @@ export function DataTable<TData, TValue>({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          {toolbarActions}
-          {/* <Button variant="ghost" size="sm" onClick={resetFilters} disabled={!isFiltered}>
-            Clear
-          </Button> */}
-        </div>
+        <div className="flex items-center gap-2">{toolbarActions}</div>
       </div>
 
       {/* Table */}
-      <div className="min-h-0 flex-1 overflow-auto rounded-[0.33em]">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-white">
+      <div className="min-h-0 flex-1 rounded-[0.1em] [&_[data-slot=table-container]]:h-full [&_[data-slot=table-container]]:overflow-auto">
+        <Table className="table-fixed" style={{ minWidth: `${tableMinWidthRem}rem` }}>
+          <TableHeader className="[&_tr]:border-b-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
+                <TableHead
+                  className="sticky top-0 left-0 z-30 bg-gray-100 pr-2 text-right text-gray-600 shadow-[inset_-2px_0_0_theme(colors.gray.300),inset_0_-2px_0_theme(colors.gray.300)]"
+                  style={indexColumnStyle}
+                ></TableHead>
                 {enableRowSelection && (
-                  <TableHead className="w-[42px]">
+                  <TableHead className="sticky top-0 z-20 w-[42px] bg-gray-100 shadow-[inset_0_-2px_0_theme(colors.gray.300)]">
                     <Checkbox
                       checked={
                         table.getIsAllPageRowsSelected() ||
@@ -259,22 +342,42 @@ export function DataTable<TData, TValue>({
                   <TableHead
                     key={header.id}
                     className={cn(
-                      header.column.getCanSort() && "hover:bg-muted/50 cursor-pointer select-none"
+                      "font-heading sticky top-0 z-20 max-w-0 bg-gray-100 tracking-tight text-gray-600 shadow-[inset_0_-2px_0_theme(colors.gray.300)] transition-colors duration-300",
+                      header.column.getCanSort() && "cursor-pointer select-none hover:bg-gray-200",
+                      header.column.getIsSorted() && "bg-gray-50 hover:bg-gray-200"
                     )}
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {header.isPlaceholder ? null : (
-                      <div className="flex items-center gap-1">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getCanSort() && !header.column.getIsSorted() && (
-                          <ChevronsUpDown className="text-muted-foreground/40 mt-0.5 h-4 w-4" />
-                        )}
-                        {header.column.getIsSorted() === "asc" && (
-                          <ChevronUp className="text-muted-foreground mt-0.5 h-4 w-4" />
-                        )}
-                        {header.column.getIsSorted() === "desc" && (
-                          <ChevronDown className="text-muted-foreground mt-0.5 h-4 w-4" />
-                        )}
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-1">
+                          <span
+                            className={cn(
+                              "font-demibold min-w-0 truncate rounded px-1.5 py-0.5 transition-colors duration-300",
+                              header.column.getIsSorted() && "text-primary"
+                            )}
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                          </span>
+                          {header.column.getCanSort() && !header.column.getIsSorted() && (
+                            <ChevronsUpDown className="text-muted-foreground/40 mt-0.5 h-4 w-4 shrink-0" />
+                          )}
+                          {header.column.getIsSorted() === "asc" && (
+                            <ChevronUp className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                          )}
+                          {header.column.getIsSorted() === "desc" && (
+                            <ChevronDown className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                          )}
+                        </div>
+                        <span
+                          className={cn(
+                            "bg-primary/85 mr-2 h-3 w-3 shrink-0 rounded-full transition-all duration-300 ease-out",
+                            header.column.getIsSorted()
+                              ? "scale-100 opacity-100"
+                              : "scale-50 opacity-0"
+                          )}
+                          aria-hidden="true"
+                        />
                       </div>
                     )}
                   </TableHead>
@@ -285,8 +388,29 @@ export function DataTable<TData, TValue>({
 
           <TableBody>
             {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow className="odd:bg-white even:bg-muted/70" key={row.id} data-state={row.getIsSelected() && "selected"}>
+              table.getRowModel().rows.map((row, rowIndex) => (
+                <TableRow
+                  className="group even:bg-muted/40 hover:bg-primary/10 odd:bg-white"
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  <TableCell
+                    className={cn(
+                      "text-muted-foreground sticky left-0 z-10 pr-2 text-right font-medium shadow-[inset_-2px_0_0_theme(colors.gray.200)]",
+                      row.getIsSelected()
+                        ? "bg-muted"
+                        : rowIndex % 2 === 0
+                          ? "bg-white"
+                          : "bg-gray-50"
+                    )}
+                    style={indexColumnStyle}
+                  >
+                    <span
+                      className="absolute top-1/2 left-1.5 ml-1 h-2.5 w-2.5 -translate-y-1/2 scale-50 rounded-full bg-gray-400 opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100"
+                      aria-hidden="true"
+                    />
+                    <span>{pageIndex * pageSize + rowIndex + 1}</span>
+                  </TableCell>
                   {enableRowSelection && (
                     <TableCell className="w-[42px]">
                       <Checkbox
@@ -297,8 +421,10 @@ export function DataTable<TData, TValue>({
                     </TableCell>
                   )}
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <TableCell key={cell.id} className="max-w-0">
+                      <TruncatedCellValue tooltip={getCellTooltipText(cell.getValue())}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TruncatedCellValue>
                     </TableCell>
                   ))}
                 </TableRow>
@@ -306,8 +432,8 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={table.getVisibleLeafColumns().length + (enableRowSelection ? 1 : 0)}
-                  className="h-24 text-center"
+                  colSpan={table.getVisibleLeafColumns().length + (enableRowSelection ? 1 : 0) + 1}
+                  className="h-24 px-1.5 text-center"
                 >
                   No results.
                 </TableCell>
@@ -319,8 +445,9 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination */}
       <div className="z-10 flex shrink-0 flex-col items-center justify-between gap-1 border-t bg-white py-1 sm:flex-row">
-        <div className="text-muted-foreground text-sm">
-          {table.getFilteredRowModel().rows.length} form{table.getFilteredRowModel().rows.length === 1 ? "" : "s"}
+        <div className="text-muted-foreground px-1.5 text-sm">
+          {table.getFilteredRowModel().rows.length}{" "}
+          {table.getFilteredRowModel().rows.length === 1 ? rowLabelSingular : rowLabelPlural}
         </div>
 
         <div className="flex items-center gap-1.5">
