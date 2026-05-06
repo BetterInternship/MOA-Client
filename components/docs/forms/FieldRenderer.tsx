@@ -28,7 +28,7 @@ import {
   parseSignatureImageValue,
   serializeSignatureImageValue,
   type SignatureImageValue,
-} from "@/lib/signature-value";
+} from "@betterinternship/core/forms";
 
 export const FieldRenderer = <T extends any[]>({
   field,

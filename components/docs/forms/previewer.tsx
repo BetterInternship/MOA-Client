@@ -33,7 +33,7 @@ import {
   fitWrappedText,
   resolvePreviewFont,
 } from "@/lib/form-previewer-rendering";
-import { getSignatureImageFieldKey, parseSignatureImageValue } from "@/lib/signature-value";
+import { getSignatureImageFieldKey, parseSignatureImageValue } from "@betterinternship/core/forms";
 
 type DefaultFieldVisibility = "all" | "mine";
 type FieldStatus = "empty" | "filled" | "signed";
