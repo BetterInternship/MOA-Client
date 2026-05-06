@@ -11,6 +11,7 @@ import {
   useReactTable,
   SortingState,
   ColumnFiltersState,
+  ColumnSizingState,
   VisibilityState,
   Updater,
 } from "@tanstack/react-table";
@@ -59,6 +60,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
  * Provides consistent filtering, sorting, column visibility, selection, and pagination UX.
  */
 interface DataTableProps<TData, TValue> {
+  /** Stable table id used for DOM identity and persisted table preferences. */
+  id: string;
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   /** Optional: which column(s) to bind the top search box to (e.g., "company") */
@@ -143,7 +146,28 @@ function getCellTooltipText(value: unknown) {
   return undefined;
 }
 
+function readStoredState<TValue>(storageKey: string, fallback: TValue) {
+  if (typeof window === "undefined") return fallback;
+
+  try {
+    return JSON.parse(localStorage.getItem(storageKey) || "") || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStoredState<TValue>(storageKey: string, value: TValue) {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(value));
+  } catch {
+    // Keep table interactions usable even when storage is unavailable.
+  }
+}
+
 export function DataTable<TData, TValue>({
+  id,
   columns,
   data,
   searchLabel,
@@ -159,16 +183,17 @@ export function DataTable<TData, TValue>({
   pageSizes = [5, 10, 20, 50],
   className,
 }: DataTableProps<TData, TValue>) {
+  const columnSizingStorageKey = React.useMemo(() => `data-table:${id}:column-sizing`, [id]);
+
   const [sorting, setSorting] = React.useState<SortingState>(() => {
     if (!sortingStorageKey) return initialSorting ?? [];
 
-    try {
-      return JSON.parse(localStorage.getItem(sortingStorageKey) || "") || initialSorting || [];
-    } catch {
-      return initialSorting ?? [];
-    }
+    return readStoredState(sortingStorageKey, initialSorting ?? []);
   });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnSizing, setColumnSizing] = React.useState<ColumnSizingState>(() =>
+    readStoredState(columnSizingStorageKey, {})
+  );
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({} as Record<string, boolean>);
   const [globalFilter, setGlobalFilter] = React.useState("");
@@ -179,11 +204,7 @@ export function DataTable<TData, TValue>({
         const nextSorting = typeof updater === "function" ? updater(currentSorting) : updater;
 
         if (sortingStorageKey) {
-          try {
-            localStorage.setItem(sortingStorageKey, JSON.stringify(nextSorting));
-          } catch {
-            // Keep sorting usable even when storage is unavailable.
-          }
+          writeStoredState(sortingStorageKey, nextSorting);
         }
 
         return nextSorting;
@@ -192,18 +213,41 @@ export function DataTable<TData, TValue>({
     [sortingStorageKey]
   );
 
+  const handleColumnSizingChange = React.useCallback(
+    (updater: Updater<ColumnSizingState>) => {
+      setColumnSizing((currentSizing) => {
+        const nextSizing = typeof updater === "function" ? updater(currentSizing) : updater;
+        writeStoredState(columnSizingStorageKey, nextSizing);
+        return nextSizing;
+      });
+    },
+    [columnSizingStorageKey]
+  );
+
+  React.useEffect(() => {
+    setColumnSizing(readStoredState(columnSizingStorageKey, {}));
+  }, [columnSizingStorageKey]);
+
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
       columnFilters,
+      columnSizing,
       columnVisibility,
       rowSelection,
       globalFilter,
     },
+    columnResizeMode: "onChange",
+    defaultColumn: {
+      size: 192,
+      minSize: 80,
+      maxSize: 720,
+    },
     enableRowSelection, // enables internal selection state
     onSortingChange: handleSortingChange,
+    onColumnSizingChange: handleColumnSizingChange,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
@@ -267,10 +311,14 @@ export function DataTable<TData, TValue>({
       (enableRowSelection ? 2.75 : 0) +
       indexColumnWidthRem
   );
+  const tableWidthPx = Math.max(
+    tableMinWidthRem * 16,
+    table.getTotalSize() + (enableRowSelection ? 42 : 0) + indexColumnWidthRem * 16
+  );
   const { pageIndex, pageSize } = table.getState().pagination;
 
   return (
-    <div className={cn("flex min-h-0 flex-col gap-3", className)}>
+    <div id={id} className={cn("flex min-h-0 flex-col gap-3", className)}>
       {/* Toolbar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
@@ -318,7 +366,17 @@ export function DataTable<TData, TValue>({
 
       {/* Table */}
       <div className="min-h-0 flex-1 rounded-[0.1em] [&_[data-slot=table-container]]:h-full [&_[data-slot=table-container]]:overflow-auto">
-        <Table className="table-fixed" style={{ minWidth: `${tableMinWidthRem}rem` }}>
+        <Table
+          className="table-fixed"
+          style={{ minWidth: `${tableMinWidthRem}rem`, width: `max(100%, ${tableWidthPx}px)` }}
+        >
+          <colgroup>
+            <col style={indexColumnStyle} />
+            {enableRowSelection && <col style={{ width: 42, minWidth: 42, maxWidth: 42 }} />}
+            {table.getVisibleLeafColumns().map((column) => (
+              <col key={column.id} style={{ width: column.getSize() }} />
+            ))}
+          </colgroup>
           <TableHeader className="[&_tr]:border-b-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -342,14 +400,17 @@ export function DataTable<TData, TValue>({
                   <TableHead
                     key={header.id}
                     className={cn(
-                      "font-heading sticky top-0 z-20 max-w-0 bg-gray-100 tracking-tight text-gray-600 shadow-[inset_0_-2px_0_theme(colors.gray.300)] transition-colors duration-300",
+                      "group font-heading sticky top-0 z-20 max-w-0 bg-gray-100 tracking-tight text-gray-600 shadow-[inset_0_-2px_0_theme(colors.gray.300)] transition-colors duration-300",
                       header.column.getCanSort() && "cursor-pointer select-none hover:bg-gray-200",
                       header.column.getIsSorted() && "bg-gray-50 hover:bg-gray-200"
                     )}
-                    onClick={header.column.getToggleSortingHandler()}
+                    style={{ width: header.getSize() }}
                   >
                     {header.isPlaceholder ? null : (
-                      <div className="flex min-w-0 items-center justify-between gap-2">
+                      <div
+                        className="flex min-w-0 items-center justify-between gap-2"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
                         <div className="flex min-w-0 items-center gap-1">
                           <span
                             className={cn(
@@ -377,6 +438,30 @@ export function DataTable<TData, TValue>({
                               : "scale-50 opacity-0"
                           )}
                           aria-hidden="true"
+                        />
+                      </div>
+                    )}
+                    {header.column.getCanResize() && (
+                      <div
+                        className="absolute top-0 right-0 z-30 h-full w-3 translate-x-1/2 cursor-col-resize touch-none select-none"
+                        onClick={(event) => event.stopPropagation()}
+                        onMouseDown={(event) => {
+                          event.stopPropagation();
+                          header.getResizeHandler()(event);
+                        }}
+                        onTouchStart={(event) => {
+                          event.stopPropagation();
+                          header.getResizeHandler()(event);
+                        }}
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label={`Resize ${String(header.column.columnDef.header ?? header.column.id)} column`}
+                      >
+                        <span
+                          className={cn(
+                            "bg-primary/70 absolute top-2 bottom-2 left-1/2 w-0.5 -translate-x-1/2 rounded-full opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100",
+                            header.column.getIsResizing() && "opacity-100"
+                          )}
                         />
                       </div>
                     )}
@@ -421,7 +506,11 @@ export function DataTable<TData, TValue>({
                     </TableCell>
                   )}
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="max-w-0">
+                    <TableCell
+                      key={cell.id}
+                      className="max-w-0"
+                      style={{ width: cell.column.getSize() }}
+                    >
                       <TruncatedCellValue tooltip={getCellTooltipText(cell.getValue())}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TruncatedCellValue>

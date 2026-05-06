@@ -301,6 +301,7 @@ export default function MyFormsTable({
 
   return (
     <DataTable
+      id="docs-dashboard-forms-table"
       columns={columns}
       data={rows}
       enableColumnVisibility

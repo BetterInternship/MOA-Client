@@ -195,7 +195,12 @@ export default function SyncPage() {
 
         {/* Individual Form Sync Section */}
         <div className="mb-8">
-          <DataTable columns={syncColumns} data={syncTableData} pageSizes={[999]} />
+          <DataTable
+            id="docs-form-sync-table"
+            columns={syncColumns}
+            data={syncTableData}
+            pageSizes={[999]}
+          />
         </div>
 
         {/* Warning Card */}

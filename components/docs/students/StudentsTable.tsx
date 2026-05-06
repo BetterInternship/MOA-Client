@@ -108,6 +108,7 @@ export default function StudentsTable({
 
   return (
     <DataTable
+      id="docs-students-table"
       columns={columns}
       data={rows}
       enableColumnVisibility
