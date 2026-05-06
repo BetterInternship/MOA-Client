@@ -52,6 +52,16 @@ const getPreviewRawValue = (values: Record<string, string>, fieldKey: string): u
   );
 };
 
+const getSignatureImageSrc = (
+  signatureImage: ReturnType<typeof parseSignatureImageValue>
+): string => {
+  if (!signatureImage) return "";
+  if (signatureImage.image.storage === "bucket") {
+    return signatureImage.image.signedUrl || signatureImage.image.publicUrl || "";
+  }
+  return signatureImage.image.dataUrl;
+};
+
 interface FormPreviewPdfDisplayProps {
   documentUrl: string;
   values: Record<string, string>;
@@ -579,6 +589,7 @@ const PdfPageOverlay = ({
             field.type === "signature"
               ? parseSignatureImageValue(values[getSignatureImageFieldKey(fieldName)])
               : null;
+          const signatureImageSrc = getSignatureImageSrc(signatureImage);
           const valueStr = canRevealValue ? resolveDisplayValue(field, rawValue) : "";
           const isFilled = !!signatureImage || valueStr.trim().length > 0;
 
@@ -711,7 +722,7 @@ const PdfPageOverlay = ({
                   align_h === "center" ? "center" : align_h === "right" ? "flex-end" : "flex-start",
               }}
             >
-              {signatureImage ? (
+              {signatureImageSrc ? (
                 <div
                   className="pointer-events-none absolute top-1/2 left-1/2 flex items-center justify-center"
                   style={{
@@ -721,7 +732,7 @@ const PdfPageOverlay = ({
                   }}
                 >
                   <img
-                    src={signatureImage.dataUrl}
+                    src={signatureImageSrc}
                     alt="Signature"
                     className="h-full w-full object-contain"
                     draggable={false}

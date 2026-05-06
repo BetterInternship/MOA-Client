@@ -480,6 +480,14 @@ const FieldRendererSignature = <T extends any[]>({
     onAuxValueChange?.(imageFieldKey, serializeSignatureImageValue(nextImage));
   };
 
+  const getSignatureImageSrc = (signature: SignatureImageValue | null) => {
+    if (!signature) return "";
+    if (signature.image.storage === "bucket") {
+      return signature.image.signedUrl || signature.image.publicUrl || "";
+    }
+    return signature.image.dataUrl;
+  };
+
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -511,7 +519,12 @@ const FieldRendererSignature = <T extends any[]>({
     window.requestAnimationFrame(() => {
       const latestImage = parseSignatureImageValue(allValues[imageFieldKey]);
       if (latestImage?.source === "draw") {
-        drawImageOnCanvas(latestImage.dataUrl);
+        const src = getSignatureImageSrc(latestImage);
+        if (!src) {
+          clearCanvas();
+          return;
+        }
+        drawImageOnCanvas(src);
         return;
       }
       clearCanvas();
@@ -700,10 +713,10 @@ const FieldRendererSignature = <T extends any[]>({
         ) : null}
       </div>
       {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
-      {mode === "upload" && signatureImage ? (
+      {mode === "upload" && signatureImage && getSignatureImageSrc(signatureImage) ? (
         <div className="mt-3 flex h-32 items-center justify-center rounded-[0.33em] border border-slate-200 bg-white p-2">
           <img
-            src={signatureImage.dataUrl}
+            src={getSignatureImageSrc(signatureImage)}
             alt="Uploaded signature"
             className="max-h-full max-w-full object-contain"
           />
