@@ -22,6 +22,7 @@ import { AutocompleteTreeMulti, TreeOption } from "./autocomplete";
 import { ClientField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
 import { Eye, ImageUp, PenLine, Trash2, Type, UploadCloud } from "lucide-react";
+import { removeSignatureImageBackground } from "@/lib/signature-image-cleanup";
 import {
   createSignatureImageValue,
   getSignatureImageFieldKey,
@@ -30,8 +31,8 @@ import {
   type SignatureImageValue,
 } from "@betterinternship/core/forms";
 
-const MAX_SIGNATURE_UPLOAD_BYTES = 2 * 1024 * 1024;
-const MAX_SIGNATURE_UPLOAD_LABEL = "2 MB";
+const MAX_SIGNATURE_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_SIGNATURE_UPLOAD_LABEL = "10 MB";
 
 export const FieldRenderer = <T extends any[]>({
   field,
@@ -558,20 +559,23 @@ const FieldRendererSignature = <T extends any[]>({
       return;
     }
 
-    const mimeType = file.type as "image/png" | "image/jpeg";
     setUploadError("");
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const dataUrl = typeof reader.result === "string" ? reader.result : "";
       if (!dataUrl) return;
+      const normalizedDataUrl = await removeSignatureImageBackground(dataUrl);
       emitSignatureImage(
         createSignatureImageValue({
           source: "upload",
-          dataUrl,
-          mimeType,
+          dataUrl: normalizedDataUrl,
+          mimeType: "image/png",
         })
       );
       setMode("upload");
+    };
+    reader.onerror = () => {
+      setUploadError("Unable to read signature image.");
     };
     reader.readAsDataURL(file);
   };
@@ -749,7 +753,7 @@ const FieldRendererSignature = <T extends any[]>({
             <img
               src={getSignatureImageSrc(signatureImage)}
               alt="Uploaded signature"
-              className="max-h-28 max-w-full object-contain"
+              className="max-h-32 w-full object-contain"
             />
           ) : (
             <>
