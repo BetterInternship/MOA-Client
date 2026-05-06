@@ -307,7 +307,12 @@ const FormRegistryPage = () => {
             {section.rows.length === 0 ? (
               <div className="text-muted-foreground py-4 text-sm">No forms in this section</div>
             ) : (
-              <DataTable columns={columns} data={section.rows} pageSizes={[999]} />
+              <DataTable
+                id={`docs-form-registry-${section.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`}
+                columns={columns}
+                data={section.rows}
+                pageSizes={[999]}
+              />
             )}
           </div>
         )}
