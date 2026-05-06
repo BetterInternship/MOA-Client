@@ -21,7 +21,7 @@ import {
 import { AutocompleteTreeMulti, TreeOption } from "./autocomplete";
 import { ClientField } from "@betterinternship/core/forms";
 import { useEffect, useRef, useState } from "react";
-import { Eye, ImageUp, PenLine, Trash2, Type } from "lucide-react";
+import { Eye, ImageUp, PenLine, Trash2, Type, UploadCloud } from "lucide-react";
 import {
   createSignatureImageValue,
   getSignatureImageFieldKey,
@@ -29,6 +29,9 @@ import {
   serializeSignatureImageValue,
   type SignatureImageValue,
 } from "@betterinternship/core/forms";
+
+const MAX_SIGNATURE_UPLOAD_BYTES = 2 * 1024 * 1024;
+const MAX_SIGNATURE_UPLOAD_LABEL = "2 MB";
 
 export const FieldRenderer = <T extends any[]>({
   field,
@@ -459,6 +462,7 @@ const FieldRendererSignature = <T extends any[]>({
   );
   const [typedName, setTypedName] = useState(value || "");
   const [uploadError, setUploadError] = useState("");
+  const [isUploadDragging, setIsUploadDragging] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
 
@@ -549,6 +553,10 @@ const FieldRendererSignature = <T extends any[]>({
       setUploadError("Please upload a PNG or JPEG signature image.");
       return;
     }
+    if (file.size > MAX_SIGNATURE_UPLOAD_BYTES) {
+      setUploadError(`Signature image must be ${MAX_SIGNATURE_UPLOAD_LABEL} or smaller.`);
+      return;
+    }
 
     const mimeType = file.type as "image/png" | "image/jpeg";
     setUploadError("");
@@ -563,6 +571,7 @@ const FieldRendererSignature = <T extends any[]>({
           mimeType,
         })
       );
+      setMode("upload");
     };
     reader.readAsDataURL(file);
   };
@@ -670,26 +679,16 @@ const FieldRendererSignature = <T extends any[]>({
           <Type className="h-3.5 w-3.5" />
           Type
         </ModeButton>
-        <label
-          className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[0.33em] border px-2.5 text-xs font-medium transition-colors ${
-            mode === "upload"
-              ? "border-slate-900 bg-slate-900 text-white"
-              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-          }`}
+        <ModeButton
+          active={mode === "upload"}
+          onClick={() => {
+            setMode("upload");
+            setUploadError("");
+          }}
         >
           <ImageUp className="h-3.5 w-3.5" />
           Upload
-          <input
-            type="file"
-            accept="image/png,image/jpeg"
-            className="hidden"
-            onChange={(event) => {
-              setMode("upload");
-              handleUpload(event.target.files?.[0]);
-              event.target.value = "";
-            }}
-          />
-        </label>
+        </ModeButton>
         <ModeButton
           active={mode === "draw"}
           onClick={() => {
@@ -713,14 +712,66 @@ const FieldRendererSignature = <T extends any[]>({
         ) : null}
       </div>
       {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
-      {mode === "upload" && signatureImage && getSignatureImageSrc(signatureImage) ? (
-        <div className="mt-3 flex h-32 items-center justify-center rounded-[0.33em] border border-slate-200 bg-white p-2">
-          <img
-            src={getSignatureImageSrc(signatureImage)}
-            alt="Uploaded signature"
-            className="max-h-full max-w-full object-contain"
+      {mode === "upload" ? (
+        <label
+          className={`mt-3 flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 rounded-[0.33em] border border-dashed p-4 text-center transition-colors ${
+            uploadError
+              ? "border-red-300 bg-red-50/60"
+              : isUploadDragging
+                ? "border-slate-900 bg-slate-100"
+                : "border-slate-300 bg-white hover:border-slate-400 hover:bg-slate-50"
+          }`}
+          onDragEnter={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsUploadDragging(true);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsUploadDragging(true);
+          }}
+          onDragLeave={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setIsUploadDragging(false);
+            }
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsUploadDragging(false);
+            handleUpload(event.dataTransfer.files?.[0]);
+          }}
+        >
+          {signatureImage && getSignatureImageSrc(signatureImage) ? (
+            <img
+              src={getSignatureImageSrc(signatureImage)}
+              alt="Uploaded signature"
+              className="max-h-28 max-w-full object-contain"
+            />
+          ) : (
+            <>
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700">
+                <UploadCloud className="h-5 w-5" />
+              </span>
+              <span className="text-sm font-medium text-slate-900">Choose a signature image</span>
+              <span className="text-xs text-slate-500">
+                PNG or JPEG, {MAX_SIGNATURE_UPLOAD_LABEL} maximum
+              </span>
+            </>
+          )}
+          <input
+            type="file"
+            accept="image/png,image/jpeg"
+            className="hidden"
+            onChange={(event) => {
+              handleUpload(event.target.files?.[0]);
+              event.target.value = "";
+            }}
           />
-        </div>
+        </label>
       ) : null}
       {mode === "draw" ? (
         <div className="mt-3 space-y-2">
