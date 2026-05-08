@@ -17,6 +17,7 @@ export interface SignatoryProfile {
   title: SignatoryProfileTitle;
   honorific: SignatoryProfileHonorific;
   autofill: SignatoryProfileAutofill;
+  signatureImage?: string | null;
   autoFormPermissions: SignatoryProfileAutoFormPermissions;
   coordinatorId?: string;
   god?: boolean;
