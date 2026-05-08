@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { ArrowLeft, LucideClipboardCheck } from "lucide-react";
 import { formsControllerMarkFormAsFirstViewed } from "@/app/api";
 import { withDerivedFormValues } from "@/lib/derived-form-values";
+import { withSavedSignatureImagesForFields } from "@/lib/saved-signature-image";
 import { cn } from "@/lib/utils";
 import { DelegateEmailScreen } from "./components/DelegateEmailScreen";
 import { MobileStepTabs } from "./components/MobileStepTabs";
@@ -141,19 +142,24 @@ function PageContent() {
       profile.name,
       formProcess.my_signing_party_id
     );
+    const valuesWithSavedSignatureImages = withSavedSignatureImagesForFields({
+      values: valuesWithPrefilledSignatures,
+      signatureFields,
+      signatureImage: profile.signatureImage,
+    });
 
-    formFiller.setValues(valuesWithPrefilledSignatures);
+    formFiller.setValues(valuesWithSavedSignatureImages);
     signContext.setRequiredSignatures(
       signatureFields.map((signatureField) => signatureField.field)
     );
 
     for (const signatureField of signatureFields) {
-      const signatureValue = valuesWithPrefilledSignatures[signatureField.field];
+      const signatureValue = valuesWithSavedSignatureImages[signatureField.field];
       if (signatureValue?.trim()) {
         signContext.setHasAgreedForSignature(signatureField.field, signatureValue, true);
       }
     }
-  }, [formProcess, form]);
+  }, [formProcess, form, profile.signatureImage]);
 
   useEffect(() => {
     if (view !== "form") {

@@ -134,6 +134,7 @@ export const BlocksRenderer = <T extends any[]>({
                 field={field}
                 value={values[field.field]}
                 onChange={(v) => onChange(field.field, v)}
+                onAuxValueChange={onChange}
                 onBlur={(nextValue) => onBlurValidate?.(field.field, field, nextValue)}
                 error={errors[field.field]}
                 allValues={values}
