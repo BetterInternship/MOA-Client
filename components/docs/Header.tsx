@@ -153,7 +153,7 @@ export default function DocsTopbarUser() {
                   <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
                     <div className="flex items-center justify-center gap-2">
                       <Newspaper className="h-4 w-4" />
-                      <span>Forms</span>
+                      <span>Form Signing</span>
                     </div>
                     <ChevronRight className="h-4 w-4 text-gray-300" />
                   </button>
@@ -164,7 +164,7 @@ export default function DocsTopbarUser() {
                     <button className="flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-sm transition-colors hover:border-gray-200 hover:bg-gray-50">
                       <div className="flex items-center justify-center gap-2">
                         <Users2 className="h-4 w-4" />
-                        <span>My Students</span>
+                        <span>Form Access</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-gray-300" />
                     </button>
@@ -292,7 +292,7 @@ export default function DocsTopbarUser() {
               onClick={() => router.push("/dashboard")}
             >
               <Newspaper className="!h-6 !w-6" strokeWidth={1.7} />
-              <span className="text-xs">Forms</span>
+              <span className="text-xs">Form Signing</span>
             </Button>
             {profile.coordinatorId && (
               <Button
@@ -306,7 +306,7 @@ export default function DocsTopbarUser() {
                 onClick={() => router.push("/students")}
               >
                 <Users2 className="!h-6 !w-6" strokeWidth={1.7} />
-                <span className="text-xs">My Students</span>
+                <span className="text-xs">Form Access</span>
               </Button>
             )}
             <Button
