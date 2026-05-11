@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Users2 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,14 +22,6 @@ import {
 } from "@/app/api";
 import { Loader } from "@/components/ui/loader";
 
-const detailEnterTransition = {
-  duration: 0.24,
-  ease: [0.22, 1, 0.36, 1] as const,
-};
-const detailExitTransition = {
-  duration: 0.16,
-  ease: [0.4, 0, 1, 1] as const,
-};
 const FORM_GROUPS_STALE_TIME_MS = 60 * 60 * 1000;
 const FORM_GROUP_MEMBERS_STALE_TIME_MS = 60 * 60 * 1000;
 const FORM_GROUP_QUERY_PARAM = "form-group-id";
@@ -311,43 +302,27 @@ export default function DocsStudentsPage() {
   return (
     <div className="flex h-full min-h-0 w-full overflow-hidden bg-gray-50">
       <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:p-4">
-        <AnimatePresence mode="wait" initial={false}>
-          {selectedFormGroup ? (
-            <motion.div
-              key={selectedFormGroup.id}
-              className="flex min-h-0 flex-1 flex-col will-change-transform"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0, transition: detailEnterTransition }}
-              exit={{ opacity: 0, y: -8, transition: detailExitTransition }}
-            >
-              <FormGroupStudentsDetail
-                formGroup={selectedFormGroup as FormGroup}
-                formGroups={sortedFormGroups as FormGroup[]}
-                members={sortedFormGroupMembers as FormGroupMember[]}
-                onSelectFormGroup={handleSelectFormGroup}
-                onCopyAccessCode={copyAccessCode}
-                onRefreshStudentList={refreshMemberList}
-                isRefreshingStudentList={isFetchingFormGroupMembers}
-                onResetAccessCode={resetAccessCode}
-                onClearStudentList={clearMemberList}
-                onRemoveMember={removeFormGroupMember}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="empty-state"
-              className="flex min-h-0 flex-1 items-center justify-center bg-white p-6 text-center"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0, transition: detailEnterTransition }}
-              exit={{ opacity: 0, y: -8, transition: detailExitTransition }}
-            >
-              <div className="flex max-w-sm flex-col items-center gap-3 text-gray-500">
-                <Users2 className="h-12 w-12 opacity-40" />
-                <p className="text-sm">No form groups yet.</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {selectedFormGroup ? (
+          <FormGroupStudentsDetail
+            formGroup={selectedFormGroup as FormGroup}
+            formGroups={sortedFormGroups as FormGroup[]}
+            members={sortedFormGroupMembers as FormGroupMember[]}
+            onSelectFormGroup={handleSelectFormGroup}
+            onCopyAccessCode={copyAccessCode}
+            onRefreshStudentList={refreshMemberList}
+            isRefreshingStudentList={isFetchingFormGroupMembers}
+            onResetAccessCode={resetAccessCode}
+            onClearStudentList={clearMemberList}
+            onRemoveMember={removeFormGroupMember}
+          />
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center bg-white p-6 text-center">
+            <div className="flex max-w-sm flex-col items-center gap-3 text-gray-500">
+              <Users2 className="h-12 w-12 opacity-40" />
+              <p className="text-sm">No form groups yet.</p>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

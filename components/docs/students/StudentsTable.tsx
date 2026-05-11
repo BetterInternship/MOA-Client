@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { X } from "lucide-react";
+import { UserMinus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,8 +59,8 @@ function createColumns(
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="sm" variant="outline" scheme="destructive" className="gap-1">
-                Remove
-                <X className="h-4 w-4" />
+                Remove Access
+                <UserMinus className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent variant="destructive">
