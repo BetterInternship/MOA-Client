@@ -4,6 +4,13 @@ import { RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -22,7 +29,9 @@ import type { FormGroup } from "./types";
 
 export function FormGroupStudentsDetail({
   formGroup,
+  formGroups,
   members,
+  onSelectFormGroup,
   onCopyAccessCode,
   onRefreshStudentList,
   isRefreshingStudentList = false,
@@ -32,7 +41,9 @@ export function FormGroupStudentsDetail({
   className,
 }: {
   formGroup: FormGroup;
+  formGroups?: FormGroup[];
   members: FormGroupMember[];
+  onSelectFormGroup?: (formGroup: FormGroup) => void;
   onCopyAccessCode: (code: string) => void | Promise<void>;
   onRefreshStudentList: () => void | Promise<void>;
   isRefreshingStudentList?: boolean;
@@ -45,8 +56,36 @@ export function FormGroupStudentsDetail({
     <div className={cn("flex min-h-0 flex-1 flex-col gap-3", className)}>
       <div className="flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 space-y-2">
-          <h2 className="text-2xl leading-tight font-semibold break-words text-gray-900 sm:text-3xl">
-            {formGroup.description}
+          <h2 className="flex min-w-0 flex-nowrap items-center gap-2 text-2xl leading-tight font-semibold text-gray-900 sm:text-3xl">
+            <span className="shrink-0 whitespace-nowrap">Students who can access</span>
+            {formGroups?.length && onSelectFormGroup ? (
+              <Select
+                value={formGroup.id}
+                onValueChange={(formGroupId) => {
+                  const nextFormGroup = formGroups.find((group) => group.id === formGroupId);
+
+                  if (nextFormGroup) {
+                    onSelectFormGroup(nextFormGroup);
+                  }
+                }}
+              >
+                <SelectTrigger
+                  aria-label="Select form group"
+                  className="border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 h-auto min-w-0 flex-1 px-2.5 py-1 text-left text-xl font-semibold shadow-none sm:max-w-[min(56rem,100%)] sm:text-2xl [&>span]:truncate"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-80 min-w-[min(28rem,calc(100vw-2rem))]">
+                  {formGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="text-primary break-words">{formGroup.description}</span>
+            )}
           </h2>
           <div className="flex flex-wrap items-center gap-1.5 text-sm">
             <span className="text-gray-500">Access Code:</span>
