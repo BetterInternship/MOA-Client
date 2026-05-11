@@ -7,10 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { FormGroupList } from "@/components/docs/students/FormGroupList";
 import { FormGroupStudentsDetail } from "@/components/docs/students/FormGroupStudentsDetail";
-import { MobileFormGroupDrawer } from "@/components/docs/students/MobileFormGroupDrawer";
 import type { FormGroupMember } from "@/components/docs/students/StudentsTable";
 import type { FormGroup } from "@/components/docs/students/types";
 import {
@@ -61,7 +58,6 @@ export default function DocsStudentsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const isLoggedIn = Boolean(profile?.email);
   const {
@@ -75,9 +71,9 @@ export default function DocsStudentsPage() {
     },
   });
   const [selectedFormGroupId, setSelectedFormGroupId] = useState<string | null>(null);
-  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
-  const sortedFormGroups = formGroups.toSorted((a, b) =>
-    a.description.localeCompare(b.description)
+  const sortedFormGroups = useMemo(
+    () => formGroups.toSorted((a, b) => a.description.localeCompare(b.description)),
+    [formGroups]
   );
   const {
     data: { formGroupMembers } = { formGroupMembers: [] },
@@ -90,12 +86,12 @@ export default function DocsStudentsPage() {
   });
 
   const loading = useMemo(() => isLoading || isFetching, [isLoading, isFetching]);
-  const sortedFormGroupMembers = formGroupMembers
-    .map((formGroupMember) => ({
-      ...formGroupMember,
-      joinedAt: Date.parse(formGroupMember.joinedAt) || 0,
-    }))
-    .toSorted((a, b) => b.joinedAt - a.joinedAt);
+  const sortedFormGroupMembers = formGroupMembers.toSorted((a, b) => {
+    const joinedAtA = Date.parse(a.joinedAt) || 0;
+    const joinedAtB = Date.parse(b.joinedAt) || 0;
+
+    return joinedAtB - joinedAtA;
+  });
   const selectedFormGroup = useMemo(() => {
     return formGroups.find((group) => group.id === selectedFormGroupId) ?? null;
   }, [formGroups, selectedFormGroupId]);
@@ -131,42 +127,42 @@ export default function DocsStudentsPage() {
   }, [isLoggedIn, profile.coordinatorId, profile.loading, router]);
 
   useEffect(() => {
-    if (!isMobile) {
-      setIsMobileDetailOpen(false);
-    }
-  }, [isMobile]);
-
-  useEffect(() => {
     if (isLoading || isFormGroupsError) return;
 
     const formGroupIdFromUrl = searchParams.get(FORM_GROUP_QUERY_PARAM);
+    const fallbackFormGroup = sortedFormGroups[0] ?? null;
 
     if (!formGroupIdFromUrl) {
-      setSelectedFormGroupId(null);
+      setSelectedFormGroupId(fallbackFormGroup?.id ?? null);
+
+      if (fallbackFormGroup) {
+        updateFormGroupIdInUrl(fallbackFormGroup.id, "replace");
+      }
+
       return;
     }
 
     const formGroupExists = formGroups.some((group) => group.id === formGroupIdFromUrl);
 
     if (!formGroupExists) {
-      setSelectedFormGroupId(null);
-      updateFormGroupIdInUrl(null, "replace");
+      setSelectedFormGroupId(fallbackFormGroup?.id ?? null);
+      updateFormGroupIdInUrl(fallbackFormGroup?.id ?? null, "replace");
       return;
     }
 
     setSelectedFormGroupId(formGroupIdFromUrl);
-
-    if (isMobile) {
-      setIsMobileDetailOpen(true);
-    }
-  }, [formGroups, isFormGroupsError, isLoading, isMobile, searchParams, updateFormGroupIdInUrl]);
+  }, [
+    formGroups,
+    isFormGroupsError,
+    isLoading,
+    searchParams,
+    sortedFormGroups,
+    updateFormGroupIdInUrl,
+  ]);
 
   const handleSelectFormGroup = (formGroup: FormGroup) => {
     setSelectedFormGroupId(formGroup.id);
     updateFormGroupIdInUrl(formGroup.id);
-    if (isMobile) {
-      setIsMobileDetailOpen(true);
-    }
   };
 
   const copyAccessCode = async (code: string) => {
@@ -313,66 +309,46 @@ export default function DocsStudentsPage() {
   }
 
   return (
-    <>
-      <div className="grid h-full min-h-0 w-full grid-rows-[minmax(0,1fr)] overflow-hidden bg-gray-50 md:grid-cols-[clamp(260px,32vw,420px)_minmax(0,1fr)]">
-        <FormGroupList
-          formGroups={sortedFormGroups as FormGroup[]}
-          selectedFormGroupId={selectedFormGroupId}
-          onSelectFormGroup={handleSelectFormGroup}
-          onCopyAccessCode={copyAccessCode}
-        />
-
-        <section className="hidden min-h-0 flex-col gap-3 overflow-hidden p-3 sm:p-4 md:flex">
-          <AnimatePresence mode="wait" initial={false}>
-            {selectedFormGroup ? (
-              <motion.div
-                key={selectedFormGroup.id}
-                className="flex min-h-0 flex-1 flex-col will-change-transform"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0, transition: detailEnterTransition }}
-                exit={{ opacity: 0, y: -8, transition: detailExitTransition }}
-              >
-                <FormGroupStudentsDetail
-                  formGroup={selectedFormGroup as FormGroup}
-                  members={sortedFormGroupMembers as FormGroupMember[]}
-                  onCopyAccessCode={copyAccessCode}
-                  onRefreshStudentList={refreshMemberList}
-                  isRefreshingStudentList={isFetchingFormGroupMembers}
-                  onResetAccessCode={resetAccessCode}
-                  onClearStudentList={clearMemberList}
-                  onRemoveMember={removeFormGroupMember}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="empty-state"
-                className="flex min-h-0 flex-1 items-center justify-center bg-white p-6 text-center"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0, transition: detailEnterTransition }}
-                exit={{ opacity: 0, y: -8, transition: detailExitTransition }}
-              >
-                <div className="flex max-w-sm flex-col items-center gap-3 text-gray-500">
-                  <Users2 className="h-12 w-12 opacity-40" />
-                  <p className="text-sm">No form group selected.</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </section>
-      </div>
-
-      <MobileFormGroupDrawer
-        open={isMobileDetailOpen}
-        onOpenChange={setIsMobileDetailOpen}
-        formGroup={selectedFormGroup as FormGroup | null}
-        members={sortedFormGroupMembers as FormGroupMember[]}
-        onCopyAccessCode={copyAccessCode}
-        onRefreshMemberList={refreshMemberList}
-        isRefreshingMemberList={isFetchingFormGroupMembers}
-        onResetAccessCode={resetAccessCode}
-        onClearMemberList={clearMemberList}
-        onRemoveMember={removeFormGroupMember}
-      />
-    </>
+    <div className="flex h-full min-h-0 w-full overflow-hidden bg-gray-50">
+      <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:p-4">
+        <AnimatePresence mode="wait" initial={false}>
+          {selectedFormGroup ? (
+            <motion.div
+              key={selectedFormGroup.id}
+              className="flex min-h-0 flex-1 flex-col will-change-transform"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0, transition: detailEnterTransition }}
+              exit={{ opacity: 0, y: -8, transition: detailExitTransition }}
+            >
+              <FormGroupStudentsDetail
+                formGroup={selectedFormGroup as FormGroup}
+                formGroups={sortedFormGroups as FormGroup[]}
+                members={sortedFormGroupMembers as FormGroupMember[]}
+                onSelectFormGroup={handleSelectFormGroup}
+                onCopyAccessCode={copyAccessCode}
+                onRefreshStudentList={refreshMemberList}
+                isRefreshingStudentList={isFetchingFormGroupMembers}
+                onResetAccessCode={resetAccessCode}
+                onClearStudentList={clearMemberList}
+                onRemoveMember={removeFormGroupMember}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty-state"
+              className="flex min-h-0 flex-1 items-center justify-center bg-white p-6 text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: detailEnterTransition }}
+              exit={{ opacity: 0, y: -8, transition: detailExitTransition }}
+            >
+              <div className="flex max-w-sm flex-col items-center gap-3 text-gray-500">
+                <Users2 className="h-12 w-12 opacity-40" />
+                <p className="text-sm">No form groups yet.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+    </div>
   );
 }
