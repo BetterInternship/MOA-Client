@@ -1,6 +1,7 @@
 "use client";
 
-import { RefreshCw, Trash2 } from "lucide-react";
+import { RefreshCw, UserMinus } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -27,6 +28,15 @@ import StudentsTable from "./StudentsTable";
 import type { FormGroupMember } from "./StudentsTable";
 import type { FormGroup } from "./types";
 
+const tableEnterTransition = {
+  duration: 0.24,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
+const tableExitTransition = {
+  duration: 0.16,
+  ease: [0.4, 0, 1, 1] as const,
+};
+
 export function FormGroupStudentsDetail({
   formGroup,
   formGroups,
@@ -36,7 +46,7 @@ export function FormGroupStudentsDetail({
   onRefreshStudentList,
   isRefreshingStudentList = false,
   onResetAccessCode,
-  onClearStudentList,
+  onClearStudentList: onRemoveAllStudentAccess,
   onRemoveMember,
   className,
 }: {
@@ -57,7 +67,7 @@ export function FormGroupStudentsDetail({
       <div className="flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 space-y-2">
           <h2 className="flex min-w-0 flex-nowrap items-center gap-2 text-2xl leading-tight font-semibold text-gray-900 sm:text-3xl">
-            <span className="shrink-0 whitespace-nowrap">Students who can access</span>
+            <span className="shrink-0 font-normal whitespace-nowrap">Manage access to</span>
             {formGroups?.length && onSelectFormGroup ? (
               <Select
                 value={formGroup.id}
@@ -71,7 +81,7 @@ export function FormGroupStudentsDetail({
               >
                 <SelectTrigger
                   aria-label="Select form group"
-                  className="border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 h-auto min-w-0 flex-1 px-2.5 py-1 text-left text-xl font-semibold shadow-none sm:max-w-[min(56rem,100%)] sm:text-2xl [&>span]:truncate"
+                  className="border-primary/30 text-primary hover:bg-primary/10 h-auto min-w-0 flex-1 rounded-[0.16em] bg-transparent px-2.5 py-1 text-left text-xl font-semibold shadow-none sm:max-w-[min(56rem,100%)] sm:text-2xl [&>span]:truncate"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -86,6 +96,7 @@ export function FormGroupStudentsDetail({
             ) : (
               <span className="text-primary break-words">{formGroup.description}</span>
             )}
+            <span className="shrink-0 font-normal whitespace-nowrap">forms.</span>
           </h2>
           <div className="flex flex-wrap items-center gap-1.5 text-sm">
             <span className="text-gray-500">Access Code:</span>
@@ -133,21 +144,25 @@ export function FormGroupStudentsDetail({
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" type="button" scheme="destructive" className="gap-2">
-                Clear Student List
-                <Trash2 className="h-4 w-4" />
+                Remove Access for All Students
+                <UserMinus className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent variant="destructive">
               <AlertDialogHeader>
-                <AlertDialogTitle>Clear student list?</AlertDialogTitle>
+                <AlertDialogTitle>Remove access for all students?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will remove all students from the selected form group.
+                  This will remove the access of all students from the selected form group.{" "}
+                  <span className="font-bold">
+                    If students are not finished with their forms, they can rejoin via the access
+                    code.
+                  </span>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction scheme="destructive" onClick={onClearStudentList}>
-                  Clear Student List
+                <AlertDialogAction scheme="destructive" onClick={onRemoveAllStudentAccess}>
+                  Remove access for all students
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -155,13 +170,22 @@ export function FormGroupStudentsDetail({
         </div>
       </div>
 
-      <Card className="min-h-0 flex-1 p-3">
-        <StudentsTable
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
           key={formGroup.id}
-          members={members}
-          onRemoveMember={(memberId) => onRemoveMember(formGroup.id, memberId)}
-        />
-      </Card>
+          className="min-h-0 flex-1 will-change-transform"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0, transition: tableEnterTransition }}
+          exit={{ opacity: 0, y: -8, transition: tableExitTransition }}
+        >
+          <Card className="mt-6 h-full min-h-0 p-3">
+            <StudentsTable
+              members={members}
+              onRemoveMember={(memberId) => onRemoveMember(formGroup.id, memberId)}
+            />
+          </Card>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
