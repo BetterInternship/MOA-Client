@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { IFormBlock, IFormSigningParty } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
 import { Plus, Copy, Trash2, ArrowUp, ArrowDown, CheckSquare, Square } from "lucide-react";
-import { BlockEditor } from "./BlockEditor";
 
 interface EditableDynamicFormProps {
   formName: string;
@@ -18,9 +17,7 @@ interface EditableDynamicFormProps {
   onAddBlock?: () => void;
   onDeleteBlock?: (index: number) => void;
   onDuplicateBlock?: (index: number) => void;
-  onBlockUpdate?: (block: IFormBlock) => void;
   selectedBlockIndex?: number | null;
-  selectedBlock?: IFormBlock | null;
   signingParties?: IFormSigningParty[];
 }
 
@@ -40,9 +37,7 @@ export const EditableDynamicForm = ({
   onAddBlock,
   onDeleteBlock,
   onDuplicateBlock,
-  onBlockUpdate,
   selectedBlockIndex,
-  selectedBlock,
   signingParties = [],
 }: EditableDynamicFormProps) => {
   const [blocks, setBlocks] = useState<IFormBlock[]>(initialBlocks);
@@ -145,24 +140,6 @@ export const EditableDynamicForm = ({
     setBlocks(newBlocks);
     onBlocksReorder?.(newBlocks);
   }, [blocks, selectedBlockIndex, onBlocksReorder]);
-  const handleBlockUpdate = useCallback(
-    (updatedBlock: IFormBlock) => {
-      // Update local blocks state when a block is edited
-      const newBlocks = blocks.map((b) => (b._id === updatedBlock._id ? updatedBlock : b));
-      setBlocks(newBlocks);
-
-      // If the updated block is currently selected, also update selectedBlock reference
-      // This ensures the BlockEditor gets the fresh block with updated validator
-      if (selectedBlockIndex !== null && selectedBlockIndex !== undefined) {
-        onBlockSelect?.(updatedBlock, selectedBlockIndex);
-      }
-
-      // Also call parent's onBlockUpdate if provided
-      onBlockUpdate?.(updatedBlock);
-    },
-    [blocks, selectedBlockIndex, onBlockSelect, onBlockUpdate]
-  );
-
   /**
    * Helper: Find a block by ID and call the onBlockSelect callback
    * This ensures consistent _id-based block selection across all code paths
@@ -565,26 +542,6 @@ export const EditableDynamicForm = ({
         </div>
       </div>
 
-      {/* Block Editor Sidebar */}
-      <div className="w-100 overflow-y-auto border-l bg-gray-50">
-        {selectedBlock ? (
-          <BlockEditor
-            block={selectedBlock}
-            onClose={() => {
-              // Clear selection through parent
-            }}
-            onUpdate={handleBlockUpdate}
-            signingParties={signingParties.map((p) => ({
-              id: p._id || `party-${p.order}`,
-              name: p._id,
-            }))}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-slate-500">
-            <p>Select a block to edit</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 };

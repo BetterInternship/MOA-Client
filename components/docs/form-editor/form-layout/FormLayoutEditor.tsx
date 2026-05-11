@@ -82,7 +82,6 @@ export const FormLayoutEditor = ({
   const blocks = metadata.schema.blocks;
   const [activeSection, setActiveSection] = useState<SectionType>("tester");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [selectedBlock, setSelectedBlock] = useState<IFormBlock | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -142,13 +141,6 @@ export const FormLayoutEditor = ({
   }, [metadata.signing_parties, metadata.subscribers]);
 
   const handleBlocksReorder = (newBlocks: IFormBlock[]) => {
-    // Keep the same block selected by ID
-    if (selectedBlockId) {
-      const selectedBlockInNewList = newBlocks.find((b) => b._id === selectedBlockId);
-      if (selectedBlockInNewList) {
-        setSelectedBlock(selectedBlockInNewList);
-      }
-    }
     setOrderedBlocks(newBlocks);
 
     // Add order values based on array position
@@ -168,28 +160,7 @@ export const FormLayoutEditor = ({
   };
 
   const handleBlockSelect = (block: IFormBlock, _blockIndex: number) => {
-    setSelectedBlock(block);
     setSelectedBlockId(block._id || null);
-  };
-
-  const handleBlockUpdate = (updatedBlock: IFormBlock) => {
-    const blockIndex = orderedBlocks.findIndex((b) => b._id === updatedBlock._id);
-    if (blockIndex === -1) return;
-
-    const newBlocks = [...orderedBlocks];
-    newBlocks[blockIndex] = updatedBlock;
-    setOrderedBlocks(newBlocks);
-    setSelectedBlock(updatedBlock);
-
-    // Add order values based on array position
-    const blocksWithOrder = addOrderToBlocks(newBlocks);
-    onMetadataChange?.({
-      ...metadata,
-      schema: {
-        ...metadata.schema,
-        blocks: blocksWithOrder,
-      },
-    });
   };
 
   const handleAddBlock = () => {
@@ -305,9 +276,7 @@ export const FormLayoutEditor = ({
             onAddBlock={handleAddBlock}
             onDeleteBlock={handleDeleteBlock}
             onDuplicateBlock={handleDuplicateBlock}
-            onBlockUpdate={handleBlockUpdate}
             selectedBlockIndex={selectedBlockIndex}
-            selectedBlock={selectedBlock}
             signingParties={parties}
           />
         );
