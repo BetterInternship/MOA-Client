@@ -107,21 +107,22 @@ export const BlocksRenderer = <T extends any[]>({
   setSelected: (selected: string) => void;
   onBlurValidate?: (fieldKey: string, field: any, nextValue?: unknown) => void;
   fieldRefs: Record<string, HTMLDivElement | null>;
-  selectedFieldId?: string;
+  selectedFieldId?: string | null;
 }) => {
   if (!blocks.length) return null;
   const sortedBlocks = blocks.toSorted((a, b) => a.order - b.order);
   return sortedBlocks.map((block, i) => {
     const isForm = isBlockField(block);
     const field = isForm ? getBlockField(block) : null;
+    const blockKey = `${formKey}:${field?.field || block.block_type}:${i}`;
 
     // Only check selection for form fields
     const isSelected = isForm && field && selectedFieldId === field.field;
 
     return (
-      <>
+      <div key={blockKey}>
         {isForm && field?.source === "manual" && (
-          <div className="space-between flex flex-row" key={`${formKey}:${i}`}>
+          <div className="space-between flex flex-row">
             <div
               ref={(el) => {
                 if (el && field) fieldRefs[field.field] = el;
@@ -152,7 +153,7 @@ export const BlocksRenderer = <T extends any[]>({
             <ParagraphRenderer content={block.text_content} />
           </div>
         )}
-      </>
+      </div>
     );
   });
 };

@@ -38,7 +38,7 @@ export const SignatureFieldRenderer = <T extends any[]>({
   allValues = {},
   TooltipContent,
 }: SignatureFieldRendererProps<T>) => {
-  const signContext = useSignContext();
+  const { setHasAgreedForSignature } = useSignContext();
   const [checked, setChecked] = useState(false);
   const imageFieldKey = getSignatureImageFieldKey(field.field);
   const rawSignatureImageValue = allValues[imageFieldKey] ?? "";
@@ -60,8 +60,8 @@ export const SignatureFieldRenderer = <T extends any[]>({
   const isDrawingRef = useRef(false);
 
   useEffect(() => {
-    signContext.setHasAgreedForSignature(field.field, value, checked);
-  }, [checked, field.field, signContext, value]);
+    setHasAgreedForSignature(field.field, value, checked);
+  }, [checked, field.field, setHasAgreedForSignature, value]);
 
   useEffect(() => {
     setTypedName(value || "");
