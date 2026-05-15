@@ -8,6 +8,7 @@
 import type { SignatoryProfileTitle } from "./signatoryProfileTitle";
 import type { SignatoryProfileHonorific } from "./signatoryProfileHonorific";
 import type { SignatoryProfileAutofill } from "./signatoryProfileAutofill";
+import type { SignatoryProfileSignatureImage } from "./signatoryProfileSignatureImage";
 import type { SignatoryProfileAutoFormPermissions } from "./signatoryProfileAutoFormPermissions";
 
 export interface SignatoryProfile {
@@ -17,7 +18,7 @@ export interface SignatoryProfile {
   title: SignatoryProfileTitle;
   honorific: SignatoryProfileHonorific;
   autofill: SignatoryProfileAutofill;
-  signatureImage?: string | null;
+  signatureImage: SignatoryProfileSignatureImage;
   autoFormPermissions: SignatoryProfileAutoFormPermissions;
   coordinatorId?: string;
   god?: boolean;

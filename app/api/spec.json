@@ -1673,6 +1673,29 @@
         "tags": ["Forms"]
       }
     },
+    "/api/forms/signature-image/__internal": {
+      "post": {
+        "operationId": "FormsController_uploadSignatureImageInternally",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UploadSignatureImageResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Forms"]
+      }
+    },
     "/api/forms/reject": {
       "post": {
         "operationId": "FormsController_rejectFormProcess",
@@ -2049,6 +2072,89 @@
         "tags": ["FormGroups"]
       }
     },
+    "/api/form-groups/assign-coordinator": {
+      "post": {
+        "operationId": "FormGroupsController_assignCoordinatorToFormGroup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignCoordinatorToFormGroupDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["FormGroups"]
+      }
+    },
+    "/api/form-groups/me/reset-code": {
+      "post": {
+        "operationId": "FormGroupsController_resetOwnFormGroupCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/FormGroupIdDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["FormGroups"]
+      }
+    },
+    "/api/form-groups/reset-code": {
+      "post": {
+        "operationId": "FormGroupsController_resetFormGroupCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/FormGroupIdDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["FormGroups"]
+      }
+    },
     "/api/form-groups/add-form": {
       "post": {
         "operationId": "FormGroupsController_addFormToGroup",
@@ -2227,6 +2333,27 @@
         "tags": ["Signatory"]
       }
     },
+    "/api/signatory/me/signature/__internal": {
+      "post": {
+        "operationId": "SignatoryController_getSignatureInternally",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BaseResponse" } }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        },
+        "tags": ["Signatory"]
+      }
+    },
     "/api/signatory/me/forms": {
       "get": {
         "operationId": "SignatoryController_getSignedDocumentsBySignatory",
@@ -2283,35 +2410,6 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/SignatoryFormGroupsResponse" }
-              }
-            }
-          },
-          "400": {
-            "description": "Error Response",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
-        },
-        "tags": ["Signatory"]
-      }
-    },
-    "/api/signatory/me/form-group/regenerate": {
-      "post": {
-        "operationId": "SignatoryController_resetFormGroupCode",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/FormGroupIdDto" } }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SignatoryFormGroupsResetCodeResponse" }
               }
             }
           },
@@ -4047,6 +4145,16 @@
         "required": ["formProcessId", "supposedSigningPartyId", "recipientEmail"]
       },
       "CreateFormGroupDto": { "type": "object", "properties": { "name": { "type": "string" } } },
+      "AssignCoordinatorToFormGroupDto": {
+        "type": "object",
+        "properties": { "formGroupId": { "type": "string" }, "email": { "type": "string" } },
+        "required": ["formGroupId", "email"]
+      },
+      "FormGroupIdDto": {
+        "type": "object",
+        "properties": { "formGroupId": { "type": "string" } },
+        "required": ["formGroupId"]
+      },
       "AddFormToGroupDto": {
         "type": "object",
         "properties": {
@@ -4088,11 +4196,21 @@
           "title": { "type": "object" },
           "honorific": { "type": "object" },
           "autofill": { "type": "object" },
+          "signatureImage": { "type": "object" },
           "autoFormPermissions": { "type": "object" },
           "coordinatorId": { "type": "string" },
           "god": { "type": "boolean" }
         },
-        "required": ["id", "email", "name", "title", "honorific", "autofill", "autoFormPermissions"]
+        "required": [
+          "id",
+          "email",
+          "name",
+          "title",
+          "honorific",
+          "autofill",
+          "signatureImage",
+          "autoFormPermissions"
+        ]
       },
       "SignatorySelfResponse": {
         "type": "object",
@@ -4190,20 +4308,6 @@
           "formGroups": { "type": "array", "items": { "$ref": "#/components/schemas/_FormGroup" } }
         },
         "required": ["success", "message", "formGroups"]
-      },
-      "FormGroupIdDto": {
-        "type": "object",
-        "properties": { "formGroupId": { "type": "string" } },
-        "required": ["formGroupId"]
-      },
-      "SignatoryFormGroupsResetCodeResponse": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean" },
-          "message": { "type": "string" },
-          "code": { "type": "string" }
-        },
-        "required": ["success", "message", "code"]
       },
       "FormGroupRemoveMemberDto": {
         "type": "object",

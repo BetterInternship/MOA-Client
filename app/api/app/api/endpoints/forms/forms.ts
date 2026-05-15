@@ -2640,6 +2640,76 @@ export const useFormsControllerUploadSignatureImage = <TError = ErrorResponse, T
 
   return useMutation(mutationOptions, queryClient);
 };
+export const formsControllerUploadSignatureImageInternally = (signal?: AbortSignal) => {
+  return preconfiguredAxiosFunction<UploadSignatureImageResponse>({
+    url: `/api/forms/signature-image/__internal`,
+    method: "POST",
+    signal,
+  });
+};
+
+export const getFormsControllerUploadSignatureImageInternallyMutationOptions = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof formsControllerUploadSignatureImageInternally>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof formsControllerUploadSignatureImageInternally>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["formsControllerUploadSignatureImageInternally"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof formsControllerUploadSignatureImageInternally>>,
+    void
+  > = () => {
+    return formsControllerUploadSignatureImageInternally();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FormsControllerUploadSignatureImageInternallyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof formsControllerUploadSignatureImageInternally>>
+>;
+
+export type FormsControllerUploadSignatureImageInternallyMutationError = ErrorResponse;
+
+export const useFormsControllerUploadSignatureImageInternally = <
+  TError = ErrorResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof formsControllerUploadSignatureImageInternally>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof formsControllerUploadSignatureImageInternally>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getFormsControllerUploadSignatureImageInternallyMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 export const formsControllerRejectFormProcess = (
   rejectFormDto: RejectFormDto,
   signal?: AbortSignal
