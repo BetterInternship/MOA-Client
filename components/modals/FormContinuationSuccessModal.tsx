@@ -1,4 +1,4 @@
-import { Button } from "../ui/button";
+import { Button } from "@betterinternship/components";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

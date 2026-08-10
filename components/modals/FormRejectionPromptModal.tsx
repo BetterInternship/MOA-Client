@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FormTextarea } from "../docs/forms/EditForm";
-import { Button } from "../ui/button";
+import { Button } from "@betterinternship/components";
 import useModalRegistry from "../modal-registry";
 import { formsControllerRejectFormProcess } from "../../app/api/app/api/endpoints/forms/forms";
 import { TextLoader } from "../ui/loader";
