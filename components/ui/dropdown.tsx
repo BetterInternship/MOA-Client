@@ -7,7 +7,7 @@
  * Stateful dropdown group component.
  */
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { useAppContext } from "@/lib/ctx-app";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
@@ -247,7 +247,7 @@ export const GroupableRadioDropdown = <ID extends number | string>({
         >
           <div
             className={cn(
-              "scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative z-[100] max-h-64 overflow-y-auto overscroll-contain"
+              "relative z-[100] max-h-64 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 overflow-y-auto overscroll-contain"
             )}
           >
             {options.map((option, index) => (
@@ -426,7 +426,7 @@ export const GroupableNavDropdown = ({
         >
           <div
             className={cn(
-              "scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative z-[1000] max-h-64 overflow-y-auto overscroll-contain py-1",
+              "relative z-[1000] max-h-64 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 overflow-y-auto overscroll-contain py-1",
               is_mobile ? "max-h-80" : "max-h-64"
             )}
             style={{

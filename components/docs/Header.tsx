@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,

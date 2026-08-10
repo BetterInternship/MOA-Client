@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Upload, ArrowRight, ArrowLeft, Check, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { FormInput } from "@/components/docs/forms/EditForm";

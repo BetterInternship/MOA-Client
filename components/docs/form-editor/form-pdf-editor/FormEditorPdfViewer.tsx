@@ -29,7 +29,7 @@ import { ensurePreviewFontsLoaded } from "@betterinternship/core/pdf-viewer";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

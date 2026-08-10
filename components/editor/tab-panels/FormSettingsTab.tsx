@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormEditorMetadata } from "@/app/contexts/form-editor-metadata.context";
 import { useEditorSelection } from "@/app/contexts/editor-selection.context";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormMetadataTab } from "@/components/editor/tab-panels/FormMetadataTab";

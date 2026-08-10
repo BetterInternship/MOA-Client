@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FormValues } from "@betterinternship/core/forms";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { TextLoader } from "@/components/ui/loader";
 import { getClientAudit } from "@/lib/audit";
 import { formsControllerContinueFormProcess } from "@/app/api";

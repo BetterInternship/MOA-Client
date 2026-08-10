@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { FormInput } from "@/components/docs/forms/EditForm";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { signatoryControllerUpdateSelf } from "@/app/api/app/api/endpoints/signatory/signatory";
@@ -32,7 +32,7 @@ export function CompleteProfileModal({
       await signatoryControllerUpdateSelf({ name: name.trim() });
       await queryClient.refetchQueries({ queryKey: ["my-profile"] });
       toast.success("Profile updated!", toastPresets.default);
-      
+
       close();
       if (onSuccess) {
         void onSuccess();

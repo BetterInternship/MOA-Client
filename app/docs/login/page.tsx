@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Input } from "@/components/ui/input";
 import { Loader2, ShieldCheck, Lock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";

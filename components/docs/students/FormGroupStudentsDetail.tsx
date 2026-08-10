@@ -2,7 +2,7 @@
 
 import { RefreshCw, UserMinus } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Card } from "@/components/ui/card";
 import {
   Select,

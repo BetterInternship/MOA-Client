@@ -1,7 +1,7 @@
 import type { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
 import { FileUp } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { cn } from "@/lib/utils";
 
 export function PdfViewerStatus({

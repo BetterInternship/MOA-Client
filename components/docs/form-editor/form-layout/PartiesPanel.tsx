@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { type IFormSigningParty } from "@betterinternship/core/forms";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { getPartyColorByOrder, getPartyDisplayTitle } from "@betterinternship/core/pdf-viewer";
 import { Plus, Trash2, GripVertical, ChevronDown } from "lucide-react";
 
@@ -416,7 +416,10 @@ export const PartiesPanel = ({ parties, onPartiesChange }: PartiesPanelProps) =>
                             if (openDropdownId === party._id) {
                               autoSaveParty(party._id, {
                                 values: editValues[party._id] ?? values,
-                                isEmail: resolveIsEmailMode(party._id, editValues[party._id] ?? values),
+                                isEmail: resolveIsEmailMode(
+                                  party._id,
+                                  editValues[party._id] ?? values
+                                ),
                               });
                               setOpenDropdownId(null);
                               return;

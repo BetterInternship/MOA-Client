@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FormInput, FormTextarea, TimeInputNative } from "@/components/docs/forms/EditForm";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { MessageSquare } from "lucide-react";

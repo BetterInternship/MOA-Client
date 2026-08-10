@@ -55,14 +55,13 @@ everything needed to implement without re-deriving.
   - Bootstrap effect (deps `[formName, fetchedData]`): if `formName` + `fetchedData.formMetadata`,
     seeds `loadFormMetadata/setFormDocument/setFormVersion/setDocumentUrl`, and on **initial
     bootstrap** does `fetch(fetchedData.documentUrl) → blob → new File([blob], \`${formName}.pdf\`,
-    {type:"application/pdf"}) → setDocumentFile(file)`. Has a `hasBootstrappedRef` and
-    `activeFormNameRef`.
+    {type:"application/pdf"}) → setDocumentFile(file)`. Has a `hasBootstrappedRef`and`activeFormNameRef`.
   - **No-`formName` branch** currently seeds `BLANK_FORM_METADATA` (create-new path) — THIS IS
     WHAT WE REPLACE with a redirect to `create-form`.
   - On `isLoading` it returns `<FormEditorLoadingFallback label="Loading form..." />`.
   - When loaded, renders `<EditorSelectionProvider><FormEditorPdfViewerProvider>…<EditorToolbar/>…<EditorContent/>`.
 - `form-editor-metadata.context.tsx` exposes `documentFile, setDocumentFile, documentFileReplaced,
-  setDocumentUrl`, etc. (see `useFormEditorMetadata`).
+setDocumentUrl`, etc. (see `useFormEditorMetadata`).
 - `pdf-viewer.context.tsx` (`FormEditorPdfViewerProvider`): parses `documentFile` once,
   identity-keyed via `loadedFileRef` (same `File` ⇒ no re-parse). Page-scoped (remounts per
   editor mount).
@@ -78,10 +77,12 @@ everything needed to implement without re-deriving.
 ## Files to create / change
 
 ### A. NEW — `app/contexts/form-draft.context.tsx`
+
 Client context. In-memory only (no persistence) — the whole point is to preserve the `File`
 object identity across the route nav while the shared `ft2…` layout stays mounted.
 
 State + API:
+
 ```ts
 interface FormDraftContextType {
   // wizard data
@@ -93,17 +94,18 @@ interface FormDraftContextType {
   setFormLabel: (s: string) => void;
   isDebugForm: boolean;
   setIsDebugForm: (b: boolean) => void;
-  formName: string | null;        // slug, set on Create (the form we just registered)
+  formName: string | null; // slug, set on Create (the form we just registered)
   setFormName: (s: string | null) => void;
 
   // transition / overlay
-  isCreating: boolean;            // overlay visible (covering)
+  isCreating: boolean; // overlay visible (covering)
   setIsCreating: (b: boolean) => void;
-  markEditorReady: () => void;    // editor signals load done → overlay fades out
+  markEditorReady: () => void; // editor signals load done → overlay fades out
 
-  clearDraft: () => void;         // reset everything incl. transition flags
+  clearDraft: () => void; // reset everything incl. transition flags
 }
 ```
+
 - Default `signingParties`: `[{ _id: "initiator", order: 1, signatory_title: "Student" }]`.
 - `markEditorReady()` should drive the overlay's fade-out. Simplest implementation: keep a
   separate `overlayState: "hidden" | "visible" | "fading"` derived internally, OR expose a
@@ -114,23 +116,27 @@ interface FormDraftContextType {
 - `useFormDraft()` hook throws if used outside provider.
 
 ### B. NEW — `app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/layout.tsx`
+
 `"use client"`. Wraps children in `<FormDraftProvider>` and renders the overlay above children:
+
 ```tsx
 export default function Ft2Layout({ children }) {
   return (
     <FormDraftProvider>
       {children}
-      <CreatingOverlay />   {/* reads useFormDraft(); fixed, full-screen */}
+      <CreatingOverlay /> {/* reads useFormDraft(); fixed, full-screen */}
     </FormDraftProvider>
   );
 }
 ```
+
 This is the nearest common ancestor of create-form + editor, so it stays mounted across the
 nav — the `File` survives and the overlay persists through the transition, fading out over the
 already-mounted editor. (It also wraps the other `ft2…` sibling pages: fields/registry/sync/
 form-groups — harmless; context just unused there, overlay hidden by default.)
 
 ### C. REWRITE — `app/docs/ft2…/create-form/page.tsx`
+
 Becomes a 2-step wizard. Reads/writes the draft store (so values survive the nav). Local
 `step` state (`1 | 2`) or a boolean `partiesModalOpen`.
 
@@ -155,7 +161,7 @@ Becomes a 2-step wizard. Reads/writes the draft store (so values survive the nav
   1. validate: pdf present, label present, all party titles non-empty.
   2. `setIsCreating(true)` (overlay appears, "Creating form…").
   3. build `formMetadata` exactly as today (`name: formName, label: formLabel, schema_version:
-     SCHEMA_VERSION, schema: { blocks: [] }, signing_parties: signingParties, subscribers: []`).
+SCHEMA_VERSION, schema: { blocks: [] }, signing_parties: signingParties, subscribers: []`).
   4. `await formsControllerRegisterForm({ ...formMetadata, base_document: pdfFile })`.
   5. write draft: `setFormName(formName)` (pdfFile + parties already in draft).
   6. `router.push(\`./editor?form_name=${encodeURIComponent(formName)}\`)`.
@@ -168,8 +174,10 @@ Becomes a 2-step wizard. Reads/writes the draft store (so values survive the nav
   `formsControllerRegisterForm`, `FormInput`, `Checkbox`, `Label`, `Card`, `Button`, toasts.
 
 ### D. NEW — `CreatingOverlay` component
+
 Location: co-locate in `form-draft.context.tsx` or a small file
 `components/docs/form-editor/CreatingOverlay.tsx`. Reads `useFormDraft()`.
+
 - Renders only when `isCreating` (or while fading).
 - Fixed, inset-0, `z-[100]`, semi-transparent backdrop (e.g. `bg-white/70 backdrop-blur-sm`),
   centered `<Loader/>` (`@/components/ui/loader`) + text "Creating form…".
@@ -181,8 +189,10 @@ Location: co-locate in `form-draft.context.tsx` or a small file
   flags. Keep `pdfFile` alive until the editor has seeded it.
 
 ### D-bis. NEW — `SimplePartiesList` component
+
 Location: `components/docs/form-editor/form-layout/SimplePartiesList.tsx`.
 Props: `{ parties: IFormSigningParty[]; onChange: (p: IFormSigningParty[]) => void }`.
+
 - Renders `parties` sorted by `order`, enumerated (#1, #2, …).
 - Row #1 (initiator, `order === 1`): fixed label "Student" (read-only, no delete, no source).
 - Rows #2+: a text input for `signatory_title` + a delete (trash) button.
@@ -196,7 +206,9 @@ Props: `{ parties: IFormSigningParty[]; onChange: (p: IFormSigningParty[]) => vo
 - Keep it dependency-light (Button, lucide `Plus`/`Trash2`, Card optional).
 
 ### E. EDIT — `app/docs/ft2…/editor/page.tsx`
+
 In `FormEditorContent`:
+
 1. **Guard:** add `const router = useRouter()` and read draft via `useFormDraft()`. If
    `!formName`: `useEffect(() => { router.replace("./create-form"); }, [])` and render only the
    loading fallback (return early). REMOVE the `else if (isInitialBootstrap)` BLANK_FORM_METADATA
@@ -227,6 +239,7 @@ In `FormEditorContent`:
 Confirm the register endpoint accepts a non-initiator signing party with **only a title** (no
 `signatory_source` / `signatory_account`). Check the API/controller types behind
 `formsControllerRegisterForm` and the `IFormSigningParty` schema in `@betterinternship/core/forms`.
+
 - If allowed → proceed with titles-only `SimplePartiesList`.
 - If rejected → fall back to also collecting an email per non-initiator row in the modal
   (minimal: one email input per row, set `signatory_account = { name: email.split("@")[0], email }`).
@@ -237,7 +250,7 @@ Confirm the register endpoint accepts a non-initiator signing party with **only 
   DialogTitle/DialogFooter). If absent, search `components/ui` for the modal primitive in use.
 - Loader: `@/components/ui/loader` → `<Loader />` (and `<Loader>text</Loader>` supported, see
   docs/layout.tsx usage).
-- Button: `@/components/ui/button`; Card: `@/components/ui/card`; Checkbox:
+- Button: `@betterinternship/components`; Card: `@/components/ui/card`; Checkbox:
   `@/components/ui/checkbox`; Label: `@/components/ui/label`; FormInput:
   `@/components/docs/forms/EditForm`.
 - Toasts: `import { toast } from "sonner"`; presets `@/components/sonner-toaster`

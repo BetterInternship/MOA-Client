@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -156,7 +156,7 @@ export function LabelWithTooltip({
             className={cn("text-primary h-3.5 w-3.5", hasTooltip ? "" : "invisible")}
           />
           {hasTooltip && (
-            <div className="pointer-events-none absolute top-full left-1/2 z-[1400] mt-1 hidden w-max max-w-[min(18rem,80vw)] -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-[10px] leading-snug whitespace-normal text-white shadow-lg group-hover:block group-focus-within:block">
+            <div className="pointer-events-none absolute top-full left-1/2 z-[1400] mt-1 hidden w-max max-w-[min(18rem,80vw)] -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-[10px] leading-snug whitespace-normal text-white shadow-lg group-focus-within:block group-hover:block">
               {tooltip}
             </div>
           )}

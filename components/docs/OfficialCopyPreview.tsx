@@ -9,7 +9,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { File as FileIcon, Loader2 } from "lucide-react";
 import { Download } from "lucide-react";
 import { useState } from "react";

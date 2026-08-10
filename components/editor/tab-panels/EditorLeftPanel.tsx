@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { useEditorSelection } from "@/app/contexts/editor-selection.context";
 import { useFormEditorMetadata } from "@/app/contexts/form-editor-metadata.context";
 import { BlocksPanel } from "./editor-components/BlocksPanel";
@@ -26,7 +26,12 @@ function EditorLeftPanel() {
     <div className="flex h-full flex-col overflow-hidden" data-editor-left-panel>
       {selectedBlockId && (
         <div className="flex items-center px-3 py-1.5">
-          <Button size="xs" variant="outline" onClick={() => setSelectedBlockId(null)} className="h-8 -mb-2">
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={() => setSelectedBlockId(null)}
+            className="-mb-2 h-8"
+          >
             <ArrowLeft />
             Back
           </Button>

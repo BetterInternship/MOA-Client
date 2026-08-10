@@ -16,7 +16,7 @@ import {
   useMyAutofill,
   getMissingManualFields,
 } from "@/hooks/use-my-autofill";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { FormDefaultValueCapture } from "@/components/docs/form-editor/form-layout/FormDefaultValueCapture";
 import { getFormFields } from "@/app/api/forms.api";
 import MyFormsTableLike from "@/components/docs/forms/MyFormTableLike";

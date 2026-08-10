@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormEditorMetadata } from "@/app/contexts/form-editor-metadata.context";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Copy, Download, Edit2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";

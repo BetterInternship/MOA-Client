@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { type IFormBlock, type IFormMetadata } from "@betterinternship/core/forms";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { FormPreviewRenderer } from "./FormPreviewRenderer";
 import { FormFillPdfViewer } from "@betterinternship/core/pdf-viewer";
 import { Loader2 } from "lucide-react";

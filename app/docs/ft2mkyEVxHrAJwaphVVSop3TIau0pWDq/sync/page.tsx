@@ -8,7 +8,7 @@ import {
   formSyncControllerSyncSingleForm,
   useFormsControllerGetRegistry,
 } from "@/app/api";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 

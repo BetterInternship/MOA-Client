@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import {
   Select,
@@ -121,10 +121,18 @@ export function CustomFieldModalForm({
       ...updates,
     };
 
-    if (typeof nextDefaults.w !== "number" || !Number.isFinite(nextDefaults.w) || nextDefaults.w <= 0) {
+    if (
+      typeof nextDefaults.w !== "number" ||
+      !Number.isFinite(nextDefaults.w) ||
+      nextDefaults.w <= 0
+    ) {
       delete nextDefaults.w;
     }
-    if (typeof nextDefaults.h !== "number" || !Number.isFinite(nextDefaults.h) || nextDefaults.h <= 0) {
+    if (
+      typeof nextDefaults.h !== "number" ||
+      !Number.isFinite(nextDefaults.h) ||
+      nextDefaults.h <= 0
+    ) {
       delete nextDefaults.h;
     }
     if (typeof nextDefaults.size !== "number" || !Number.isFinite(nextDefaults.size)) {
@@ -356,8 +364,7 @@ export function CustomFieldModalForm({
                     value={schemaDefaults.w ?? ""}
                     onChange={(e) =>
                       applyFieldSchemaDefaults({
-                        w:
-                          e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
+                        w: e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
                       })
                     }
                     placeholder="100"
@@ -371,8 +378,7 @@ export function CustomFieldModalForm({
                     value={schemaDefaults.h ?? ""}
                     onChange={(e) =>
                       applyFieldSchemaDefaults({
-                        h:
-                          e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
+                        h: e.target.value.trim().length === 0 ? undefined : Number(e.target.value),
                       })
                     }
                     placeholder="12"
@@ -387,7 +393,9 @@ export function CustomFieldModalForm({
                   <Button
                     type="button"
                     size="sm"
-                    variant={(schemaDefaults.align_h || "center") === "left" ? "default" : "outline"}
+                    variant={
+                      (schemaDefaults.align_h || "center") === "left" ? "default" : "outline"
+                    }
                     className="h-8 flex-1"
                     onClick={() => applyFieldSchemaDefaults({ align_h: "left" })}
                   >
@@ -396,7 +404,9 @@ export function CustomFieldModalForm({
                   <Button
                     type="button"
                     size="sm"
-                    variant={(schemaDefaults.align_h || "center") === "center" ? "default" : "outline"}
+                    variant={
+                      (schemaDefaults.align_h || "center") === "center" ? "default" : "outline"
+                    }
                     className="h-8 flex-1"
                     onClick={() => applyFieldSchemaDefaults({ align_h: "center" })}
                   >
@@ -405,7 +415,9 @@ export function CustomFieldModalForm({
                   <Button
                     type="button"
                     size="sm"
-                    variant={(schemaDefaults.align_h || "center") === "right" ? "default" : "outline"}
+                    variant={
+                      (schemaDefaults.align_h || "center") === "right" ? "default" : "outline"
+                    }
                     className="h-8 flex-1"
                     onClick={() => applyFieldSchemaDefaults({ align_h: "right" })}
                   >
@@ -429,7 +441,9 @@ export function CustomFieldModalForm({
                   <Button
                     type="button"
                     size="sm"
-                    variant={(schemaDefaults.align_v || "bottom") === "middle" ? "default" : "outline"}
+                    variant={
+                      (schemaDefaults.align_v || "bottom") === "middle" ? "default" : "outline"
+                    }
                     className="h-8 flex-1"
                     onClick={() => applyFieldSchemaDefaults({ align_v: "middle" })}
                   >
@@ -438,7 +452,9 @@ export function CustomFieldModalForm({
                   <Button
                     type="button"
                     size="sm"
-                    variant={(schemaDefaults.align_v || "bottom") === "bottom" ? "default" : "outline"}
+                    variant={
+                      (schemaDefaults.align_v || "bottom") === "bottom" ? "default" : "outline"
+                    }
                     className="h-8 flex-1"
                     onClick={() => applyFieldSchemaDefaults({ align_v: "bottom" })}
                   >
@@ -467,7 +483,6 @@ export function CustomFieldModalForm({
               <div className="flex items-center justify-between rounded-[0.33em] border border-slate-200 px-2.5 py-2">
                 <div className="space-y-0.5">
                   <p className="text-xs font-semibold text-slate-700">Derived value</p>
-              
                 </div>
                 <Switch
                   checked={isDerived}

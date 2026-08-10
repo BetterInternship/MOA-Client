@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { useModal } from "@/app/providers/modal-provider";
 import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
 import { FormContinuationSuccessModal } from "@/components/modals/FormContinuationSuccessModal";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { formsControllerAlterRecipient } from "../../../api/app/api/endpoints/forms/forms";

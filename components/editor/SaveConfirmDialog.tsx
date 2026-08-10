@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import type { BlockChange, ListChange } from "@/lib/form-editor-metadata/diff";
 
 interface SaveConfirmDialogProps {
@@ -19,15 +19,13 @@ interface SaveConfirmDialogProps {
 }
 
 function Badge({ kind }: { kind: "added" | "removed" | "modified" }) {
-  if (kind === "added")
-    return <span className="mr-1.5 inline-block text-green-600">+</span>;
-  if (kind === "removed")
-    return <span className="mr-1.5 inline-block text-red-500">−</span>;
+  if (kind === "added") return <span className="mr-1.5 inline-block text-green-600">+</span>;
+  if (kind === "removed") return <span className="mr-1.5 inline-block text-red-500">−</span>;
   return <span className="mr-1.5 inline-block text-blue-500">~</span>;
 }
 
 function Row({ children }: { children: React.ReactNode }) {
-  return <div className="text-sm leading-relaxed text-muted-foreground">{children}</div>;
+  return <div className="text-muted-foreground text-sm leading-relaxed">{children}</div>;
 }
 
 function ListRow({ change }: { change: ListChange }) {
@@ -66,12 +64,10 @@ export function SaveConfirmDialog({ open, onOpenChange }: SaveConfirmDialogProps
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-          {!hasChanges && (
-            <p className="text-sm text-muted-foreground">No changes to save.</p>
-          )}
+          {!hasChanges && <p className="text-muted-foreground text-sm">No changes to save.</p>}
 
           {documentFileReplaced && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               <span className="mr-1.5 inline-block">📄</span>
               Base document replaced
             </div>
@@ -80,7 +76,7 @@ export function SaveConfirmDialog({ open, onOpenChange }: SaveConfirmDialogProps
           {pendingDiff.metaDeltas.length > 0 && (
             <div className="space-y-1">
               {pendingDiff.metaDeltas.map((d) => (
-                <div key={d.key} className="text-sm text-muted-foreground">
+                <div key={d.key} className="text-muted-foreground text-sm">
                   <span className="mr-1.5 inline-block">✏️</span>
                   {d.label} changed
                 </div>
@@ -90,7 +86,7 @@ export function SaveConfirmDialog({ open, onOpenChange }: SaveConfirmDialogProps
 
           {pendingDiff.parties.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/60">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wide uppercase">
                 Signing Parties
               </p>
               {pendingDiff.parties.map((p) => (
@@ -101,7 +97,7 @@ export function SaveConfirmDialog({ open, onOpenChange }: SaveConfirmDialogProps
 
           {pendingDiff.subscribers.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/60">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wide uppercase">
                 Subscribers
               </p>
               {pendingDiff.subscribers.map((s) => (
@@ -110,30 +106,31 @@ export function SaveConfirmDialog({ open, onOpenChange }: SaveConfirmDialogProps
             </div>
           )}
 
-          {pendingDiff.blocks.length > 0 && (() => {
-            const groups = new Map<string, BlockChange[]>();
-            for (const b of pendingDiff.blocks) {
-              const key = b.partyLabel || "General";
-              if (!groups.has(key)) groups.set(key, []);
-              groups.get(key)!.push(b);
-            }
-            return Array.from(groups.entries()).map(([party, changes]) => (
-              <div key={party} className="space-y-0.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/60">
-                  {party}
-                </p>
-                {changes.map((b) => (
-                  <Row key={b.blockId}>
-                    <Badge kind={b.kind} />
-                    {b.label}
-                  </Row>
-                ))}
-              </div>
-            ));
-          })()}
+          {pendingDiff.blocks.length > 0 &&
+            (() => {
+              const groups = new Map<string, BlockChange[]>();
+              for (const b of pendingDiff.blocks) {
+                const key = b.partyLabel || "General";
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key)!.push(b);
+              }
+              return Array.from(groups.entries()).map(([party, changes]) => (
+                <div key={party} className="space-y-0.5">
+                  <p className="text-muted-foreground/60 text-xs font-semibold tracking-wide uppercase">
+                    {party}
+                  </p>
+                  {changes.map((b) => (
+                    <Row key={b.blockId}>
+                      <Badge kind={b.kind} />
+                      {b.label}
+                    </Row>
+                  ))}
+                </div>
+              ));
+            })()}
 
           {pendingDiff.reordered && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               <span className="mr-1.5 inline-block">↕️</span>
               Fields reordered
             </div>

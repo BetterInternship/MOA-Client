@@ -10,7 +10,7 @@
 
 import { useRef } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { IFormSigningParty } from "@betterinternship/core/forms";
 
 interface SimplePartiesListProps {
@@ -82,7 +82,7 @@ export function SimplePartiesList({ parties, onChange }: SimplePartiesListProps)
                   size="icon"
                   onClick={() => handleDelete(party._id)}
                   aria-label="Remove recipient"
-                  className="shrink-0 text-slate-400 hover:text-destructive"
+                  className="hover:text-destructive shrink-0 text-slate-400"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

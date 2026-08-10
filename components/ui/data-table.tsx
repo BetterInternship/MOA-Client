@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,

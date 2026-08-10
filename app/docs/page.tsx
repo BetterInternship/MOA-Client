@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { z } from "zod";
 import { Search, SearchCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { VerificationDetailsCard } from "@/components/docs/VerificationDetailsCard";
 import { OfficialCopyPreview } from "@/components/docs/OfficialCopyPreview";
 import { SignedOrExternalDocumentInfo, useDocsControllerGetByVerificationCode } from "../api";
@@ -17,7 +17,7 @@ const SerialSchema = z
   .trim()
   .regex(
     /^(?:IOM-)?\d{10}-[A-Fa-f0-9]{8}-[A-Fa-f0-9]{8}$/,
-    "Serial must be 10-8-8 characters (e.g., 0123456789-abcdefgh-1234abcd), optionally prefixed with IOM-",
+    "Serial must be 10-8-8 characters (e.g., 0123456789-abcdefgh-1234abcd), optionally prefixed with IOM-"
   );
 
 export default function VerifyDocsPage() {
@@ -74,7 +74,7 @@ function VerifyDocsPageContent() {
                     <HeaderIcon icon={SearchCheck} />
                     <HeaderText> Document Verifier </HeaderText>
                   </div>
-                  <p className="text-sm text-muted-foreground sm:text-base">
+                  <p className="text-muted-foreground text-sm sm:text-base">
                     Enter the <strong>Serial Number</strong> printed on the document to check its
                     authenticity.
                   </p>

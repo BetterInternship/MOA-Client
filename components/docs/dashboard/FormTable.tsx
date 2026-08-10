@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { ArrowRight, Download, Hourglass, ChevronDown, Sheet, ExternalLink } from "lucide-react";
 import { IMyForm, useMyForms } from "../forms/myforms.ctx";
 import { IFormSignatory } from "@betterinternship/core/forms";

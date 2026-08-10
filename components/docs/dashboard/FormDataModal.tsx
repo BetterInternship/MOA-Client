@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import Table from "@/components/docs/dashboard/Table";
 import CsvExporter from "@/components/docs/dashboard/CsvExporter";
 import FieldVisibilityToggle from "@/components/docs/dashboard/FieldVisibilityToggle";

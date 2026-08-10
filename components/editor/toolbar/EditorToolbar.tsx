@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormEditorMetadata } from "@/app/contexts/form-editor-metadata.context";
 import { useEditorSelection } from "@/app/contexts/editor-selection.context";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Save, Settings, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatWhen } from "@/lib/format";
@@ -15,8 +15,7 @@ import { SaveConfirmDialog } from "@/components/editor/SaveConfirmDialog";
  * - save action (opens confirmation dialog)
  */
 export function EditorToolbar() {
-  const { formMetadata, formDocument, formVersion, isSaving } =
-    useFormEditorMetadata();
+  const { formMetadata, formDocument, formVersion, isSaving } = useFormEditorMetadata();
   const { activeTab, setActiveTab } = useEditorSelection();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 

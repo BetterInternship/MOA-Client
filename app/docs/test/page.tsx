@@ -2,7 +2,7 @@
 
 import { Turnstile } from "@marsidev/react-turnstile";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Loader } from "@/components/ui/loader";
 
 interface Response {

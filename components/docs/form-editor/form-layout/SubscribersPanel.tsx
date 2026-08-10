@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { type IFormSubscriber } from "@betterinternship/core/forms";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { Plus, Trash2 } from "lucide-react";
 import { validateEmail } from "@/lib/validators";
 import { toast } from "sonner";

@@ -10,7 +10,7 @@ import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
 import { useFormFiller } from "@/components/docs/forms/form-filler.ctx";
 import { FormFillPdfViewer } from "@betterinternship/core/pdf-viewer";
 import { Loader } from "@/components/ui/loader";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { useMyAutofill } from "@/hooks/use-my-autofill";
 import { useSignContext } from "../auth/provider/sign.ctx";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
@@ -403,7 +403,7 @@ function PageContent() {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col items-center overflow-y-scroll [scrollbar-gutter:stable]">
+    <div className="flex h-full min-h-0 w-full [scrollbar-gutter:stable] flex-col items-center overflow-y-scroll">
       {showOuterHeader && (
         <div className="w-full flex-shrink-0 border-b border-gray-200 bg-white shadow-sm">
           <div className="mx-auto max-w-7xl px-2 py-3 sm:px-6">

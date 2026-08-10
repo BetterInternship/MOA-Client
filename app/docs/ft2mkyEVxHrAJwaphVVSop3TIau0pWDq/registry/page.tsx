@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { formSyncControllerCompareFormVersions, useFormsControllerGetRegistry } from "@/app/api";
 import { fetchAllFormGroups } from "@/app/api/forms.api";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { useRouter } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import { DataTable } from "@/components/ui/data-table";

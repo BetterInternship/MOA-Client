@@ -2,7 +2,7 @@
 
 import { useFormProcess } from "@/components/docs/forms/form-process.ctx";
 import { useFormRendererContext } from "@/components/docs/forms/form-renderer.ctx";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 
 type SignIntentGateProps = {
   onSignSelf: () => void;

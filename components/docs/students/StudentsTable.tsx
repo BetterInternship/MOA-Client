@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { UserMinus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import {
   AlertDialog,
   AlertDialogAction,

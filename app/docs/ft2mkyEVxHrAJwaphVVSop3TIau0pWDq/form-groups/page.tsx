@@ -16,7 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import { toast } from "sonner";
 import { useFormsControllerGetRegistry } from "@/app/api";
 import {
@@ -802,7 +802,7 @@ export default function FormGroupsPage() {
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className=" border-slate-200 px-12">
+                      <div className="border-slate-200 px-12">
                         {group.forms && group.forms.length > 0 ? (
                           <div className="">
                             {group.forms.map((formName) => {

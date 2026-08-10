@@ -10,7 +10,7 @@ import { useFormEditorMetadata } from "@/app/contexts/form-editor-metadata.conte
 import { useEditorSelection } from "@/app/contexts/editor-selection.context";
 import { useFieldTemplateContext } from "@/app/contexts/field-template.ctx";
 import { FormTextarea, FormInput } from "@/components/docs/forms/EditForm";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import {
   BiAlignLeft,
   BiAlignMiddle,

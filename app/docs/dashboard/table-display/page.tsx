@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { HeaderIcon, HeaderText } from "@/components/ui/text";
 import { Table2, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@betterinternship/components";
 import Table from "@/components/docs/dashboard/Table";
 import FieldVisibilityToggle from "@/components/docs/dashboard/FieldVisibilityToggle";
 import { RowEntry } from "@/lib/types";

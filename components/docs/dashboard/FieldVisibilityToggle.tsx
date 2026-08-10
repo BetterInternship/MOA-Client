@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { EyeOff, ListMinus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-    
+import { Button } from "@betterinternship/components";
+
 interface FieldVisibilityToggleProps {
   availableColumns: string[];
   visibleColumns: string[];
@@ -19,15 +19,15 @@ export default function FieldVisibilityToggle({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter columns based on search query
-  const filteredColumns = availableColumns.filter(column =>
+  const filteredColumns = availableColumns.filter((column) =>
     column.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Count hidden fields
-  const hiddenCount = availableColumns.filter(col => !visibleColumns.includes(col)).length;
+  const hiddenCount = availableColumns.filter((col) => !visibleColumns.includes(col)).length;
 
   const handleShowAll = () => {
-    availableColumns.forEach(col => {
+    availableColumns.forEach((col) => {
       if (!visibleColumns.includes(col)) {
         onToggleColumn(col);
       }
@@ -35,7 +35,7 @@ export default function FieldVisibilityToggle({
   };
 
   const handleHideAll = () => {
-    visibleColumns.forEach(col => {
+    visibleColumns.forEach((col) => {
       onToggleColumn(col);
     });
   };
@@ -59,17 +59,17 @@ export default function FieldVisibilityToggle({
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-80 rounded-lg border border-gray-300 bg-white shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-2 w-80 rounded-lg border border-gray-300 bg-white shadow-lg">
           {/* Search Input */}
           <div className="border-b border-gray-200 p-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 w-4 h-4 -translate-y-1/2 transform text-gray-400" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
               <input
                 type="text"
                 placeholder="Find a field"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded border border-gray-300 py-1.5 pl-10 pr-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded border border-gray-300 py-1.5 pr-3 pl-10 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 autoFocus
               />
             </div>
@@ -112,16 +112,10 @@ export default function FieldVisibilityToggle({
 
           {/* Footer Actions */}
           <div className="flex justify-between border-t border-gray-200 p-3">
-            <button
-              onClick={handleHideAll}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
+            <button onClick={handleHideAll} className="text-sm text-gray-600 hover:text-gray-800">
               Hide all
             </button>
-            <button
-              onClick={handleShowAll}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
+            <button onClick={handleShowAll} className="text-sm text-gray-600 hover:text-gray-800">
               Show all
             </button>
           </div>
@@ -129,12 +123,7 @@ export default function FieldVisibilityToggle({
       )}
 
       {/* Backdrop to close dropdown */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      {isOpen && <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />}
     </div>
   );
 }
