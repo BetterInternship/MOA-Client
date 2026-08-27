@@ -27,11 +27,18 @@ export const useMyAutofill = () => {
     const internshipMoaFields = profile.autofill;
 
     // Destructure to isolate only shared fields or fields for that form
-    const autofillValues = {
+    const storedAutofillValues = {
       ...(internshipMoaFields.base ?? {}),
       ...internshipMoaFields.shared,
       ...(internshipMoaFields[form.formName] ?? {}),
     };
+    const allowedFieldNames = new Set([
+      ...form.fields.map((field) => field.field),
+      "__signature_image_enabled",
+    ]);
+    const autofillValues = Object.fromEntries(
+      Object.entries(storedAutofillValues).filter(([field]) => allowedFieldNames.has(field))
+    ) as FormValues;
 
     // Populate with prefillers as well
     for (const field of form.fields) {
