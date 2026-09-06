@@ -11,7 +11,10 @@ import { SigningPartiesTab } from "@/components/editor/tab-panels/SigningParties
 import { SubscribersTab } from "@/components/editor/tab-panels/SubscribersTab";
 import FieldRegistryPage from "@/app/docs/ft2mkyEVxHrAJwaphVVSop3TIau0pWDq/fields/page";
 import { cn } from "@/lib/utils";
-import { ArrowLeft } from "lucide-react";
+import { useSignedUrl } from "@/lib/signed-url";
+import { toast } from "sonner";
+import { toastPresets } from "@/components/sonner-toaster";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { SCHEMA_VERSION } from "@betterinternship/core/forms";
 
 type SettingsSection = "metadata" | "recipients" | "subscribers" | "settings" | "field-registry";
@@ -115,7 +118,11 @@ export function FormSettingsTab() {
 }
 
 function FormSettingsContent() {
-  const { formMetadata, updateFormMetadata } = useFormEditorMetadata();
+  const { formMetadata, updateFormMetadata, documentFile, documentUrl } = useFormEditorMetadata();
+  const { url: resolvedDocumentUrl, loading: isDocumentUrlLoading } = useSignedUrl(
+    documentUrl ?? ""
+  );
+  const [isDownloading, setIsDownloading] = useState(false);
 
   if (!formMetadata) {
     return (
@@ -131,6 +138,33 @@ function FormSettingsContent() {
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateFormMetadata({ label: e.target.value });
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsDownloading(true);
+    try {
+      let blob: Blob;
+      if (documentFile) {
+        blob = documentFile;
+      } else {
+        const response = await fetch(resolvedDocumentUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        blob = await response.blob();
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${formMetadata.name || "form"}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download form PDF:", error);
+      toast.error("Failed to download form PDF", toastPresets.destructive);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -167,6 +201,29 @@ function FormSettingsContent() {
               placeholder="e.g., Application Form"
             />
             <p className="text-muted-foreground mt-2 text-xs">This is the display name for users</p>
+          </div>
+
+          <div className="border-t pt-5">
+            <h4 className="text-sm font-medium">Form PDF</h4>
+            <p className="text-muted-foreground mt-2 text-xs">
+              Download the PDF currently loaded in the editor.
+            </p>
+            <Button
+              className="mt-3 gap-2"
+              disabled={
+                isDownloading || isDocumentUrlLoading || (!documentFile && !resolvedDocumentUrl)
+              }
+              onClick={() => void handleDownloadPdf()}
+              type="button"
+              variant="outline"
+            >
+              {isDownloading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Download Form PDF
+            </Button>
           </div>
         </div>
       </div>
