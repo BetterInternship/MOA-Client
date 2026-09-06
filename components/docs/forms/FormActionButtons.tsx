@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { FormValues } from "@betterinternship/core/forms";
 import { Button } from "@/components/ui/button";
 import { TextLoader } from "@/components/ui/loader";
@@ -17,6 +16,7 @@ import { useFormProcess } from "./form-process.ctx";
 import { toast } from "sonner";
 import { toastPresets } from "@/components/sonner-toaster";
 import { withSubmittedSignatureImages } from "@/lib/signature-image-submit";
+import { useTrackSignJob } from "./signJobs.ctx";
 
 interface SubmitFormButtonProps {
   submitDisabled?: boolean;
@@ -32,7 +32,7 @@ function useFormActionController() {
   const profile = useSignatoryProfile();
   const modalRegistry = useModalRegistry();
   const updateAutofill = useMyAutofillUpdate();
-  const queryClient = useQueryClient();
+  const trackSignJob = useTrackSignJob();
   const [busy, setBusy] = useState(false);
 
   const signingPartyBlocks = form.formMetadata.getSigningPartyBlocks(
@@ -67,16 +67,22 @@ function useFormActionController() {
               ...finalValuesWithSignatures,
               ...signingPartyValues,
             });
-            return formsControllerContinueFormProcess({
+            const response = await formsControllerContinueFormProcess({
               formProcessId: formProcess.id,
               supposedSigningPartyId: formProcess.my_signing_party_id!,
               values: valuesWithSignatures,
               audit: getClientAudit(),
-            }).then(async () => {
-              modalRegistry.specifySigningParties.close();
-              await queryClient.refetchQueries({ queryKey: ["my-forms"] });
-              modalRegistry.formContinuationSuccess.open();
             });
+            // 202 { jobId } now — signing runs async, so track the job and
+            // return early rather than await its completion (plan S9).
+            trackSignJob(
+              response.jobId,
+              formProcess.id,
+              formProcess.my_signing_party_id!,
+              form.formName
+            );
+            modalRegistry.specifySigningParties.close();
+            modalRegistry.formContinuationSuccess.open();
           },
           updateAutofill,
           {},
@@ -84,13 +90,18 @@ function useFormActionController() {
           form.formMetadata.getSigningParties()
         );
       } else {
-        await formsControllerContinueFormProcess({
+        const response = await formsControllerContinueFormProcess({
           formProcessId: formProcess.id,
           supposedSigningPartyId: formProcess.my_signing_party_id!,
           values: finalValuesWithSignatures,
           audit: getClientAudit(),
         });
-        await queryClient.refetchQueries({ queryKey: ["my-forms"] });
+        trackSignJob(
+          response.jobId,
+          formProcess.id,
+          formProcess.my_signing_party_id!,
+          form.formName
+        );
         modalRegistry.formContinuationSuccess.open();
       }
     } catch (error) {

@@ -10,6 +10,9 @@ import { SignContextProvider } from "./auth/provider/sign.ctx";
 import { MyFormsContextProvider } from "@/components/docs/forms/myforms.ctx";
 import { FormSettingsProvider } from "./auth/provider/form-settings.ctx";
 import { AppContextProvider } from "@/lib/ctx-app";
+import { MQJobsProvider } from "@betterinternship/components";
+import { pollMqJob } from "@/lib/api/mq-jobs";
+import { SignJobsProvider } from "@/components/docs/forms/signJobs.ctx";
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -21,9 +24,13 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
               <SignatoryProfileContextProvider>
                 <SignContextProvider>
                   <MyFormsContextProvider>
-                    <AppContextProvider>
-                      <ModalProvider>{children}</ModalProvider>
-                    </AppContextProvider>
+                    <MQJobsProvider poll={pollMqJob}>
+                      <SignJobsProvider>
+                        <AppContextProvider>
+                          <ModalProvider>{children}</ModalProvider>
+                        </AppContextProvider>
+                      </SignJobsProvider>
+                    </MQJobsProvider>
                   </MyFormsContextProvider>
                 </SignContextProvider>
               </SignatoryProfileContextProvider>
