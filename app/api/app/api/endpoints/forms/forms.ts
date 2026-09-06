@@ -48,7 +48,7 @@ import type {
   FormsControllerMarkFormAsFirstViewedParams,
   GetExportForSignatoryDto,
   InitiateFormDto,
-  ProcessResponse,
+  MqJobQueuedResponse,
   RegisterFieldDto,
   RegisterFormSchemaDto,
   RejectFormDto,
@@ -2497,7 +2497,7 @@ export const formsControllerContinueFormProcess = (
   continueFormDto: ContinueFormDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<MqJobQueuedResponse>({
     url: `/api/forms/continue`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -3003,7 +3003,7 @@ export const formsControllerInitiateFormProcess = (
   initiateFormDto: InitiateFormDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<MqJobQueuedResponse>({
     url: `/api/forms/initiate`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -3074,7 +3074,7 @@ export const useFormsControllerInitiateFormProcess = <TError = ErrorResponse, TC
   return useMutation(mutationOptions, queryClient);
 };
 export const formsControllerInitiateFormProcessInternally = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<MqJobQueuedResponse>({
     url: `/api/forms/initiate/__internal`,
     method: "POST",
     signal,
@@ -3147,7 +3147,7 @@ export const formsControllerFilloutFormProcess = (
   initiateFormDto: InitiateFormDto,
   signal?: AbortSignal
 ) => {
-  return preconfiguredAxiosFunction<ProcessResponse>({
+  return preconfiguredAxiosFunction<MqJobQueuedResponse>({
     url: `/api/forms/fillout`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -3218,7 +3218,7 @@ export const useFormsControllerFilloutFormProcess = <TError = ErrorResponse, TCo
   return useMutation(mutationOptions, queryClient);
 };
 export const formsControllerFilloutFormProcessInternally = (signal?: AbortSignal) => {
-  return preconfiguredAxiosFunction<BaseResponse>({
+  return preconfiguredAxiosFunction<MqJobQueuedResponse>({
     url: `/api/forms/fillout/__internal`,
     method: "POST",
     signal,
@@ -3587,7 +3587,7 @@ export const formsControllerGetAlterRecipientContextInternally = (
   signal?: AbortSignal
 ) => {
   return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/edit-recipient/__internal`,
+    url: `/api/forms/alter-recipient/__internal`,
     method: "GET",
     params,
     signal,
@@ -3597,7 +3597,7 @@ export const formsControllerGetAlterRecipientContextInternally = (
 export const getFormsControllerGetAlterRecipientContextInternallyQueryKey = (
   params?: FormsControllerGetAlterRecipientContextInternallyParams
 ) => {
-  return [`/api/forms/edit-recipient/__internal`, ...(params ? [params] : [])] as const;
+  return [`/api/forms/alter-recipient/__internal`, ...(params ? [params] : [])] as const;
 };
 
 export const getFormsControllerGetAlterRecipientContextInternallyQueryOptions = <
@@ -3849,7 +3849,7 @@ export function useFormsControllerGetAlterRecipientContextInternallySuspense<
 
 export const formsControllerAlterRecipientInternally = (signal?: AbortSignal) => {
   return preconfiguredAxiosFunction<BaseResponse>({
-    url: `/api/forms/edit-recipient/__internal`,
+    url: `/api/forms/alter-recipient/__internal`,
     method: "POST",
     signal,
   });

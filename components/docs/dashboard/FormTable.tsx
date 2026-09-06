@@ -7,6 +7,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Download, Hourglass, ChevronDown, Sheet, ExternalLink } from "lucide-react";
 import { IMyForm, useMyForms } from "../forms/myforms.ctx";
+import { useSignJobForProcess } from "../forms/signJobs.ctx";
 import { IFormSignatory } from "@betterinternship/core/forms";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { resolveSignedUrl } from "@/lib/signed-url";
@@ -133,6 +134,10 @@ const createActionColumns = (
         (signingParty) =>
           signingParty.signatory_account?.email === profile.email && !signingParty.signed
       );
+      // A just-submitted signature runs async now (plan §6) — the row's own
+      // `signed` flag won't flip until the job lands, so show an
+      // in-progress state instead of falling through to "Sign Now" again.
+      const pendingJob = useSignJobForProcess(myForm.form_process_id);
 
       if (myForm.signed_document_id) {
         return (
@@ -158,6 +163,13 @@ const createActionColumns = (
           >
             View Details
             <ExternalLink className="h-4 w-4" />
+          </Button>
+        );
+      } else if (pendingJob?.isPending) {
+        return (
+          <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
+            Processing
+            <Hourglass className="h-4 w-4 animate-pulse" />
           </Button>
         );
       } else if (lastUnsignedSigningParty?._id !== mySigningParty?._id) {
