@@ -54,6 +54,7 @@ import {
   SelectContent,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { MorphHeight } from "@/components/ui/morph-height";
 
 /**
  * Reusable table shell used by registry screens.
@@ -89,6 +90,24 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   /** Optional: render content beneath an expandable row. */
   renderExpandedRow?: (row: TData) => React.ReactNode;
+  /** Optional: extra className for a row, e.g. to dim one mid-update. */
+  getRowClassName?: (row: TData) => string | undefined;
+  /**
+   * Optional: a stable id per row (e.g. a primary key). Without this,
+   * react-table falls back to array index, so a refetch that doesn't
+   * preserve row order reassigns each DOM row's data instead of moving the
+   * row — no transition can play across that, since nothing here actually
+   * changed identity as far as React can tell.
+   */
+  getRowId?: (row: TData) => string;
+  /**
+   * Optional: rows still in `data` but mid-collapse — every cell renders
+   * empty instead of its normal content, and `MorphHeight` shrinks each
+   * `<td>` to nothing in sync, giving the whole row a genuine height
+   * collapse instead of the row just vanishing on the render that finally
+   * drops it from `data`.
+   */
+  isRowExiting?: (row: TData) => boolean;
   onSelectionChange?: (rows: TData[]) => void;
 }
 
@@ -185,6 +204,9 @@ export function DataTable<TData, TValue>({
   pageSizes = [5, 10, 20, 50],
   className,
   renderExpandedRow,
+  getRowClassName,
+  getRowId,
+  isRowExiting,
 }: DataTableProps<TData, TValue>) {
   const columnSizingStorageKey = React.useMemo(() => `data-table:${id}:column-sizing`, [id]);
 
@@ -235,6 +257,7 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
+    ...(getRowId ? { getRowId } : {}),
     state: {
       sorting,
       columnFilters,
@@ -488,10 +511,15 @@ export function DataTable<TData, TValue>({
 
           <TableBody>
             {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row, rowIndex) => (
+              table.getRowModel().rows.map((row, rowIndex) => {
+                const exiting = isRowExiting?.(row.original) ?? false;
+                return (
                 <React.Fragment key={row.id}>
                   <TableRow
-                    className="group even:bg-muted/40 hover:bg-primary/10 odd:bg-white"
+                    className={cn(
+                      "group even:bg-muted/40 hover:bg-primary/10 odd:bg-white",
+                      getRowClassName?.(row.original)
+                    )}
                     data-state={row.getIsSelected() && "selected"}
                   >
                     <TableCell
@@ -509,29 +537,35 @@ export function DataTable<TData, TValue>({
                         className="absolute top-1/2 left-1.5 ml-1 h-2.5 w-2.5 -translate-y-1/2 scale-50 rounded-full bg-gray-400 opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100"
                         aria-hidden="true"
                       />
-                      <span>{pageIndex * pageSize + rowIndex + 1}</span>
-                      {renderExpandedRow && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="ml-1 h-6 w-6"
-                          onClick={() => toggleExpandedRow(row.id)}
-                          aria-label={
-                            expandedRowIds.has(row.id)
-                              ? "Collapse signing map"
-                              : "Expand signing map"
-                          }
-                          aria-expanded={expandedRowIds.has(row.id)}
-                        >
-                          <ChevronDown
-                            className={cn(
-                              "h-3.5 w-3.5 transition-transform",
-                              expandedRowIds.has(row.id) && "rotate-180"
+                      <MorphHeight>
+                        {exiting ? null : (
+                          <div className="flex items-center justify-end">
+                            <span>{pageIndex * pageSize + rowIndex + 1}</span>
+                            {renderExpandedRow && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="ml-1 h-6 w-6"
+                                onClick={() => toggleExpandedRow(row.id)}
+                                aria-label={
+                                  expandedRowIds.has(row.id)
+                                    ? "Collapse signing map"
+                                    : "Expand signing map"
+                                }
+                                aria-expanded={expandedRowIds.has(row.id)}
+                              >
+                                <ChevronDown
+                                  className={cn(
+                                    "h-3.5 w-3.5 transition-transform",
+                                    expandedRowIds.has(row.id) && "rotate-180"
+                                  )}
+                                />
+                              </Button>
                             )}
-                          />
-                        </Button>
-                      )}
+                          </div>
+                        )}
+                      </MorphHeight>
                     </TableCell>
                     {enableRowSelection && (
                       <TableCell className="w-[42px]">
@@ -548,9 +582,13 @@ export function DataTable<TData, TValue>({
                         className="max-w-0"
                         style={{ width: cell.column.getSize() }}
                       >
-                        <TruncatedCellValue tooltip={getCellTooltipText(cell.getValue())}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TruncatedCellValue>
+                        <MorphHeight>
+                          {exiting ? null : (
+                            <TruncatedCellValue tooltip={getCellTooltipText(cell.getValue())}>
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TruncatedCellValue>
+                          )}
+                        </MorphHeight>
                       </TableCell>
                     ))}
                   </TableRow>
@@ -567,7 +605,8 @@ export function DataTable<TData, TValue>({
                     </TableRow>
                   )}
                 </React.Fragment>
-              ))
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell

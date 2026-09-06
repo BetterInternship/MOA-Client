@@ -6,6 +6,7 @@ import { Newspaper, Pen, Clock, Check, CircleSlash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useSignatoryProfile } from "../auth/provider/signatory.ctx";
 import { IMyForm, useMyForms } from "@/components/docs/forms/myforms.ctx";
+import { useHeldFormProcessIds } from "@/components/docs/forms/signJobs.ctx";
 import MyFormsTable from "@/components/docs/dashboard/FormTable";
 import { cn } from "@/lib/utils";
 import { Loader } from "@/components/ui/loader";
@@ -16,6 +17,13 @@ export default function DocsDashboardPage() {
   const isLoggedIn = Boolean(profile?.email);
   const isCoordinator = Boolean(profile.coordinatorId);
   const [activeTab, setActiveTab] = useState("needs_signing");
+  const heldFormProcessIds = useHeldFormProcessIds();
+
+  // A row that just resolved may no longer match the active tab's filter
+  // (e.g. it left "Needs signing" the instant your signature landed) —
+  // hold it in view a moment longer instead of yanking it out mid-render.
+  const withHeldRows = (predicate: (form: IMyForm) => boolean) => (form: IMyForm) =>
+    predicate(form) || heldFormProcessIds.has(form.form_process_id);
 
   const statuses = [
     {
@@ -169,7 +177,7 @@ export default function DocsDashboardPage() {
               return activeTab === status.id ? (
                 <Card key={status.id} className="min-h-0 flex-1 p-3">
                   <MyFormsTable
-                    rows={forms.filter(status.filter)}
+                    rows={forms.filter(withHeldRows(status.filter))}
                     isCoordinator={isCoordinator}
                     exportEnabled
                     exportLabel={status.label}

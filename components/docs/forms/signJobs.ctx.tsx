@@ -32,6 +32,15 @@ import { useMyForms } from "./myforms.ctx";
 
 const STORAGE_KEY = "bi.mq-jobs.docs-sign";
 
+// A resolved row often stops matching whatever status-tab filter surfaced it
+// (e.g. "Needs signing" once *your* party is signed) — settling first lets
+// the resolved content actually be seen; exiting is the collapse before the
+// row is finally dropped from the held set.
+const SETTLE_MS = 700;
+const EXIT_MS = 220;
+
+type HeldPhase = "settling" | "exiting";
+
 interface SignJobResult {
   formProcessId: string;
   signingPartyId: string;
@@ -49,6 +58,7 @@ interface TrackedSignJob {
 
 interface SignJobsApi {
   jobs: TrackedSignJob[];
+  heldPhase: Record<string, HeldPhase>;
   track: (
     jobId: string,
     formProcessId: string,
@@ -81,6 +91,33 @@ export const SignJobsProvider = ({
   const refetchedFor = useRef<Set<string>>(new Set());
   const queryClient = useQueryClient();
   const myForms = useMyForms();
+
+  const [heldPhase, setHeldPhase] = useState<Record<string, HeldPhase>>({});
+  const holdTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const beginHold = useCallback((formProcessId: string) => {
+    clearTimeout(holdTimers.current[formProcessId]);
+    setHeldPhase((prev) => ({ ...prev, [formProcessId]: "settling" }));
+    holdTimers.current[formProcessId] = setTimeout(() => {
+      setHeldPhase((prev) => ({ ...prev, [formProcessId]: "exiting" }));
+      holdTimers.current[formProcessId] = setTimeout(() => {
+        setHeldPhase((prev) => {
+          if (!(formProcessId in prev)) return prev;
+          const next = { ...prev };
+          delete next[formProcessId];
+          return next;
+        });
+        delete holdTimers.current[formProcessId];
+      }, EXIT_MS);
+    }, SETTLE_MS);
+  }, []);
+
+  useEffect(() => {
+    const timers = holdTimers.current;
+    return () => {
+      Object.values(timers).forEach(clearTimeout);
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -166,7 +203,11 @@ export const SignJobsProvider = ({
   }, [polled]);
 
   // Once the refetched row shows this party signed, stop tracking (and
-  // polling) it — mirrors fillout's reconciliation.
+  // polling) it — mirrors fillout's reconciliation. A tab's status filter
+  // (e.g. "Needs signing") typically stops matching the row in this same
+  // tick, which would otherwise yank it out instantly — `beginHold` keeps it
+  // rendered a little longer so `useHeldFormProcessIds` can hold the row in
+  // view while it settles into its new state, then collapses out.
   useEffect(() => {
     for (const job of jobs) {
       const row = myForms.forms.find(
@@ -175,14 +216,17 @@ export const SignJobsProvider = ({
       const party = row?.signing_parties.find(
         (party) => party._id === job.signingPartyId,
       );
-      if (party?.signed) untrack(job.jobId);
+      if (party?.signed) {
+        beginHold(job.formProcessId);
+        untrack(job.jobId);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myForms.forms]);
 
   const api = useMemo<SignJobsApi>(
-    () => ({ jobs, track, untrack }),
-    [jobs, track, untrack],
+    () => ({ jobs, heldPhase, track, untrack }),
+    [jobs, heldPhase, track, untrack],
   );
 
   return (
@@ -209,4 +253,51 @@ export const useSignJobForProcess = (formProcessId: string) => {
   const jobIds = useMemo(() => (job ? [job.jobId] : []), [job]);
   const polled = useMQJobs<SignJobResult>(jobIds);
   return job ? (polled[0] ?? null) : null;
+};
+
+/**
+ * `formProcessId`s with a sign job currently tracked — for row-level
+ * "this whole row is mid-signature" styling, as opposed to
+ * `useSignJobForProcess`'s per-cell detailed status.
+ *
+ * Deliberately keyed on *tracked*, not the job's own polled `isPending` —
+ * the job itself flips to `done` as soon as the server finishes signing,
+ * which is faster than the separate `my-forms` refetch that actually
+ * updates this row's `signing_parties`. Reading `isPending` here left a gap
+ * where the job already reports done but the row's own data hasn't caught
+ * up yet, so callers would evaluate the *old* data and could render the
+ * pre-signature state for a moment. `jobs` (tracked) stays true across that
+ * whole gap by design — untracking only happens once the fresh data lands.
+ */
+export const usePendingSignFormProcessIds = (): Set<string> => {
+  const { jobs } = useSignJobsApi();
+  return useMemo(
+    () => new Set(jobs.map((job) => job.formProcessId)),
+    [jobs],
+  );
+};
+
+/**
+ * `formProcessId`s that just resolved and should still render even though
+ * they may no longer match whatever filter surfaced them (settling, so the
+ * resolved state is visible; exiting, mid-collapse) — union this into a
+ * status-tab's filtered rows so the row doesn't just vanish.
+ */
+export const useHeldFormProcessIds = (): Set<string> => {
+  const { heldPhase } = useSignJobsApi();
+  return useMemo(() => new Set(Object.keys(heldPhase)), [heldPhase]);
+};
+
+/** `formProcessId`s currently in their collapse-out animation. */
+export const useExitingFormProcessIds = (): Set<string> => {
+  const { heldPhase } = useSignJobsApi();
+  return useMemo(
+    () =>
+      new Set(
+        Object.entries(heldPhase)
+          .filter(([, phase]) => phase === "exiting")
+          .map(([formProcessId]) => formProcessId),
+      ),
+    [heldPhase],
+  );
 };

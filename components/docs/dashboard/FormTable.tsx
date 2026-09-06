@@ -5,9 +5,21 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Download, Hourglass, ChevronDown, Sheet, ExternalLink } from "lucide-react";
+import {
+  ArrowRight,
+  Download,
+  Hourglass,
+  Loader2,
+  ChevronDown,
+  Sheet,
+  ExternalLink,
+} from "lucide-react";
 import { IMyForm, useMyForms } from "../forms/myforms.ctx";
-import { useSignJobForProcess } from "../forms/signJobs.ctx";
+import {
+  usePendingSignFormProcessIds,
+  useHeldFormProcessIds,
+  useExitingFormProcessIds,
+} from "../forms/signJobs.ctx";
 import { IFormSignatory } from "@betterinternship/core/forms";
 import { useSignatoryProfile } from "@/app/docs/auth/provider/signatory.ctx";
 import { resolveSignedUrl } from "@/lib/signed-url";
@@ -80,7 +92,8 @@ export const createBaseFormColumns = (): ColumnDef<IMyForm>[] => [
  */
 const createCoordinatorFormColumns = (
   profile: IFormSignatory,
-  onViewRejectedDetails: (form: IMyForm) => void
+  onViewRejectedDetails: (form: IMyForm) => void,
+  inFlightIds: Set<string>
 ): ColumnDef<IMyForm>[] => [
   ...createBaseFormColumns(),
   {
@@ -97,7 +110,7 @@ const createCoordinatorFormColumns = (
     cell: (info) => info.getValue(),
     enableSorting: true,
   },
-  ...createActionColumns(profile, onViewRejectedDetails),
+  ...createActionColumns(profile, onViewRejectedDetails, inFlightIds),
 ];
 
 /**
@@ -107,10 +120,11 @@ const createCoordinatorFormColumns = (
  */
 const createNonCoordintatorColumns = (
   profile: IFormSignatory,
-  onViewRejectedDetails: (form: IMyForm) => void
+  onViewRejectedDetails: (form: IMyForm) => void,
+  inFlightIds: Set<string>
 ): ColumnDef<IMyForm>[] => [
   ...createBaseFormColumns(),
-  ...createActionColumns(profile, onViewRejectedDetails),
+  ...createActionColumns(profile, onViewRejectedDetails, inFlightIds),
 ];
 
 /**
@@ -120,7 +134,8 @@ const createNonCoordintatorColumns = (
  */
 const createActionColumns = (
   profile: IFormSignatory,
-  onViewRejectedDetails: (form: IMyForm) => void
+  onViewRejectedDetails: (form: IMyForm) => void,
+  inFlightIds: Set<string>
 ): ColumnDef<IMyForm>[] => [
   {
     id: "actions",
@@ -136,11 +151,17 @@ const createActionColumns = (
       );
       // A just-submitted signature runs async now (plan §6) — the row's own
       // `signed` flag won't flip until the job lands, so show an
-      // in-progress state instead of falling through to "Sign Now" again.
-      const pendingJob = useSignJobForProcess(myForm.form_process_id);
+      // in-progress state instead of falling through to real (possibly
+      // stale, and about to change again as the row settles/exits) data.
+      // Covers the whole tracked-through-held lifetime, not just "tracked":
+      // otherwise the button flips to its real next state (e.g. "Pending")
+      // for the brief settle/exit window right before the row leaves,
+      // which just reads as another flash rather than useful information.
+      const isPending = inFlightIds.has(myForm.form_process_id);
 
+      let content: React.ReactNode;
       if (myForm.signed_document_id) {
-        return (
+        content = (
           <Button
             size="sm"
             onClick={async () => {
@@ -154,7 +175,7 @@ const createActionColumns = (
           </Button>
         );
       } else if (myForm.rejection_reason) {
-        return (
+        content = (
           <Button
             size="sm"
             variant="outline"
@@ -165,15 +186,15 @@ const createActionColumns = (
             <ExternalLink className="h-4 w-4" />
           </Button>
         );
-      } else if (pendingJob?.isPending) {
-        return (
+      } else if (isPending) {
+        content = (
           <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
             Processing
-            <Hourglass className="h-4 w-4 animate-pulse" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           </Button>
         );
       } else if (lastUnsignedSigningParty?._id !== mySigningParty?._id) {
-        return (
+        content = (
           <Button size="sm" variant="outline" disabled className="flex items-center gap-1">
             Pending
             <Hourglass className="h-4 w-4" />
@@ -182,7 +203,7 @@ const createActionColumns = (
       } else {
         const baseUrl = process.env.NEXT_PUBLIC_DOCS_URL;
         const pendingLink = `${baseUrl}sign?form-process-id=${myForm.form_process_id}&signing-party-id=${mySigningParty?._id}`;
-        return (
+        content = (
           <a href={pendingLink} target="_blank">
             <Button
               size="sm"
@@ -194,6 +215,11 @@ const createActionColumns = (
           </a>
         );
       }
+
+      // DataTable wraps every cell in MorphHeight itself, so this swap
+      // (a plain button vs. an anchor-wrapped one, different icons) already
+      // morphs smoothly without needing to wrap it again here.
+      return content;
     },
   },
 ];
@@ -211,12 +237,22 @@ export default function MyFormsTable({
 }) {
   const profile = useSignatoryProfile();
   const modalRegistry = useModalRegistry();
+  const pendingFormProcessIds = usePendingSignFormProcessIds();
+  const heldFormProcessIds = useHeldFormProcessIds();
+  const exitingFormProcessIds = useExitingFormProcessIds();
+  // The union covers the whole "don't show this row's real state yet"
+  // window: in flight, then settling/exiting once resolved but still being
+  // held in view past its natural tab membership.
+  const inFlightIds = useMemo(
+    () => new Set([...pendingFormProcessIds, ...heldFormProcessIds]),
+    [pendingFormProcessIds, heldFormProcessIds]
+  );
   const handleViewRejectedDetails = (form: IMyForm) => {
     modalRegistry.cancelledFormDetails.open(form.rejection_reason);
   };
   const columns = isCoordinator
-    ? createCoordinatorFormColumns(profile, handleViewRejectedDetails)
-    : createNonCoordintatorColumns(profile, handleViewRejectedDetails);
+    ? createCoordinatorFormColumns(profile, handleViewRejectedDetails, inFlightIds)
+    : createNonCoordintatorColumns(profile, handleViewRejectedDetails, inFlightIds);
 
   const { forms } = useMyForms();
   const [selectedFormTypes, setSelectedFormTypes] = useState<Set<string>>(new Set());
@@ -321,7 +357,18 @@ export default function MyFormsTable({
       id="docs-dashboard-forms-table"
       columns={columns}
       data={rows}
+      getRowId={(form) => form.form_process_id}
       enableColumnVisibility
+      getRowClassName={(form) =>
+        // The transition class must stay applied on both sides of the
+        // change — dropping it in the same render as `opacity-100` would
+        // remove the animation right when it's needed, and the fade would
+        // just snap instead of playing.
+        `transition-opacity duration-300 ${
+          inFlightIds.has(form.form_process_id) ? "opacity-50" : "opacity-100"
+        }`
+      }
+      isRowExiting={(form) => exitingFormProcessIds.has(form.form_process_id)}
       initialSorting={[{ id: "timestamp", desc: false }]}
       sortingStorageKey="docs-dashboard-forms-sorting"
       pageSizes={[20, 50]}
